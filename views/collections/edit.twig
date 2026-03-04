@@ -90,7 +90,7 @@
                     <div>
                         <form method="POST" action="/cms/collections/{{ collection.getSlug() }}/fields/{{ field.getId() }}/delete"
                               style="display:inline"
-                              onsubmit="return confirm('Delete field {{ field.getName() }}? Column data will be lost!')">
+                              class="confirm-delete" data-message="Delete field {{ field.getName() }}? Column data will be lost!">
                             {{ csrf_field() | raw }}
                             <button type="submit" class="btn btn-sm btn-danger">Delete</button>
                         </form>
@@ -158,7 +158,7 @@
 </div>
 
 {% block scripts %}
-<script>
+<script nonce="{{ csp_nonce() }}">
 document.getElementById('field_name').addEventListener('input', function() {
     const slugField = document.getElementById('field_slug');
     if (!slugField.dataset.manual) {
@@ -172,6 +172,14 @@ document.getElementById('field_slug').addEventListener('input', function() {
 document.getElementById('field_type').addEventListener('change', function() {
     const optGroup = document.getElementById('options-group');
     optGroup.style.display = (this.value === 'select' || this.value === 'relation') ? 'block' : 'none';
+});
+
+document.querySelectorAll('.confirm-delete').forEach(function(form) {
+    form.addEventListener('submit', function(e) {
+        if (!confirm(form.dataset.message || 'Are you sure?')) {
+            e.preventDefault();
+        }
+    });
 });
 </script>
 {% endblock %}

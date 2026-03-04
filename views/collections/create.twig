@@ -63,7 +63,7 @@
 </div>
 
 {% block scripts %}
-<script>
+<script nonce="{{ csp_nonce() }}">
 document.getElementById('name').addEventListener('input', function() {
     const slugField = document.getElementById('slug');
     if (!slugField.dataset.manual) {

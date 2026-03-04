@@ -39,7 +39,7 @@
                             <a href="/cms/collections/{{ collection.getSlug() }}/entries" class="btn btn-sm btn-outline">Entries</a>
                             <a href="/cms/collections/{{ collection.getSlug() }}" class="btn btn-sm btn-outline">Edit</a>
                             <form method="POST" action="/cms/collections/{{ collection.getSlug() }}/delete"
-                                  style="display:inline" onsubmit="return confirm('Delete collection {{ collection.getName() }}? This will drop the table and all data!')">
+                                  style="display:inline" class="confirm-delete" data-message="Delete collection {{ collection.getName() }}? This will drop the table and all data!">
                                 {{ csrf_field() | raw }}
                                 <button type="submit" class="btn btn-sm btn-danger">Delete</button>
                             </form>

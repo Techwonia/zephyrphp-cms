@@ -6,7 +6,7 @@
     <title>{% block title %}CMS{% endblock %} | {{ config('app.name') }}</title>
     <link rel="stylesheet" href="/assets/css/app.css">
     <link rel="stylesheet" href="/assets/css/dashboard.css">
-    <style>
+    <style nonce="{{ csp_style_nonce() }}">
         .cms-sidebar .nav-icon { display: inline-block; width: 20px; text-align: center; margin-right: 8px; }
         .cms-sidebar .nav-collection { font-size: 0.85rem; }
         .cms-sidebar .nav-collection .entry-count { color: #888; font-size: 0.75rem; margin-left: auto; }
@@ -139,7 +139,7 @@
         </div>
     </main>
 
-    <script>
+    <script nonce="{{ csp_nonce() }}">
     document.addEventListener('DOMContentLoaded', function() {
         const toggle = document.getElementById('sidebar-toggle');
         const close = document.getElementById('sidebar-close');
@@ -156,6 +156,15 @@
                 document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
                 btn.classList.add('active');
                 document.getElementById(target).classList.add('active');
+            });
+        });
+
+        // Confirm delete forms
+        document.querySelectorAll('.confirm-delete').forEach(function(form) {
+            form.addEventListener('submit', function(e) {
+                if (!confirm(form.dataset.message || 'Are you sure?')) {
+                    e.preventDefault();
+                }
             });
         });
     });

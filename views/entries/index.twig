@@ -73,7 +73,7 @@
                         <td class="actions-cell">
                             <a href="/cms/collections/{{ collection.getSlug() }}/entries/{{ entry.id }}" class="btn btn-sm btn-outline">Edit</a>
                             <form method="POST" action="/cms/collections/{{ collection.getSlug() }}/entries/{{ entry.id }}/delete"
-                                  style="display:inline" onsubmit="return confirm('Delete this entry?')">
+                                  style="display:inline" class="confirm-delete" data-message="Delete this entry?">
                                 {{ csrf_field() | raw }}
                                 <button type="submit" class="btn btn-sm btn-danger">Delete</button>
                             </form>

@@ -10,7 +10,7 @@
 <div class="page-header">
     <h1>Media Library</h1>
     <div class="page-actions">
-        <button class="btn btn-primary" onclick="document.getElementById('upload-form').style.display = document.getElementById('upload-form').style.display === 'none' ? 'block' : 'none'">
+        <button class="btn btn-primary" id="toggle-upload-btn">
             + Upload File
         </button>
     </div>
@@ -50,9 +50,9 @@
             <div class="media-name" title="{{ item.getOriginalName() }}">{{ item.getOriginalName() }}</div>
             <div class="media-size">{{ item.getHumanSize() }}</div>
             <div style="margin-top: 0.5rem; display: flex; gap: 0.25rem;">
-                <button class="btn btn-sm btn-outline" onclick="copyToClipboard('{{ item.getUrl() }}')" title="Copy URL">Copy URL</button>
+                <button class="btn btn-sm btn-outline copy-url-btn" data-url="{{ item.getUrl() }}" title="Copy URL">Copy URL</button>
                 <form method="POST" action="/cms/media/{{ item.getId() }}/delete"
-                      style="display:inline" onsubmit="return confirm('Delete this file?')">
+                      style="display:inline" class="confirm-delete" data-message="Delete this file?">
                     {{ csrf_field() | raw }}
                     <button type="submit" class="btn btn-sm btn-danger">Delete</button>
                 </form>
@@ -87,23 +87,49 @@
 <div class="empty-state">
     <h3>No media files yet</h3>
     <p>Upload your first file to get started.</p>
-    <button class="btn btn-primary" style="margin-top: 1rem;"
-            onclick="document.getElementById('upload-form').style.display = 'block'">
+    <button class="btn btn-primary" style="margin-top: 1rem;" id="show-upload-btn">
         + Upload File
     </button>
 </div>
 {% endif %}
 
 {% block scripts %}
-<script>
-function copyToClipboard(text) {
-    const fullUrl = window.location.origin + text;
-    navigator.clipboard.writeText(fullUrl).then(function() {
-        alert('URL copied to clipboard!');
-    }).catch(function() {
-        prompt('Copy this URL:', fullUrl);
+<script nonce="{{ csp_nonce() }}">
+document.addEventListener('DOMContentLoaded', function() {
+    var toggleBtn = document.getElementById('toggle-upload-btn');
+    var showBtn = document.getElementById('show-upload-btn');
+    var uploadForm = document.getElementById('upload-form');
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function() {
+            uploadForm.style.display = uploadForm.style.display === 'none' ? 'block' : 'none';
+        });
+    }
+    if (showBtn) {
+        showBtn.addEventListener('click', function() {
+            uploadForm.style.display = 'block';
+        });
+    }
+
+    document.querySelectorAll('.copy-url-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var fullUrl = window.location.origin + btn.dataset.url;
+            navigator.clipboard.writeText(fullUrl).then(function() {
+                alert('URL copied to clipboard!');
+            }).catch(function() {
+                prompt('Copy this URL:', fullUrl);
+            });
+        });
     });
-}
+
+    document.querySelectorAll('.confirm-delete').forEach(function(form) {
+        form.addEventListener('submit', function(e) {
+            if (!confirm(form.dataset.message || 'Are you sure?')) {
+                e.preventDefault();
+            }
+        });
+    });
+});
 </script>
 {% endblock %}
 {% endblock %}
