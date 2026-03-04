@@ -1,0 +1,78 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Create Collection{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms/collections">Collections</a> / Create
+</div>
+
+<div class="page-header">
+    <h1>Create Collection</h1>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" action="/cms/collections">
+            {{ csrf_field() | raw }}
+
+            <div class="form-group">
+                <label for="name">Collection Name *</label>
+                <input type="text" id="name" name="name" class="form-control"
+                       value="{{ flash('_old_input').name ?? '' }}"
+                       placeholder="e.g. Blog Posts" required>
+                {% if flash('errors').name is defined %}
+                    <div class="invalid-feedback">{{ flash('errors').name }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="slug">Slug</label>
+                <input type="text" id="slug" name="slug" class="form-control"
+                       value="{{ flash('_old_input').slug ?? '' }}"
+                       placeholder="Auto-generated from name (e.g. blog_posts)">
+                <p class="text-muted">Used for table name (cms_slug) and URLs. Leave empty to auto-generate.</p>
+                {% if flash('errors').slug is defined %}
+                    <div class="invalid-feedback">{{ flash('errors').slug }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" class="form-control"
+                          rows="3" placeholder="Optional description">{{ flash('_old_input').description ?? '' }}</textarea>
+            </div>
+
+            <div class="form-inline-checks">
+                <label>
+                    <input type="checkbox" name="is_api_enabled" value="1">
+                    Enable REST API
+                </label>
+                <label>
+                    <input type="checkbox" name="is_publishable" value="1">
+                    Publishable (draft/published status)
+                </label>
+            </div>
+
+            <div style="margin-top: 1.5rem;">
+                <button type="submit" class="btn btn-primary">Create Collection</button>
+                <a href="/cms/collections" class="btn btn-outline" style="margin-left: 0.5rem;">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+document.getElementById('name').addEventListener('input', function() {
+    const slugField = document.getElementById('slug');
+    if (!slugField.dataset.manual) {
+        slugField.value = this.value.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+    }
+});
+document.getElementById('slug').addEventListener('input', function() {
+    this.dataset.manual = '1';
+});
+</script>
+{% endblock %}
+{% endblock %}

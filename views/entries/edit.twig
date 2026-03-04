@@ -1,0 +1,190 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Edit Entry #{{ entry.id }} — {{ collection.getName() }}{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms/collections">Collections</a> /
+    <a href="/cms/collections/{{ collection.getSlug() }}">{{ collection.getName() }}</a> /
+    <a href="/cms/collections/{{ collection.getSlug() }}/entries">Entries</a> / #{{ entry.id }}
+</div>
+
+<div class="page-header">
+    <h1>Edit Entry #{{ entry.id }}</h1>
+    <div class="page-actions">
+        <form method="POST" action="/cms/collections/{{ collection.getSlug() }}/entries/{{ entry.id }}/delete"
+              style="display:inline" onsubmit="return confirm('Delete this entry?')">
+            {{ csrf_field() | raw }}
+            <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" action="/cms/collections/{{ collection.getSlug() }}/entries/{{ entry.id }}" enctype="multipart/form-data">
+            {{ csrf_field() | raw }}
+
+            {% for field in fields %}
+            <div class="form-group">
+                <label for="field_{{ field.getSlug() }}">
+                    {{ field.getName() }}
+                    {% if field.isRequired() %} *{% endif %}
+                </label>
+
+                {% set val = entry[field.getSlug()] ?? field.getDefaultValue() ?? '' %}
+                {% set hasError = flash('errors')[field.getSlug()] is defined %}
+
+                {% if field.getType() == 'textarea' %}
+                    <textarea id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                              class="form-control{% if hasError %} is-invalid{% endif %}"
+                              rows="4" {% if field.isRequired() %}required{% endif %}>{{ val }}</textarea>
+
+                {% elseif field.getType() == 'richtext' %}
+                    <textarea id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                              class="form-control richtext-editor{% if hasError %} is-invalid{% endif %}"
+                              rows="8" {% if field.isRequired() %}required{% endif %}>{{ val }}</textarea>
+
+                {% elseif field.getType() == 'boolean' %}
+                    <div>
+                        <label style="display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="hidden" name="{{ field.getSlug() }}" value="0">
+                            <input type="checkbox" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}" value="1"
+                                   {% if val == '1' or val == 1 or val == true %}checked{% endif %}>
+                            Yes
+                        </label>
+                    </div>
+
+                {% elseif field.getType() == 'number' %}
+                    <input type="number" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                           class="form-control{% if hasError %} is-invalid{% endif %}"
+                           value="{{ val }}" step="1"
+                           {% if field.isRequired() %}required{% endif %}>
+
+                {% elseif field.getType() == 'decimal' %}
+                    <input type="number" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                           class="form-control{% if hasError %} is-invalid{% endif %}"
+                           value="{{ val }}" step="0.01"
+                           {% if field.isRequired() %}required{% endif %}>
+
+                {% elseif field.getType() == 'email' %}
+                    <input type="email" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                           class="form-control{% if hasError %} is-invalid{% endif %}"
+                           value="{{ val }}"
+                           {% if field.isRequired() %}required{% endif %}>
+
+                {% elseif field.getType() == 'url' %}
+                    <input type="url" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                           class="form-control{% if hasError %} is-invalid{% endif %}"
+                           value="{{ val }}" placeholder="https://"
+                           {% if field.isRequired() %}required{% endif %}>
+
+                {% elseif field.getType() == 'date' %}
+                    <input type="date" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                           class="form-control{% if hasError %} is-invalid{% endif %}"
+                           value="{{ val }}"
+                           {% if field.isRequired() %}required{% endif %}>
+
+                {% elseif field.getType() == 'datetime' %}
+                    <input type="datetime-local" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                           class="form-control{% if hasError %} is-invalid{% endif %}"
+                           value="{{ val ? val|replace({' ': 'T'}) : '' }}"
+                           {% if field.isRequired() %}required{% endif %}>
+
+                {% elseif field.getType() == 'select' %}
+                    <select id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                            class="form-control{% if hasError %} is-invalid{% endif %}"
+                            {% if field.isRequired() %}required{% endif %}>
+                        <option value="">— Select —</option>
+                        {% if field.getOptions() and field.getOptions().choices is defined %}
+                            {% for choice in field.getOptions().choices %}
+                                <option value="{{ choice }}" {% if val == choice %}selected{% endif %}>{{ choice }}</option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+
+                {% elseif field.getType() == 'relation' %}
+                    <select id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                            class="form-control{% if hasError %} is-invalid{% endif %}"
+                            {% if field.isRequired() %}required{% endif %}>
+                        <option value="">— Select —</option>
+                        {% if relationData[field.getSlug()] is defined %}
+                            {% for relEntry in relationData[field.getSlug()].entries %}
+                                <option value="{{ relEntry.id }}" {% if val == relEntry.id or val == relEntry.id ~ '' %}selected{% endif %}>
+                                    #{{ relEntry.id }}
+                                    {% for key, relVal in relEntry if key != 'id' and key != 'status' and key != 'published_at' and key != 'created_by' and key != 'created_at' and key != 'updated_at' and relVal is not null %}
+                                        — {{ relVal }}{% if not loop.last %},{% endif %}
+                                    {% endfor %}
+                                </option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                    {% if field.getOptions().relation_collection is defined %}
+                        <p class="text-muted">Related to: {{ field.getOptions().relation_collection }}</p>
+                    {% endif %}
+
+                {% elseif field.getType() == 'image' or field.getType() == 'file' %}
+                    {% if val %}
+                        <div style="margin-bottom: 0.5rem;">
+                            {% if field.getType() == 'image' %}
+                                <img src="/{{ val }}" alt="" style="max-height: 100px; border-radius: 4px; border: 1px solid #dee2e6;">
+                            {% else %}
+                                <a href="/{{ val }}" target="_blank">{{ val }}</a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                    <input type="file" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                           class="form-control{% if hasError %} is-invalid{% endif %}"
+                           {% if field.getType() == 'image' %}accept="image/*"{% endif %}>
+                    {% if val %}
+                        <p class="text-muted">Leave empty to keep current file.</p>
+                    {% endif %}
+
+                {% elseif field.getType() == 'json' %}
+                    <textarea id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                              class="form-control{% if hasError %} is-invalid{% endif %}"
+                              rows="5" style="font-family: monospace; font-size: 0.85rem;"
+                              {% if field.isRequired() %}required{% endif %}>{{ val }}</textarea>
+
+                {% else %}
+                    {# text, slug, and any other type #}
+                    <input type="text" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                           class="form-control{% if hasError %} is-invalid{% endif %}"
+                           value="{{ val }}"
+                           {% if field.isRequired() %}required{% endif %}>
+                {% endif %}
+
+                {% if hasError %}
+                    <div class="invalid-feedback">{{ flash('errors')[field.getSlug()] }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            {% if collection.isPublishable() %}
+            <div class="form-group">
+                <label for="status">Status</label>
+                <select id="status" name="status" class="form-control">
+                    <option value="draft" {% if entry.status is defined and entry.status == 'draft' %}selected{% endif %}>Draft</option>
+                    <option value="published" {% if entry.status is defined and entry.status == 'published' %}selected{% endif %}>Published</option>
+                </select>
+                {% if entry.published_at is defined and entry.published_at %}
+                    <p class="text-muted">Published at: {{ entry.published_at }}</p>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <div style="margin-top: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <a href="/cms/collections/{{ collection.getSlug() }}/entries" class="btn btn-outline">Cancel</a>
+            </div>
+
+            {% if entry.created_at is defined or entry.updated_at is defined %}
+            <div style="margin-top: 1.5rem; font-size: 0.8rem; color: #888;">
+                {% if entry.created_at is defined and entry.created_at %}Created: {{ entry.created_at }}{% endif %}
+                {% if entry.updated_at is defined and entry.updated_at %} &middot; Updated: {{ entry.updated_at }}{% endif %}
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Media Library{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / Media
+</div>
+
+<div class="page-header">
+    <h1>Media Library</h1>
+    <div class="page-actions">
+        <button class="btn btn-primary" onclick="document.getElementById('upload-form').style.display = document.getElementById('upload-form').style.display === 'none' ? 'block' : 'none'">
+            + Upload File
+        </button>
+    </div>
+</div>
+
+{# Upload Form #}
+<div id="upload-form" class="card" style="display: none; margin-bottom: 1.5rem;">
+    <div class="card-body">
+        <form method="POST" action="/cms/media/upload" enctype="multipart/form-data">
+            {{ csrf_field() | raw }}
+            <div style="display: flex; gap: 0.75rem; align-items: flex-end;">
+                <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                    <label for="file">Select File</label>
+                    <input type="file" id="file" name="file" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Upload</button>
+            </div>
+            <p class="text-muted" style="margin-top: 0.5rem;">
+                Allowed: images, PDF, SVG, ZIP, and documents. Max size: {{ config('cms.max_upload_size', '10MB') }}.
+            </p>
+        </form>
+    </div>
+</div>
+
+{% if media|length > 0 %}
+<div class="media-grid">
+    {% for item in media %}
+    <div class="media-card">
+        <div class="media-preview">
+            {% if item.isImage() %}
+                <img src="{{ item.getUrl() }}" alt="{{ item.getOriginalName() }}">
+            {% else %}
+                <div style="font-size: 2rem; color: #888;">&#128196;</div>
+            {% endif %}
+        </div>
+        <div class="media-info">
+            <div class="media-name" title="{{ item.getOriginalName() }}">{{ item.getOriginalName() }}</div>
+            <div class="media-size">{{ item.getHumanSize() }}</div>
+            <div style="margin-top: 0.5rem; display: flex; gap: 0.25rem;">
+                <button class="btn btn-sm btn-outline" onclick="copyToClipboard('{{ item.getUrl() }}')" title="Copy URL">Copy URL</button>
+                <form method="POST" action="/cms/media/{{ item.getId() }}/delete"
+                      style="display:inline" onsubmit="return confirm('Delete this file?')">
+                    {{ csrf_field() | raw }}
+                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{# Pagination #}
+{% if lastPage > 1 %}
+<div class="pagination">
+    {% if currentPage > 1 %}
+        <a href="/cms/media?page={{ currentPage - 1 }}">&laquo; Prev</a>
+    {% endif %}
+
+    {% for p in 1..lastPage %}
+        {% if p == currentPage %}
+            <span class="active">{{ p }}</span>
+        {% else %}
+            <a href="/cms/media?page={{ p }}">{{ p }}</a>
+        {% endif %}
+    {% endfor %}
+
+    {% if currentPage < lastPage %}
+        <a href="/cms/media?page={{ currentPage + 1 }}">Next &raquo;</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="empty-state">
+    <h3>No media files yet</h3>
+    <p>Upload your first file to get started.</p>
+    <button class="btn btn-primary" style="margin-top: 1rem;"
+            onclick="document.getElementById('upload-form').style.display = 'block'">
+        + Upload File
+    </button>
+</div>
+{% endif %}
+
+{% block scripts %}
+<script>
+function copyToClipboard(text) {
+    const fullUrl = window.location.origin + text;
+    navigator.clipboard.writeText(fullUrl).then(function() {
+        alert('URL copied to clipboard!');
+    }).catch(function() {
+        prompt('Copy this URL:', fullUrl);
+    });
+}
+</script>
+{% endblock %}
+{% endblock %}

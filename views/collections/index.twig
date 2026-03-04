@@ -1,0 +1,61 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Collections{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Collections</h1>
+    <div class="page-actions">
+        <a href="/cms/collections/create" class="btn btn-primary">+ New Collection</a>
+    </div>
+</div>
+
+{% if collections|length > 0 %}
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Slug</th>
+                        <th>Fields</th>
+                        <th>Entries</th>
+                        <th>API</th>
+                        <th>Publishable</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for collection in collections %}
+                    <tr>
+                        <td><strong>{{ collection.getName() }}</strong></td>
+                        <td><code>{{ collection.getSlug() }}</code></td>
+                        <td>{{ collection.getFields()|length }}</td>
+                        <td>{{ stats[collection.getSlug()] ?? 0 }}</td>
+                        <td>{% if collection.isApiEnabled() %}<span class="badge">Yes</span>{% else %}—{% endif %}</td>
+                        <td>{% if collection.isPublishable() %}<span class="badge">Yes</span>{% else %}—{% endif %}</td>
+                        <td class="actions-cell">
+                            <a href="/cms/collections/{{ collection.getSlug() }}/entries" class="btn btn-sm btn-outline">Entries</a>
+                            <a href="/cms/collections/{{ collection.getSlug() }}" class="btn btn-sm btn-outline">Edit</a>
+                            <form method="POST" action="/cms/collections/{{ collection.getSlug() }}/delete"
+                                  style="display:inline" onsubmit="return confirm('Delete collection {{ collection.getName() }}? This will drop the table and all data!')">
+                                {{ csrf_field() | raw }}
+                                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="empty-state">
+    <h3>No collections yet</h3>
+    <p>Collections define your content types — like blog posts, products, or pages.</p>
+    <a href="/cms/collections/create" class="btn btn-primary" style="margin-top: 1rem;">+ Create Your First Collection</a>
+</div>
+{% endif %}
+{% endblock %}

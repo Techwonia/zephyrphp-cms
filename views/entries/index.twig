@@ -1,0 +1,116 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}{{ collection.getName() }} Entries{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms/collections">Collections</a> /
+    <a href="/cms/collections/{{ collection.getSlug() }}">{{ collection.getName() }}</a> / Entries
+</div>
+
+<div class="page-header">
+    <h1>{{ collection.getName() }}</h1>
+    <div class="page-actions">
+        <a href="/cms/collections/{{ collection.getSlug() }}/entries/create" class="btn btn-primary">+ New Entry</a>
+    </div>
+</div>
+
+{% if listableFields|length > 0 %}
+<div class="search-bar">
+    <form method="GET" action="/cms/collections/{{ collection.getSlug() }}/entries" style="display: flex; gap: 0.5rem; width: 100%;">
+        <input type="text" name="search" class="form-control" placeholder="Search..." value="{{ search }}">
+        <button type="submit" class="btn btn-outline">Search</button>
+        {% if search %}
+            <a href="/cms/collections/{{ collection.getSlug() }}/entries" class="btn btn-outline">Clear</a>
+        {% endif %}
+    </form>
+</div>
+{% endif %}
+
+{% if entries.data|length > 0 %}
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        {% for field in listableFields %}
+                        <th>
+                            <a href="/cms/collections/{{ collection.getSlug() }}/entries?sort_by={{ field.getSlug() }}&sort_dir={% if sortBy == field.getSlug() and sortDir == 'ASC' %}DESC{% else %}ASC{% endif %}&search={{ search }}"
+                               style="text-decoration: none; color: inherit;">
+                                {{ field.getName() }}
+                                {% if sortBy == field.getSlug() %}
+                                    {{ sortDir == 'ASC' ? '&#9650;' : '&#9660;' }}
+                                {% endif %}
+                            </a>
+                        </th>
+                        {% endfor %}
+                        {% if collection.isPublishable() %}
+                        <th>Status</th>
+                        {% endif %}
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in entries.data %}
+                    <tr>
+                        <td>{{ entry.id }}</td>
+                        {% for field in listableFields %}
+                        <td>
+                            {% if field.getType() == 'boolean' %}
+                                {{ entry[field.getSlug()] ? 'Yes' : 'No' }}
+                            {% elseif field.getType() == 'image' and entry[field.getSlug()] %}
+                                <img src="/{{ entry[field.getSlug()] }}" alt="" style="max-height: 30px;">
+                            {% else %}
+                                <span class="truncate">{{ entry[field.getSlug()] ?? '—' }}</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                        {% if collection.isPublishable() %}
+                        <td><span class="badge">{{ entry.status ?? 'draft' }}</span></td>
+                        {% endif %}
+                        <td class="actions-cell">
+                            <a href="/cms/collections/{{ collection.getSlug() }}/entries/{{ entry.id }}" class="btn btn-sm btn-outline">Edit</a>
+                            <form method="POST" action="/cms/collections/{{ collection.getSlug() }}/entries/{{ entry.id }}/delete"
+                                  style="display:inline" onsubmit="return confirm('Delete this entry?')">
+                                {{ csrf_field() | raw }}
+                                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {# Pagination #}
+        {% if entries.last_page > 1 %}
+        <div class="pagination">
+            {% if entries.current_page > 1 %}
+                <a href="/cms/collections/{{ collection.getSlug() }}/entries?page={{ entries.current_page - 1 }}&search={{ search }}&sort_by={{ sortBy }}&sort_dir={{ sortDir }}">&laquo; Prev</a>
+            {% endif %}
+
+            {% for p in 1..entries.last_page %}
+                {% if p == entries.current_page %}
+                    <span class="active">{{ p }}</span>
+                {% else %}
+                    <a href="/cms/collections/{{ collection.getSlug() }}/entries?page={{ p }}&search={{ search }}&sort_by={{ sortBy }}&sort_dir={{ sortDir }}">{{ p }}</a>
+                {% endif %}
+            {% endfor %}
+
+            {% if entries.current_page < entries.last_page %}
+                <a href="/cms/collections/{{ collection.getSlug() }}/entries?page={{ entries.current_page + 1 }}&search={{ search }}&sort_by={{ sortBy }}&sort_dir={{ sortDir }}">Next &raquo;</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% else %}
+<div class="empty-state">
+    <h3>No entries yet</h3>
+    <p>Create your first entry for this collection.</p>
+    <a href="/cms/collections/{{ collection.getSlug() }}/entries/create" class="btn btn-primary" style="margin-top: 1rem;">+ Create Entry</a>
+</div>
+{% endif %}
+{% endblock %}

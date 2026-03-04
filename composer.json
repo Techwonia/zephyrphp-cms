@@ -1,0 +1,31 @@
+{
+    "name": "zephyrphp/cms",
+    "description": "CMS Builder module for ZephyrPHP - Dynamic content management with GUI",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Techwonia",
+            "email": "info@techwonia.com"
+        }
+    ],
+    "require": {
+        "php": "^8.1",
+        "zephyrphp/framework": "^0.1|dev-main",
+        "zephyrphp/database": "^0.1|dev-main",
+        "zephyrphp/auth": "^0.1|dev-main",
+        "zephyrphp/authorization": "^0.1|dev-main"
+    },
+    "autoload": {
+        "psr-4": {
+            "ZephyrPHP\\Cms\\": "src/"
+        }
+    },
+    "extra": {
+        "zephyr": {
+            "module": "cms",
+            "config": "config/cms.php",
+            "dependencies": ["database", "auth", "authorization"]
+        }
+    }
+}
