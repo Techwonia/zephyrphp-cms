@@ -138,10 +138,23 @@
                         <label><input type="checkbox" name="field_unique" value="1"> Unique</label>
                     </div>
 
-                    <div class="form-group" id="options-group" style="display: none;">
-                        <label for="field_options">Options</label>
-                        <textarea id="field_options" name="field_options" class="form-control" rows="3"
-                                  placeholder="For select: one option per line. For relation: collection slug."></textarea>
+                    <div class="form-group" id="select-options-group" style="display: none;">
+                        <label for="field_options_select">Options (one per line)</label>
+                        <textarea id="field_options_select" name="field_options" class="form-control" rows="3"
+                                  placeholder="Option 1&#10;Option 2&#10;Option 3"></textarea>
+                    </div>
+
+                    <div class="form-group" id="relation-options-group" style="display: none;">
+                        <label for="field_options_relation">Related Collection</label>
+                        <select id="field_options_relation" name="field_options" class="form-control">
+                            <option value="">-- Select a collection --</option>
+                            {% for col in collections %}
+                                {% if col.getSlug() != collection.getSlug() %}
+                                <option value="{{ col.getSlug() }}">{{ col.getName() }} ({{ col.getSlug() }})</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                        <p class="text-muted">Entries from the selected collection will be available as relation options.</p>
                     </div>
 
                     <div class="form-group">
@@ -170,8 +183,23 @@ document.getElementById('field_slug').addEventListener('input', function() {
 });
 
 document.getElementById('field_type').addEventListener('change', function() {
-    const optGroup = document.getElementById('options-group');
-    optGroup.style.display = (this.value === 'select' || this.value === 'relation') ? 'block' : 'none';
+    var selectGroup = document.getElementById('select-options-group');
+    var relationGroup = document.getElementById('relation-options-group');
+    var selectInput = document.getElementById('field_options_select');
+    var relationInput = document.getElementById('field_options_relation');
+
+    selectGroup.style.display = 'none';
+    relationGroup.style.display = 'none';
+    selectInput.name = '';
+    relationInput.name = '';
+
+    if (this.value === 'select') {
+        selectGroup.style.display = 'block';
+        selectInput.name = 'field_options';
+    } else if (this.value === 'relation') {
+        relationGroup.style.display = 'block';
+        relationInput.name = 'field_options';
+    }
 });
 
 document.querySelectorAll('.confirm-delete').forEach(function(form) {

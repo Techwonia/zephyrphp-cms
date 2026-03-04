@@ -150,8 +150,11 @@ class CollectionController extends Controller
             'relation' => 'Relation',
         ];
 
+        $allCollections = Collection::findAll();
+
         return $this->render('cms::collections/edit', [
             'collection' => $collection,
+            'collections' => $allCollections,
             'fields' => $collection->getFields()->toArray(),
             'fieldTypes' => $fieldTypes,
             'entryCount' => $entryCount,
