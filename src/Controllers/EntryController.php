@@ -143,11 +143,25 @@ class EntryController extends Controller
             return '';
         }
 
-        $relationData = $this->loadRelationData($collection->getFields()->toArray());
+        $fields = $collection->getFields()->toArray();
+        $relationData = $this->loadRelationData($fields);
+
+        // Decode JSON relation values for multi-select fields
+        foreach ($fields as $field) {
+            if ($field->getType() === 'relation') {
+                $relationType = $field->getOptions()['relation_type'] ?? 'one_to_one';
+                if ($relationType !== 'one_to_one' && isset($entry[$field->getSlug()])) {
+                    $decoded = json_decode((string) $entry[$field->getSlug()], true);
+                    if (is_array($decoded)) {
+                        $entry[$field->getSlug()] = $decoded;
+                    }
+                }
+            }
+        }
 
         return $this->render('cms::entries/edit', [
             'collection' => $collection,
-            'fields' => $collection->getFields()->toArray(),
+            'fields' => $fields,
             'entry' => $entry,
             'relationData' => $relationData,
             'user' => Auth::user(),
@@ -216,15 +230,36 @@ class EntryController extends Controller
         foreach ($fields as $field) {
             $value = $this->input($field->getSlug());
 
-            $data[$field->getSlug()] = match ($field->getType()) {
-                'boolean' => $this->boolean($field->getSlug()) ? 1 : 0,
-                'number', 'relation' => $value !== null && $value !== '' ? (int) $value : null,
-                'decimal' => $value !== null && $value !== '' ? (float) $value : null,
-                'image', 'file' => $this->handleFileUpload($field, $existing),
-                default => $value !== '' ? $value : null,
-            };
+            if ($field->getType() === 'relation') {
+                $data[$field->getSlug()] = $this->buildRelationValue($field, $value);
+            } else {
+                $data[$field->getSlug()] = match ($field->getType()) {
+                    'boolean' => $this->boolean($field->getSlug()) ? 1 : 0,
+                    'number' => $value !== null && $value !== '' ? (int) $value : null,
+                    'decimal' => $value !== null && $value !== '' ? (float) $value : null,
+                    'image', 'file' => $this->handleFileUpload($field, $existing),
+                    default => $value !== '' ? $value : null,
+                };
+            }
         }
         return $data;
+    }
+
+    private function buildRelationValue(Field $field, mixed $value): mixed
+    {
+        $relationType = $field->getOptions()['relation_type'] ?? 'one_to_one';
+
+        if ($relationType === 'one_to_one') {
+            return $value !== null && $value !== '' ? (int) $value : null;
+        }
+
+        // one_to_many or many_to_many — value comes as array from multi-select
+        if (is_array($value)) {
+            $value = array_filter($value, fn($v) => $v !== '' && $v !== null);
+            return !empty($value) ? json_encode(array_map('intval', array_values($value))) : null;
+        }
+
+        return $value !== null && $value !== '' ? $value : null;
     }
 
     private function validateEntryData(array $fields, array $data): array

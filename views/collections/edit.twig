@@ -80,6 +80,12 @@
                         <div class="field-meta">
                             <code>{{ field.getSlug() }}</code>
                             &middot; <span class="field-badge">{{ field.getType() }}</span>
+                            {% if field.getType() == 'relation' and field.getOptions().relation_type is defined %}
+                                <span class="field-badge">{{ field.getOptions().relation_type|replace({'_': ' '}) }}</span>
+                                {% if field.getOptions().relation_collection is defined %}
+                                    <span class="field-badge">&rarr; {{ field.getOptions().relation_collection }}</span>
+                                {% endif %}
+                            {% endif %}
                             {% if field.isRequired() %}<span class="field-badge required">required</span>{% endif %}
                             {% if field.isUnique() %}<span class="field-badge">unique</span>{% endif %}
                             {% if field.isSearchable() %}<span class="field-badge">searchable</span>{% endif %}
@@ -144,17 +150,29 @@
                                   placeholder="Option 1&#10;Option 2&#10;Option 3"></textarea>
                     </div>
 
-                    <div class="form-group" id="relation-options-group" style="display: none;">
-                        <label for="field_options_relation">Related Collection</label>
-                        <select id="field_options_relation" name="field_options" class="form-control">
-                            <option value="">-- Select a collection --</option>
-                            {% for col in collections %}
-                                {% if col.getSlug() != collection.getSlug() %}
-                                <option value="{{ col.getSlug() }}">{{ col.getName() }} ({{ col.getSlug() }})</option>
-                                {% endif %}
-                            {% endfor %}
-                        </select>
-                        <p class="text-muted">Entries from the selected collection will be available as relation options.</p>
+                    <div id="relation-options-group" style="display: none;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="field_relation_type">Relation Type</label>
+                                <select id="field_relation_type" name="field_relation_type" class="form-control">
+                                    <option value="one_to_one">One to One</option>
+                                    <option value="one_to_many">One to Many</option>
+                                    <option value="many_to_many">Many to Many</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="field_options_relation">Related Collection</label>
+                                <select id="field_options_relation" name="field_options" class="form-control">
+                                    <option value="">-- Select a collection --</option>
+                                    {% for col in collections %}
+                                        {% if col.getSlug() != collection.getSlug() %}
+                                        <option value="{{ col.getSlug() }}">{{ col.getName() }} ({{ col.getSlug() }})</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <p class="text-muted" id="relation-type-hint">One to One: Pick a single related entry.</p>
                     </div>
 
                     <div class="form-group">
@@ -201,6 +219,18 @@ document.getElementById('field_type').addEventListener('change', function() {
         relationInput.name = 'field_options';
     }
 });
+
+var relationTypeHints = {
+    'one_to_one': 'One to One: Pick a single related entry.',
+    'one_to_many': 'One to Many: This entry can link to multiple entries in the related collection.',
+    'many_to_many': 'Many to Many: Entries in both collections can link to each other.'
+};
+var relTypeSelect = document.getElementById('field_relation_type');
+if (relTypeSelect) {
+    relTypeSelect.addEventListener('change', function() {
+        document.getElementById('relation-type-hint').textContent = relationTypeHints[this.value] || '';
+    });
+}
 
 document.querySelectorAll('.confirm-delete').forEach(function(form) {
     form.addEventListener('submit', function(e) {

@@ -290,7 +290,14 @@ class CollectionController extends Controller
             $options = ['choices' => array_values($choices)];
         }
         if ($type === 'relation' && !empty($optionsRaw)) {
-            $options = ['relation_collection' => trim($optionsRaw)];
+            $relationType = $this->input('field_relation_type', 'one_to_one');
+            if (!in_array($relationType, ['one_to_one', 'one_to_many', 'many_to_many'])) {
+                $relationType = 'one_to_one';
+            }
+            $options = [
+                'relation_collection' => trim($optionsRaw),
+                'relation_type' => $relationType,
+            ];
         }
 
         $maxOrder = 0;
@@ -365,7 +372,14 @@ class CollectionController extends Controller
             $options = ['choices' => array_values($choices)];
         }
         if ($type === 'relation' && !empty($optionsRaw)) {
-            $options = ['relation_collection' => trim($optionsRaw)];
+            $relationType = $this->input('field_relation_type', 'one_to_one');
+            if (!in_array($relationType, ['one_to_one', 'one_to_many', 'many_to_many'])) {
+                $relationType = 'one_to_one';
+            }
+            $options = [
+                'relation_collection' => trim($optionsRaw),
+                'relation_type' => $relationType,
+            ];
         }
 
         $field->setName($name);

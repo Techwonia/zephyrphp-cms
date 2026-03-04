@@ -24,9 +24,11 @@ class SchemaManager
     // FIELD TYPE MAPPING
     // ========================================================================
 
-    public function getColumnType(string $fieldType): string
+    public function getColumnType(Field $field): string
     {
-        return match ($fieldType) {
+        $relationType = $field->getOptions()['relation_type'] ?? 'one_to_one';
+
+        return match ($field->getType()) {
             'text', 'email', 'slug', 'select' => Types::STRING,
             'textarea' => Types::TEXT,
             'richtext' => Types::TEXT,
@@ -36,7 +38,7 @@ class SchemaManager
             'date' => Types::DATE_MUTABLE,
             'datetime' => Types::DATETIME_MUTABLE,
             'url', 'image', 'file' => Types::STRING,
-            'relation' => Types::INTEGER,
+            'relation' => $relationType === 'one_to_one' ? Types::INTEGER : Types::JSON,
             'json' => Types::JSON,
             default => Types::STRING,
         };
@@ -78,7 +80,7 @@ class SchemaManager
         foreach ($fields as $field) {
             $table->addColumn(
                 $field->getSlug(),
-                $this->getColumnType($field->getType()),
+                $this->getColumnType($field),
                 $this->getColumnOptions($field)
             );
 
@@ -111,9 +113,6 @@ class SchemaManager
      */
     public function addColumn(string $tableName, Field $field): void
     {
-        $type = $this->getColumnType($field->getType());
-        $options = $this->getColumnOptions($field);
-
         // Build ALTER TABLE manually for reliability
         $columnDef = $this->buildColumnDefinition($field);
         $sql = "ALTER TABLE `{$tableName}` ADD COLUMN `{$field->getSlug()}` {$columnDef}";
@@ -177,12 +176,15 @@ class SchemaManager
      */
     private function buildColumnDefinition(Field $field): string
     {
+        $relationType = $field->getOptions()['relation_type'] ?? 'one_to_one';
+
         $mysqlType = match ($field->getType()) {
             'text', 'email', 'slug', 'select' => 'VARCHAR(255)',
             'url', 'image', 'file' => 'VARCHAR(500)',
             'textarea' => 'TEXT',
             'richtext' => 'LONGTEXT',
-            'number', 'relation' => 'INT',
+            'number' => 'INT',
+            'relation' => $relationType === 'one_to_one' ? 'INT' : 'JSON',
             'decimal' => 'DECIMAL(10,2)',
             'boolean' => 'TINYINT(1)',
             'date' => 'DATE',
@@ -194,9 +196,12 @@ class SchemaManager
         $nullable = $field->isRequired() ? 'NOT NULL' : 'NULL';
         $default = '';
 
+        $isNumericDefault = in_array($field->getType(), ['number', 'decimal', 'boolean'])
+            || ($field->getType() === 'relation' && $relationType === 'one_to_one');
+
         if ($field->getDefaultValue() !== null && $field->getDefaultValue() !== '') {
             $defaultVal = $field->getDefaultValue();
-            if (in_array($field->getType(), ['number', 'decimal', 'boolean', 'relation'])) {
+            if ($isNumericDefault) {
                 $default = "DEFAULT {$defaultVal}";
             } else {
                 $default = "DEFAULT '{$defaultVal}'";

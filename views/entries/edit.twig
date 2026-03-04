@@ -104,10 +104,14 @@
                     </select>
 
                 {% elseif field.getType() == 'relation' %}
-                    <select id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                    {% set relationType = field.getOptions().relation_type ?? 'one_to_one' %}
+                    {% set isMulti = relationType != 'one_to_one' %}
+                    {% set selectedIds = isMulti and val is iterable ? val : [] %}
+                    <select id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}{% if isMulti %}[]{% endif %}"
                             class="form-control{% if hasError %} is-invalid{% endif %}"
+                            {% if isMulti %}multiple size="6"{% endif %}
                             {% if field.isRequired() %}required{% endif %}>
-                        <option value="">— Select —</option>
+                        {% if not isMulti %}<option value="">— Select —</option>{% endif %}
                         {% if relationData[field.getSlug()] is defined %}
                             {% for relEntry in relationData[field.getSlug()].entries %}
                                 {% set relLabel = '' %}
@@ -116,14 +120,20 @@
                                         {% set relLabel = rv %}
                                     {% endif %}
                                 {% endfor %}
-                                <option value="{{ relEntry.id }}" {% if val == relEntry.id or val == relEntry.id ~ '' %}selected{% endif %}>
-                                    #{{ relEntry.id }}{% if relLabel %} — {{ relLabel }}{% endif %}
-                                </option>
+                                {% if isMulti %}
+                                    <option value="{{ relEntry.id }}" {% if relEntry.id in selectedIds %}selected{% endif %}>
+                                        #{{ relEntry.id }}{% if relLabel %} — {{ relLabel }}{% endif %}
+                                    </option>
+                                {% else %}
+                                    <option value="{{ relEntry.id }}" {% if val == relEntry.id or val == relEntry.id ~ '' %}selected{% endif %}>
+                                        #{{ relEntry.id }}{% if relLabel %} — {{ relLabel }}{% endif %}
+                                    </option>
+                                {% endif %}
                             {% endfor %}
                         {% endif %}
                     </select>
                     {% if field.getOptions().relation_collection is defined %}
-                        <p class="text-muted">Related to: {{ field.getOptions().relation_collection }}</p>
+                        <p class="text-muted">{{ relationType|replace({'_': ' '})|title }} — Related to: {{ field.getOptions().relation_collection }}{% if isMulti %} (hold Ctrl to select multiple){% endif %}</p>
                     {% endif %}
 
                 {% elseif field.getType() == 'image' or field.getType() == 'file' %}
