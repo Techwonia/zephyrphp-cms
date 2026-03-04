@@ -80,9 +80,11 @@ class ContentApiController extends Controller
             if ($field->getType() === 'relation') {
                 $relationType = $field->getOptions()['relation_type'] ?? 'one_to_one';
                 if ($relationType !== 'one_to_one') {
+                    $targetTable = 'cms_' . ($field->getOptions()['relation_collection'] ?? '');
                     $entry[$field->getSlug()] = $this->schema->getPivotRelations(
                         $collection->getTableName(),
                         $field->getSlug(),
+                        $targetTable,
                         $id
                     );
                 }
@@ -148,8 +150,13 @@ class ContentApiController extends Controller
         $entryId = $this->schema->insertEntry($collection->getTableName(), $data);
 
         // Sync pivot relations
-        foreach ($pivotData as $fieldSlug => $relatedIds) {
-            $this->schema->syncPivotRelations($collection->getTableName(), $fieldSlug, $entryId, $relatedIds);
+        foreach ($fields as $field) {
+            if (isset($pivotData[$field->getSlug()])) {
+                $targetTable = 'cms_' . ($field->getOptions()['relation_collection'] ?? '');
+                $this->schema->syncPivotRelations(
+                    $collection->getTableName(), $field->getSlug(), $targetTable, $entryId, $pivotData[$field->getSlug()]
+                );
+            }
         }
 
         $entry = $this->schema->findEntry($collection->getTableName(), $entryId);
@@ -197,8 +204,13 @@ class ContentApiController extends Controller
         $this->schema->updateEntry($collection->getTableName(), $id, $data);
 
         // Sync pivot relations
-        foreach ($pivotData as $fieldSlug => $relatedIds) {
-            $this->schema->syncPivotRelations($collection->getTableName(), $fieldSlug, $id, $relatedIds);
+        foreach ($fields as $field) {
+            if (isset($pivotData[$field->getSlug()])) {
+                $targetTable = 'cms_' . ($field->getOptions()['relation_collection'] ?? '');
+                $this->schema->syncPivotRelations(
+                    $collection->getTableName(), $field->getSlug(), $targetTable, $id, $pivotData[$field->getSlug()]
+                );
+            }
         }
 
         $entry = $this->schema->findEntry($collection->getTableName(), $id);

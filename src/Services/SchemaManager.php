@@ -179,7 +179,8 @@ class SchemaManager
             'url', 'image', 'file' => 'VARCHAR(500)',
             'textarea' => 'TEXT',
             'richtext' => 'LONGTEXT',
-            'number', 'relation' => 'INT',
+            'number' => 'INT',
+            'relation' => 'INT UNSIGNED',
             'decimal' => 'DECIMAL(10,2)',
             'boolean' => 'TINYINT(1)',
             'date' => 'DATE',
@@ -241,7 +242,7 @@ class SchemaManager
      */
     public function getPivotTableName(string $sourceTable, string $fieldSlug): string
     {
-        return "{$sourceTable}_{$fieldSlug}_rel";
+        return "{$sourceTable}_to_{$fieldSlug}";
     }
 
     /**
@@ -253,11 +254,11 @@ class SchemaManager
 
         $sql = "CREATE TABLE `{$pivotTable}` ("
              . "`id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, "
-             . "`source_id` INT UNSIGNED NOT NULL, "
-             . "`related_id` INT UNSIGNED NOT NULL, "
-             . "UNIQUE KEY `uniq_relation` (`source_id`, `related_id`), "
-             . "CONSTRAINT `fk_{$pivotTable}_source` FOREIGN KEY (`source_id`) REFERENCES `{$sourceTable}`(`id`) ON DELETE CASCADE, "
-             . "CONSTRAINT `fk_{$pivotTable}_related` FOREIGN KEY (`related_id`) REFERENCES `{$targetTable}`(`id`) ON DELETE CASCADE"
+             . "`{$sourceTable}_id` INT UNSIGNED NOT NULL, "
+             . "`{$targetTable}_id` INT UNSIGNED NOT NULL, "
+             . "UNIQUE KEY `uniq_pair` (`{$sourceTable}_id`, `{$targetTable}_id`), "
+             . "CONSTRAINT `fk_{$pivotTable}_source` FOREIGN KEY (`{$sourceTable}_id`) REFERENCES `{$sourceTable}`(`id`) ON DELETE CASCADE, "
+             . "CONSTRAINT `fk_{$pivotTable}_target` FOREIGN KEY (`{$targetTable}_id`) REFERENCES `{$targetTable}`(`id`) ON DELETE CASCADE"
              . ")";
 
         $this->connection->executeStatement($sql);
@@ -275,7 +276,7 @@ class SchemaManager
     /**
      * Get related entry IDs from a pivot table
      */
-    public function getPivotRelations(string $sourceTable, string $fieldSlug, int $sourceId): array
+    public function getPivotRelations(string $sourceTable, string $fieldSlug, string $targetTable, int $sourceId): array
     {
         $pivotTable = $this->getPivotTableName($sourceTable, $fieldSlug);
 
@@ -283,20 +284,23 @@ class SchemaManager
             return [];
         }
 
+        $srcCol = "{$sourceTable}_id";
+        $tgtCol = "{$targetTable}_id";
+
         $result = $this->connection->createQueryBuilder()
-            ->select('related_id')
+            ->select("`{$tgtCol}`")
             ->from($pivotTable)
-            ->where('source_id = :sourceId')
+            ->where("`{$srcCol}` = :sourceId")
             ->setParameter('sourceId', $sourceId)
             ->executeQuery();
 
-        return array_column($result->fetchAllAssociative(), 'related_id');
+        return array_column($result->fetchAllAssociative(), $tgtCol);
     }
 
     /**
      * Sync pivot table relations (delete old, insert new)
      */
-    public function syncPivotRelations(string $sourceTable, string $fieldSlug, int $sourceId, array $relatedIds): void
+    public function syncPivotRelations(string $sourceTable, string $fieldSlug, string $targetTable, int $sourceId, array $relatedIds): void
     {
         $pivotTable = $this->getPivotTableName($sourceTable, $fieldSlug);
 
@@ -304,14 +308,17 @@ class SchemaManager
             return;
         }
 
+        $srcCol = "{$sourceTable}_id";
+        $tgtCol = "{$targetTable}_id";
+
         // Remove existing relations
-        $this->connection->delete($pivotTable, ['source_id' => $sourceId]);
+        $this->connection->delete($pivotTable, [$srcCol => $sourceId]);
 
         // Insert new relations
         foreach ($relatedIds as $relatedId) {
             $this->connection->insert($pivotTable, [
-                'source_id' => $sourceId,
-                'related_id' => (int) $relatedId,
+                $srcCol => $sourceId,
+                $tgtCol => (int) $relatedId,
             ]);
         }
     }

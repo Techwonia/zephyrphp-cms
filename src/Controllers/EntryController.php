@@ -155,9 +155,11 @@ class EntryController extends Controller
             if ($field->getType() === 'relation') {
                 $relationType = $field->getOptions()['relation_type'] ?? 'one_to_one';
                 if ($relationType !== 'one_to_one') {
+                    $targetTable = 'cms_' . ($field->getOptions()['relation_collection'] ?? '');
                     $entry[$field->getSlug()] = $this->schema->getPivotRelations(
                         $collection->getTableName(),
                         $field->getSlug(),
+                        $targetTable,
                         $id
                     );
                 }
@@ -291,9 +293,11 @@ class EntryController extends Controller
             if ($field->getType() === 'relation') {
                 $relationType = $field->getOptions()['relation_type'] ?? 'one_to_one';
                 if ($relationType !== 'one_to_one' && isset($pivotData[$field->getSlug()])) {
+                    $targetTable = 'cms_' . ($field->getOptions()['relation_collection'] ?? '');
                     $this->schema->syncPivotRelations(
                         $tableName,
                         $field->getSlug(),
+                        $targetTable,
                         $entryId,
                         $pivotData[$field->getSlug()]
                     );
