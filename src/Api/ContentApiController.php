@@ -53,7 +53,7 @@ class ContentApiController extends Controller
             'searchFields' => $searchableFields,
         ]);
 
-        return $this->json([
+        $this->json([
             'data' => $result['data'],
             'meta' => [
                 'total' => $result['total'],
@@ -62,6 +62,7 @@ class ContentApiController extends Controller
                 'last_page' => $result['last_page'],
             ],
         ]);
+        return '';
     }
 
     public function show(string $slug, int $id): string
@@ -70,10 +71,12 @@ class ContentApiController extends Controller
 
         $entry = $this->schema->findEntry($collection->getTableName(), $id);
         if (!$entry) {
-            return $this->json(['error' => 'Entry not found.'], 404);
+            $this->json(['error' => 'Entry not found.'], 404);
+            return '';
         }
 
-        return $this->json(['data' => $entry]);
+        $this->json(['data' => $entry]);
+        return '';
     }
 
     public function store(string $slug): string
@@ -104,13 +107,15 @@ class ContentApiController extends Controller
         }
 
         if (!empty($errors)) {
-            return $this->json(['error' => 'Validation failed.', 'errors' => $errors], 422);
+            $this->json(['error' => 'Validation failed.', 'errors' => $errors], 422);
+            return '';
         }
 
         $id = $this->schema->insertEntry($collection->getTableName(), $data);
         $entry = $this->schema->findEntry($collection->getTableName(), $id);
 
-        return $this->json(['data' => $entry], 201);
+        $this->json(['data' => $entry], 201);
+        return '';
     }
 
     public function update(string $slug, int $id): string
@@ -119,7 +124,8 @@ class ContentApiController extends Controller
 
         $entry = $this->schema->findEntry($collection->getTableName(), $id);
         if (!$entry) {
-            return $this->json(['error' => 'Entry not found.'], 404);
+            $this->json(['error' => 'Entry not found.'], 404);
+            return '';
         }
 
         $fields = $collection->getFields()->toArray();
@@ -140,7 +146,8 @@ class ContentApiController extends Controller
         $this->schema->updateEntry($collection->getTableName(), $id, $data);
         $entry = $this->schema->findEntry($collection->getTableName(), $id);
 
-        return $this->json(['data' => $entry]);
+        $this->json(['data' => $entry]);
+        return '';
     }
 
     public function destroy(string $slug, int $id): string
@@ -149,11 +156,13 @@ class ContentApiController extends Controller
 
         $entry = $this->schema->findEntry($collection->getTableName(), $id);
         if (!$entry) {
-            return $this->json(['error' => 'Entry not found.'], 404);
+            $this->json(['error' => 'Entry not found.'], 404);
+            return '';
         }
 
         $this->schema->deleteEntry($collection->getTableName(), $id);
 
-        return $this->json(['message' => 'Entry deleted.']);
+        $this->json(['message' => 'Entry deleted.']);
+        return '';
     }
 }

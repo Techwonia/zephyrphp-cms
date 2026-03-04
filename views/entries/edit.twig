@@ -110,11 +110,14 @@
                         <option value="">— Select —</option>
                         {% if relationData[field.getSlug()] is defined %}
                             {% for relEntry in relationData[field.getSlug()].entries %}
+                                {% set relLabel = '' %}
+                                {% for rk, rv in relEntry %}
+                                    {% if rk not in ['id', 'status', 'published_at', 'created_by', 'created_at', 'updated_at'] and rv is not null and relLabel == '' %}
+                                        {% set relLabel = rv %}
+                                    {% endif %}
+                                {% endfor %}
                                 <option value="{{ relEntry.id }}" {% if val == relEntry.id or val == relEntry.id ~ '' %}selected{% endif %}>
-                                    #{{ relEntry.id }}
-                                    {% for key, relVal in relEntry if key != 'id' and key != 'status' and key != 'published_at' and key != 'created_by' and key != 'created_at' and key != 'updated_at' and relVal is not null %}
-                                        — {{ relVal }}{% if not loop.last %},{% endif %}
-                                    {% endfor %}
+                                    #{{ relEntry.id }}{% if relLabel %} — {{ relLabel }}{% endif %}
                                 </option>
                             {% endfor %}
                         {% endif %}
