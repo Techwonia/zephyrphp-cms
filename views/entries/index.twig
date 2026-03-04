@@ -17,7 +17,7 @@
 
 {% if listableFields|length > 0 %}
 <div class="search-bar">
-    <form method="GET" action="/cms/collections/{{ collection.getSlug() }}/entries" style="display: flex; gap: 0.5rem; width: 100%;">
+    <form method="GET" action="/cms/collections/{{ collection.getSlug() }}/entries" class="search-form">
         <input type="text" name="search" class="form-control" placeholder="Search..." value="{{ search }}">
         <button type="submit" class="btn btn-outline">Search</button>
         {% if search %}
@@ -38,7 +38,7 @@
                         {% for field in listableFields %}
                         <th>
                             <a href="/cms/collections/{{ collection.getSlug() }}/entries?sort_by={{ field.getSlug() }}&sort_dir={% if sortBy == field.getSlug() and sortDir == 'ASC' %}DESC{% else %}ASC{% endif %}&search={{ search }}"
-                               style="text-decoration: none; color: inherit;">
+                               class="sort-link">
                                 {{ field.getName() }}
                                 {% if sortBy == field.getSlug() %}
                                     {{ sortDir == 'ASC' ? '&#9650;' : '&#9660;' }}
@@ -110,7 +110,7 @@
 <div class="empty-state">
     <h3>No entries yet</h3>
     <p>Create your first entry for this collection.</p>
-    <a href="/cms/collections/{{ collection.getSlug() }}/entries/create" class="btn btn-primary" style="margin-top: 1rem;">+ Create Entry</a>
+    <a href="/cms/collections/{{ collection.getSlug() }}/entries/create" class="btn btn-primary">+ Create Entry</a>
 </div>
 {% endif %}
 {% endblock %}

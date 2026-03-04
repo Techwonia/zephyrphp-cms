@@ -17,18 +17,18 @@
 </div>
 
 {# Upload Form #}
-<div id="upload-form" class="card" style="display: none; margin-bottom: 1.5rem;">
+<div id="upload-form" class="card upload-card" style="display: none;">
     <div class="card-body">
         <form method="POST" action="/cms/media/upload" enctype="multipart/form-data">
             {{ csrf_field() | raw }}
-            <div style="display: flex; gap: 0.75rem; align-items: flex-end;">
-                <div class="form-group" style="flex: 1; margin-bottom: 0;">
+            <div class="upload-row">
+                <div class="form-group upload-field">
                     <label for="file">Select File</label>
                     <input type="file" id="file" name="file" class="form-control" required>
                 </div>
                 <button type="submit" class="btn btn-primary">Upload</button>
             </div>
-            <p class="text-muted" style="margin-top: 0.5rem;">
+            <p class="text-muted">
                 Allowed: images, PDF, SVG, ZIP, and documents. Max size: {{ config('cms.max_upload_size', '10MB') }}.
             </p>
         </form>
@@ -43,13 +43,13 @@
             {% if item.isImage() %}
                 <img src="{{ item.getUrl() }}" alt="{{ item.getOriginalName() }}">
             {% else %}
-                <div style="font-size: 2rem; color: #888;">&#128196;</div>
+                <div class="media-file-icon">&#128196;</div>
             {% endif %}
         </div>
         <div class="media-info">
             <div class="media-name" title="{{ item.getOriginalName() }}">{{ item.getOriginalName() }}</div>
             <div class="media-size">{{ item.getHumanSize() }}</div>
-            <div style="margin-top: 0.5rem; display: flex; gap: 0.25rem;">
+            <div class="media-actions">
                 <button class="btn btn-sm btn-outline copy-url-btn" data-url="{{ item.getUrl() }}" title="Copy URL">Copy URL</button>
                 <form method="POST" action="/cms/media/{{ item.getId() }}/delete"
                       style="display:inline" class="confirm-delete" data-message="Delete this file?">
@@ -87,7 +87,7 @@
 <div class="empty-state">
     <h3>No media files yet</h3>
     <p>Upload your first file to get started.</p>
-    <button class="btn btn-primary" style="margin-top: 1rem;" id="show-upload-btn">
+    <button class="btn btn-primary" id="show-upload-btn">
         + Upload File
     </button>
 </div>

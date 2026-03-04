@@ -6,51 +6,6 @@
     <title>{% block title %}CMS{% endblock %} | {{ config('app.name') }}</title>
     <link rel="stylesheet" href="/assets/css/app.css">
     <link rel="stylesheet" href="/assets/css/dashboard.css">
-    <style nonce="{{ csp_style_nonce() }}">
-        .cms-sidebar .nav-icon { display: inline-block; width: 20px; text-align: center; margin-right: 8px; }
-        .cms-sidebar .nav-collection { font-size: 0.85rem; }
-        .cms-sidebar .nav-collection .entry-count { color: #888; font-size: 0.75rem; margin-left: auto; }
-        .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
-        .page-header h1 { margin: 0; font-size: 1.5rem; }
-        .page-header .page-actions { display: flex; gap: 0.5rem; }
-        .breadcrumb { font-size: 0.85rem; color: #888; margin-bottom: 1rem; }
-        .breadcrumb a { color: #4a90d9; text-decoration: none; }
-        .breadcrumb a:hover { text-decoration: underline; }
-        .empty-state { text-align: center; padding: 3rem 1rem; color: #888; }
-        .empty-state h3 { color: #555; margin-bottom: 0.5rem; }
-        .field-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-bottom: 1px solid #eee; }
-        .field-row:last-child { border-bottom: none; }
-        .field-row .field-info { flex: 1; }
-        .field-row .field-name { font-weight: 600; }
-        .field-row .field-meta { font-size: 0.8rem; color: #888; }
-        .field-badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 3px; font-size: 0.75rem; background: #e8f0fe; color: #1a73e8; }
-        .field-badge.required { background: #fce8e6; color: #d93025; }
-        .add-field-form { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 1rem; margin-top: 1rem; }
-        .add-field-form .form-row { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: flex-end; }
-        .add-field-form .form-row .form-group { flex: 1; min-width: 150px; }
-        .form-inline-checks { display: flex; gap: 1rem; flex-wrap: wrap; margin: 0.75rem 0; }
-        .form-inline-checks label { display: flex; align-items: center; gap: 0.3rem; font-size: 0.85rem; cursor: pointer; }
-        .pagination { display: flex; gap: 0.5rem; justify-content: center; margin-top: 1.5rem; }
-        .pagination a, .pagination span { padding: 0.4rem 0.8rem; border: 1px solid #dee2e6; border-radius: 4px; text-decoration: none; color: #333; font-size: 0.85rem; }
-        .pagination a:hover { background: #e9ecef; }
-        .pagination .active { background: #4a90d9; color: white; border-color: #4a90d9; }
-        .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; }
-        .media-card { border: 1px solid #dee2e6; border-radius: 6px; overflow: hidden; background: white; }
-        .media-card .media-preview { height: 120px; display: flex; align-items: center; justify-content: center; background: #f8f9fa; overflow: hidden; }
-        .media-card .media-preview img { max-width: 100%; max-height: 100%; object-fit: cover; }
-        .media-card .media-info { padding: 0.5rem; font-size: 0.8rem; }
-        .media-card .media-info .media-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .media-card .media-info .media-size { color: #888; }
-        .search-bar { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
-        .search-bar input { flex: 1; }
-        .text-muted { color: #888; font-size: 0.85rem; }
-        .tab-nav { display: flex; border-bottom: 2px solid #dee2e6; margin-bottom: 1.5rem; }
-        .tab-btn { padding: 0.6rem 1.2rem; border: none; background: none; cursor: pointer; font-size: 0.9rem; color: #666; border-bottom: 2px solid transparent; margin-bottom: -2px; }
-        .tab-btn.active { color: #4a90d9; border-bottom-color: #4a90d9; font-weight: 600; }
-        .tab-panel { display: none; }
-        .tab-panel.active { display: block; }
-        .truncate { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; vertical-align: middle; }
-    </style>
     {% block styles %}{% endblock %}
 </head>
 <body class="dashboard-body">
@@ -141,19 +96,19 @@
 
     <script nonce="{{ csp_nonce() }}">
     document.addEventListener('DOMContentLoaded', function() {
-        const toggle = document.getElementById('sidebar-toggle');
-        const close = document.getElementById('sidebar-close');
-        const sidebar = document.getElementById('sidebar');
+        var toggle = document.getElementById('sidebar-toggle');
+        var close = document.getElementById('sidebar-close');
+        var sidebar = document.getElementById('sidebar');
 
-        if (toggle) toggle.addEventListener('click', () => sidebar.classList.toggle('open'));
-        if (close) close.addEventListener('click', () => sidebar.classList.remove('open'));
+        if (toggle) toggle.addEventListener('click', function() { sidebar.classList.toggle('open'); });
+        if (close) close.addEventListener('click', function() { sidebar.classList.remove('open'); });
 
         // Tab switching
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const target = btn.dataset.tab;
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var target = btn.dataset.tab;
+                document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+                document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
                 btn.classList.add('active');
                 document.getElementById(target).classList.add('active');
             });

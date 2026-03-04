@@ -13,23 +13,29 @@
 <div class="stats-grid">
     <div class="stat-card">
         <div class="stat-icon">&#128203;</div>
-        <div class="stat-value">{{ totalCollections }}</div>
-        <div class="stat-label">Collections</div>
+        <div class="stat-info">
+            <div class="stat-value">{{ totalCollections }}</div>
+            <div class="stat-label">Collections</div>
+        </div>
     </div>
     <div class="stat-card">
         <div class="stat-icon">&#128196;</div>
-        <div class="stat-value">{{ totalEntries }}</div>
-        <div class="stat-label">Total Entries</div>
+        <div class="stat-info">
+            <div class="stat-value">{{ totalEntries }}</div>
+            <div class="stat-label">Total Entries</div>
+        </div>
     </div>
     <div class="stat-card">
         <div class="stat-icon">&#128247;</div>
-        <div class="stat-value">{{ totalMedia }}</div>
-        <div class="stat-label">Media Files</div>
+        <div class="stat-info">
+            <div class="stat-value">{{ totalMedia }}</div>
+            <div class="stat-label">Media Files</div>
+        </div>
     </div>
 </div>
 
 {% if collections|length > 0 %}
-<div class="card" style="margin-top: 2rem;">
+<div class="card">
     <div class="card-header">
         <h3>Collections</h3>
     </div>
@@ -72,10 +78,10 @@
     </div>
 </div>
 {% else %}
-<div class="empty-state" style="margin-top: 2rem;">
+<div class="empty-state">
     <h3>No collections yet</h3>
     <p>Create your first collection to start building your content.</p>
-    <a href="/cms/collections/create" class="btn btn-primary" style="margin-top: 1rem;">+ Create Collection</a>
+    <a href="/cms/collections/create" class="btn btn-primary">+ Create Collection</a>
 </div>
 {% endif %}
 {% endblock %}

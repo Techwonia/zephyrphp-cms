@@ -130,7 +130,7 @@
                     {% if val %}
                         <div style="margin-bottom: 0.5rem;">
                             {% if field.getType() == 'image' %}
-                                <img src="/{{ val }}" alt="" style="max-height: 100px; border-radius: 4px; border: 1px solid #dee2e6;">
+                                <img src="/{{ val }}" alt="" style="max-height: 100px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.1);">
                             {% else %}
                                 <a href="/{{ val }}" target="_blank">{{ val }}</a>
                             {% endif %}
@@ -176,13 +176,13 @@
             </div>
             {% endif %}
 
-            <div style="margin-top: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+            <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Save Changes</button>
                 <a href="/cms/collections/{{ collection.getSlug() }}/entries" class="btn btn-outline">Cancel</a>
             </div>
 
             {% if entry.created_at is defined or entry.updated_at is defined %}
-            <div style="margin-top: 1.5rem; font-size: 0.8rem; color: #888;">
+            <div class="text-muted" style="margin-top: var(--spacing-md);">
                 {% if entry.created_at is defined and entry.created_at %}Created: {{ entry.created_at }}{% endif %}
                 {% if entry.updated_at is defined and entry.updated_at %} &middot; Updated: {{ entry.updated_at }}{% endif %}
             </div>

@@ -57,7 +57,7 @@
                     </label>
                 </div>
 
-                <div style="margin-top: 1.5rem;">
+                <div class="form-actions">
                     <button type="submit" class="btn btn-primary">Save Settings</button>
                 </div>
             </form>
@@ -105,7 +105,7 @@
 
             {# ADD FIELD FORM #}
             <div class="add-field-form">
-                <h4 style="margin-top: 0; margin-bottom: 0.75rem;">Add New Field</h4>
+                <h4>Add New Field</h4>
                 <form method="POST" action="/cms/collections/{{ collection.getSlug() }}/fields">
                     {{ csrf_field() | raw }}
 
