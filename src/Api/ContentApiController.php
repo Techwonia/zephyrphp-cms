@@ -75,6 +75,20 @@ class ContentApiController extends Controller
             return '';
         }
 
+        // Include pivot relation data
+        foreach ($collection->getFields() as $field) {
+            if ($field->getType() === 'relation') {
+                $relationType = $field->getOptions()['relation_type'] ?? 'one_to_one';
+                if ($relationType !== 'one_to_one') {
+                    $entry[$field->getSlug()] = $this->schema->getPivotRelations(
+                        $collection->getTableName(),
+                        $field->getSlug(),
+                        $id
+                    );
+                }
+            }
+        }
+
         $this->json(['data' => $entry]);
         return '';
     }
@@ -85,9 +99,22 @@ class ContentApiController extends Controller
 
         $fields = $collection->getFields()->toArray();
         $data = [];
+        $pivotData = [];
 
         foreach ($fields as $field) {
             $value = $this->input($field->getSlug());
+
+            if ($field->getType() === 'relation') {
+                $relationType = $field->getOptions()['relation_type'] ?? 'one_to_one';
+                if ($relationType !== 'one_to_one') {
+                    // Pivot relation — expect array of IDs
+                    if ($value !== null) {
+                        $pivotData[$field->getSlug()] = is_array($value) ? array_map('intval', $value) : [(int) $value];
+                    }
+                    continue;
+                }
+            }
+
             if ($value !== null) {
                 $data[$field->getSlug()] = match ($field->getType()) {
                     'boolean' => (bool) $value ? 1 : 0,
@@ -102,7 +129,14 @@ class ContentApiController extends Controller
         $errors = [];
         foreach ($fields as $field) {
             if ($field->isRequired() && !isset($data[$field->getSlug()])) {
-                $errors[$field->getSlug()] = "{$field->getName()} is required.";
+                $relationType = $field->getOptions()['relation_type'] ?? 'one_to_one';
+                if ($field->getType() === 'relation' && $relationType !== 'one_to_one') {
+                    if (empty($pivotData[$field->getSlug()] ?? [])) {
+                        $errors[$field->getSlug()] = "{$field->getName()} is required.";
+                    }
+                } else {
+                    $errors[$field->getSlug()] = "{$field->getName()} is required.";
+                }
             }
         }
 
@@ -111,9 +145,14 @@ class ContentApiController extends Controller
             return '';
         }
 
-        $id = $this->schema->insertEntry($collection->getTableName(), $data);
-        $entry = $this->schema->findEntry($collection->getTableName(), $id);
+        $entryId = $this->schema->insertEntry($collection->getTableName(), $data);
 
+        // Sync pivot relations
+        foreach ($pivotData as $fieldSlug => $relatedIds) {
+            $this->schema->syncPivotRelations($collection->getTableName(), $fieldSlug, $entryId, $relatedIds);
+        }
+
+        $entry = $this->schema->findEntry($collection->getTableName(), $entryId);
         $this->json(['data' => $entry], 201);
         return '';
     }
@@ -130,9 +169,21 @@ class ContentApiController extends Controller
 
         $fields = $collection->getFields()->toArray();
         $data = [];
+        $pivotData = [];
 
         foreach ($fields as $field) {
             $value = $this->input($field->getSlug());
+
+            if ($field->getType() === 'relation') {
+                $relationType = $field->getOptions()['relation_type'] ?? 'one_to_one';
+                if ($relationType !== 'one_to_one') {
+                    if ($value !== null) {
+                        $pivotData[$field->getSlug()] = is_array($value) ? array_map('intval', $value) : [(int) $value];
+                    }
+                    continue;
+                }
+            }
+
             if ($value !== null) {
                 $data[$field->getSlug()] = match ($field->getType()) {
                     'boolean' => (bool) $value ? 1 : 0,
@@ -144,8 +195,13 @@ class ContentApiController extends Controller
         }
 
         $this->schema->updateEntry($collection->getTableName(), $id, $data);
-        $entry = $this->schema->findEntry($collection->getTableName(), $id);
 
+        // Sync pivot relations
+        foreach ($pivotData as $fieldSlug => $relatedIds) {
+            $this->schema->syncPivotRelations($collection->getTableName(), $fieldSlug, $id, $relatedIds);
+        }
+
+        $entry = $this->schema->findEntry($collection->getTableName(), $id);
         $this->json(['data' => $entry]);
         return '';
     }

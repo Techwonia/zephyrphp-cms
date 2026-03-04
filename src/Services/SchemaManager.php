@@ -26,8 +26,6 @@ class SchemaManager
 
     public function getColumnType(Field $field): string
     {
-        $relationType = $field->getOptions()['relation_type'] ?? 'one_to_one';
-
         return match ($field->getType()) {
             'text', 'email', 'slug', 'select' => Types::STRING,
             'textarea' => Types::TEXT,
@@ -38,7 +36,7 @@ class SchemaManager
             'date' => Types::DATE_MUTABLE,
             'datetime' => Types::DATETIME_MUTABLE,
             'url', 'image', 'file' => Types::STRING,
-            'relation' => $relationType === 'one_to_one' ? Types::INTEGER : Types::JSON,
+            'relation' => Types::INTEGER,
             'json' => Types::JSON,
             default => Types::STRING,
         };
@@ -176,15 +174,12 @@ class SchemaManager
      */
     private function buildColumnDefinition(Field $field): string
     {
-        $relationType = $field->getOptions()['relation_type'] ?? 'one_to_one';
-
         $mysqlType = match ($field->getType()) {
             'text', 'email', 'slug', 'select' => 'VARCHAR(255)',
             'url', 'image', 'file' => 'VARCHAR(500)',
             'textarea' => 'TEXT',
             'richtext' => 'LONGTEXT',
-            'number' => 'INT',
-            'relation' => $relationType === 'one_to_one' ? 'INT' : 'JSON',
+            'number', 'relation' => 'INT',
             'decimal' => 'DECIMAL(10,2)',
             'boolean' => 'TINYINT(1)',
             'date' => 'DATE',
@@ -196,8 +191,7 @@ class SchemaManager
         $nullable = $field->isRequired() ? 'NOT NULL' : 'NULL';
         $default = '';
 
-        $isNumericDefault = in_array($field->getType(), ['number', 'decimal', 'boolean'])
-            || ($field->getType() === 'relation' && $relationType === 'one_to_one');
+        $isNumericDefault = in_array($field->getType(), ['number', 'decimal', 'boolean', 'relation']);
 
         if ($field->getDefaultValue() !== null && $field->getDefaultValue() !== '') {
             $defaultVal = $field->getDefaultValue();
@@ -211,6 +205,115 @@ class SchemaManager
         }
 
         return "{$mysqlType} {$nullable} {$default}";
+    }
+
+    // ========================================================================
+    // RELATION OPERATIONS
+    // ========================================================================
+
+    /**
+     * Add a foreign key constraint for one-to-one relations
+     */
+    public function addForeignKey(string $sourceTable, string $columnName, string $targetTable): void
+    {
+        $fkName = "fk_{$sourceTable}_{$columnName}";
+        $sql = "ALTER TABLE `{$sourceTable}` ADD CONSTRAINT `{$fkName}` "
+             . "FOREIGN KEY (`{$columnName}`) REFERENCES `{$targetTable}`(`id`) ON DELETE SET NULL";
+        $this->connection->executeStatement($sql);
+    }
+
+    /**
+     * Drop a foreign key constraint
+     */
+    public function dropForeignKey(string $sourceTable, string $columnName): void
+    {
+        $fkName = "fk_{$sourceTable}_{$columnName}";
+        try {
+            $sql = "ALTER TABLE `{$sourceTable}` DROP FOREIGN KEY `{$fkName}`";
+            $this->connection->executeStatement($sql);
+        } catch (\Exception $e) {
+            // FK may not exist, safe to ignore
+        }
+    }
+
+    /**
+     * Get pivot table name for a relation field
+     */
+    public function getPivotTableName(string $sourceTable, string $fieldSlug): string
+    {
+        return "{$sourceTable}_{$fieldSlug}_rel";
+    }
+
+    /**
+     * Create a pivot table for one-to-many or many-to-many relations
+     */
+    public function createPivotTable(string $sourceTable, string $targetTable, string $fieldSlug): void
+    {
+        $pivotTable = $this->getPivotTableName($sourceTable, $fieldSlug);
+
+        $sql = "CREATE TABLE `{$pivotTable}` ("
+             . "`id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, "
+             . "`source_id` INT UNSIGNED NOT NULL, "
+             . "`related_id` INT UNSIGNED NOT NULL, "
+             . "UNIQUE KEY `uniq_relation` (`source_id`, `related_id`), "
+             . "CONSTRAINT `fk_{$pivotTable}_source` FOREIGN KEY (`source_id`) REFERENCES `{$sourceTable}`(`id`) ON DELETE CASCADE, "
+             . "CONSTRAINT `fk_{$pivotTable}_related` FOREIGN KEY (`related_id`) REFERENCES `{$targetTable}`(`id`) ON DELETE CASCADE"
+             . ")";
+
+        $this->connection->executeStatement($sql);
+    }
+
+    /**
+     * Drop a pivot table
+     */
+    public function dropPivotTable(string $sourceTable, string $fieldSlug): void
+    {
+        $pivotTable = $this->getPivotTableName($sourceTable, $fieldSlug);
+        $this->connection->executeStatement("DROP TABLE IF EXISTS `{$pivotTable}`");
+    }
+
+    /**
+     * Get related entry IDs from a pivot table
+     */
+    public function getPivotRelations(string $sourceTable, string $fieldSlug, int $sourceId): array
+    {
+        $pivotTable = $this->getPivotTableName($sourceTable, $fieldSlug);
+
+        if (!$this->tableExists($pivotTable)) {
+            return [];
+        }
+
+        $result = $this->connection->createQueryBuilder()
+            ->select('related_id')
+            ->from($pivotTable)
+            ->where('source_id = :sourceId')
+            ->setParameter('sourceId', $sourceId)
+            ->executeQuery();
+
+        return array_column($result->fetchAllAssociative(), 'related_id');
+    }
+
+    /**
+     * Sync pivot table relations (delete old, insert new)
+     */
+    public function syncPivotRelations(string $sourceTable, string $fieldSlug, int $sourceId, array $relatedIds): void
+    {
+        $pivotTable = $this->getPivotTableName($sourceTable, $fieldSlug);
+
+        if (!$this->tableExists($pivotTable)) {
+            return;
+        }
+
+        // Remove existing relations
+        $this->connection->delete($pivotTable, ['source_id' => $sourceId]);
+
+        // Insert new relations
+        foreach ($relatedIds as $relatedId) {
+            $this->connection->insert($pivotTable, [
+                'source_id' => $sourceId,
+                'related_id' => (int) $relatedId,
+            ]);
+        }
     }
 
     // ========================================================================

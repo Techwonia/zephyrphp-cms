@@ -322,8 +322,35 @@ class CollectionController extends Controller
         $field->setSortOrder($maxOrder + 1);
         $field->save();
 
-        // Add column to the dynamic table
-        $this->schema->addColumn($collection->getTableName(), $field);
+        // Add column or pivot table to the dynamic table
+        if ($type === 'relation' && $options) {
+            $relationType = $options['relation_type'] ?? 'one_to_one';
+            $relSlug = $options['relation_collection'] ?? '';
+            $relCollection = !empty($relSlug) ? Collection::findOneBy(['slug' => $relSlug]) : null;
+
+            if ($relationType === 'one_to_one') {
+                // INT column + foreign key
+                $this->schema->addColumn($collection->getTableName(), $field);
+                if ($relCollection && $this->schema->tableExists($relCollection->getTableName())) {
+                    $this->schema->addForeignKey(
+                        $collection->getTableName(),
+                        $field->getSlug(),
+                        $relCollection->getTableName()
+                    );
+                }
+            } else {
+                // Pivot table for one-to-many / many-to-many
+                if ($relCollection && $this->schema->tableExists($relCollection->getTableName())) {
+                    $this->schema->createPivotTable(
+                        $collection->getTableName(),
+                        $relCollection->getTableName(),
+                        $field->getSlug()
+                    );
+                }
+            }
+        } else {
+            $this->schema->addColumn($collection->getTableName(), $field);
+        }
 
         $this->flash('success', "Field \"{$name}\" added successfully.");
         $this->redirect("/cms/collections/{$slug}");
@@ -421,8 +448,18 @@ class CollectionController extends Controller
         $fieldName = $field->getName();
         $fieldSlug = $field->getSlug();
 
-        // Drop the column from the dynamic table
-        $this->schema->dropColumn($collection->getTableName(), $fieldSlug);
+        // Drop the column or pivot table from the dynamic table
+        if ($field->getType() === 'relation') {
+            $relationType = $field->getOptions()['relation_type'] ?? 'one_to_one';
+            if ($relationType === 'one_to_one') {
+                $this->schema->dropForeignKey($collection->getTableName(), $fieldSlug);
+                $this->schema->dropColumn($collection->getTableName(), $fieldSlug);
+            } else {
+                $this->schema->dropPivotTable($collection->getTableName(), $fieldSlug);
+            }
+        } else {
+            $this->schema->dropColumn($collection->getTableName(), $fieldSlug);
+        }
 
         // Delete the field record
         $field->delete();
