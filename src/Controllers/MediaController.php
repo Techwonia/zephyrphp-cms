@@ -62,7 +62,8 @@ class MediaController extends Controller
         }
 
         $basePath = defined('BASE_PATH') ? BASE_PATH : getcwd();
-        $uploadDir = $basePath . '/storage/cms/uploads/' . date('Y') . '/' . date('m');
+        $publicPath = defined('PUBLIC_PATH') ? PUBLIC_PATH : $basePath . '/public';
+        $uploadDir = $publicPath . '/storage/cms/uploads/' . date('Y') . '/' . date('m');
 
         if (!is_dir($uploadDir)) {
             mkdir($uploadDir, 0755, true);
@@ -105,7 +106,8 @@ class MediaController extends Controller
 
         // Delete the actual file
         $basePath = defined('BASE_PATH') ? BASE_PATH : getcwd();
-        $filePath = $basePath . '/' . $media->getPath();
+        $publicPath = defined('PUBLIC_PATH') ? PUBLIC_PATH : $basePath . '/public';
+        $filePath = $publicPath . '/' . $media->getPath();
         if (file_exists($filePath)) {
             unlink($filePath);
         }
