@@ -210,13 +210,15 @@ class CollectionController extends Controller
             return;
         }
 
-        // Drop the dynamic table
-        $this->schema->dropCollectionTable($collection->getTableName());
+        $collectionName = $collection->getName();
 
-        // Delete the collection (cascade deletes fields)
+        // Drop the dynamic table + all related pivot tables and FK constraints
+        $this->schema->dropCollectionTableWithRelations($collection);
+
+        // Delete the collection record (cascade deletes field records)
         $collection->delete();
 
-        $this->flash('success', "Collection \"{$collection->getName()}\" deleted.");
+        $this->flash('success', "Collection \"{$collectionName}\" deleted.");
         $this->redirect('/cms/collections');
     }
 

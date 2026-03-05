@@ -150,13 +150,78 @@ class SchemaManager
     }
 
     /**
-     * Drop a collection table entirely
+     * Drop a collection table entirely, including all related pivot tables and FK constraints.
+     *
+     * @param Collection $collection The collection being deleted
+     */
+    public function dropCollectionTableWithRelations(Collection $collection): void
+    {
+        $tableName = $collection->getTableName();
+
+        // 1. Drop pivot tables and FK constraints for fields in THIS collection
+        foreach ($collection->getFields() as $field) {
+            if ($field->getType() !== 'relation') {
+                continue;
+            }
+            $relationType = $field->getOptions()['relation_type'] ?? 'one_to_one';
+            if ($relationType === 'one_to_one') {
+                $this->dropForeignKey($tableName, $field->getSlug());
+            } else {
+                $this->dropPivotTable($tableName, $field->getSlug());
+            }
+        }
+
+        // 2. Drop pivot tables and FK constraints in OTHER collections that target THIS collection
+        $allCollections = Collection::findAll();
+        foreach ($allCollections as $otherCollection) {
+            if ($otherCollection->getId() === $collection->getId()) {
+                continue;
+            }
+            foreach ($otherCollection->getFields() as $field) {
+                if ($field->getType() !== 'relation') {
+                    continue;
+                }
+                $relSlug = $field->getOptions()['relation_collection'] ?? '';
+                if ($relSlug !== $collection->getSlug()) {
+                    continue;
+                }
+                $relationType = $field->getOptions()['relation_type'] ?? 'one_to_one';
+                if ($relationType === 'one_to_one') {
+                    $this->dropForeignKey($otherCollection->getTableName(), $field->getSlug());
+                    // Set the column to NULL for all rows since the target is gone
+                    try {
+                        $this->connection->executeStatement(
+                            "UPDATE `{$otherCollection->getTableName()}` SET `{$field->getSlug()}` = NULL"
+                        );
+                    } catch (\Exception $e) {
+                        // Column may not exist yet
+                    }
+                } else {
+                    $this->dropPivotTable($otherCollection->getTableName(), $field->getSlug());
+                }
+            }
+        }
+
+        // 3. Now safely drop the main table
+        $sm = $this->connection->createSchemaManager();
+        if ($sm->tablesExist([$tableName])) {
+            // Disable FK checks temporarily to ensure clean drop
+            $this->connection->executeStatement('SET FOREIGN_KEY_CHECKS = 0');
+            $sm->dropTable($tableName);
+            $this->connection->executeStatement('SET FOREIGN_KEY_CHECKS = 1');
+        }
+    }
+
+    /**
+     * Drop a collection table entirely (simple, no relation cleanup)
      */
     public function dropCollectionTable(string $tableName): void
     {
         $sm = $this->connection->createSchemaManager();
         if ($sm->tablesExist([$tableName])) {
+            $this->connection->executeStatement('SET FOREIGN_KEY_CHECKS = 0');
             $sm->dropTable($tableName);
+            $this->connection->executeStatement('SET FOREIGN_KEY_CHECKS = 1');
         }
     }
 
@@ -213,13 +278,29 @@ class SchemaManager
     // ========================================================================
 
     /**
-     * Add a foreign key constraint for one-to-one relations
+     * Add a foreign key constraint for one-to-one relations.
+     * Ensures the column is nullable (required for ON DELETE SET NULL).
      */
     public function addForeignKey(string $sourceTable, string $columnName, string $targetTable): void
     {
+        // Ensure column is nullable and unsigned (matching target id type)
+        $this->connection->executeStatement(
+            "ALTER TABLE `{$sourceTable}` MODIFY COLUMN `{$columnName}` INT UNSIGNED NULL DEFAULT NULL"
+        );
+
+        // Add index on the FK column for performance
+        $idxName = "idx_{$sourceTable}_{$columnName}";
+        try {
+            $this->connection->executeStatement(
+                "ALTER TABLE `{$sourceTable}` ADD INDEX `{$idxName}` (`{$columnName}`)"
+            );
+        } catch (\Exception $e) {
+            // Index may already exist
+        }
+
         $fkName = "fk_{$sourceTable}_{$columnName}";
         $sql = "ALTER TABLE `{$sourceTable}` ADD CONSTRAINT `{$fkName}` "
-             . "FOREIGN KEY (`{$columnName}`) REFERENCES `{$targetTable}`(`id`) ON DELETE SET NULL";
+             . "FOREIGN KEY (`{$columnName}`) REFERENCES `{$targetTable}`(`id`) ON DELETE SET NULL ON UPDATE CASCADE";
         $this->connection->executeStatement($sql);
     }
 
@@ -256,10 +337,12 @@ class SchemaManager
              . "`id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, "
              . "`{$sourceTable}_id` INT UNSIGNED NOT NULL, "
              . "`{$targetTable}_id` INT UNSIGNED NOT NULL, "
-             . "UNIQUE KEY `uniq_pair` (`{$sourceTable}_id`, `{$targetTable}_id`), "
-             . "CONSTRAINT `fk_{$pivotTable}_source` FOREIGN KEY (`{$sourceTable}_id`) REFERENCES `{$sourceTable}`(`id`) ON DELETE CASCADE, "
-             . "CONSTRAINT `fk_{$pivotTable}_target` FOREIGN KEY (`{$targetTable}_id`) REFERENCES `{$targetTable}`(`id`) ON DELETE CASCADE"
-             . ")";
+             . "INDEX `idx_{$pivotTable}_source` (`{$sourceTable}_id`), "
+             . "INDEX `idx_{$pivotTable}_target` (`{$targetTable}_id`), "
+             . "UNIQUE KEY `uniq_{$pivotTable}` (`{$sourceTable}_id`, `{$targetTable}_id`), "
+             . "CONSTRAINT `fk_{$pivotTable}_source` FOREIGN KEY (`{$sourceTable}_id`) REFERENCES `{$sourceTable}`(`id`) ON DELETE CASCADE ON UPDATE CASCADE, "
+             . "CONSTRAINT `fk_{$pivotTable}_target` FOREIGN KEY (`{$targetTable}_id`) REFERENCES `{$targetTable}`(`id`) ON DELETE CASCADE ON UPDATE CASCADE"
+             . ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci";
 
         $this->connection->executeStatement($sql);
     }
