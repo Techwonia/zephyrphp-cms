@@ -11,8 +11,8 @@ use ZephyrPHP\Cms\Controllers\PageController;
 use ZephyrPHP\Cms\Controllers\PageFrontendController;
 use ZephyrPHP\Cms\Api\ContentApiController;
 
-// CMS Admin Routes
-Route::group(['prefix' => '/cms'], function () {
+// CMS Admin Routes (protected by auth middleware)
+Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMiddleware::class]], function () {
     // Dashboard
     Route::get('/', [CmsController::class, 'dashboard']);
 
