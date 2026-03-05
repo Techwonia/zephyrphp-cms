@@ -1,0 +1,80 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Create Theme{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / <a href="/cms/themes">Themes</a> / Create
+</div>
+
+<div class="page-header">
+    <h1>Create Theme</h1>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" action="/cms/themes">
+            {{ csrf_field() | raw }}
+
+            <div class="form-group">
+                <label for="name">Theme Name *</label>
+                <input type="text" id="name" name="name" class="form-control" required
+                       value="{{ flash('_old_input').name ?? '' }}"
+                       placeholder="My Theme">
+            </div>
+
+            <div class="form-group">
+                <label for="slug">Slug</label>
+                <input type="text" id="slug" name="slug" class="form-control"
+                       value="{{ flash('_old_input').slug ?? '' }}"
+                       placeholder="Auto-generated from name">
+                <small class="text-muted">Used as directory name. Leave empty to auto-generate.</small>
+            </div>
+
+            <div class="form-group">
+                <label for="copy_from">Copy From</label>
+                <select id="copy_from" name="copy_from" class="form-control">
+                    <option value="">Start from scratch</option>
+                    {% for theme in existingThemes %}
+                        <option value="{{ theme.getSlug() }}">{{ theme.getName() }}</option>
+                    {% endfor %}
+                </select>
+                <small class="text-muted">Optionally duplicate an existing theme's files.</small>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" class="form-control" rows="3"
+                          placeholder="Optional theme description">{{ flash('_old_input').description ?? '' }}</textarea>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Create Theme</button>
+                <a href="/cms/themes" class="btn btn-outline">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ csp_nonce() }}">
+document.addEventListener('DOMContentLoaded', function() {
+    var nameInput = document.getElementById('name');
+    var slugInput = document.getElementById('slug');
+    var manual = false;
+
+    slugInput.addEventListener('input', function() { manual = true; });
+
+    nameInput.addEventListener('input', function() {
+        if (!manual) {
+            slugInput.value = nameInput.value
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/-+/g, '-')
+                .replace(/^-|-$/g, '');
+        }
+    });
+});
+</script>
+{% endblock %}

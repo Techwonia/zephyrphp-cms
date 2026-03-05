@@ -38,11 +38,18 @@ class CmsServiceProvider
         // Register Twig namespace for CMS templates
         $view->addNamespace('cms', __DIR__ . '/../views');
 
-        // Register theme namespace
+        // Register theme namespace (uses effective theme: preview if admin, else live)
         $themeManager = new ThemeManager();
         $themePath = $themeManager->getActiveThemePath();
         if (is_dir($themePath)) {
             $view->addNamespace('theme', $themePath);
+        }
+
+        // Pass preview state as global Twig vars
+        $previewTheme = $themeManager->getPreviewTheme();
+        if ($previewTheme) {
+            $view->addGlobal('is_theme_preview', true);
+            $view->addGlobal('preview_theme_slug', $previewTheme);
         }
 
         // Register Twig helper functions
@@ -153,6 +160,11 @@ class CmsServiceProvider
         $view->addFunction('theme_config', function () use ($themeManager) {
             return $themeManager->getThemeConfig();
         });
+
+        // theme_preview(slug) - Generate preview URL with query param
+        $view->addFunction('theme_preview_url', function (string $slug) {
+            return '/?theme_preview=' . urlencode($slug);
+        });
     }
 
     private function registerDynamicRoutes(): void
@@ -249,6 +261,29 @@ class CmsServiceProvider
                 }
                 if (!isset($columns['items_per_page'])) {
                     $conn->executeStatement("ALTER TABLE `cms_page_types` ADD COLUMN `items_per_page` INT NOT NULL DEFAULT 10");
+                }
+            }
+
+            // Themes table
+            if (!$sm->tablesExist(['cms_themes'])) {
+                $conn->executeStatement("CREATE TABLE `cms_themes` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `name` VARCHAR(255) NOT NULL,
+                    `slug` VARCHAR(100) NOT NULL,
+                    `status` VARCHAR(20) NOT NULL DEFAULT 'draft',
+                    `description` TEXT NULL DEFAULT NULL,
+                    `createdAt` DATETIME NULL DEFAULT NULL,
+                    `updatedAt` DATETIME NULL DEFAULT NULL,
+                    UNIQUE KEY `uniq_theme_slug` (`slug`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+                // Seed default theme if themes dir exists
+                $themeManager = new ThemeManager();
+                $defaultPath = $themeManager->getThemesBasePath() . '/default';
+                if (is_dir($defaultPath)) {
+                    $conn->executeStatement(
+                        "INSERT INTO `cms_themes` (`name`, `slug`, `status`, `createdAt`, `updatedAt`) VALUES ('Default', 'default', 'live', NOW(), NOW())"
+                    );
                 }
             }
 

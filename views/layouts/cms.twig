@@ -3,136 +3,1131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{% block title %}CMS{% endblock %} | {{ config('app.name') }}</title>
-    <link rel="stylesheet" href="/assets/css/app.css">
-    <link rel="stylesheet" href="/assets/css/dashboard.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style nonce="{{ csp_nonce() }}">
+    /* ============================================
+       Polaris-Inspired Design System
+       ============================================ */
+    :root {
+        /* Backgrounds */
+        --bg-app: #F1F1F1;
+        --bg-surface: #FFFFFF;
+        --bg-surface-hover: #F7F7F7;
+        --bg-subdued: #FAFAFA;
+        --bg-inverse: #1A1A1A;
+        --bg-sidebar: #1A1A1A;
+
+        /* Text */
+        --text: #303030;
+        --text-secondary: #616161;
+        --text-disabled: #B5B5B5;
+        --text-link: #005BD3;
+        --text-inverse: #FFFFFF;
+        --text-sidebar: #A3A3A3;
+        --text-sidebar-active: #FFFFFF;
+
+        /* Borders */
+        --border: #E3E3E3;
+        --border-hover: #CCCCCC;
+        --border-focus: #005BD3;
+
+        /* Primary (Shopify Green) */
+        --color-primary: #008060;
+        --color-primary-hover: #006e52;
+        --color-primary-pressed: #005c45;
+        --color-primary-text: #FFFFFF;
+
+        /* Status */
+        --color-success: #047B5D;
+        --color-success-bg: rgba(4, 123, 93, 0.08);
+        --color-critical: #D72C0D;
+        --color-critical-bg: rgba(215, 44, 13, 0.08);
+        --color-warning: #B98900;
+        --color-warning-bg: rgba(185, 137, 0, 0.08);
+        --color-info: #2C6ECB;
+        --color-info-bg: rgba(44, 110, 203, 0.08);
+
+        /* Shadows */
+        --shadow-card: 0px 0px 0px 1px rgba(0,0,0,0.04), 0px 1px 3px rgba(0,0,0,0.08);
+        --shadow-card-hover: 0px 0px 0px 1px rgba(0,0,0,0.04), 0px 3px 6px rgba(0,0,0,0.12);
+        --shadow-dropdown: 0px 4px 12px rgba(0,0,0,0.15);
+
+        /* Spacing */
+        --space-100: 4px;
+        --space-200: 8px;
+        --space-300: 12px;
+        --space-400: 16px;
+        --space-500: 20px;
+        --space-600: 24px;
+        --space-800: 32px;
+        --space-1000: 40px;
+
+        /* Border Radius */
+        --radius-100: 4px;
+        --radius-200: 8px;
+        --radius-300: 12px;
+        --radius-full: 9999px;
+
+        /* Typography */
+        --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        --font-mono: 'SF Mono', Monaco, Consolas, 'Liberation Mono', monospace;
+        --font-xs: 0.75rem;
+        --font-sm: 0.8125rem;
+        --font-base: 0.875rem;
+        --font-md: 1rem;
+        --font-lg: 1.25rem;
+        --font-xl: 1.5rem;
+
+        /* Sidebar */
+        --sidebar-width: 240px;
+    }
+
+    /* ============================================
+       Reset & Base
+       ============================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+        font-family: var(--font);
+        font-size: var(--font-base);
+        color: var(--text);
+        background: var(--bg-app);
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--text-link); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ============================================
+       Layout: Sidebar + Main
+       ============================================ */
+    .cms-layout {
+        display: flex;
+        min-height: 100vh;
+    }
+
+    /* Sidebar */
+    .cms-sidebar {
+        width: var(--sidebar-width);
+        background: var(--bg-sidebar);
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        z-index: 100;
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.25s ease;
+    }
+
+    .sidebar-brand {
+        display: flex;
+        align-items: center;
+        gap: var(--space-300);
+        padding: var(--space-400) var(--space-400);
+        text-decoration: none;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .sidebar-brand-icon {
+        width: 32px;
+        height: 32px;
+        background: var(--color-primary);
+        border-radius: var(--radius-200);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: var(--font-sm);
+    }
+    .sidebar-brand-text {
+        color: var(--text-inverse);
+        font-weight: 600;
+        font-size: var(--font-base);
+    }
+
+    .sidebar-close {
+        display: none;
+        background: none;
+        border: none;
+        color: var(--text-sidebar);
+        font-size: 1.25rem;
+        cursor: pointer;
+        padding: var(--space-100);
+    }
+
+    .sidebar-nav {
+        flex: 1;
+        padding: var(--space-200) 0;
+        overflow-y: auto;
+    }
+    .sidebar-nav ul { list-style: none; }
+
+    .nav-section-label {
+        padding: var(--space-300) var(--space-400) var(--space-100);
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: rgba(255,255,255,0.35);
+    }
+
+    .nav-item a {
+        display: flex;
+        align-items: center;
+        gap: var(--space-300);
+        padding: 7px var(--space-400);
+        color: var(--text-sidebar);
+        text-decoration: none;
+        font-size: var(--font-sm);
+        font-weight: 500;
+        border-radius: var(--radius-200);
+        margin: 1px var(--space-200);
+        transition: background 0.15s, color 0.15s;
+    }
+    .nav-item a:hover {
+        background: rgba(255,255,255,0.06);
+        color: var(--text-sidebar-active);
+        text-decoration: none;
+    }
+    .nav-item a.active {
+        background: rgba(255,255,255,0.1);
+        color: var(--text-sidebar-active);
+    }
+    .nav-item a.active .nav-icon svg { stroke: #36FBA1; }
+
+    .nav-icon {
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .nav-icon svg {
+        width: 18px;
+        height: 18px;
+        stroke: currentColor;
+        stroke-width: 1.5;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    .nav-sub-item a {
+        padding-left: 52px;
+        font-size: var(--font-xs);
+    }
+
+    .sidebar-footer {
+        padding: var(--space-300) var(--space-400);
+        border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .sidebar-user {
+        display: flex;
+        align-items: center;
+        gap: var(--space-200);
+        margin-bottom: var(--space-200);
+    }
+    .sidebar-avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: var(--radius-full);
+        background: var(--color-primary);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 600;
+    }
+    .sidebar-user-info {
+        flex: 1;
+        min-width: 0;
+    }
+    .sidebar-user-name {
+        color: var(--text-inverse);
+        font-size: var(--font-xs);
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .sidebar-user-email {
+        color: var(--text-sidebar);
+        font-size: 11px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .btn-logout-sidebar {
+        display: block;
+        width: 100%;
+        padding: var(--space-100) var(--space-200);
+        background: rgba(255,255,255,0.06);
+        border: none;
+        border-radius: var(--radius-100);
+        color: var(--text-sidebar);
+        cursor: pointer;
+        font-size: 11px;
+        font-family: var(--font);
+        text-align: center;
+        transition: background 0.15s, color 0.15s;
+    }
+    .btn-logout-sidebar:hover {
+        background: rgba(215, 44, 13, 0.2);
+        color: #FF6B6B;
+    }
+
+    /* Main Content Area */
+    .cms-main {
+        flex: 1;
+        margin-left: var(--sidebar-width);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Top Bar */
+    .cms-topbar {
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border);
+        padding: var(--space-200) var(--space-600);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        min-height: 48px;
+    }
+    .topbar-left {
+        display: flex;
+        align-items: center;
+        gap: var(--space-300);
+    }
+    .sidebar-toggle {
+        display: none;
+        background: none;
+        border: none;
+        color: var(--text);
+        cursor: pointer;
+        padding: var(--space-100);
+    }
+    .sidebar-toggle svg {
+        width: 20px;
+        height: 20px;
+        stroke: currentColor;
+        stroke-width: 1.5;
+        fill: none;
+    }
+    .topbar-right {
+        display: flex;
+        align-items: center;
+        gap: var(--space-300);
+    }
+    .topbar-user {
+        font-size: var(--font-sm);
+        color: var(--text-secondary);
+    }
+
+    /* Content Area */
+    .cms-content {
+        padding: var(--space-600);
+        max-width: 1200px;
+        flex: 1;
+    }
+
+    /* ============================================
+       Components
+       ============================================ */
+
+    /* Breadcrumb */
+    .breadcrumb {
+        font-size: var(--font-sm);
+        color: var(--text-secondary);
+        margin-bottom: var(--space-300);
+    }
+    .breadcrumb a {
+        color: var(--text-link);
+        text-decoration: none;
+    }
+    .breadcrumb a:hover { text-decoration: underline; }
+
+    /* Page Header */
+    .page-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: var(--space-500);
+    }
+    .page-header h1 {
+        font-size: var(--font-xl);
+        font-weight: 700;
+        color: var(--text);
+        margin: 0;
+    }
+    .page-actions {
+        display: flex;
+        gap: var(--space-200);
+    }
+
+    /* Cards */
+    .card {
+        background: var(--bg-surface);
+        border-radius: var(--radius-300);
+        box-shadow: var(--shadow-card);
+        overflow: hidden;
+    }
+    .card-header {
+        padding: var(--space-400) var(--space-500);
+        border-bottom: 1px solid var(--border);
+    }
+    .card-header h3 {
+        font-size: var(--font-base);
+        font-weight: 600;
+        margin: 0;
+    }
+    .card-body {
+        padding: var(--space-500);
+    }
+
+    /* Buttons */
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-200);
+        padding: 6px 12px;
+        font-size: var(--font-sm);
+        font-weight: 600;
+        font-family: var(--font);
+        border-radius: var(--radius-200);
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+        text-decoration: none;
+        line-height: 1.4;
+        white-space: nowrap;
+    }
+    .btn:hover { text-decoration: none; }
+
+    .btn-primary {
+        background: var(--color-primary);
+        color: var(--color-primary-text);
+        border-color: var(--color-primary);
+    }
+    .btn-primary:hover {
+        background: var(--color-primary-hover);
+        border-color: var(--color-primary-hover);
+    }
+
+    .btn-outline {
+        background: var(--bg-surface);
+        color: var(--text);
+        border-color: var(--border);
+    }
+    .btn-outline:hover {
+        background: var(--bg-surface-hover);
+        border-color: var(--border-hover);
+    }
+
+    .btn-danger {
+        background: transparent;
+        color: var(--color-critical);
+        border-color: var(--border);
+    }
+    .btn-danger:hover {
+        background: var(--color-critical-bg);
+        border-color: var(--color-critical);
+    }
+
+    .btn-plain {
+        background: none;
+        border: none;
+        color: var(--text-link);
+        padding: 4px 8px;
+    }
+    .btn-plain:hover { text-decoration: underline; }
+
+    .btn-sm {
+        padding: 4px 10px;
+        font-size: var(--font-xs);
+    }
+
+    /* Tables */
+    .table-responsive { overflow-x: auto; }
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .data-table thead th {
+        padding: var(--space-300) var(--space-400);
+        text-align: left;
+        font-size: var(--font-xs);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--text-secondary);
+        background: var(--bg-subdued);
+        border-bottom: 1px solid var(--border);
+    }
+    .data-table tbody td {
+        padding: var(--space-300) var(--space-400);
+        font-size: var(--font-sm);
+        border-bottom: 1px solid var(--border);
+        vertical-align: middle;
+    }
+    .data-table tbody tr:hover {
+        background: var(--bg-surface-hover);
+    }
+    .data-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    .sort-link {
+        color: inherit;
+        text-decoration: none;
+    }
+    .sort-link:hover { color: var(--text-link); text-decoration: none; }
+
+    .actions-cell {
+        display: flex;
+        gap: var(--space-100);
+        align-items: center;
+    }
+
+    /* Forms */
+    .form-group {
+        margin-bottom: var(--space-400);
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: var(--space-100);
+        font-weight: 500;
+        font-size: var(--font-sm);
+        color: var(--text);
+    }
+    .form-control {
+        width: 100%;
+        padding: 8px 12px;
+        font-size: var(--font-base);
+        font-family: var(--font);
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-200);
+        color: var(--text);
+        transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .form-control:focus {
+        outline: none;
+        border-color: var(--border-focus);
+        box-shadow: 0 0 0 2px rgba(0, 91, 211, 0.2);
+    }
+    .form-control::placeholder { color: var(--text-disabled); }
+    .form-control:disabled {
+        background: var(--bg-subdued);
+        color: var(--text-disabled);
+        cursor: not-allowed;
+    }
+
+    select.form-control {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23616161' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        padding-right: 32px;
+        cursor: pointer;
+    }
+
+    textarea.form-control { resize: vertical; }
+
+    .form-control.is-invalid { border-color: var(--color-critical); }
+    .invalid-feedback {
+        color: var(--color-critical);
+        font-size: var(--font-xs);
+        margin-top: var(--space-100);
+    }
+
+    .form-inline-checks {
+        display: flex;
+        gap: var(--space-400);
+        flex-wrap: wrap;
+        margin: var(--space-200) 0;
+    }
+    .form-inline-checks label {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-100);
+        font-size: var(--font-sm);
+        color: var(--text);
+        cursor: pointer;
+        font-weight: 400;
+    }
+    .form-inline-checks input[type="checkbox"] {
+        accent-color: var(--color-primary);
+        width: 16px;
+        height: 16px;
+    }
+
+    input[type="file"].form-control { padding: 6px 12px; cursor: pointer; }
+    input[type="file"].form-control::file-selector-button {
+        background: var(--bg-subdued);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-100);
+        color: var(--text);
+        padding: 4px 10px;
+        margin-right: 8px;
+        cursor: pointer;
+        font-size: var(--font-xs);
+        font-family: var(--font);
+    }
+
+    .form-actions {
+        display: flex;
+        gap: var(--space-200);
+        margin-top: var(--space-500);
+    }
+
+    .form-row {
+        display: flex;
+        gap: var(--space-300);
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+    .form-row .form-group { flex: 1; min-width: 150px; }
+
+    .text-muted { color: var(--text-secondary); }
+    small.text-muted { font-size: var(--font-xs); display: block; margin-top: 2px; }
+
+    /* Badges */
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        font-size: 11px;
+        font-weight: 600;
+        border-radius: var(--radius-full);
+        border: 1px solid transparent;
+    }
+    .badge-success, .badge-live {
+        background: var(--color-success-bg);
+        color: var(--color-success);
+        border-color: rgba(4, 123, 93, 0.15);
+    }
+    .badge-warning, .badge-draft {
+        background: var(--color-warning-bg);
+        color: var(--color-warning);
+        border-color: rgba(185, 137, 0, 0.15);
+    }
+    .badge-info {
+        background: var(--color-info-bg);
+        color: var(--color-info);
+        border-color: rgba(44, 110, 203, 0.15);
+    }
+    .badge-danger, .badge-critical {
+        background: var(--color-critical-bg);
+        color: var(--color-critical);
+        border-color: rgba(215, 44, 13, 0.15);
+    }
+    .badge-default {
+        background: var(--bg-subdued);
+        color: var(--text-secondary);
+        border-color: var(--border);
+    }
+
+    /* Alerts */
+    .alert {
+        padding: var(--space-300) var(--space-400);
+        border-radius: var(--radius-200);
+        margin-bottom: var(--space-400);
+        font-size: var(--font-sm);
+        border-left: 3px solid transparent;
+    }
+    .alert p { margin: 0; }
+    .alert p + p { margin-top: 2px; }
+    .alert-success {
+        background: var(--color-success-bg);
+        border-left-color: var(--color-success);
+        color: var(--color-success);
+    }
+    .alert-error {
+        background: var(--color-critical-bg);
+        border-left-color: var(--color-critical);
+        color: var(--color-critical);
+    }
+
+    /* Tabs */
+    .tab-nav {
+        display: flex;
+        border-bottom: 1px solid var(--border);
+        background: var(--bg-surface);
+        padding: 0 var(--space-400);
+    }
+    .tab-btn {
+        padding: var(--space-300) var(--space-400);
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        color: var(--text-secondary);
+        cursor: pointer;
+        font-size: var(--font-sm);
+        font-weight: 500;
+        font-family: var(--font);
+        transition: color 0.15s, border-color 0.15s;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active {
+        color: var(--color-primary);
+        border-bottom-color: var(--color-primary);
+    }
+    .tab-panel { display: none; padding: var(--space-500); }
+    .tab-panel.active { display: block; }
+
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: var(--space-400);
+        margin-bottom: var(--space-500);
+    }
+    .stat-card {
+        background: var(--bg-surface);
+        border-radius: var(--radius-300);
+        box-shadow: var(--shadow-card);
+        padding: var(--space-400) var(--space-500);
+        display: flex;
+        align-items: center;
+        gap: var(--space-400);
+    }
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: var(--radius-200);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+    .stat-icon-green { background: var(--color-success-bg); color: var(--color-success); }
+    .stat-icon-blue { background: var(--color-info-bg); color: var(--color-info); }
+    .stat-icon-purple { background: rgba(130, 87, 229, 0.08); color: #8257E5; }
+    .stat-icon-orange { background: var(--color-warning-bg); color: var(--color-warning); }
+    .stat-value {
+        font-size: var(--font-lg);
+        font-weight: 700;
+        color: var(--text);
+    }
+    .stat-label {
+        font-size: var(--font-xs);
+        color: var(--text-secondary);
+    }
+
+    /* Pagination */
+    .pagination {
+        display: flex;
+        gap: var(--space-100);
+        justify-content: center;
+        margin-top: var(--space-500);
+    }
+    .pagination a, .pagination span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 32px;
+        height: 32px;
+        padding: 0 var(--space-200);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-200);
+        font-size: var(--font-sm);
+        color: var(--text);
+        text-decoration: none;
+        transition: all 0.15s;
+    }
+    .pagination a:hover {
+        background: var(--bg-surface-hover);
+        border-color: var(--border-hover);
+        text-decoration: none;
+    }
+    .pagination .active {
+        background: var(--color-primary);
+        color: var(--color-primary-text);
+        border-color: var(--color-primary);
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: var(--space-1000) var(--space-500) !important;
+        color: var(--text-secondary);
+    }
+    .empty-state h3 {
+        color: var(--text);
+        font-size: var(--font-md);
+        margin-bottom: var(--space-200);
+    }
+    .empty-state p { margin-bottom: var(--space-400); }
+
+    /* Search Bar */
+    .search-bar {
+        display: flex;
+        gap: var(--space-200);
+        margin-bottom: var(--space-400);
+    }
+    .search-bar input { flex: 1; }
+    .search-form { display: flex; gap: var(--space-200); width: 100%; }
+
+    /* Code */
+    code {
+        font-family: var(--font-mono);
+        font-size: var(--font-xs);
+        padding: 2px 6px;
+        background: var(--bg-subdued);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-100);
+        color: var(--text);
+    }
+
+    /* Truncate */
+    .truncate {
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        display: inline-block;
+        vertical-align: middle;
+    }
+
+    /* Field Rows */
+    .field-row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-300);
+        padding: var(--space-300) var(--space-400);
+        border-bottom: 1px solid var(--border);
+        transition: background 0.15s;
+    }
+    .field-row:last-child { border-bottom: none; }
+    .field-row:hover { background: var(--bg-surface-hover); }
+    .field-info { flex: 1; }
+    .field-name { font-weight: 600; font-size: var(--font-sm); }
+    .field-meta {
+        font-size: var(--font-xs);
+        color: var(--text-secondary);
+        margin-top: 2px;
+        display: flex;
+        gap: var(--space-100);
+        flex-wrap: wrap;
+    }
+    .field-badge {
+        display: inline-block;
+        padding: 1px 6px;
+        border-radius: var(--radius-full);
+        font-size: 10px;
+        font-weight: 600;
+    }
+    .field-badge.required {
+        background: var(--color-critical-bg);
+        color: var(--color-critical);
+    }
+    .field-badge:not(.required) {
+        background: var(--bg-subdued);
+        color: var(--text-secondary);
+        border: 1px solid var(--border);
+    }
+
+    .add-field-form {
+        background: var(--bg-subdued);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-200);
+        padding: var(--space-400);
+        margin-top: var(--space-400);
+    }
+    .add-field-form h4 {
+        margin: 0 0 var(--space-300) 0;
+        font-size: var(--font-base);
+        font-weight: 600;
+    }
+
+    /* Toggle Switch */
+    .toggle-label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-300);
+        font-weight: 500;
+    }
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 40px;
+        height: 22px;
+        flex-shrink: 0;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        inset: 0;
+        background: var(--border);
+        border-radius: 22px;
+        transition: 0.2s;
+    }
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 16px;
+        width: 16px;
+        left: 3px;
+        bottom: 3px;
+        background: white;
+        border-radius: 50%;
+        transition: 0.2s;
+    }
+    .toggle-switch input:checked + .toggle-slider { background: var(--color-primary); }
+    .toggle-switch input:checked + .toggle-slider:before { transform: translateX(18px); }
+
+    /* Media Grid */
+    .media-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: var(--space-400);
+    }
+    .media-card {
+        background: var(--bg-surface);
+        border-radius: var(--radius-200);
+        box-shadow: var(--shadow-card);
+        overflow: hidden;
+        transition: box-shadow 0.15s;
+    }
+    .media-card:hover { box-shadow: var(--shadow-card-hover); }
+    .media-preview {
+        height: 130px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg-subdued);
+        overflow: hidden;
+    }
+    .media-preview img { max-width: 100%; max-height: 100%; object-fit: cover; }
+    .media-file-icon { font-size: 1.75rem; color: var(--text-disabled); }
+    .media-info { padding: var(--space-300); }
+    .media-name {
+        font-weight: 600;
+        font-size: var(--font-xs);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .media-size { color: var(--text-secondary); font-size: 11px; }
+    .media-actions {
+        margin-top: var(--space-200);
+        display: flex;
+        gap: var(--space-100);
+    }
+    .upload-card { margin-bottom: var(--space-400); }
+    .upload-row { display: flex; gap: var(--space-300); align-items: flex-end; }
+    .upload-field { flex: 1; margin-bottom: 0 !important; }
+
+    /* Roles Grid */
+    .roles-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: var(--space-300);
+        margin-bottom: var(--space-500);
+    }
+    .role-checkbox {
+        display: flex;
+        flex-direction: column;
+        padding: var(--space-300) var(--space-400);
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-200);
+        cursor: pointer;
+        transition: border-color 0.15s;
+    }
+    .role-checkbox:hover { border-color: var(--color-primary); }
+    .role-checkbox input[type="checkbox"] { accent-color: var(--color-primary); }
+    .role-name { font-weight: 600; font-size: var(--font-sm); }
+    .role-description { font-size: var(--font-xs); color: var(--text-secondary); }
+
+    /* ============================================
+       Responsive
+       ============================================ */
+    @media (max-width: 768px) {
+        .cms-sidebar { transform: translateX(-100%); }
+        .cms-sidebar.open { transform: translateX(0); }
+        .sidebar-close { display: block; }
+        .sidebar-toggle { display: block; }
+        .cms-main { margin-left: 0; }
+        .cms-content { padding: var(--space-400); }
+        .stats-grid { grid-template-columns: 1fr 1fr; }
+        .tab-nav { overflow-x: auto; }
+    }
+
+    @media (max-width: 480px) {
+        .stats-grid { grid-template-columns: 1fr; }
+        .page-header { flex-direction: column; gap: var(--space-200); align-items: flex-start; }
+    }
+    </style>
     {% block styles %}{% endblock %}
 </head>
-<body class="dashboard-body">
-    <aside class="sidebar cms-sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <a href="/cms" class="sidebar-brand">CMS Builder</a>
-            <button class="sidebar-close" id="sidebar-close">&times;</button>
-        </div>
+<body>
+    <div class="cms-layout">
+        {# ========== SIDEBAR ========== #}
+        <aside class="cms-sidebar" id="sidebar">
+            <a href="/cms" class="sidebar-brand">
+                <div class="sidebar-brand-icon">Z</div>
+                <span class="sidebar-brand-text">{{ config('app.name', 'ZephyrPHP') }}</span>
+                <button class="sidebar-close" id="sidebar-close">&times;</button>
+            </a>
 
-        <nav class="sidebar-nav">
-            <ul>
-                <li>
-                    <a href="/cms" class="{% if request().path() == '/cms' %}active{% endif %}">
-                        <span class="nav-icon">&#9632;</span> Dashboard
-                    </a>
-                </li>
+            <nav class="sidebar-nav">
+                <ul>
+                    {# Home #}
+                    <li class="nav-item">
+                        <a href="/cms" class="{% if request().path() == '/cms' %}active{% endif %}">
+                            <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+                            Home
+                        </a>
+                    </li>
 
-                <li class="nav-divider"></li>
-                <li class="nav-heading">Content</li>
-                <li>
-                    <a href="/cms/collections" class="{% if request().path() == '/cms/collections' %}active{% endif %}">
-                        <span class="nav-icon">&#128203;</span> Collections
-                    </a>
-                </li>
-                {% if collections is defined and collections|length > 0 %}
-                {% for col in collections %}
-                <li>
-                    <a href="/cms/collections/{{ col.getSlug() }}/entries" class="nav-collection {% if request().path() starts with '/cms/collections/' ~ col.getSlug() %}active{% endif %}">
-                        <span class="nav-icon">&#128196;</span>
-                        {{ col.getName() }}
-                    </a>
-                </li>
-                {% endfor %}
+                    {# Content #}
+                    <li class="nav-section-label">Content</li>
+                    <li class="nav-item">
+                        <a href="/cms/collections" class="{% if request().path() == '/cms/collections' %}active{% endif %}">
+                            <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2v11z"/></svg></span>
+                            Collections
+                        </a>
+                    </li>
+                    {% if collections is defined and collections|length > 0 %}
+                    {% for col in collections %}
+                    <li class="nav-item nav-sub-item">
+                        <a href="/cms/collections/{{ col.getSlug() }}/entries" class="{% if request().path() starts with '/cms/collections/' ~ col.getSlug() %}active{% endif %}">
+                            {{ col.getName() }}
+                        </a>
+                    </li>
+                    {% endfor %}
+                    {% endif %}
+                    <li class="nav-item">
+                        <a href="/cms/pages" class="{% if request().path() starts with '/cms/pages' %}active{% endif %}">
+                            <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>
+                            Pages
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/cms/media" class="{% if request().path() starts with '/cms/media' %}active{% endif %}">
+                            <span class="nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span>
+                            Media
+                        </a>
+                    </li>
+
+                    {# Design #}
+                    <li class="nav-section-label">Design</li>
+                    <li class="nav-item">
+                        <a href="/cms/themes" class="{% if request().path() starts with '/cms/themes' %}active{% endif %}">
+                            <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg></span>
+                            Themes
+                        </a>
+                    </li>
+
+                    {% if auth().user().hasRole('admin') %}
+                    {# Admin #}
+                    <li class="nav-section-label">Admin</li>
+                    <li class="nav-item">
+                        <a href="/cms/users" class="{% if request().path() starts with '/cms/users' %}active{% endif %}">
+                            <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+                            Users
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/cms/roles" class="{% if request().path() starts with '/cms/roles' %}active{% endif %}">
+                            <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+                            Roles
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {# Settings #}
+                    <li class="nav-section-label">Settings</li>
+                    <li class="nav-item">
+                        <a href="/cms/settings/profile" class="{% if request().path() starts with '/cms/settings/profile' %}active{% endif %}">
+                            <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+                            Profile
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/cms/settings/database" class="{% if request().path() starts with '/cms/settings/database' %}active{% endif %}">
+                            <span class="nav-icon"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></span>
+                            Database
+                        </a>
+                    </li>
+                    {% if auth().user().hasRole('admin') %}
+                    <li class="nav-item">
+                        <a href="/cms/settings/system" class="{% if request().path() starts with '/cms/settings/system' %}active{% endif %}">
+                            <span class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+                            System
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {# Back to site #}
+                    <li class="nav-item" style="margin-top: var(--space-200);">
+                        <a href="/">
+                            <span class="nav-icon"><svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></span>
+                            Back to Site
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="sidebar-user">
+                    <div class="sidebar-avatar">{{ auth().user().getName()|first|upper }}</div>
+                    <div class="sidebar-user-info">
+                        <div class="sidebar-user-name">{{ auth().user().getName() }}</div>
+                        <div class="sidebar-user-email">{{ auth().user().getEmail() }}</div>
+                    </div>
+                </div>
+                <form method="POST" action="/logout">
+                    {{ csrf_field() | raw }}
+                    <button type="submit" class="btn-logout-sidebar">Sign Out</button>
+                </form>
+            </div>
+        </aside>
+
+        {# ========== MAIN ========== #}
+        <main class="cms-main">
+            <header class="cms-topbar">
+                <div class="topbar-left">
+                    <button class="sidebar-toggle" id="sidebar-toggle">
+                        <svg viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                </div>
+                <div class="topbar-right">
+                    <span class="topbar-user">{{ auth().user().getName() }}</span>
+                </div>
+            </header>
+
+            <div class="cms-content">
+                {% if flash('success') %}
+                <div class="alert alert-success">{{ flash('success') }}</div>
                 {% endif %}
-                <li>
-                    <a href="/cms/pages" class="{% if request().path() starts with '/cms/pages' %}active{% endif %}">
-                        <span class="nav-icon">&#128195;</span> Pages
-                    </a>
-                </li>
-                <li>
-                    <a href="/cms/media" class="{% if request().path() starts with '/cms/media' %}active{% endif %}">
-                        <span class="nav-icon">&#128247;</span> Media
-                    </a>
-                </li>
 
-                {% if auth().user().hasRole('admin') %}
-                <li class="nav-divider"></li>
-                <li class="nav-heading">Admin</li>
-                <li>
-                    <a href="/cms/users" class="{% if request().path() starts with '/cms/users' %}active{% endif %}">
-                        <span class="nav-icon">&#128101;</span> Users
-                    </a>
-                </li>
-                <li>
-                    <a href="/cms/roles" class="{% if request().path() starts with '/cms/roles' %}active{% endif %}">
-                        <span class="nav-icon">&#128274;</span> Roles
-                    </a>
-                </li>
+                {% if flash('errors') is iterable %}
+                <div class="alert alert-error">
+                    {% for error in flash('errors') %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
                 {% endif %}
 
-                <li class="nav-divider"></li>
-                <li class="nav-heading">Settings</li>
-                <li>
-                    <a href="/cms/settings/profile" class="{% if request().path() starts with '/cms/settings/profile' %}active{% endif %}">
-                        <span class="nav-icon">&#128100;</span> Profile
-                    </a>
-                </li>
-                <li>
-                    <a href="/cms/settings/database" class="{% if request().path() starts with '/cms/settings/database' %}active{% endif %}">
-                        <span class="nav-icon">&#9881;</span> Database
-                    </a>
-                </li>
-                {% if auth().user().hasRole('admin') %}
-                <li>
-                    <a href="/cms/settings/system" class="{% if request().path() starts with '/cms/settings/system' %}active{% endif %}">
-                        <span class="nav-icon">&#9874;</span> System
-                    </a>
-                </li>
-                {% endif %}
-
-                <li class="nav-divider"></li>
-                <li>
-                    <a href="/">
-                        <span class="nav-icon">&#8592;</span> Back to Site
-                    </a>
-                </li>
-            </ul>
-        </nav>
-
-        <div class="sidebar-footer">
-            <div class="sidebar-user">
-                <span class="user-name">{{ auth().user().getName() }}</span>
-                <span class="user-email">{{ auth().user().getEmail() }}</span>
+                {% block content %}{% endblock %}
             </div>
-            <form method="POST" action="/logout">
-                {{ csrf_field() | raw }}
-                <button type="submit" class="btn-logout">Logout</button>
-            </form>
-        </div>
-    </aside>
-
-    <main class="dashboard-main">
-        <header class="dashboard-header">
-            <button class="sidebar-toggle" id="sidebar-toggle">&#9776;</button>
-            <div class="header-right">
-                <span class="header-user">{{ auth().user().getName() }}</span>
-            </div>
-        </header>
-
-        <div class="dashboard-content">
-            {% if flash('success') %}
-            <div class="alert alert-success">
-                {{ flash('success') }}
-            </div>
-            {% endif %}
-
-            {% if flash('errors') is iterable %}
-            <div class="alert alert-error">
-                {% for error in flash('errors') %}
-                    <p>{{ error }}</p>
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            {% block content %}{% endblock %}
-        </div>
-    </main>
+        </main>
+    </div>
 
     <script nonce="{{ csp_nonce() }}">
     document.addEventListener('DOMContentLoaded', function() {

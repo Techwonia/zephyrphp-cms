@@ -17,11 +17,11 @@
 </div>
 
 {% if status.connected %}
-<div class="alert alert-success" style="margin-bottom: var(--spacing-md);">
+<div class="alert alert-success" style="margin-bottom: var(--space-400);">
     <strong>Status:</strong> {{ status.message }}
 </div>
 {% else %}
-<div class="alert alert-error" style="margin-bottom: var(--spacing-md);">
+<div class="alert alert-error" style="margin-bottom: var(--space-400);">
     <strong>Status:</strong> {{ status.message }}
 </div>
 {% endif %}
@@ -31,7 +31,7 @@
         <form method="POST" action="/cms/settings/database" id="db-settings-form">
             {{ csrf_field() | raw }}
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md);">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
 
                 {# Left Column #}
                 <div>
@@ -104,7 +104,7 @@
             </div>
 
             {# Test Result #}
-            <div id="test-result" style="display: none; margin-bottom: var(--spacing-md);"></div>
+            <div id="test-result" style="display: none; margin-bottom: var(--space-400);"></div>
 
             {# Actions #}
             <div class="form-actions" style="display: flex; gap: 8px; align-items: center;">
@@ -117,7 +117,7 @@
                 <a href="/cms" class="btn btn-outline">Cancel</a>
             </div>
 
-            <p class="text-muted" style="margin-top: var(--spacing-sm);">
+            <p class="text-muted" style="margin-top: var(--space-200);">
                 A backup of your .env file will be saved before any changes are applied.
             </p>
         </form>
@@ -222,7 +222,7 @@
         var currentDb = document.getElementById('DB_DATABASE').value;
         var html = '';
         databases.forEach(function(db) {
-            var isActive = db === currentDb ? ' style="background: var(--accent-color); color: #fff;"' : '';
+            var isActive = db === currentDb ? ' style="background: var(--color-primary); color: #fff;"' : '';
             html += '<div class="db-option"' + isActive + ' data-db="' + db + '">' + db + '</div>';
         });
         dbList.innerHTML = html;

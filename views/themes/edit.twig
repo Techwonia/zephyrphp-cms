@@ -1,0 +1,276 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Edit Theme: {{ theme.getName() }}{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / <a href="/cms/themes">Themes</a> / {{ theme.getName() }}
+</div>
+
+<div class="page-header">
+    <h1>
+        {{ theme.getName() }}
+        {% if theme.isLive() %}
+            <span class="badge badge-success">Live</span>
+        {% else %}
+            <span class="badge badge-draft">Draft</span>
+        {% endif %}
+    </h1>
+    <div class="page-actions">
+        {% if not theme.isLive() %}
+            <a href="/cms/themes/{{ theme.getSlug() }}/preview" class="btn btn-sm btn-outline">Preview</a>
+            <form method="POST" action="/cms/themes/{{ theme.getSlug() }}/publish" style="display:inline">
+                {{ csrf_field() | raw }}
+                <button type="submit" class="btn btn-sm btn-primary">Publish</button>
+            </form>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <div class="tab-nav">
+        <button class="tab-btn active" data-tab="tab-settings">Settings</button>
+        <button class="tab-btn" data-tab="tab-editor">File Editor</button>
+    </div>
+
+    {# Settings Tab #}
+    <div class="tab-panel active" id="tab-settings">
+        <form method="POST" action="/cms/themes/{{ theme.getSlug() }}">
+            {{ csrf_field() | raw }}
+
+            <div class="form-group">
+                <label for="name">Theme Name *</label>
+                <input type="text" id="name" name="name" class="form-control" required
+                       value="{{ theme.getName() }}">
+            </div>
+
+            <div class="form-group">
+                <label>Slug</label>
+                <input type="text" class="form-control" value="{{ theme.getSlug() }}" disabled>
+                <small class="text-muted">Cannot be changed after creation.</small>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" class="form-control" rows="3">{{ theme.getDescription() ?? '' }}</textarea>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Save Settings</button>
+            </div>
+        </form>
+    </div>
+
+    {# File Editor Tab #}
+    <div class="tab-panel" id="tab-editor">
+        <div class="editor-layout">
+            <div class="editor-sidebar">
+                <h4>Files</h4>
+                {% for folder, fileList in files %}
+                <div class="file-folder">
+                    <div class="folder-name">{{ folder }}/</div>
+                    {% for file in fileList %}
+                    <a href="#" class="file-item {% if activeFile == file %}active{% endif %}" data-file="{{ file }}">
+                        {{ file|split('/')|last }}
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+            <div class="editor-main">
+                <div class="editor-toolbar">
+                    <span class="editor-file-name" id="editorFileName">{{ activeFile ?: 'Select a file to edit' }}</span>
+                    <button class="btn btn-sm btn-primary" id="saveFileBtn" {% if not activeFile %}disabled{% endif %}>Save</button>
+                </div>
+                <textarea id="codeEditor" class="code-editor">{{ fileContent }}</textarea>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/theme/dracula.min.css">
+<style nonce="{{ csp_nonce() }}">
+.editor-layout {
+    display: flex;
+    min-height: 500px;
+    border-top: 1px solid var(--border-default, #E3E3E3);
+}
+.editor-sidebar {
+    width: 220px;
+    border-right: 1px solid var(--border-default, #E3E3E3);
+    padding: var(--space-300, 12px);
+    overflow-y: auto;
+}
+.editor-sidebar h4 {
+    margin: 0 0 var(--space-200, 8px) 0;
+    font-size: var(--font-size-sm, 0.8125rem);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary, #616161);
+}
+.folder-name {
+    font-weight: 600;
+    font-size: var(--font-size-sm, 0.8125rem);
+    padding: var(--space-100, 4px) 0;
+    color: var(--text-primary, #303030);
+}
+.file-item {
+    display: block;
+    padding: var(--space-100, 4px) var(--space-200, 8px);
+    margin-left: var(--space-200, 8px);
+    font-size: var(--font-size-xs, 0.75rem);
+    color: var(--text-secondary, #616161);
+    text-decoration: none;
+    border-radius: var(--radius-100, 4px);
+    transition: background 0.15s;
+}
+.file-item:hover {
+    background: var(--bg-surface-hover, #F7F7F7);
+    color: var(--text-primary, #303030);
+}
+.file-item.active {
+    background: var(--color-primary, #008060);
+    color: #fff;
+}
+.file-folder {
+    margin-bottom: var(--space-300, 12px);
+}
+.editor-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+.editor-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-200, 8px) var(--space-300, 12px);
+    border-bottom: 1px solid var(--border-default, #E3E3E3);
+    background: var(--bg-subdued, #FAFAFA);
+}
+.editor-file-name {
+    font-size: var(--font-size-sm, 0.8125rem);
+    font-family: monospace;
+    color: var(--text-secondary, #616161);
+}
+.CodeMirror {
+    flex: 1;
+    height: auto;
+    font-size: 13px;
+}
+.code-editor {
+    width: 100%;
+    min-height: 450px;
+    font-family: monospace;
+    font-size: 13px;
+    padding: var(--space-300, 12px);
+    border: none;
+    resize: none;
+    background: #282a36;
+    color: #f8f8f2;
+}
+.badge-success {
+    background: rgba(4, 123, 93, 0.1);
+    color: var(--color-success, #047B5D);
+    border: 1px solid rgba(4, 123, 93, 0.2);
+}
+.badge-draft {
+    background: rgba(255, 184, 0, 0.1);
+    color: #b8860b;
+    border: 1px solid rgba(255, 184, 0, 0.2);
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/htmlmixed/htmlmixed.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/xml/xml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/css/css.min.js"></script>
+<script nonce="{{ csp_nonce() }}">
+document.addEventListener('DOMContentLoaded', function() {
+    var textarea = document.getElementById('codeEditor');
+    var editor = CodeMirror.fromTextArea(textarea, {
+        mode: 'htmlmixed',
+        theme: 'dracula',
+        lineNumbers: true,
+        indentUnit: 4,
+        tabSize: 4,
+        lineWrapping: true
+    });
+
+    var currentFile = '{{ activeFile }}';
+    var themeSlug = '{{ theme.getSlug() }}';
+
+    // File tree click
+    document.querySelectorAll('.file-item').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            var file = this.dataset.file;
+
+            // Load file via AJAX (use GET with query param)
+            fetch('/cms/themes/' + themeSlug + '?file=' + encodeURIComponent(file))
+                .then(function(r) { return r.text(); })
+                .then(function(html) {
+                    // Extract file content from response — simpler: reload page
+                    window.location.href = '/cms/themes/' + themeSlug + '?file=' + encodeURIComponent(file);
+                });
+        });
+    });
+
+    // Switch to editor tab if file is loaded
+    if (currentFile) {
+        document.querySelector('[data-tab="tab-editor"]').click();
+    }
+
+    // Save file
+    document.getElementById('saveFileBtn').addEventListener('click', function() {
+        if (!currentFile) return;
+
+        var btn = this;
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+
+        fetch('/cms/themes/' + themeSlug + '/file', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            body: JSON.stringify({
+                file: currentFile,
+                content: editor.getValue()
+            })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            btn.disabled = false;
+            if (data.success) {
+                btn.textContent = 'Saved!';
+                setTimeout(function() { btn.textContent = 'Save'; }, 1500);
+            } else {
+                btn.textContent = 'Error';
+                setTimeout(function() { btn.textContent = 'Save'; }, 2000);
+            }
+        })
+        .catch(function() {
+            btn.disabled = false;
+            btn.textContent = 'Error';
+            setTimeout(function() { btn.textContent = 'Save'; }, 2000);
+        });
+    });
+
+    // Ctrl+S shortcut
+    editor.on('keydown', function(cm, e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault();
+            document.getElementById('saveFileBtn').click();
+        }
+    });
+});
+</script>
+{% endblock %}

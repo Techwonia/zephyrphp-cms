@@ -9,6 +9,7 @@ use ZephyrPHP\Cms\Controllers\DatabaseSettingsController;
 use ZephyrPHP\Cms\Controllers\PageTypeController;
 use ZephyrPHP\Cms\Controllers\PageController;
 use ZephyrPHP\Cms\Controllers\PageFrontendController;
+use ZephyrPHP\Cms\Controllers\ThemeController;
 use ZephyrPHP\Cms\Api\ContentApiController;
 
 // CMS Admin Routes (protected by auth middleware)
@@ -62,6 +63,17 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     Route::get('/pages/{ptSlug}/{id}', [PageController::class, 'edit']);
     Route::post('/pages/{ptSlug}/{id}', [PageController::class, 'update']);
     Route::post('/pages/{ptSlug}/{id}/delete', [PageController::class, 'destroy']);
+
+    // Themes
+    Route::get('/themes', [ThemeController::class, 'index']);
+    Route::get('/themes/create', [ThemeController::class, 'create']);
+    Route::post('/themes', [ThemeController::class, 'store']);
+    Route::get('/themes/{slug}', [ThemeController::class, 'edit']);
+    Route::post('/themes/{slug}', [ThemeController::class, 'update']);
+    Route::post('/themes/{slug}/publish', [ThemeController::class, 'publish']);
+    Route::post('/themes/{slug}/delete', [ThemeController::class, 'destroy']);
+    Route::get('/themes/{slug}/preview', [ThemeController::class, 'preview']);
+    Route::post('/themes/{slug}/file', [ThemeController::class, 'saveFile']);
 
     // Database Settings
     Route::get('/settings/database', [DatabaseSettingsController::class, 'index']);

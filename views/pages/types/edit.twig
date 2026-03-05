@@ -8,8 +8,8 @@
 <style nonce="{{ csp_nonce() }}">
     .field-system {
         opacity: 0.7;
-        border-left: 3px solid var(--accent-color);
-        padding-left: var(--spacing-sm);
+        border-left: 3px solid var(--color-primary);
+        padding-left: var(--space-200);
     }
     .field-system .field-name {
         font-size: 0.9rem;
@@ -31,7 +31,7 @@
         border-bottom: none;
         cursor: pointer;
         font-size: 0.85rem;
-        color: var(--text-muted);
+        color: var(--text-secondary);
     }
     .template-sub-tab.active {
         background: #282a36;
@@ -53,7 +53,7 @@
         font-size: 0.8rem;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        color: var(--text-muted);
+        color: var(--text-secondary);
         margin-bottom: 0.25rem;
     }
     .snippet-btn {
@@ -71,7 +71,7 @@
     }
     .snippet-btn:hover {
         background: var(--bg-color);
-        border-color: var(--accent-color);
+        border-color: var(--color-primary);
     }
     .snippet-icon {
         font-size: 1.1rem;
@@ -208,7 +208,7 @@
         <div class="card-body">
             {# System fields #}
             <div class="system-fields-section">
-                <h4 class="text-muted" style="margin-bottom: var(--spacing-sm); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">System Fields</h4>
+                <h4 class="text-muted" style="margin-bottom: var(--space-200); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">System Fields</h4>
 
                 <div class="field-row field-system">
                     <div class="field-info">
@@ -265,7 +265,7 @@
 
             {# Custom fields #}
             {% if fields|length > 0 %}
-                <h4 class="text-muted" style="margin: var(--spacing-md) 0 var(--spacing-sm); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Custom Fields</h4>
+                <h4 class="text-muted" style="margin: var(--space-400) 0 var(--space-200); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Custom Fields</h4>
                 {% for field in fields %}
                 <div class="field-row">
                     <div class="field-info">
@@ -289,7 +289,7 @@
                 </div>
                 {% endfor %}
             {% else %}
-                <div class="empty-state" style="margin-top: var(--spacing-md);">
+                <div class="empty-state" style="margin-top: var(--space-400);">
                     <p>No custom fields defined yet. Add your first field below.</p>
                 </div>
             {% endif %}

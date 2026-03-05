@@ -4,56 +4,52 @@
 
 {% block content %}
 <div class="page-header">
-    <h1>Dashboard</h1>
-    <p class="text-muted">Welcome back, {{ user.getName() }}!</p>
+    <div>
+        <h1>Dashboard</h1>
+        <p class="text-muted" style="margin-top: 2px;">Welcome back, {{ user.getName() }}</p>
+    </div>
 </div>
 
 <div class="stats-grid">
     <div class="stat-card">
-        <div class="stat-icon">&#128203;</div>
-        <div class="stat-info">
+        <div class="stat-icon stat-icon-green">&#128203;</div>
+        <div>
             <div class="stat-value">{{ totalCollections }}</div>
             <div class="stat-label">Collections</div>
         </div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon">&#128196;</div>
-        <div class="stat-info">
+        <div class="stat-icon stat-icon-blue">&#128196;</div>
+        <div>
             <div class="stat-value">{{ totalEntries }}</div>
             <div class="stat-label">Total Entries</div>
         </div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon">&#128195;</div>
-        <div class="stat-info">
+        <div class="stat-icon stat-icon-purple">&#128195;</div>
+        <div>
             <div class="stat-value">{{ totalPages }}</div>
             <div class="stat-label">Pages</div>
         </div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon">&#128247;</div>
-        <div class="stat-info">
+        <div class="stat-icon stat-icon-orange">&#128247;</div>
+        <div>
             <div class="stat-value">{{ totalMedia }}</div>
             <div class="stat-label">Media Files</div>
         </div>
     </div>
-    <div class="stat-card">
-        <div class="stat-icon">&#128100;</div>
-        <div class="stat-info">
-            <div class="stat-value">{{ user.getEmail() }}</div>
-            <div class="stat-label">{{ user.getCreatedAt() | date('M d, Y') }}</div>
-        </div>
-    </div>
 </div>
 
-<div class="card" style="margin-bottom: var(--spacing-md, 1.5rem);">
+<div class="card" style="margin-bottom: var(--space-500);">
     <div class="card-header">
         <h3>Quick Actions</h3>
     </div>
     <div class="card-body" style="display: flex; gap: 8px; flex-wrap: wrap;">
-        <a href="/cms/collections/create" class="btn btn-primary">+ New Collection</a>
+        <a href="/cms/collections/create" class="btn btn-primary">New Collection</a>
         <a href="/cms/pages" class="btn btn-outline">Pages</a>
         <a href="/cms/media" class="btn btn-outline">Media</a>
+        <a href="/cms/themes" class="btn btn-outline">Themes</a>
         {% if user.hasRole('admin') %}
         <a href="/cms/users" class="btn btn-outline">Users</a>
         <a href="/cms/roles" class="btn btn-outline">Roles</a>
@@ -67,49 +63,49 @@
     <div class="card-header">
         <h3>Collections</h3>
     </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Slug</th>
-                        <th>Fields</th>
-                        <th>Entries</th>
-                        <th>API</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for collection in collections %}
-                    <tr>
-                        <td><strong>{{ collection.getName() }}</strong></td>
-                        <td><code>{{ collection.getSlug() }}</code></td>
-                        <td>{{ collection.getFields()|length }}</td>
-                        <td>{{ stats[collection.getSlug()] ?? 0 }}</td>
-                        <td>
-                            {% if collection.isApiEnabled() %}
-                                <span class="badge">API</span>
-                            {% else %}
-                                <span class="text-muted">—</span>
-                            {% endif %}
-                        </td>
-                        <td class="actions-cell">
-                            <a href="/cms/collections/{{ collection.getSlug() }}/entries" class="btn btn-sm btn-outline">Entries</a>
-                            <a href="/cms/collections/{{ collection.getSlug() }}" class="btn btn-sm btn-outline">Edit</a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Slug</th>
+                    <th>Fields</th>
+                    <th>Entries</th>
+                    <th>API</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for collection in collections %}
+                <tr>
+                    <td><strong>{{ collection.getName() }}</strong></td>
+                    <td><code>{{ collection.getSlug() }}</code></td>
+                    <td>{{ collection.getFields()|length }}</td>
+                    <td>{{ stats[collection.getSlug()] ?? 0 }}</td>
+                    <td>
+                        {% if collection.isApiEnabled() %}
+                            <span class="badge badge-info">API</span>
+                        {% else %}
+                            <span class="text-muted">&mdash;</span>
+                        {% endif %}
+                    </td>
+                    <td class="actions-cell">
+                        <a href="/cms/collections/{{ collection.getSlug() }}/entries" class="btn btn-sm btn-outline">Entries</a>
+                        <a href="/cms/collections/{{ collection.getSlug() }}" class="btn btn-sm btn-outline">Edit</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 {% else %}
-<div class="empty-state">
-    <h3>No collections yet</h3>
-    <p>Create your first collection to start building your content.</p>
-    <a href="/cms/collections/create" class="btn btn-primary">+ Create Collection</a>
+<div class="card">
+    <div class="card-body empty-state">
+        <h3>No collections yet</h3>
+        <p>Create your first collection to start building your content.</p>
+        <a href="/cms/collections/create" class="btn btn-primary">Create Collection</a>
+    </div>
 </div>
 {% endif %}
 {% endblock %}
