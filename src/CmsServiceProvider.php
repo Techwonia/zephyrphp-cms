@@ -164,7 +164,11 @@ class CmsServiceProvider
                 $prefix = $pageType->getUrlPrefix();
                 if (empty($prefix)) continue;
 
-                $prefix = '/' . ltrim($prefix, '/');
+                $prefix = '/' . ltrim(rtrim($prefix, '/'), '/');
+
+                // Skip root prefix — a catch-all /{slug} would break other routes
+                if ($prefix === '/' || $prefix === '') continue;
+
                 $ptSlug = $pageType->getSlug();
 
                 if ($pageType->isDynamic()) {

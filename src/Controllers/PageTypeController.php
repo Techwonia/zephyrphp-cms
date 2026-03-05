@@ -80,6 +80,13 @@ class PageTypeController extends Controller
         $pageMode = $this->input('page_mode', 'static');
         $layout = $this->input('layout', 'base');
         $urlPrefix = trim($this->input('url_prefix', ''));
+        // Sanitize: strip trailing slashes, reject root-only prefix
+        if ($urlPrefix !== '') {
+            $urlPrefix = '/' . trim($urlPrefix, '/');
+            if ($urlPrefix === '/') {
+                $urlPrefix = '';
+            }
+        }
         $itemsPerPage = (int) ($this->input('items_per_page', '10') ?: 10);
 
         if (empty($slug)) {
@@ -216,6 +223,13 @@ class PageTypeController extends Controller
         $pageMode = $this->input('page_mode', $pageType->getPageMode());
         $layout = $this->input('layout', $pageType->getLayout());
         $urlPrefix = trim($this->input('url_prefix', ''));
+        // Sanitize: strip trailing slashes, reject root-only prefix
+        if ($urlPrefix !== '') {
+            $urlPrefix = '/' . trim($urlPrefix, '/');
+            if ($urlPrefix === '/') {
+                $urlPrefix = '';
+            }
+        }
         $itemsPerPage = (int) ($this->input('items_per_page', (string) $pageType->getItemsPerPage()) ?: 10);
 
         $errors = [];
