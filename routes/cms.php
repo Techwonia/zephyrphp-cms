@@ -74,6 +74,9 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     Route::post('/themes/{slug}/delete', [ThemeController::class, 'destroy']);
     Route::get('/themes/{slug}/preview', [ThemeController::class, 'preview']);
     Route::post('/themes/{slug}/file', [ThemeController::class, 'saveFile']);
+    Route::post('/themes/{slug}/pages/add', [ThemeController::class, 'addPage']);
+    Route::post('/themes/{slug}/pages/update', [ThemeController::class, 'updatePage']);
+    Route::post('/themes/{slug}/pages/delete', [ThemeController::class, 'removePage']);
 
     // Database Settings
     Route::get('/settings/database', [DatabaseSettingsController::class, 'index']);

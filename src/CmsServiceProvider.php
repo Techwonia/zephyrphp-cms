@@ -43,6 +43,12 @@ class CmsServiceProvider
         $themePath = $themeManager->getActiveThemePath();
         if (is_dir($themePath)) {
             $view->addNamespace('theme', $themePath);
+
+            // Prepend theme templates path so render('home') finds theme templates first
+            $templatesPath = $themePath . '/templates';
+            if (is_dir($templatesPath)) {
+                $view->prependTemplatePath($templatesPath);
+            }
         }
 
         // Pass preview state as global Twig vars
@@ -63,6 +69,9 @@ class CmsServiceProvider
 
         // Register dynamic page routes
         $this->registerDynamicRoutes();
+
+        // Register theme page routes from pages.json
+        $this->registerThemePageRoutes($themeManager);
 
         // Auto-create CMS tables if they don't exist
         $this->ensureTablesExist();
@@ -165,6 +174,29 @@ class CmsServiceProvider
         $view->addFunction('theme_preview_url', function (string $slug) {
             return '/?theme_preview=' . urlencode($slug);
         });
+    }
+
+    private function registerThemePageRoutes(ThemeManager $themeManager): void
+    {
+        try {
+            $pages = $themeManager->getPages();
+            foreach ($pages as $page) {
+                $template = $page['template'];
+                $slug = $page['slug'] ?? '/';
+                $title = $page['title'] ?? '';
+
+                \ZephyrPHP\Router\Route::get($slug, function () use ($template, $title) {
+                    $view = \ZephyrPHP\View\View::getInstance();
+                    echo $view->render($template, [
+                        'page' => [
+                            'title' => $title,
+                        ],
+                    ]);
+                });
+            }
+        } catch (\Exception $e) {
+            // pages.json may not exist yet
+        }
     }
 
     private function registerDynamicRoutes(): void

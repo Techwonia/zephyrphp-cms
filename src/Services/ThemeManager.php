@@ -384,6 +384,117 @@ class ThemeManager
         return $this->themesBasePath;
     }
 
+    // --- Pages Management ---
+
+    /**
+     * Get the path to a theme's pages.json config.
+     */
+    public function getPagesConfigPath(string $slug): string
+    {
+        return $this->getThemePath($slug) . '/pages.json';
+    }
+
+    /**
+     * Get all pages from a theme's pages.json.
+     */
+    public function getPages(?string $slug = null): array
+    {
+        $slug = $slug ?? $this->getEffectiveTheme();
+        $path = $this->getPagesConfigPath($slug);
+
+        if (!file_exists($path)) {
+            return [];
+        }
+
+        $data = json_decode(file_get_contents($path), true);
+        return $data['pages'] ?? [];
+    }
+
+    /**
+     * Save a page entry to pages.json (add or update by template name).
+     */
+    public function savePage(string $slug, array $page): void
+    {
+        $path = $this->getPagesConfigPath($slug);
+        $data = file_exists($path) ? json_decode(file_get_contents($path), true) : [];
+        $pages = $data['pages'] ?? [];
+
+        // Update existing or add new
+        $found = false;
+        foreach ($pages as $i => $existing) {
+            if ($existing['template'] === $page['template']) {
+                $pages[$i] = $page;
+                $found = true;
+                break;
+            }
+        }
+
+        if (!$found) {
+            $pages[] = $page;
+        }
+
+        $data['pages'] = $pages;
+        file_put_contents($path, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+    }
+
+    /**
+     * Delete a page from pages.json and optionally delete the template file.
+     */
+    public function deletePage(string $slug, string $template, bool $deleteFile = true): bool
+    {
+        $path = $this->getPagesConfigPath($slug);
+        if (!file_exists($path)) {
+            return false;
+        }
+
+        $data = json_decode(file_get_contents($path), true);
+        $pages = $data['pages'] ?? [];
+
+        $filtered = array_values(array_filter($pages, function ($p) use ($template) {
+            return $p['template'] !== $template;
+        }));
+
+        if (count($filtered) === count($pages)) {
+            return false; // Not found
+        }
+
+        $data['pages'] = $filtered;
+        file_put_contents($path, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
+        // Delete template file
+        if ($deleteFile) {
+            $templateFile = $this->getTemplatesPath($slug) . '/' . $template . '.twig';
+            if (file_exists($templateFile)) {
+                unlink($templateFile);
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Get available layouts for a theme (from filesystem).
+     */
+    public function getLayoutFiles(string $slug): array
+    {
+        $layoutsDir = $this->getThemePath($slug) . '/layouts';
+        $layouts = [];
+
+        if (!is_dir($layoutsDir)) {
+            return $layouts;
+        }
+
+        foreach (scandir($layoutsDir) as $file) {
+            if ($file === '.' || $file === '..') continue;
+            if (str_ends_with($file, '.twig')) {
+                $name = basename($file, '.twig');
+                $layouts[] = $name;
+            }
+        }
+
+        return $layouts;
+    }
+
     // --- Private Helpers ---
 
     private function createStarterTheme(string $path, string $name): void
@@ -459,6 +570,34 @@ TWIG;
 </footer>
 TWIG;
         file_put_contents($path . '/snippets/footer.twig', $footer);
+
+        // Home page template
+        $home = <<<'TWIG'
+{% extends "@theme/layouts/base.twig" %}
+
+{% block title %}{{ page.title ?? config('app.name', 'ZephyrPHP') }}{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 60px 20px; text-align: center;">
+    <h1>{{ page.title ?? config('app.name', 'ZephyrPHP') }}</h1>
+    <p>Your site is ready. Edit this page from the theme editor.</p>
+</div>
+{% endblock %}
+TWIG;
+        file_put_contents($path . '/templates/home.twig', $home);
+
+        // pages.json
+        $pagesConfig = [
+            'pages' => [
+                [
+                    'title' => 'Home',
+                    'slug' => '/',
+                    'template' => 'home',
+                    'layout' => 'base',
+                ],
+            ],
+        ];
+        file_put_contents($path . '/pages.json', json_encode($pagesConfig, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
     }
 
     private function copyDirectory(string $source, string $dest): void

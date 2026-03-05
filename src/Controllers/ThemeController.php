@@ -114,6 +114,8 @@ class ThemeController extends Controller
 
         $files = $this->themeManager->listFiles($slug);
         $config = $this->themeManager->getThemeConfig($slug);
+        $pages = $this->themeManager->getPages($slug);
+        $layouts = $this->themeManager->getLayoutFiles($slug);
 
         // Load first file content for editor
         $activeFile = $this->input('file', '');
@@ -126,6 +128,8 @@ class ThemeController extends Controller
             'theme' => $theme,
             'files' => $files,
             'config' => $config,
+            'pages' => $pages,
+            'layouts' => $layouts,
             'activeFile' => $activeFile,
             'fileContent' => $fileContent,
             'user' => Auth::user(),
@@ -272,6 +276,148 @@ class ThemeController extends Controller
         } else {
             http_response_code(500);
             echo json_encode(['error' => 'Failed to save file']);
+        }
+    }
+
+    /**
+     * AJAX: Add a new page to the theme.
+     */
+    public function addPage(string $slug): void
+    {
+        $this->requireAdmin();
+        header('Content-Type: application/json');
+
+        $theme = Theme::findOneBy(['slug' => $slug]);
+        if (!$theme) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Theme not found']);
+            return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        $title = trim($input['title'] ?? '');
+        $pageSlug = trim($input['slug'] ?? '');
+        $layout = trim($input['layout'] ?? 'base');
+
+        if (empty($title) || empty($pageSlug)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Title and URL slug are required']);
+            return;
+        }
+
+        // Ensure slug starts with /
+        if (!str_starts_with($pageSlug, '/')) {
+            $pageSlug = '/' . $pageSlug;
+        }
+
+        // Generate template name from title
+        $templateName = $this->generateSlug($title);
+        if (empty($templateName)) {
+            $templateName = 'page-' . time();
+        }
+
+        // Check if template already exists
+        if ($this->themeManager->templateExists($templateName . '.twig', $slug)) {
+            http_response_code(409);
+            echo json_encode(['error' => 'A page with this template name already exists']);
+            return;
+        }
+
+        // Create template file
+        $templateContent = "{% extends \"@theme/layouts/{$layout}.twig\" %}\n\n";
+        $templateContent .= "{% block title %}{{ page.title }}{% endblock %}\n\n";
+        $templateContent .= "{% block content %}\n";
+        $templateContent .= "<div class=\"container\">\n";
+        $templateContent .= "    <h1>{{ page.title }}</h1>\n";
+        $templateContent .= "    <p>Edit this page from the theme editor.</p>\n";
+        $templateContent .= "</div>\n";
+        $templateContent .= "{% endblock %}\n";
+
+        $this->themeManager->writeTemplate($templateName . '.twig', $templateContent, $slug);
+
+        // Add to pages.json
+        $page = [
+            'title' => $title,
+            'slug' => $pageSlug,
+            'template' => $templateName,
+            'layout' => $layout,
+        ];
+        $this->themeManager->savePage($slug, $page);
+
+        echo json_encode(['success' => true, 'page' => $page]);
+    }
+
+    /**
+     * AJAX: Update page settings (title, slug, layout).
+     */
+    public function updatePage(string $slug): void
+    {
+        $this->requireAdmin();
+        header('Content-Type: application/json');
+
+        $theme = Theme::findOneBy(['slug' => $slug]);
+        if (!$theme) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Theme not found']);
+            return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        $template = trim($input['template'] ?? '');
+        $title = trim($input['title'] ?? '');
+        $pageSlug = trim($input['slug'] ?? '');
+        $layout = trim($input['layout'] ?? 'base');
+
+        if (empty($template) || empty($title) || empty($pageSlug)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Template, title, and slug are required']);
+            return;
+        }
+
+        if (!str_starts_with($pageSlug, '/')) {
+            $pageSlug = '/' . $pageSlug;
+        }
+
+        $page = [
+            'title' => $title,
+            'slug' => $pageSlug,
+            'template' => $template,
+            'layout' => $layout,
+        ];
+        $this->themeManager->savePage($slug, $page);
+
+        echo json_encode(['success' => true, 'page' => $page]);
+    }
+
+    /**
+     * AJAX: Delete a page from the theme.
+     */
+    public function removePage(string $slug): void
+    {
+        $this->requireAdmin();
+        header('Content-Type: application/json');
+
+        $theme = Theme::findOneBy(['slug' => $slug]);
+        if (!$theme) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Theme not found']);
+            return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        $template = trim($input['template'] ?? '');
+
+        if (empty($template)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Template name is required']);
+            return;
+        }
+
+        if ($this->themeManager->deletePage($slug, $template)) {
+            echo json_encode(['success' => true]);
+        } else {
+            http_response_code(404);
+            echo json_encode(['error' => 'Page not found']);
         }
     }
 

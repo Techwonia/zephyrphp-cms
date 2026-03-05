@@ -30,6 +30,7 @@
 <div class="card">
     <div class="tab-nav">
         <button class="tab-btn active" data-tab="tab-settings">Settings</button>
+        <button class="tab-btn" data-tab="tab-pages">Pages</button>
         <button class="tab-btn" data-tab="tab-editor">File Editor</button>
     </div>
 
@@ -59,6 +60,83 @@
                 <button type="submit" class="btn btn-primary">Save Settings</button>
             </div>
         </form>
+    </div>
+
+    {# Pages Tab #}
+    <div class="tab-panel" id="tab-pages">
+        <div class="pages-header">
+            <p class="text-muted">Manage pages that belong to this theme. Each page has a URL, template, and layout.</p>
+            <button class="btn btn-primary btn-sm" id="addPageBtn">Add Page</button>
+        </div>
+
+        <table class="data-table" id="pagesTable">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>URL</th>
+                    <th>Template</th>
+                    <th>Layout</th>
+                    <th style="width:180px">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for page in pages %}
+                <tr data-template="{{ page.template }}">
+                    <td>{{ page.title }}</td>
+                    <td><code>{{ page.slug }}</code></td>
+                    <td><code>{{ page.template }}.twig</code></td>
+                    <td>{{ page.layout ?? 'base' }}</td>
+                    <td>
+                        <a href="/cms/themes/{{ theme.getSlug() }}?file=templates/{{ page.template }}.twig" class="btn btn-xs btn-outline">Edit Content</a>
+                        <button class="btn btn-xs btn-outline edit-page-btn"
+                            data-template="{{ page.template }}"
+                            data-title="{{ page.title }}"
+                            data-slug="{{ page.slug }}"
+                            data-layout="{{ page.layout ?? 'base' }}">Settings</button>
+                        <button class="btn btn-xs btn-danger delete-page-btn" data-template="{{ page.template }}" data-title="{{ page.title }}">Delete</button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr class="empty-row">
+                    <td colspan="5" class="text-center text-muted" style="padding:40px">No pages yet. Click "Add Page" to create one.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {# Add Page Modal #}
+        <div class="modal-overlay" id="addPageModal" style="display:none">
+            <div class="modal-card">
+                <div class="modal-header">
+                    <h3 id="pageModalTitle">Add New Page</h3>
+                    <button class="modal-close" id="closePageModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="pageEditTemplate" value="">
+                    <div class="form-group">
+                        <label for="pageTitle">Page Title *</label>
+                        <input type="text" id="pageTitle" class="form-control" placeholder="About Us">
+                    </div>
+                    <div class="form-group">
+                        <label for="pageSlug">URL Path *</label>
+                        <input type="text" id="pageSlug" class="form-control" placeholder="/about">
+                        <small class="text-muted">The URL where this page will be accessible.</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="pageLayout">Layout</label>
+                        <select id="pageLayout" class="form-control">
+                            {% for layout in layouts %}
+                            <option value="{{ layout }}">{{ layout|capitalize }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" id="cancelPageModal">Cancel</button>
+                    <button class="btn btn-primary" id="savePageBtn">Create Page</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     {# File Editor Tab #}
@@ -172,6 +250,95 @@
     background: #282a36;
     color: #f8f8f2;
 }
+.pages-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-400, 16px);
+    border-bottom: 1px solid var(--border-default, #E3E3E3);
+}
+.pages-header .text-muted {
+    margin: 0;
+}
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.data-table th,
+.data-table td {
+    padding: var(--space-300, 12px) var(--space-400, 16px);
+    text-align: left;
+    border-bottom: 1px solid var(--border-default, #E3E3E3);
+}
+.data-table th {
+    font-size: var(--font-size-sm, 0.8125rem);
+    font-weight: 600;
+    color: var(--text-secondary, #616161);
+    background: var(--bg-subdued, #FAFAFA);
+}
+.data-table td code {
+    background: rgba(0,0,0,0.06);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: var(--font-size-xs, 0.75rem);
+}
+.btn-xs {
+    padding: 4px 8px;
+    font-size: var(--font-size-xs, 0.75rem);
+}
+.btn-danger {
+    background: #D72C0D;
+    color: #fff;
+    border: none;
+}
+.btn-danger:hover {
+    background: #BC2200;
+}
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+.modal-card {
+    background: #fff;
+    border-radius: var(--radius-200, 8px);
+    width: 480px;
+    max-width: 90vw;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-400, 16px) var(--space-500, 20px);
+    border-bottom: 1px solid var(--border-default, #E3E3E3);
+}
+.modal-header h3 {
+    margin: 0;
+    font-size: 1rem;
+}
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-secondary, #616161);
+    line-height: 1;
+}
+.modal-body {
+    padding: var(--space-500, 20px);
+}
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-200, 8px);
+    padding: var(--space-400, 16px) var(--space-500, 20px);
+    border-top: 1px solid var(--border-default, #E3E3E3);
+}
 .badge-success {
     background: rgba(4, 123, 93, 0.1);
     color: var(--color-success, #047B5D);
@@ -270,6 +437,114 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             document.getElementById('saveFileBtn').click();
         }
+    });
+
+    // --- Pages Management ---
+    var csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+    function showModal(isEdit) {
+        var modal = document.getElementById('addPageModal');
+        modal.style.display = 'flex';
+        document.getElementById('pageModalTitle').textContent = isEdit ? 'Edit Page Settings' : 'Add New Page';
+        document.getElementById('savePageBtn').textContent = isEdit ? 'Save Changes' : 'Create Page';
+    }
+
+    function hideModal() {
+        var modal = document.getElementById('addPageModal');
+        modal.style.display = 'none';
+        document.getElementById('pageTitle').value = '';
+        document.getElementById('pageSlug').value = '';
+        document.getElementById('pageLayout').value = 'base';
+        document.getElementById('pageEditTemplate').value = '';
+    }
+
+    document.getElementById('addPageBtn')?.addEventListener('click', function() {
+        showModal(false);
+    });
+    document.getElementById('closePageModal')?.addEventListener('click', hideModal);
+    document.getElementById('cancelPageModal')?.addEventListener('click', hideModal);
+
+    // Edit page settings
+    document.querySelectorAll('.edit-page-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            document.getElementById('pageEditTemplate').value = this.dataset.template;
+            document.getElementById('pageTitle').value = this.dataset.title;
+            document.getElementById('pageSlug').value = this.dataset.slug;
+            document.getElementById('pageLayout').value = this.dataset.layout;
+            showModal(true);
+        });
+    });
+
+    // Save page (add or update)
+    document.getElementById('savePageBtn')?.addEventListener('click', function() {
+        var btn = this;
+        var editTemplate = document.getElementById('pageEditTemplate').value;
+        var isEdit = !!editTemplate;
+        var endpoint = isEdit ? '/cms/themes/' + themeSlug + '/pages/update' : '/cms/themes/' + themeSlug + '/pages/add';
+
+        var payload = {
+            title: document.getElementById('pageTitle').value,
+            slug: document.getElementById('pageSlug').value,
+            layout: document.getElementById('pageLayout').value
+        };
+        if (isEdit) {
+            payload.template = editTemplate;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+
+        fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+            body: JSON.stringify(payload)
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert(data.error || 'Failed to save page');
+                btn.disabled = false;
+                btn.textContent = isEdit ? 'Save Changes' : 'Create Page';
+            }
+        })
+        .catch(function() {
+            alert('Network error');
+            btn.disabled = false;
+            btn.textContent = isEdit ? 'Save Changes' : 'Create Page';
+        });
+    });
+
+    // Delete page
+    document.querySelectorAll('.delete-page-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var template = this.dataset.template;
+            var title = this.dataset.title;
+            if (!confirm('Delete page "' + title + '"? This will also delete the template file.')) return;
+
+            fetch('/cms/themes/' + themeSlug + '/pages/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                body: JSON.stringify({ template: template })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert(data.error || 'Failed to delete page');
+                }
+            });
+        });
+    });
+
+    // Auto-generate slug from title
+    document.getElementById('pageTitle')?.addEventListener('input', function() {
+        var editTemplate = document.getElementById('pageEditTemplate').value;
+        if (editTemplate) return; // Don't auto-generate on edit
+        var slug = '/' + this.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        document.getElementById('pageSlug').value = slug;
     });
 });
 </script>
