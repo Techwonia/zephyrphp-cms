@@ -9,6 +9,7 @@ use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Types\Types;
 use ZephyrPHP\Cms\Models\Collection;
 use ZephyrPHP\Cms\Models\Field;
+use ZephyrPHP\Cms\Models\PageTypeField;
 use ZephyrPHP\Database\Connection as ZephyrConnection;
 
 class SchemaManager
@@ -20,11 +21,29 @@ class SchemaManager
         $this->connection = ZephyrConnection::getInstance()->getConnection();
     }
 
+    public function getConnection(): Connection
+    {
+        return $this->connection;
+    }
+
+    /**
+     * Drop a table by name (generic)
+     */
+    public function dropTable(string $tableName): void
+    {
+        $sm = $this->connection->createSchemaManager();
+        if ($sm->tablesExist([$tableName])) {
+            $this->connection->executeStatement('SET FOREIGN_KEY_CHECKS = 0');
+            $sm->dropTable($tableName);
+            $this->connection->executeStatement('SET FOREIGN_KEY_CHECKS = 1');
+        }
+    }
+
     // ========================================================================
     // FIELD TYPE MAPPING
     // ========================================================================
 
-    public function getColumnType(Field $field): string
+    public function getColumnType(Field|PageTypeField $field): string
     {
         return match ($field->getType()) {
             'text', 'email', 'slug', 'select' => Types::STRING,
@@ -42,7 +61,7 @@ class SchemaManager
         };
     }
 
-    public function getColumnOptions(Field $field): array
+    public function getColumnOptions(Field|PageTypeField $field): array
     {
         $options = ['notnull' => $field->isRequired()];
 
@@ -113,14 +132,14 @@ class SchemaManager
     /**
      * Add a column to a collection table
      */
-    public function addColumn(string $tableName, Field $field): void
+    public function addColumn(string $tableName, Field|PageTypeField $field): void
     {
         // Build ALTER TABLE manually for reliability
         $columnDef = $this->buildColumnDefinition($field);
         $sql = "ALTER TABLE `{$tableName}` ADD COLUMN `{$field->getSlug()}` {$columnDef}";
         $this->connection->executeStatement($sql);
 
-        if ($field->isUnique()) {
+        if ($field instanceof Field && $field->isUnique()) {
             $indexName = "uniq_{$tableName}_{$field->getSlug()}";
             $sql = "ALTER TABLE `{$tableName}` ADD UNIQUE INDEX `{$indexName}` (`{$field->getSlug()}`)";
             $this->connection->executeStatement($sql);
@@ -130,7 +149,7 @@ class SchemaManager
     /**
      * Modify a column in a collection table
      */
-    public function modifyColumn(string $tableName, Field $field, ?string $oldSlug = null): void
+    public function modifyColumn(string $tableName, Field|PageTypeField $field, ?string $oldSlug = null): void
     {
         $columnDef = $this->buildColumnDefinition($field);
 
@@ -241,7 +260,7 @@ class SchemaManager
     /**
      * Build MySQL column definition string
      */
-    private function buildColumnDefinition(Field $field): string
+    private function buildColumnDefinition(Field|PageTypeField $field): string
     {
         $mysqlType = match ($field->getType()) {
             'text', 'email', 'slug', 'select' => 'VARCHAR(255)',

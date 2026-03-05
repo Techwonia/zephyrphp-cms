@@ -1,0 +1,77 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Pages{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / Pages
+</div>
+
+<div class="page-header">
+    <h1>Page Types</h1>
+    <div class="page-actions">
+        <a href="/cms/pages/types/create" class="btn btn-primary">+ New Page Type</a>
+    </div>
+</div>
+
+{% if pageTypes|length > 0 %}
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Mode</th>
+                        <th>URL</th>
+                        <th>Layout</th>
+                        <th>Fields</th>
+                        <th>Pages</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pt in pageTypes %}
+                    <tr>
+                        <td><strong>{{ pt.getName() }}</strong></td>
+                        <td>
+                            {% if pt.isDynamic() %}
+                                <span class="field-badge" style="background:#e3f2fd;color:#1565c0;">dynamic</span>
+                            {% else %}
+                                <span class="field-badge" style="background:#f3e5f5;color:#7b1fa2;">static</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if pt.getUrlPrefix() %}
+                                <code>{{ pt.getUrlPrefix() }}</code>
+                            {% else %}
+                                <span class="text-muted">/page/{slug}</span>
+                            {% endif %}
+                        </td>
+                        <td><code>{{ pt.getLayout() }}</code></td>
+                        <td>{{ pt.getFields()|length }}</td>
+                        <td>{{ stats[pt.getSlug()] ?? 0 }}</td>
+                        <td class="actions-cell">
+                            <a href="/cms/pages/{{ pt.getSlug() }}/list" class="btn btn-sm btn-outline">Pages</a>
+                            <a href="/cms/pages/types/{{ pt.getSlug() }}" class="btn btn-sm btn-outline">Edit</a>
+                            <form method="POST" action="/cms/pages/types/{{ pt.getSlug() }}/delete"
+                                  style="display:inline" class="confirm-delete" data-message="Delete page type '{{ pt.getName() }}'? All pages of this type will be deleted.">
+                                {{ csrf_field() | raw }}
+                                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="empty-state">
+    <h3>No page types yet</h3>
+    <p>Create your first page type to start building pages.</p>
+    <a href="/cms/pages/types/create" class="btn btn-primary">+ Create Page Type</a>
+</div>
+{% endif %}
+{% endblock %}

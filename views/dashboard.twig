@@ -1,13 +1,11 @@
 {% extends "@cms/layouts/cms.twig" %}
 
-{% block title %}CMS Dashboard{% endblock %}
+{% block title %}Dashboard{% endblock %}
 
 {% block content %}
 <div class="page-header">
-    <h1>CMS Dashboard</h1>
-    <div class="page-actions">
-        <a href="/cms/collections/create" class="btn btn-primary">+ New Collection</a>
-    </div>
+    <h1>Dashboard</h1>
+    <p class="text-muted">Welcome back, {{ user.getName() }}!</p>
 </div>
 
 <div class="stats-grid">
@@ -26,11 +24,41 @@
         </div>
     </div>
     <div class="stat-card">
+        <div class="stat-icon">&#128195;</div>
+        <div class="stat-info">
+            <div class="stat-value">{{ totalPages }}</div>
+            <div class="stat-label">Pages</div>
+        </div>
+    </div>
+    <div class="stat-card">
         <div class="stat-icon">&#128247;</div>
         <div class="stat-info">
             <div class="stat-value">{{ totalMedia }}</div>
             <div class="stat-label">Media Files</div>
         </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">&#128100;</div>
+        <div class="stat-info">
+            <div class="stat-value">{{ user.getEmail() }}</div>
+            <div class="stat-label">{{ user.getCreatedAt() | date('M d, Y') }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: var(--spacing-md, 1.5rem);">
+    <div class="card-header">
+        <h3>Quick Actions</h3>
+    </div>
+    <div class="card-body" style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <a href="/cms/collections/create" class="btn btn-primary">+ New Collection</a>
+        <a href="/cms/pages" class="btn btn-outline">Pages</a>
+        <a href="/cms/media" class="btn btn-outline">Media</a>
+        {% if user.hasRole('admin') %}
+        <a href="/cms/users" class="btn btn-outline">Users</a>
+        <a href="/cms/roles" class="btn btn-outline">Roles</a>
+        {% endif %}
+        <a href="/cms/settings/profile" class="btn btn-outline">Profile</a>
     </div>
 </div>
 

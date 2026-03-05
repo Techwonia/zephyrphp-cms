@@ -1,0 +1,148 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Create Page — {{ pageType.getName() }}{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms/pages">Pages</a> /
+    <a href="/cms/pages/{{ pageType.getSlug() }}/list">{{ pageType.getName() }}</a> / Create
+</div>
+
+<div class="page-header">
+    <h1>Create Page</h1>
+    <p class="text-muted">{{ pageType.getName() }}
+        {% if pageType.getUrlPrefix() %}
+            — URL: <code>{{ pageType.getUrlPrefix() }}/{slug}</code>
+        {% endif %}
+    </p>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" action="/cms/pages/{{ pageType.getSlug() }}" enctype="multipart/form-data">
+            {{ csrf_field() | raw }}
+
+            <div class="form-group">
+                <label for="title">Title *</label>
+                <input type="text" id="title" name="title" class="form-control"
+                       value="{{ flash('_old_input').title ?? '' }}"
+                       placeholder="Page title" required>
+                {% if flash('errors').title is defined %}
+                    <div class="invalid-feedback">{{ flash('errors').title }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="slug">URL Slug *</label>
+                <input type="text" id="slug" name="slug" class="form-control"
+                       value="{{ flash('_old_input').slug ?? '' }}"
+                       placeholder="page-url-slug">
+                <p class="text-muted">
+                    {% if pageType.getUrlPrefix() %}
+                        Page URL: {{ pageType.getUrlPrefix() }}/your-slug
+                    {% else %}
+                        Page URL: /page/your-slug
+                    {% endif %}
+                </p>
+                {% if flash('errors').slug is defined %}
+                    <div class="invalid-feedback">{{ flash('errors').slug }}</div>
+                {% endif %}
+            </div>
+
+            {# Custom Fields #}
+            {% for field in fields %}
+            <div class="form-group">
+                <label for="field_{{ field.getSlug() }}">{{ field.getName() }}{% if field.isRequired() %} *{% endif %}</label>
+                {% if field.getType() == 'textarea' or field.getType() == 'richtext' %}
+                    <textarea id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}" class="form-control"
+                              rows="5" {% if field.isRequired() %}required{% endif %}>{{ flash('_old_input')[field.getSlug()] ?? field.getDefaultValue() ?? '' }}</textarea>
+                {% elseif field.getType() == 'boolean' %}
+                    <div>
+                        <label><input type="checkbox" name="{{ field.getSlug() }}" value="1"> Yes</label>
+                    </div>
+                {% elseif field.getType() == 'select' and field.getOptions().choices is defined %}
+                    <select id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}" class="form-control">
+                        <option value="">— Select —</option>
+                        {% for choice in field.getOptions().choices %}
+                            <option value="{{ choice }}">{{ choice }}</option>
+                        {% endfor %}
+                    </select>
+                {% elseif field.getType() == 'image' or field.getType() == 'file' %}
+                    <input type="file" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}" class="form-control">
+                {% elseif field.getType() == 'number' %}
+                    <input type="number" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}" class="form-control"
+                           value="{{ flash('_old_input')[field.getSlug()] ?? field.getDefaultValue() ?? '' }}"
+                           {% if field.isRequired() %}required{% endif %}>
+                {% elseif field.getType() == 'date' %}
+                    <input type="date" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}" class="form-control"
+                           value="{{ flash('_old_input')[field.getSlug()] ?? '' }}"
+                           {% if field.isRequired() %}required{% endif %}>
+                {% elseif field.getType() == 'datetime' %}
+                    <input type="datetime-local" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}" class="form-control"
+                           value="{{ flash('_old_input')[field.getSlug()] ?? '' }}"
+                           {% if field.isRequired() %}required{% endif %}>
+                {% else %}
+                    <input type="text" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}" class="form-control"
+                           value="{{ flash('_old_input')[field.getSlug()] ?? field.getDefaultValue() ?? '' }}"
+                           {% if field.isRequired() %}required{% endif %}>
+                {% endif %}
+                {% if flash('errors')[field.getSlug()] is defined %}
+                    <div class="invalid-feedback">{{ flash('errors')[field.getSlug()] }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            {# SEO Fields #}
+            {% if pageType.hasSeo() %}
+            <div style="margin-top: var(--spacing-md); padding-top: var(--spacing-md); border-top: 1px solid var(--border-color);">
+                <h3 style="margin-bottom: var(--spacing-sm);">SEO</h3>
+                <div class="form-group">
+                    <label for="seo_title">SEO Title</label>
+                    <input type="text" id="seo_title" name="seo_title" class="form-control"
+                           placeholder="Override page title for search engines">
+                </div>
+                <div class="form-group">
+                    <label for="seo_description">SEO Description</label>
+                    <textarea id="seo_description" name="seo_description" class="form-control"
+                              rows="3" placeholder="Meta description for search engines"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="seo_image">SEO Image</label>
+                    <input type="file" id="seo_image" name="seo_image" class="form-control" accept="image/*">
+                </div>
+            </div>
+            {% endif %}
+
+            {# Status #}
+            {% if pageType.isPublishable() %}
+            <div class="form-group" style="margin-top: var(--spacing-md);">
+                <label for="status">Status</label>
+                <select id="status" name="status" class="form-control">
+                    <option value="draft">Draft</option>
+                    <option value="published">Published</option>
+                </select>
+            </div>
+            {% endif %}
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Create Page</button>
+                <a href="/cms/pages/{{ pageType.getSlug() }}/list" class="btn btn-outline">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% block scripts %}
+<script nonce="{{ csp_nonce() }}">
+document.getElementById('title').addEventListener('input', function() {
+    var slugField = document.getElementById('slug');
+    if (!slugField.dataset.manual) {
+        slugField.value = this.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    }
+});
+document.getElementById('slug').addEventListener('input', function() {
+    this.dataset.manual = '1';
+});
+</script>
+{% endblock %}
+{% endblock %}

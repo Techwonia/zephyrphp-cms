@@ -1,0 +1,109 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}{{ pageType.getName() }} Pages{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms/pages">Pages</a> /
+    <a href="/cms/pages/types/{{ pageType.getSlug() }}">{{ pageType.getName() }}</a> / Pages
+</div>
+
+<div class="page-header">
+    <h1>{{ pageType.getName() }}</h1>
+    <div class="page-actions">
+        <a href="/cms/pages/{{ pageType.getSlug() }}/create" class="btn btn-primary">+ New Page</a>
+    </div>
+</div>
+
+{% if listableFields|length > 0 %}
+<div class="search-bar">
+    <form method="GET" action="/cms/pages/{{ pageType.getSlug() }}/list" class="search-form">
+        <input type="text" name="search" class="form-control" placeholder="Search..." value="{{ search }}">
+        <button type="submit" class="btn btn-outline">Search</button>
+        {% if search %}
+            <a href="/cms/pages/{{ pageType.getSlug() }}/list" class="btn btn-outline">Clear</a>
+        {% endif %}
+    </form>
+</div>
+{% endif %}
+
+{% if entries.data|length > 0 %}
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Title</th>
+                        <th>Slug</th>
+                        {% for field in listableFields %}
+                        <th>{{ field.getName() }}</th>
+                        {% endfor %}
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in entries.data %}
+                    <tr>
+                        <td>{{ entry.id }}</td>
+                        <td><strong>{{ entry.title }}</strong></td>
+                        <td><code>{{ entry.slug }}</code></td>
+                        {% for field in listableFields %}
+                        <td>
+                            {% if field.getType() == 'boolean' %}
+                                {{ entry[field.getSlug()] ? 'Yes' : 'No' }}
+                            {% elseif field.getType() == 'image' and entry[field.getSlug()] %}
+                                <img src="/{{ entry[field.getSlug()] }}" alt="" style="max-height: 30px;">
+                            {% else %}
+                                <span class="truncate">{{ entry[field.getSlug()] ?? '—' }}</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                        <td><span class="badge">{{ entry.status ?? 'draft' }}</span></td>
+                        <td class="actions-cell">
+                            {% if entry.status == 'published' %}
+                                <a href="/page/{{ entry.slug }}" class="btn btn-sm btn-outline" target="_blank">View</a>
+                            {% endif %}
+                            <a href="/cms/pages/{{ pageType.getSlug() }}/{{ entry.id }}" class="btn btn-sm btn-outline">Edit</a>
+                            <form method="POST" action="/cms/pages/{{ pageType.getSlug() }}/{{ entry.id }}/delete"
+                                  style="display:inline" class="confirm-delete" data-message="Delete this page?">
+                                {{ csrf_field() | raw }}
+                                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {# Pagination #}
+        {% if entries.last_page > 1 %}
+        <div class="pagination">
+            {% if entries.current_page > 1 %}
+                <a href="/cms/pages/{{ pageType.getSlug() }}/list?page={{ entries.current_page - 1 }}&search={{ search }}&sort_by={{ sortBy }}&sort_dir={{ sortDir }}">&laquo; Prev</a>
+            {% endif %}
+            {% for p in 1..entries.last_page %}
+                {% if p == entries.current_page %}
+                    <span class="active">{{ p }}</span>
+                {% else %}
+                    <a href="/cms/pages/{{ pageType.getSlug() }}/list?page={{ p }}&search={{ search }}&sort_by={{ sortBy }}&sort_dir={{ sortDir }}">{{ p }}</a>
+                {% endif %}
+            {% endfor %}
+            {% if entries.current_page < entries.last_page %}
+                <a href="/cms/pages/{{ pageType.getSlug() }}/list?page={{ entries.current_page + 1 }}&search={{ search }}&sort_by={{ sortBy }}&sort_dir={{ sortDir }}">Next &raquo;</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% else %}
+<div class="empty-state">
+    <h3>No pages yet</h3>
+    <p>Create your first page for this type.</p>
+    <a href="/cms/pages/{{ pageType.getSlug() }}/create" class="btn btn-primary">+ Create Page</a>
+</div>
+{% endif %}
+{% endblock %}

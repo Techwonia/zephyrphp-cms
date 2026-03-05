@@ -6,6 +6,9 @@ use ZephyrPHP\Cms\Controllers\CollectionController;
 use ZephyrPHP\Cms\Controllers\EntryController;
 use ZephyrPHP\Cms\Controllers\MediaController;
 use ZephyrPHP\Cms\Controllers\DatabaseSettingsController;
+use ZephyrPHP\Cms\Controllers\PageTypeController;
+use ZephyrPHP\Cms\Controllers\PageController;
+use ZephyrPHP\Cms\Controllers\PageFrontendController;
 use ZephyrPHP\Cms\Api\ContentApiController;
 
 // CMS Admin Routes
@@ -39,12 +42,36 @@ Route::group(['prefix' => '/cms'], function () {
     Route::post('/media/upload', [MediaController::class, 'upload']);
     Route::post('/media/{id}/delete', [MediaController::class, 'destroy']);
 
+    // Page Types
+    Route::get('/pages', [PageTypeController::class, 'index']);
+    Route::get('/pages/types/create', [PageTypeController::class, 'create']);
+    Route::post('/pages/types', [PageTypeController::class, 'store']);
+    Route::get('/pages/types/{slug}', [PageTypeController::class, 'edit']);
+    Route::post('/pages/types/{slug}', [PageTypeController::class, 'update']);
+    Route::post('/pages/types/{slug}/delete', [PageTypeController::class, 'destroy']);
+    Route::post('/pages/types/{slug}/fields', [PageTypeController::class, 'addField']);
+    Route::post('/pages/types/{slug}/fields/{id}', [PageTypeController::class, 'updateField']);
+    Route::post('/pages/types/{slug}/fields/{id}/delete', [PageTypeController::class, 'deleteField']);
+    Route::post('/pages/types/{slug}/template', [PageTypeController::class, 'saveTemplate']);
+
+    // Pages (entries under a page type)
+    Route::get('/pages/{ptSlug}/list', [PageController::class, 'index']);
+    Route::get('/pages/{ptSlug}/create', [PageController::class, 'create']);
+    Route::post('/pages/{ptSlug}', [PageController::class, 'store']);
+    Route::get('/pages/{ptSlug}/preview/{id}', [PageController::class, 'preview']);
+    Route::get('/pages/{ptSlug}/{id}', [PageController::class, 'edit']);
+    Route::post('/pages/{ptSlug}/{id}', [PageController::class, 'update']);
+    Route::post('/pages/{ptSlug}/{id}/delete', [PageController::class, 'destroy']);
+
     // Database Settings
     Route::get('/settings/database', [DatabaseSettingsController::class, 'index']);
     Route::post('/settings/database', [DatabaseSettingsController::class, 'update']);
     Route::post('/settings/database/test', [DatabaseSettingsController::class, 'test']);
     Route::post('/settings/database/list', [DatabaseSettingsController::class, 'listDatabases']);
 });
+
+// Public Page Frontend
+Route::get('/page/{slug}', [PageFrontendController::class, 'show']);
 
 // CMS Public API Routes
 Route::group(['prefix' => '/api/cms'], function () {

@@ -28,7 +28,7 @@ class CollectionController extends Controller
         }
         if (!Auth::user()->hasRole('admin')) {
             $this->flash('errors', ['auth' => 'Access denied. Admin role required.']);
-            $this->redirect('/v1/dashboard');
+            $this->redirect('/cms');
         }
     }
 
