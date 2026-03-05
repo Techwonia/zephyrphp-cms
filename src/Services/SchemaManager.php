@@ -70,8 +70,12 @@ class SchemaManager
         $schema = new Schema();
         $table = $schema->createTable($collection->getTableName());
 
-        // Primary key
-        $table->addColumn('id', Types::INTEGER, ['autoincrement' => true, 'unsigned' => true]);
+        // Primary key (INT auto-increment or UUID CHAR(36))
+        if ($collection->isUuid()) {
+            $table->addColumn('id', Types::STRING, ['length' => 36, 'fixed' => true]);
+        } else {
+            $table->addColumn('id', Types::INTEGER, ['autoincrement' => true, 'unsigned' => true]);
+        }
         $table->setPrimaryKey(['id']);
 
         // User-defined field columns
@@ -245,7 +249,7 @@ class SchemaManager
             'textarea' => 'TEXT',
             'richtext' => 'LONGTEXT',
             'number' => 'INT',
-            'relation' => 'INT UNSIGNED',
+            'relation' => $this->getRelationColumnType($field),
             'decimal' => 'DECIMAL(10,2)',
             'boolean' => 'TINYINT(1)',
             'date' => 'DATE',
@@ -257,7 +261,11 @@ class SchemaManager
         $nullable = $field->isRequired() ? 'NOT NULL' : 'NULL';
         $default = '';
 
-        $isNumericDefault = in_array($field->getType(), ['number', 'decimal', 'boolean', 'relation']);
+        $isNumericDefault = in_array($field->getType(), ['number', 'decimal', 'boolean']);
+        // Relation columns pointing to UUID targets are strings, not numeric
+        if ($field->getType() === 'relation' && $mysqlType === 'INT UNSIGNED') {
+            $isNumericDefault = true;
+        }
 
         if ($field->getDefaultValue() !== null && $field->getDefaultValue() !== '') {
             $defaultVal = $field->getDefaultValue();
@@ -273,6 +281,21 @@ class SchemaManager
         return "{$mysqlType} {$nullable} {$default}";
     }
 
+    /**
+     * Determine the column type for a relation field based on the target collection's primary key
+     */
+    private function getRelationColumnType(Field $field): string
+    {
+        $relSlug = $field->getOptions()['relation_collection'] ?? '';
+        if (!empty($relSlug)) {
+            $targetCollection = Collection::findOneBy(['slug' => $relSlug]);
+            if ($targetCollection && $targetCollection->isUuid()) {
+                return 'CHAR(36)';
+            }
+        }
+        return 'INT UNSIGNED';
+    }
+
     // ========================================================================
     // RELATION OPERATIONS
     // ========================================================================
@@ -283,9 +306,10 @@ class SchemaManager
      */
     public function addForeignKey(string $sourceTable, string $columnName, string $targetTable): void
     {
-        // Ensure column is nullable and unsigned (matching target id type)
+        // Match the target table's primary key type
+        $targetType = $this->getPrimaryKeyColumnType($targetTable);
         $this->connection->executeStatement(
-            "ALTER TABLE `{$sourceTable}` MODIFY COLUMN `{$columnName}` INT UNSIGNED NULL DEFAULT NULL"
+            "ALTER TABLE `{$sourceTable}` MODIFY COLUMN `{$columnName}` {$targetType} NULL DEFAULT NULL"
         );
 
         // Add index on the FK column for performance
@@ -327,16 +351,39 @@ class SchemaManager
     }
 
     /**
+     * Detect the primary key column type of a table (INT UNSIGNED or CHAR(36) for UUID)
+     */
+    public function getPrimaryKeyColumnType(string $tableName): string
+    {
+        try {
+            $sm = $this->connection->createSchemaManager();
+            $columns = $sm->listTableColumns($tableName);
+            if (isset($columns['id'])) {
+                $type = $columns['id']->getType()->getName();
+                if ($type === 'string' || $type === 'guid') {
+                    return 'CHAR(36)';
+                }
+            }
+        } catch (\Exception $e) {
+            // fallback
+        }
+        return 'INT UNSIGNED';
+    }
+
+    /**
      * Create a pivot table for one-to-many or many-to-many relations
      */
     public function createPivotTable(string $sourceTable, string $targetTable, string $fieldSlug): void
     {
         $pivotTable = $this->getPivotTableName($sourceTable, $fieldSlug);
 
+        $srcType = $this->getPrimaryKeyColumnType($sourceTable);
+        $tgtType = $this->getPrimaryKeyColumnType($targetTable);
+
         $sql = "CREATE TABLE `{$pivotTable}` ("
              . "`id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, "
-             . "`{$sourceTable}_id` INT UNSIGNED NOT NULL, "
-             . "`{$targetTable}_id` INT UNSIGNED NOT NULL, "
+             . "`{$sourceTable}_id` {$srcType} NOT NULL, "
+             . "`{$targetTable}_id` {$tgtType} NOT NULL, "
              . "INDEX `idx_{$pivotTable}_source` (`{$sourceTable}_id`), "
              . "INDEX `idx_{$pivotTable}_target` (`{$targetTable}_id`), "
              . "UNIQUE KEY `uniq_{$pivotTable}` (`{$sourceTable}_id`, `{$targetTable}_id`), "
@@ -359,7 +406,7 @@ class SchemaManager
     /**
      * Get related entry IDs from a pivot table
      */
-    public function getPivotRelations(string $sourceTable, string $fieldSlug, string $targetTable, int $sourceId): array
+    public function getPivotRelations(string $sourceTable, string $fieldSlug, string $targetTable, int|string $sourceId): array
     {
         $pivotTable = $this->getPivotTableName($sourceTable, $fieldSlug);
 
@@ -383,7 +430,7 @@ class SchemaManager
     /**
      * Sync pivot table relations (delete old, insert new)
      */
-    public function syncPivotRelations(string $sourceTable, string $fieldSlug, string $targetTable, int $sourceId, array $relatedIds): void
+    public function syncPivotRelations(string $sourceTable, string $fieldSlug, string $targetTable, int|string $sourceId, array $relatedIds): void
     {
         $pivotTable = $this->getPivotTableName($sourceTable, $fieldSlug);
 
@@ -411,12 +458,29 @@ class SchemaManager
     // ========================================================================
 
     /**
+     * Generate a UUID v4
+     */
+    public function generateUuid(): string
+    {
+        $data = random_bytes(16);
+        $data[6] = chr(ord($data[6]) & 0x0f | 0x40); // version 4
+        $data[8] = chr(ord($data[8]) & 0x3f | 0x80); // variant
+        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
+    }
+
+    /**
      * Insert an entry into a collection table
      */
-    public function insertEntry(string $tableName, array $data): int
+    public function insertEntry(string $tableName, array $data, bool $useUuid = false): int|string
     {
         $data['created_at'] = (new \DateTime())->format('Y-m-d H:i:s');
         $data['updated_at'] = (new \DateTime())->format('Y-m-d H:i:s');
+
+        if ($useUuid) {
+            $data['id'] = $this->generateUuid();
+            $this->connection->insert($tableName, $data);
+            return $data['id'];
+        }
 
         $this->connection->insert($tableName, $data);
         return (int) $this->connection->lastInsertId();
@@ -425,7 +489,7 @@ class SchemaManager
     /**
      * Update an entry in a collection table
      */
-    public function updateEntry(string $tableName, int $id, array $data): void
+    public function updateEntry(string $tableName, int|string $id, array $data): void
     {
         $data['updated_at'] = (new \DateTime())->format('Y-m-d H:i:s');
         $this->connection->update($tableName, $data, ['id' => $id]);
@@ -434,7 +498,7 @@ class SchemaManager
     /**
      * Delete an entry from a collection table
      */
-    public function deleteEntry(string $tableName, int $id): void
+    public function deleteEntry(string $tableName, int|string $id): void
     {
         $this->connection->delete($tableName, ['id' => $id]);
     }
@@ -442,7 +506,7 @@ class SchemaManager
     /**
      * Find a single entry by ID
      */
-    public function findEntry(string $tableName, int $id): ?array
+    public function findEntry(string $tableName, int|string $id): ?array
     {
         $qb = $this->connection->createQueryBuilder();
         $result = $qb->select('*')

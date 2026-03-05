@@ -43,6 +43,15 @@
                           rows="3" placeholder="Optional description">{{ flash('_old_input').description ?? '' }}</textarea>
             </div>
 
+            <div class="form-group">
+                <label for="primary_key_type">Primary Key Type</label>
+                <select id="primary_key_type" name="primary_key_type" class="form-control">
+                    <option value="integer">Integer (Auto-Increment)</option>
+                    <option value="uuid">UUID (CHAR 36)</option>
+                </select>
+                <p class="text-muted">Choose how entry IDs are generated. Cannot be changed after entries are created.</p>
+            </div>
+
             <div class="form-inline-checks">
                 <label>
                     <input type="checkbox" name="is_api_enabled" value="1">

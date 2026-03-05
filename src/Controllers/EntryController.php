@@ -124,7 +124,7 @@ class EntryController extends Controller
 
         $data['created_by'] = Auth::user()?->getId();
 
-        $entryId = $this->schema->insertEntry($collection->getTableName(), $data);
+        $entryId = $this->schema->insertEntry($collection->getTableName(), $data, $collection->isUuid());
 
         // Sync pivot relations
         $this->syncAllPivotRelations($collection->getTableName(), $fields, $entryId, $pivotData);
@@ -133,7 +133,7 @@ class EntryController extends Controller
         $this->redirect("/cms/collections/{$slug}/entries");
     }
 
-    public function edit(string $slug, int $id): string
+    public function edit(string $slug, string $id): string
     {
         $this->requireAdmin();
 
@@ -175,7 +175,7 @@ class EntryController extends Controller
         ]);
     }
 
-    public function update(string $slug, int $id): void
+    public function update(string $slug, string $id): void
     {
         $this->requireAdmin();
 
@@ -218,7 +218,7 @@ class EntryController extends Controller
         $this->redirect("/cms/collections/{$slug}/entries");
     }
 
-    public function destroy(string $slug, int $id): void
+    public function destroy(string $slug, string $id): void
     {
         $this->requireAdmin();
 
@@ -287,7 +287,7 @@ class EntryController extends Controller
     /**
      * Sync all pivot relations for an entry
      */
-    private function syncAllPivotRelations(string $tableName, array $fields, int $entryId, array $pivotData): void
+    private function syncAllPivotRelations(string $tableName, array $fields, int|string $entryId, array $pivotData): void
     {
         foreach ($fields as $field) {
             if ($field->getType() === 'relation') {

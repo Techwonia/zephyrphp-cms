@@ -68,6 +68,7 @@ class CollectionController extends Controller
         $description = $this->input('description', '');
         $isApiEnabled = $this->boolean('is_api_enabled');
         $isPublishable = $this->boolean('is_publishable');
+        $primaryKeyType = $this->input('primary_key_type', 'integer');
 
         // Auto-generate slug from name if empty
         if (empty($slug)) {
@@ -108,6 +109,7 @@ class CollectionController extends Controller
         $collection->setDescription($description ?: null);
         $collection->setIsApiEnabled($isApiEnabled);
         $collection->setIsPublishable($isPublishable);
+        $collection->setPrimaryKeyType($primaryKeyType);
         $collection->setCreatedBy(Auth::user()?->getId());
         $collection->save();
 
@@ -177,6 +179,7 @@ class CollectionController extends Controller
         $description = $this->input('description', '');
         $isApiEnabled = $this->boolean('is_api_enabled');
         $isPublishable = $this->boolean('is_publishable');
+        $primaryKeyType = $this->input('primary_key_type', $collection->getPrimaryKeyType());
 
         $errors = [];
         if (empty($name)) {
@@ -193,6 +196,7 @@ class CollectionController extends Controller
         $collection->setDescription($description ?: null);
         $collection->setIsApiEnabled($isApiEnabled);
         $collection->setIsPublishable($isPublishable);
+        $collection->setPrimaryKeyType($primaryKeyType);
         $collection->save();
 
         $this->flash('success', 'Collection updated successfully.');

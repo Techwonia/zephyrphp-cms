@@ -32,6 +32,9 @@ class Collection extends Model
     #[ORM\Column(name: 'is_publishable', type: 'boolean')]
     protected bool $isPublishable = false;
 
+    #[ORM\Column(name: 'primary_key_type', type: 'string', length: 10)]
+    protected string $primaryKeyType = 'integer';
+
     #[ORM\Column(name: 'sort_order', type: 'integer')]
     protected int $sortOrder = 0;
 
@@ -77,6 +80,16 @@ class Collection extends Model
     public function isPublishable(): bool
     {
         return $this->isPublishable;
+    }
+
+    public function getPrimaryKeyType(): string
+    {
+        return $this->primaryKeyType;
+    }
+
+    public function isUuid(): bool
+    {
+        return $this->primaryKeyType === 'uuid';
     }
 
     public function getSortOrder(): int
@@ -161,6 +174,12 @@ class Collection extends Model
     public function setIsPublishable(bool $isPublishable): self
     {
         $this->isPublishable = $isPublishable;
+        return $this;
+    }
+
+    public function setPrimaryKeyType(string $type): self
+    {
+        $this->primaryKeyType = in_array($type, ['integer', 'uuid']) ? $type : 'integer';
         return $this;
     }
 

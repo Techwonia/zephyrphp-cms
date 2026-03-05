@@ -65,7 +65,7 @@ class ContentApiController extends Controller
         return '';
     }
 
-    public function show(string $slug, int $id): string
+    public function show(string $slug, string $id): string
     {
         $collection = $this->resolveCollection($slug);
 
@@ -147,7 +147,7 @@ class ContentApiController extends Controller
             return '';
         }
 
-        $entryId = $this->schema->insertEntry($collection->getTableName(), $data);
+        $entryId = $this->schema->insertEntry($collection->getTableName(), $data, $collection->isUuid());
 
         // Sync pivot relations
         foreach ($fields as $field) {
@@ -164,7 +164,7 @@ class ContentApiController extends Controller
         return '';
     }
 
-    public function update(string $slug, int $id): string
+    public function update(string $slug, string $id): string
     {
         $collection = $this->resolveCollection($slug);
 
@@ -218,7 +218,7 @@ class ContentApiController extends Controller
         return '';
     }
 
-    public function destroy(string $slug, int $id): string
+    public function destroy(string $slug, string $id): string
     {
         $collection = $this->resolveCollection($slug);
 

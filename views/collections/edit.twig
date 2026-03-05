@@ -44,6 +44,21 @@
                               rows="3">{{ collection.getDescription() }}</textarea>
                 </div>
 
+                <div class="form-group">
+                    <label for="primary_key_type">Primary Key Type</label>
+                    <select id="primary_key_type" name="primary_key_type" class="form-control"
+                            {% if entryCount > 0 %}disabled{% endif %}>
+                        <option value="integer" {% if collection.getPrimaryKeyType() == 'integer' %}selected{% endif %}>Integer (Auto-Increment)</option>
+                        <option value="uuid" {% if collection.getPrimaryKeyType() == 'uuid' %}selected{% endif %}>UUID (CHAR 36)</option>
+                    </select>
+                    {% if entryCount > 0 %}
+                        <p class="text-muted">Primary key type cannot be changed when entries exist ({{ entryCount }} entries).</p>
+                        <input type="hidden" name="primary_key_type" value="{{ collection.getPrimaryKeyType() }}">
+                    {% else %}
+                        <p class="text-muted">Choose how entry IDs are generated. UUID provides globally unique identifiers.</p>
+                    {% endif %}
+                </div>
+
                 <div class="form-inline-checks">
                     <label>
                         <input type="checkbox" name="is_api_enabled" value="1"
@@ -72,7 +87,89 @@
             <h3>Fields</h3>
         </div>
         <div class="card-body">
+            {# ===== SYSTEM FIELDS (read-only) ===== #}
+            <div class="system-fields-section">
+                <h4 class="text-muted" style="margin-bottom: var(--spacing-sm); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">System Fields</h4>
+
+                <div class="field-row field-system">
+                    <div class="field-info">
+                        <div class="field-name">ID</div>
+                        <div class="field-meta">
+                            <code>id</code>
+                            &middot; <span class="field-badge">{{ collection.isUuid() ? 'uuid (CHAR 36)' : 'integer (auto-increment)' }}</span>
+                            <span class="field-badge">primary key</span>
+                            <span class="field-badge required">required</span>
+                        </div>
+                    </div>
+                    <div><span class="field-badge" style="opacity: 0.5;">system</span></div>
+                </div>
+
+                <div class="field-row field-system">
+                    <div class="field-info">
+                        <div class="field-name">Created By</div>
+                        <div class="field-meta">
+                            <code>created_by</code>
+                            &middot; <span class="field-badge">integer</span>
+                            <span class="field-badge">nullable</span>
+                        </div>
+                    </div>
+                    <div><span class="field-badge" style="opacity: 0.5;">system</span></div>
+                </div>
+
+                <div class="field-row field-system">
+                    <div class="field-info">
+                        <div class="field-name">Created At</div>
+                        <div class="field-meta">
+                            <code>created_at</code>
+                            &middot; <span class="field-badge">datetime</span>
+                            <span class="field-badge">auto</span>
+                        </div>
+                    </div>
+                    <div><span class="field-badge" style="opacity: 0.5;">system</span></div>
+                </div>
+
+                <div class="field-row field-system">
+                    <div class="field-info">
+                        <div class="field-name">Updated At</div>
+                        <div class="field-meta">
+                            <code>updated_at</code>
+                            &middot; <span class="field-badge">datetime</span>
+                            <span class="field-badge">auto</span>
+                        </div>
+                    </div>
+                    <div><span class="field-badge" style="opacity: 0.5;">system</span></div>
+                </div>
+
+                {% if collection.isPublishable() %}
+                <div class="field-row field-system">
+                    <div class="field-info">
+                        <div class="field-name">Status</div>
+                        <div class="field-meta">
+                            <code>status</code>
+                            &middot; <span class="field-badge">string</span>
+                            <span class="field-badge">default: draft</span>
+                        </div>
+                    </div>
+                    <div><span class="field-badge" style="opacity: 0.5;">system</span></div>
+                </div>
+
+                <div class="field-row field-system">
+                    <div class="field-info">
+                        <div class="field-name">Published At</div>
+                        <div class="field-meta">
+                            <code>published_at</code>
+                            &middot; <span class="field-badge">datetime</span>
+                            <span class="field-badge">nullable</span>
+                        </div>
+                    </div>
+                    <div><span class="field-badge" style="opacity: 0.5;">system</span></div>
+                </div>
+                {% endif %}
+            </div>
+
+            {# ===== USER-DEFINED FIELDS ===== #}
             {% if fields|length > 0 %}
+                <h4 class="text-muted" style="margin: var(--spacing-md) 0 var(--spacing-sm); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Custom Fields</h4>
                 {% for field in fields %}
                 <div class="field-row">
                     <div class="field-info">
@@ -104,8 +201,8 @@
                 </div>
                 {% endfor %}
             {% else %}
-                <div class="empty-state">
-                    <p>No fields defined yet. Add your first field below.</p>
+                <div class="empty-state" style="margin-top: var(--spacing-md);">
+                    <p>No custom fields defined yet. Add your first field below.</p>
                 </div>
             {% endif %}
 
@@ -240,5 +337,16 @@ document.querySelectorAll('.confirm-delete').forEach(function(form) {
     });
 });
 </script>
+
+<style nonce="{{ csp_nonce() }}">
+    .field-system {
+        opacity: 0.7;
+        border-left: 3px solid var(--accent-color);
+        padding-left: var(--spacing-sm);
+    }
+    .field-system .field-name {
+        font-size: 0.9rem;
+    }
+</style>
 {% endblock %}
 {% endblock %}
