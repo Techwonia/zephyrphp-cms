@@ -5,6 +5,7 @@ use ZephyrPHP\Cms\Controllers\CmsController;
 use ZephyrPHP\Cms\Controllers\CollectionController;
 use ZephyrPHP\Cms\Controllers\EntryController;
 use ZephyrPHP\Cms\Controllers\MediaController;
+use ZephyrPHP\Cms\Controllers\DatabaseSettingsController;
 use ZephyrPHP\Cms\Api\ContentApiController;
 
 // CMS Admin Routes
@@ -37,6 +38,12 @@ Route::group(['prefix' => '/cms'], function () {
     Route::get('/media', [MediaController::class, 'index']);
     Route::post('/media/upload', [MediaController::class, 'upload']);
     Route::post('/media/{id}/delete', [MediaController::class, 'destroy']);
+
+    // Database Settings
+    Route::get('/settings/database', [DatabaseSettingsController::class, 'index']);
+    Route::post('/settings/database', [DatabaseSettingsController::class, 'update']);
+    Route::post('/settings/database/test', [DatabaseSettingsController::class, 'test']);
+    Route::post('/settings/database/list', [DatabaseSettingsController::class, 'listDatabases']);
 });
 
 // CMS Public API Routes

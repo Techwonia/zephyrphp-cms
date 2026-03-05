@@ -1,0 +1,285 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Database Settings{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / Database Settings
+</div>
+
+<div class="page-header">
+    <h1>Database Settings</h1>
+    <div class="page-actions">
+        <span class="badge {% if status.connected %}badge-success{% else %}badge-danger{% endif %}" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+            {% if status.connected %}&#9679; Connected{% else %}&#9679; Disconnected{% endif %}
+        </span>
+    </div>
+</div>
+
+{% if status.connected %}
+<div class="alert alert-success" style="margin-bottom: var(--spacing-md);">
+    <strong>Status:</strong> {{ status.message }}
+</div>
+{% else %}
+<div class="alert alert-error" style="margin-bottom: var(--spacing-md);">
+    <strong>Status:</strong> {{ status.message }}
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" action="/cms/settings/database" id="db-settings-form">
+            {{ csrf_field() | raw }}
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md);">
+
+                {# Left Column #}
+                <div>
+                    <div class="form-group">
+                        <label for="ENV">Environment</label>
+                        <select id="ENV" name="ENV" class="form-control">
+                            <option value="dev" {% if settings.ENV == 'dev' %}selected{% endif %}>Development</option>
+                            <option value="staging" {% if settings.ENV == 'staging' %}selected{% endif %}>Staging</option>
+                            <option value="production" {% if settings.ENV == 'production' %}selected{% endif %}>Production</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="DB_CONNECTION">Database Driver</label>
+                        <select id="DB_CONNECTION" name="DB_CONNECTION" class="form-control">
+                            <option value="pdo_mysql" {% if settings.DB_CONNECTION == 'pdo_mysql' %}selected{% endif %}>MySQL / MariaDB</option>
+                            <option value="pdo_pgsql" {% if settings.DB_CONNECTION == 'pdo_pgsql' %}selected{% endif %}>PostgreSQL</option>
+                            <option value="pdo_sqlite" {% if settings.DB_CONNECTION == 'pdo_sqlite' %}selected{% endif %}>SQLite</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="host-group">
+                        <label for="DB_HOST">Host</label>
+                        <input type="text" id="DB_HOST" name="DB_HOST" class="form-control"
+                               value="{{ settings.DB_HOST }}" placeholder="127.0.0.1">
+                    </div>
+
+                    <div class="form-group" id="port-group">
+                        <label for="DB_PORT">Port</label>
+                        <input type="number" id="DB_PORT" name="DB_PORT" class="form-control"
+                               value="{{ settings.DB_PORT }}" placeholder="3306">
+                    </div>
+                </div>
+
+                {# Right Column #}
+                <div>
+                    <div class="form-group">
+                        <label for="DB_DATABASE">Database Name</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="text" id="DB_DATABASE" name="DB_DATABASE" class="form-control"
+                                   value="{{ settings.DB_DATABASE }}" placeholder="my_database" style="flex: 1;">
+                            <button type="button" class="btn btn-outline" id="browse-db-btn" title="Browse databases from server">
+                                Browse
+                            </button>
+                        </div>
+                        <div id="db-dropdown" style="display: none; position: relative;">
+                            <div id="db-list" style="position: absolute; top: 0; left: 0; right: 60px; max-height: 200px; overflow-y: auto; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.3);"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="username-group">
+                        <label for="DB_USERNAME">Username</label>
+                        <input type="text" id="DB_USERNAME" name="DB_USERNAME" class="form-control"
+                               value="{{ settings.DB_USERNAME }}" placeholder="root">
+                    </div>
+
+                    <div class="form-group" id="password-group">
+                        <label for="DB_PASSWORD">Password</label>
+                        <input type="password" id="DB_PASSWORD" name="DB_PASSWORD" class="form-control"
+                               value="{{ settings.DB_PASSWORD }}" placeholder="Leave empty if no password"
+                               autocomplete="new-password">
+                    </div>
+
+                    <div class="form-group" id="charset-group">
+                        <label for="DB_CHARSET">Character Set</label>
+                        <input type="text" id="DB_CHARSET" name="DB_CHARSET" class="form-control"
+                               value="{{ settings.DB_CHARSET }}" placeholder="utf8mb4">
+                    </div>
+                </div>
+            </div>
+
+            {# Test Result #}
+            <div id="test-result" style="display: none; margin-bottom: var(--spacing-md);"></div>
+
+            {# Actions #}
+            <div class="form-actions" style="display: flex; gap: 8px; align-items: center;">
+                <button type="button" class="btn btn-outline" id="test-btn">
+                    Test Connection
+                </button>
+                <button type="submit" class="btn btn-primary" id="save-btn">
+                    Save Settings
+                </button>
+                <a href="/cms" class="btn btn-outline">Cancel</a>
+            </div>
+
+            <p class="text-muted" style="margin-top: var(--spacing-sm);">
+                A backup of your .env file will be saved before any changes are applied.
+            </p>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ csp_nonce() }}">
+(function() {
+    var form = document.getElementById('db-settings-form');
+    var testBtn = document.getElementById('test-btn');
+    var browseBtn = document.getElementById('browse-db-btn');
+    var testResult = document.getElementById('test-result');
+    var dbDropdown = document.getElementById('db-dropdown');
+    var dbList = document.getElementById('db-list');
+    var driverSelect = document.getElementById('DB_CONNECTION');
+
+    // Toggle fields for SQLite
+    function toggleDriverFields() {
+        var isSqlite = driverSelect.value === 'pdo_sqlite';
+        var groups = ['host-group', 'port-group', 'username-group', 'password-group', 'charset-group'];
+        groups.forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) el.style.display = isSqlite ? 'none' : 'block';
+        });
+        browseBtn.style.display = isSqlite ? 'none' : 'inline-flex';
+    }
+
+    driverSelect.addEventListener('change', toggleDriverFields);
+    toggleDriverFields();
+
+    // Test Connection
+    testBtn.addEventListener('click', function() {
+        testBtn.disabled = true;
+        testBtn.textContent = 'Testing...';
+        testResult.style.display = 'none';
+
+        var formData = new FormData(form);
+
+        fetch('/cms/settings/database/test', {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            testResult.style.display = 'block';
+            if (data.success) {
+                testResult.className = 'alert alert-success';
+                testResult.innerHTML = '<strong>&#10003; Success:</strong> ' + data.message;
+            } else {
+                testResult.className = 'alert alert-error';
+                testResult.innerHTML = '<strong>&#10007; Failed:</strong> ' + data.message;
+            }
+        })
+        .catch(function(err) {
+            testResult.style.display = 'block';
+            testResult.className = 'alert alert-error';
+            testResult.innerHTML = '<strong>&#10007; Error:</strong> ' + err.message;
+        })
+        .finally(function() {
+            testBtn.disabled = false;
+            testBtn.textContent = 'Test Connection';
+        });
+    });
+
+    // Browse Databases
+    browseBtn.addEventListener('click', function() {
+        browseBtn.disabled = true;
+        browseBtn.textContent = '...';
+
+        var formData = new FormData(form);
+
+        fetch('/cms/settings/database/list', {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success && data.databases.length > 0) {
+                showDbDropdown(data.databases);
+            } else {
+                testResult.style.display = 'block';
+                testResult.className = 'alert alert-error';
+                testResult.innerHTML = '<strong>&#10007;</strong> ' + (data.message || 'No databases found. Check your host, port and credentials.');
+            }
+        })
+        .catch(function(err) {
+            testResult.style.display = 'block';
+            testResult.className = 'alert alert-error';
+            testResult.innerHTML = '<strong>&#10007;</strong> Failed to list databases: ' + err.message;
+        })
+        .finally(function() {
+            browseBtn.disabled = false;
+            browseBtn.textContent = 'Browse';
+        });
+    });
+
+    function showDbDropdown(databases) {
+        var currentDb = document.getElementById('DB_DATABASE').value;
+        var html = '';
+        databases.forEach(function(db) {
+            var isActive = db === currentDb ? ' style="background: var(--accent-color); color: #fff;"' : '';
+            html += '<div class="db-option"' + isActive + ' data-db="' + db + '">' + db + '</div>';
+        });
+        dbList.innerHTML = html;
+        dbDropdown.style.display = 'block';
+
+        // Bind click events
+        dbList.querySelectorAll('.db-option').forEach(function(el) {
+            el.addEventListener('click', function() {
+                document.getElementById('DB_DATABASE').value = el.dataset.db;
+                dbDropdown.style.display = 'none';
+            });
+        });
+    }
+
+    // Close dropdown on outside click
+    document.addEventListener('click', function(e) {
+        if (!dbDropdown.contains(e.target) && e.target !== browseBtn) {
+            dbDropdown.style.display = 'none';
+        }
+    });
+
+    // Confirm before save
+    form.addEventListener('submit', function(e) {
+        if (!confirm('Are you sure you want to update database settings?\nThis will modify your .env file. A backup will be created.')) {
+            e.preventDefault();
+        }
+    });
+})();
+</script>
+
+<style nonce="{{ csp_nonce() }}">
+    .db-option {
+        padding: 0.6rem 1rem;
+        cursor: pointer;
+        border-bottom: 1px solid var(--border-color);
+        transition: background 0.15s;
+    }
+    .db-option:hover {
+        background: var(--bg-hover);
+    }
+    .db-option:last-child {
+        border-bottom: none;
+    }
+    .badge-success {
+        background: rgba(52, 199, 89, 0.15);
+        color: #34c759;
+        border-radius: 6px;
+    }
+    .badge-danger {
+        background: rgba(255, 69, 58, 0.15);
+        color: #ff453a;
+        border-radius: 6px;
+    }
+    @media (max-width: 768px) {
+        div[style*="grid-template-columns: 1fr 1fr"] {
+            grid-template-columns: 1fr !important;
+        }
+    }
+</style>
+{% endblock %}
