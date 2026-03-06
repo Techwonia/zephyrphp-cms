@@ -1,0 +1,71 @@
+<section class="section-faq" style="background:{{ section.settings.bg_color|default('#ffffff') }}; padding:{{ section.settings.padding|default(60) }}px 0;">
+    <div class="container" style="max-width:{{ section.settings.max_width|default(800) }}px; margin:0 auto;">
+        {% if section.settings.heading %}
+            <h2 style="text-align:{{ section.settings.text_align|default('center') }}; color:{{ section.settings.heading_color|default('#303030') }}; margin-bottom:32px;">
+                {{ section.settings.heading }}
+            </h2>
+        {% endif %}
+
+        {% if section.blocks|length > 0 %}
+            <div style="display:flex; flex-direction:column; gap:{{ section.settings.gap|default(8) }}px;">
+                {% for block in section.blocks %}
+                    {% if block.type == 'question' %}
+                        <details style="border:1px solid {{ section.settings.border_color|default('#e3e3e3') }}; border-radius:8px; overflow:hidden;">
+                            <summary style="padding:16px 20px; cursor:pointer; font-weight:600; color:{{ section.settings.heading_color|default('#303030') }}; background:{{ section.settings.item_bg|default('#fafafa') }}; list-style:none; display:flex; justify-content:space-between; align-items:center;">
+                                {{ block.settings.question }}
+                                <span style="font-size:18px; transition:transform 0.2s;">+</span>
+                            </summary>
+                            <div style="padding:16px 20px; color:{{ section.settings.text_color|default('#616161') }}; line-height:1.7; border-top:1px solid {{ section.settings.border_color|default('#e3e3e3') }};">
+                                {{ block.settings.answer|raw }}
+                            </div>
+                        </details>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% else %}
+            <p style="text-align:center; color:#999;">Add FAQ blocks to populate this section.</p>
+        {% endif %}
+    </div>
+</section>
+
+{% schema %}
+{
+    "name": "FAQ",
+    "description": "Frequently asked questions with expandable answers",
+    "icon": "help",
+    "settings": [
+        {"type": "text", "id": "heading", "label": "Heading", "default": "Frequently Asked Questions"},
+        {"type": "select", "id": "text_align", "label": "Header Alignment", "default": "center",
+         "options": [{"value": "left", "label": "Left"}, {"value": "center", "label": "Center"}]},
+        {"type": "range", "id": "max_width", "label": "Max Width (px)", "min": 500, "max": 1000, "step": 50, "default": 800},
+        {"type": "range", "id": "gap", "label": "Item Gap (px)", "min": 0, "max": 16, "step": 2, "default": 8},
+        {"type": "color", "id": "bg_color", "label": "Background Color", "default": "#ffffff"},
+        {"type": "color", "id": "item_bg", "label": "Item Background", "default": "#fafafa"},
+        {"type": "color", "id": "border_color", "label": "Border Color", "default": "#e3e3e3"},
+        {"type": "color", "id": "heading_color", "label": "Heading Color", "default": "#303030"},
+        {"type": "color", "id": "text_color", "label": "Answer Color", "default": "#616161"},
+        {"type": "range", "id": "padding", "label": "Section Padding (px)", "min": 0, "max": 120, "step": 4, "default": 60}
+    ],
+    "blocks": [
+        {
+            "type": "question",
+            "name": "Question",
+            "settings": [
+                {"type": "text", "id": "question", "label": "Question", "default": "What is your return policy?"},
+                {"type": "richtext", "id": "answer", "label": "Answer", "default": "<p>We offer a 30-day return policy on all products.</p>"}
+            ]
+        }
+    ],
+    "presets": [
+        {
+            "name": "FAQ",
+            "settings": {"heading": "Frequently Asked Questions"},
+            "blocks": [
+                {"type": "question", "settings": {"question": "How do I get started?", "answer": "<p>Simply sign up and follow the getting started guide.</p>"}},
+                {"type": "question", "settings": {"question": "Is there a free trial?", "answer": "<p>Yes! We offer a 14-day free trial with no credit card required.</p>"}},
+                {"type": "question", "settings": {"question": "Can I cancel anytime?", "answer": "<p>Absolutely. You can cancel your subscription at any time from your account settings.</p>"}}
+            ]
+        }
+    ]
+}
+{% endschema %}

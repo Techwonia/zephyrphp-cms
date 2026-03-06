@@ -1,0 +1,43 @@
+<section class="section-cta" style="background:{{ section.settings.bg_color|default('#008060') }}; padding:{{ section.settings.padding|default(60) }}px 0; text-align:center;">
+    <div class="container" style="max-width:700px; margin:0 auto;">
+        {% if section.settings.heading %}
+            <h2 style="color:{{ section.settings.heading_color|default('#ffffff') }}; margin-bottom:12px; font-size:{{ section.settings.heading_size|default(32) }}px;">
+                {{ section.settings.heading }}
+            </h2>
+        {% endif %}
+        {% if section.settings.text %}
+            <p style="color:{{ section.settings.text_color|default('rgba(255,255,255,0.85)') }}; margin-bottom:28px; font-size:16px; line-height:1.6;">
+                {{ section.settings.text }}
+            </p>
+        {% endif %}
+        {% if section.settings.button_text %}
+            <a href="{{ section.settings.button_url|default('#') }}" style="display:inline-block; padding:14px 36px; background:{{ section.settings.button_bg|default('#ffffff') }}; color:{{ section.settings.button_text_color|default('#008060') }}; border-radius:8px; text-decoration:none; font-weight:600; font-size:16px;">
+                {{ section.settings.button_text }}
+            </a>
+        {% endif %}
+    </div>
+</section>
+
+{% schema %}
+{
+    "name": "Call to Action",
+    "description": "A prominent banner encouraging users to take action",
+    "icon": "megaphone",
+    "settings": [
+        {"type": "text", "id": "heading", "label": "Heading", "default": "Ready to Get Started?"},
+        {"type": "textarea", "id": "text", "label": "Description", "default": "Join thousands of users who are already building amazing things."},
+        {"type": "text", "id": "button_text", "label": "Button Text", "default": "Start Free Trial"},
+        {"type": "url", "id": "button_url", "label": "Button URL", "default": "#"},
+        {"type": "range", "id": "heading_size", "label": "Heading Size (px)", "min": 20, "max": 48, "step": 2, "default": 32},
+        {"type": "color", "id": "bg_color", "label": "Background Color", "default": "#008060"},
+        {"type": "color", "id": "heading_color", "label": "Heading Color", "default": "#ffffff"},
+        {"type": "color", "id": "text_color", "label": "Text Color", "default": "rgba(255,255,255,0.85)"},
+        {"type": "color", "id": "button_bg", "label": "Button Background", "default": "#ffffff"},
+        {"type": "color", "id": "button_text_color", "label": "Button Text Color", "default": "#008060"},
+        {"type": "range", "id": "padding", "label": "Section Padding (px)", "min": 20, "max": 120, "step": 4, "default": 60}
+    ],
+    "presets": [
+        {"name": "Call to Action", "settings": {"heading": "Ready to Get Started?", "button_text": "Start Free Trial"}}
+    ]
+}
+{% endschema %}

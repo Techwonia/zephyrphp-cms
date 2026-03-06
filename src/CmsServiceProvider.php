@@ -7,6 +7,7 @@ namespace ZephyrPHP\Cms;
 use ZephyrPHP\Container\Container;
 use ZephyrPHP\Cms\Services\SchemaManager;
 use ZephyrPHP\Cms\Services\ThemeManager;
+use ZephyrPHP\Cms\Services\SectionManager;
 use ZephyrPHP\Cms\Models\PageType;
 use ZephyrPHP\Database\EntityManager;
 
@@ -25,6 +26,12 @@ class CmsServiceProvider
         });
 
         $container->alias('cms.theme', ThemeManager::class);
+
+        $container->singleton(SectionManager::class, function () use ($container) {
+            return new SectionManager($container->make(ThemeManager::class));
+        });
+
+        $container->alias('cms.sections', SectionManager::class);
 
         // Register CMS models path with Doctrine
         $em = EntityManager::getInstance();
@@ -174,6 +181,36 @@ class CmsServiceProvider
         $view->addFunction('theme_preview_url', function (string $slug) {
             return '/?theme_preview=' . urlencode($slug);
         });
+
+        // theme_settings() - Get global theme settings (merged with defaults)
+        $view->addFunction('theme_settings', function () use ($themeManager) {
+            try {
+                $sectionManager = new SectionManager($themeManager);
+                return $sectionManager->getGlobalSettings();
+            } catch (\Exception $e) {
+                return [];
+            }
+        });
+
+        // has_sections(pageTemplate) - Check if a page has sections configured
+        $view->addFunction('has_sections', function (string $pageTemplate) use ($themeManager) {
+            try {
+                $sectionManager = new SectionManager($themeManager);
+                return $sectionManager->hasSections(null, $pageTemplate);
+            } catch (\Exception $e) {
+                return false;
+            }
+        });
+
+        // render_sections(pageTemplate) - Render all sections for a page
+        $view->addFunction('render_sections', function (string $pageTemplate) use ($themeManager) {
+            try {
+                $sectionManager = new SectionManager($themeManager);
+                return $sectionManager->renderSections($pageTemplate);
+            } catch (\Exception $e) {
+                return '<!-- Section render error: ' . htmlspecialchars($e->getMessage()) . ' -->';
+            }
+        });
     }
 
     private function registerThemePageRoutes(ThemeManager $themeManager): void
@@ -184,14 +221,33 @@ class CmsServiceProvider
                 $template = $page['template'];
                 $slug = $page['slug'] ?? '/';
                 $title = $page['title'] ?? '';
+                $layout = $page['layout'] ?? 'base';
 
-                \ZephyrPHP\Router\Route::get($slug, function () use ($template, $title) {
+                \ZephyrPHP\Router\Route::get($slug, function () use ($template, $title, $layout, $themeManager) {
                     $view = \ZephyrPHP\View\View::getInstance();
-                    echo $view->render($template, [
-                        'page' => [
-                            'title' => $title,
-                        ],
-                    ]);
+                    $sectionManager = new SectionManager($themeManager);
+
+                    // Check if this page has sections configured
+                    if ($sectionManager->hasSections(null, $template)) {
+                        // Render using sections: use the layout and inject sections
+                        $sectionsHtml = $sectionManager->renderSections($template);
+                        echo $view->render('@theme/layouts/' . $layout . '.twig', [
+                            'page' => [
+                                'title' => $title,
+                                'template' => $template,
+                            ],
+                            'sections_html' => $sectionsHtml,
+                            'use_sections' => true,
+                            'theme_settings' => $sectionManager->getGlobalSettings(),
+                        ]);
+                    } else {
+                        // Fall back to static template rendering
+                        echo $view->render($template, [
+                            'page' => [
+                                'title' => $title,
+                            ],
+                        ]);
+                    }
                 });
             }
         } catch (\Exception $e) {

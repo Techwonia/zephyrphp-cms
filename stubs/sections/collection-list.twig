@@ -1,0 +1,71 @@
+<section class="section-collection-list" style="background:{{ section.settings.bg_color|default('#ffffff') }}; padding:{{ section.settings.padding|default(60) }}px 0;">
+    <div class="container" style="max-width:{{ section.settings.max_width|default(900) }}px; margin:0 auto;">
+        {% if section.settings.heading %}
+            <h2 style="color:{{ section.settings.heading_color|default('#303030') }}; margin-bottom:32px;">
+                {{ section.settings.heading }}
+            </h2>
+        {% endif %}
+
+        {% if section.settings.collection %}
+            {% set items = collection(section.settings.collection, {per_page: section.settings.items_count|default(10), sort_dir: section.settings.sort_dir|default('DESC')}) %}
+
+            {% if items.data|length > 0 %}
+                <div style="display:flex; flex-direction:column; gap:{{ section.settings.gap|default(16) }}px;">
+                    {% for item in items.data %}
+                        <div style="display:flex; gap:20px; align-items:center; padding:16px; border-bottom:1px solid #eee;">
+                            {% if item.image is defined and item.image and section.settings.show_image %}
+                                <img src="/{{ item.image }}" alt="{{ item.title|default('') }}" style="width:80px; height:80px; object-fit:cover; border-radius:6px; flex-shrink:0;">
+                            {% endif %}
+                            <div style="flex:1;">
+                                {% if item.title is defined %}
+                                    <h3 style="margin:0 0 4px; color:{{ section.settings.heading_color|default('#303030') }}; font-size:16px;">{{ item.title }}</h3>
+                                {% endif %}
+                                {% if item.excerpt is defined and section.settings.show_excerpt %}
+                                    <p style="margin:0; color:{{ section.settings.text_color|default('#616161') }}; font-size:14px;">{{ item.excerpt|slice(0, 150) }}</p>
+                                {% endif %}
+                            </div>
+                            {% if item.slug is defined and section.settings.show_link %}
+                                <a href="{{ item.slug }}" style="color:{{ section.settings.link_color|default('#008060') }}; text-decoration:none; font-weight:500; white-space:nowrap;">
+                                    {{ section.settings.link_text|default('View') }} &rarr;
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p style="text-align:center; color:#999; padding:40px 0;">No entries found.</p>
+            {% endif %}
+        {% else %}
+            <p style="text-align:center; color:#999; padding:40px 0;">Select a collection to display.</p>
+        {% endif %}
+    </div>
+</section>
+
+{% schema %}
+{
+    "name": "Collection List",
+    "description": "Display entries from a collection in a list/row layout",
+    "icon": "list",
+    "settings": [
+        {"type": "text", "id": "heading", "label": "Heading", "default": "Latest Entries"},
+        {"type": "collection", "id": "collection", "label": "Collection"},
+        {"type": "range", "id": "items_count", "label": "Items to Show", "min": 1, "max": 20, "step": 1, "default": 10},
+        {"type": "select", "id": "sort_dir", "label": "Sort Order", "default": "DESC",
+         "options": [{"value": "DESC", "label": "Newest First"}, {"value": "ASC", "label": "Oldest First"}]},
+        {"type": "checkbox", "id": "show_image", "label": "Show Image", "default": true},
+        {"type": "checkbox", "id": "show_excerpt", "label": "Show Excerpt", "default": true},
+        {"type": "checkbox", "id": "show_link", "label": "Show Link", "default": true},
+        {"type": "text", "id": "link_text", "label": "Link Text", "default": "View"},
+        {"type": "color", "id": "link_color", "label": "Link Color", "default": "#008060"},
+        {"type": "range", "id": "max_width", "label": "Max Width (px)", "min": 600, "max": 1200, "step": 50, "default": 900},
+        {"type": "range", "id": "gap", "label": "Row Gap (px)", "min": 0, "max": 32, "step": 4, "default": 16},
+        {"type": "color", "id": "bg_color", "label": "Background Color", "default": "#ffffff"},
+        {"type": "color", "id": "heading_color", "label": "Heading Color", "default": "#303030"},
+        {"type": "color", "id": "text_color", "label": "Text Color", "default": "#616161"},
+        {"type": "range", "id": "padding", "label": "Section Padding (px)", "min": 0, "max": 120, "step": 4, "default": 60}
+    ],
+    "presets": [
+        {"name": "Collection List", "settings": {"heading": "Latest Entries", "items_count": 10}}
+    ]
+}
+{% endschema %}

@@ -1,0 +1,37 @@
+<section class="section-rich-text" style="background:{{ section.settings.bg_color|default('#ffffff') }}; padding:{{ section.settings.padding|default(60) }}px 0;">
+    <div class="container" style="max-width:{{ section.settings.max_width|default(800) }}px; margin:0 auto;">
+        {% if section.settings.heading %}
+            <h2 style="text-align:{{ section.settings.text_align|default('left') }}; color:{{ section.settings.heading_color|default('#303030') }}; margin-bottom:16px;">
+                {{ section.settings.heading }}
+            </h2>
+        {% endif %}
+        {% if section.settings.content %}
+            <div style="color:{{ section.settings.text_color|default('#616161') }}; line-height:1.8; font-size:{{ section.settings.font_size|default(16) }}px; text-align:{{ section.settings.text_align|default('left') }};">
+                {{ section.settings.content|raw }}
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+{% schema %}
+{
+    "name": "Rich Text",
+    "description": "A text content block for paragraphs, articles, or descriptions",
+    "icon": "text",
+    "settings": [
+        {"type": "text", "id": "heading", "label": "Heading"},
+        {"type": "richtext", "id": "content", "label": "Content", "default": "<p>Add your content here. You can use HTML formatting.</p>"},
+        {"type": "select", "id": "text_align", "label": "Text Alignment", "default": "left",
+         "options": [{"value": "left", "label": "Left"}, {"value": "center", "label": "Center"}, {"value": "right", "label": "Right"}]},
+        {"type": "range", "id": "font_size", "label": "Font Size (px)", "min": 14, "max": 24, "step": 1, "default": 16},
+        {"type": "range", "id": "max_width", "label": "Max Width (px)", "min": 400, "max": 1200, "step": 50, "default": 800},
+        {"type": "color", "id": "bg_color", "label": "Background Color", "default": "#ffffff"},
+        {"type": "color", "id": "heading_color", "label": "Heading Color", "default": "#303030"},
+        {"type": "color", "id": "text_color", "label": "Text Color", "default": "#616161"},
+        {"type": "range", "id": "padding", "label": "Section Padding (px)", "min": 0, "max": 120, "step": 4, "default": 60}
+    ],
+    "presets": [
+        {"name": "Rich Text", "settings": {"content": "<p>Add your content here.</p>"}}
+    ]
+}
+{% endschema %}

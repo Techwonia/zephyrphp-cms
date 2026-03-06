@@ -1,0 +1,56 @@
+[
+    {
+        "name": "Colors",
+        "settings": [
+            {"type": "color", "id": "primary_color", "label": "Primary Color", "default": "#008060"},
+            {"type": "color", "id": "secondary_color", "label": "Accent Color", "default": "#00d9ff"},
+            {"type": "color", "id": "bg_color", "label": "Body Background", "default": "#0a0e27"},
+            {"type": "color", "id": "text_color", "label": "Body Text Color", "default": "#ffffff"},
+            {"type": "color", "id": "text_secondary_color", "label": "Secondary Text", "default": "#8892b0"}
+        ]
+    },
+    {
+        "name": "Typography",
+        "settings": [
+            {
+                "type": "select",
+                "id": "heading_font",
+                "label": "Heading Font",
+                "default": "Inter",
+                "options": [
+                    {"value": "Inter", "label": "Inter"},
+                    {"value": "Poppins", "label": "Poppins"},
+                    {"value": "Roboto", "label": "Roboto"},
+                    {"value": "Open Sans", "label": "Open Sans"},
+                    {"value": "Playfair Display", "label": "Playfair Display"},
+                    {"value": "Montserrat", "label": "Montserrat"}
+                ]
+            },
+            {
+                "type": "select",
+                "id": "body_font",
+                "label": "Body Font",
+                "default": "Inter",
+                "options": [
+                    {"value": "Inter", "label": "Inter"},
+                    {"value": "Roboto", "label": "Roboto"},
+                    {"value": "Open Sans", "label": "Open Sans"},
+                    {"value": "Lato", "label": "Lato"},
+                    {"value": "Source Sans Pro", "label": "Source Sans Pro"}
+                ]
+            },
+            {"type": "range", "id": "base_font_size", "label": "Base Font Size (px)", "min": 14, "max": 20, "step": 1, "default": 16}
+        ]
+    },
+    {
+        "name": "Social Media",
+        "settings": [
+            {"type": "url", "id": "social_twitter", "label": "Twitter / X URL"},
+            {"type": "url", "id": "social_facebook", "label": "Facebook URL"},
+            {"type": "url", "id": "social_instagram", "label": "Instagram URL"},
+            {"type": "url", "id": "social_linkedin", "label": "LinkedIn URL"},
+            {"type": "url", "id": "social_youtube", "label": "YouTube URL"},
+            {"type": "url", "id": "social_github", "label": "GitHub URL"}
+        ]
+    }
+]

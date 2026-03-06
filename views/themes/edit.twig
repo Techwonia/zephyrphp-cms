@@ -17,6 +17,10 @@
         {% endif %}
     </h1>
     <div class="page-actions">
+        <a href="/cms/themes/{{ theme.getSlug() }}/customize" class="btn btn-sm btn-primary" style="display:inline-flex; align-items:center; gap:4px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            Customize
+        </a>
         {% if not theme.isLive() %}
             <a href="/cms/themes/{{ theme.getSlug() }}/preview" class="btn btn-sm btn-outline">Preview</a>
             <form method="POST" action="/cms/themes/{{ theme.getSlug() }}/publish" style="display:inline">

@@ -1,0 +1,26 @@
+<section class="section-spacer" style="background:{{ section.settings.bg_color|default('transparent') }}; height:{{ section.settings.height|default(40) }}px;">
+    {% if section.settings.show_divider %}
+        <div style="max-width:{{ section.settings.divider_width|default(100) }}px; margin:0 auto; border-top:{{ section.settings.divider_thickness|default(1) }}px {{ section.settings.divider_style|default('solid') }} {{ section.settings.divider_color|default('#e3e3e3') }}; position:relative; top:50%;"></div>
+    {% endif %}
+</section>
+
+{% schema %}
+{
+    "name": "Spacer",
+    "description": "Adjustable vertical space with optional divider line",
+    "icon": "spacer",
+    "settings": [
+        {"type": "range", "id": "height", "label": "Height (px)", "min": 8, "max": 200, "step": 4, "default": 40},
+        {"type": "checkbox", "id": "show_divider", "label": "Show Divider Line", "default": false},
+        {"type": "range", "id": "divider_width", "label": "Divider Width (px)", "min": 40, "max": 1200, "step": 10, "default": 100},
+        {"type": "range", "id": "divider_thickness", "label": "Divider Thickness (px)", "min": 1, "max": 4, "step": 1, "default": 1},
+        {"type": "select", "id": "divider_style", "label": "Divider Style", "default": "solid",
+         "options": [{"value": "solid", "label": "Solid"}, {"value": "dashed", "label": "Dashed"}, {"value": "dotted", "label": "Dotted"}]},
+        {"type": "color", "id": "divider_color", "label": "Divider Color", "default": "#e3e3e3"},
+        {"type": "color", "id": "bg_color", "label": "Background Color", "default": "transparent"}
+    ],
+    "presets": [
+        {"name": "Spacer", "settings": {"height": 40}}
+    ]
+}
+{% endschema %}

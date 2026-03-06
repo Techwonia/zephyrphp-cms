@@ -271,8 +271,9 @@ class ThemeManager
         $themePath = $this->getThemePath($slug);
         $files = [];
 
-        $dirs = ['layouts', 'templates', 'snippets', 'sections'];
-        foreach ($dirs as $dir) {
+        // Twig template directories
+        $twigDirs = ['layouts', 'templates', 'snippets', 'sections'];
+        foreach ($twigDirs as $dir) {
             $dirPath = $themePath . '/' . $dir;
             if (!is_dir($dirPath)) continue;
 
@@ -285,6 +286,17 @@ class ThemeManager
                 if ($file->isFile() && str_ends_with($file->getFilename(), '.twig')) {
                     $relative = $dir . '/' . str_replace('\\', '/', $iterator->getSubPathName());
                     $files[$dir][] = $relative;
+                }
+            }
+        }
+
+        // Config files (JSON)
+        $configDir = $themePath . '/config';
+        if (is_dir($configDir)) {
+            foreach (scandir($configDir) as $file) {
+                if ($file === '.' || $file === '..') continue;
+                if (str_ends_with($file, '.json')) {
+                    $files['config'][] = 'config/' . $file;
                 }
             }
         }
@@ -499,10 +511,16 @@ class ThemeManager
 
     private function createStarterTheme(string $path, string $name): void
     {
-        $dirs = ['layouts', 'templates', 'snippets', 'sections'];
+        $dirs = ['layouts', 'templates', 'snippets', 'sections', 'config'];
         foreach ($dirs as $dir) {
             mkdir($path . '/' . $dir, 0755, true);
         }
+
+        // Copy starter sections from stubs
+        $this->copyStarterSections($path);
+
+        // Copy config stubs (settings_schema.json, settings_data.json)
+        $this->copyConfigStubs($path);
 
         // theme.json
         $config = [
@@ -598,6 +616,52 @@ TWIG;
             ],
         ];
         file_put_contents($path . '/pages.json', json_encode($pagesConfig, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+    }
+
+    /**
+     * Copy all starter section .twig files from the stubs directory into a theme.
+     */
+    private function copyStarterSections(string $themePath): void
+    {
+        $stubsDir = __DIR__ . '/../../stubs/sections';
+        if (!is_dir($stubsDir)) {
+            return;
+        }
+
+        $targetDir = $themePath . '/sections';
+        if (!is_dir($targetDir)) {
+            mkdir($targetDir, 0755, true);
+        }
+
+        foreach (scandir($stubsDir) as $file) {
+            if ($file === '.' || $file === '..') continue;
+            if (str_ends_with($file, '.twig')) {
+                copy($stubsDir . '/' . $file, $targetDir . '/' . $file);
+            }
+        }
+    }
+
+    /**
+     * Copy config stubs (settings_schema.json, settings_data.json) into a theme.
+     */
+    private function copyConfigStubs(string $themePath): void
+    {
+        $stubsDir = __DIR__ . '/../../stubs/config';
+        if (!is_dir($stubsDir)) {
+            return;
+        }
+
+        $targetDir = $themePath . '/config';
+        if (!is_dir($targetDir)) {
+            mkdir($targetDir, 0755, true);
+        }
+
+        foreach (scandir($stubsDir) as $file) {
+            if ($file === '.' || $file === '..') continue;
+            if (str_ends_with($file, '.json')) {
+                copy($stubsDir . '/' . $file, $targetDir . '/' . $file);
+            }
+        }
     }
 
     private function copyDirectory(string $source, string $dest): void

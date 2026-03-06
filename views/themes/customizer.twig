@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Customize: {{ theme.getName() }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --primary: #008060;
+            --primary-hover: #006e52;
+            --danger: #D72C0D;
+            --text: #303030;
+            --text-secondary: #616161;
+            --text-disabled: #B5B5B5;
+            --bg-app: #F1F1F1;
+            --bg-surface: #FFFFFF;
+            --bg-subdued: #FAFAFA;
+            --bg-hover: #F7F7F7;
+            --border: #E3E3E3;
+            --border-dark: #C9CCCF;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+            --sidebar-w: 320px;
+            --topbar-h: 56px;
+            --radius: 8px;
+            --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            font-family: var(--font);
+            font-size: 13px;
+            color: var(--text);
+            background: var(--bg-app);
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* ── Top Bar ── */
+        .customizer-topbar {
+            height: var(--topbar-h);
+            background: #1A1A1A;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            color: #fff;
+            z-index: 100;
+        }
+        .topbar-left { display: flex; align-items: center; gap: 16px; }
+        .topbar-back {
+            display: flex; align-items: center; gap: 6px;
+            color: #aaa; text-decoration: none; font-size: 13px;
+            padding: 6px 10px; border-radius: 6px; transition: all 0.15s;
+        }
+        .topbar-back:hover { color: #fff; background: rgba(255,255,255,0.1); }
+        .topbar-back svg { width: 16px; height: 16px; }
+        .topbar-title { font-weight: 600; font-size: 14px; }
+        .topbar-right { display: flex; align-items: center; gap: 8px; }
+        .topbar-btn {
+            padding: 7px 16px; border-radius: 6px; font-size: 13px; font-weight: 500;
+            cursor: pointer; border: none; transition: all 0.15s;
+        }
+        .topbar-btn-outline {
+            background: transparent; color: #aaa; border: 1px solid #444;
+        }
+        .topbar-btn-outline:hover { color: #fff; border-color: #666; }
+        .topbar-btn-primary {
+            background: var(--primary); color: #fff;
+        }
+        .topbar-btn-primary:hover { background: var(--primary-hover); }
+        .topbar-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .topbar-unsaved {
+            display: none; font-size: 12px; color: #FFB800; font-weight: 500;
+        }
+        .topbar-unsaved.visible { display: inline; }
+
+        /* ── Main Layout ── */
+        .customizer-body {
+            display: flex;
+            height: calc(100vh - var(--topbar-h));
+        }
+
+        /* ── Sidebar ── */
+        .customizer-sidebar {
+            width: var(--sidebar-w);
+            background: var(--bg-surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Sidebar panels stack and slide */
+        .sidebar-panels {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        .sidebar-panel {
+            position: absolute;
+            inset: 0;
+            overflow-y: auto;
+            padding: 0;
+            transition: transform 0.25s ease;
+        }
+        .sidebar-panel.panel-main { transform: translateX(0); }
+        .sidebar-panel.panel-detail { transform: translateX(100%); }
+        .sidebar-panel.panel-main.slide-out { transform: translateX(-100%); }
+        .sidebar-panel.panel-detail.slide-in { transform: translateX(0); }
+
+        /* Page selector */
+        .page-selector {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        .page-select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: var(--font);
+            background: var(--bg-surface);
+        }
+        .page-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(0,128,96,0.15);
+        }
+
+        /* Section headers */
+        .sidebar-section-label {
+            padding: 12px 16px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+        }
+
+        /* Section list items */
+        .section-list {
+            list-style: none;
+            padding: 0 8px;
+        }
+        .section-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            margin: 2px 0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.15s;
+            border: 1px solid transparent;
+        }
+        .section-item:hover { background: var(--bg-hover); }
+        .section-item.active { background: rgba(0,128,96,0.06); border-color: rgba(0,128,96,0.2); }
+        .section-item .drag-handle {
+            cursor: grab;
+            color: var(--text-disabled);
+            flex-shrink: 0;
+            display: flex;
+        }
+        .section-item .drag-handle:active { cursor: grabbing; }
+        .section-item .section-name {
+            flex: 1;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .section-item .section-chevron {
+            color: var(--text-disabled);
+            flex-shrink: 0;
+        }
+
+        /* Add section button */
+        .add-section-btn {
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            width: calc(100% - 16px); margin: 8px 8px 16px;
+            padding: 10px;
+            border: 1px dashed var(--border-dark);
+            border-radius: 6px;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 13px;
+            font-family: var(--font);
+            transition: all 0.15s;
+        }
+        .add-section-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: rgba(0,128,96,0.03);
+        }
+
+        /* Settings groups in main panel */
+        .settings-group {
+            border-bottom: 1px solid var(--border);
+        }
+        .settings-group-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 16px; cursor: pointer; transition: background 0.15s;
+        }
+        .settings-group-header:hover { background: var(--bg-hover); }
+        .settings-group-title { font-size: 13px; font-weight: 500; }
+        .settings-group-chevron { color: var(--text-disabled); transition: transform 0.2s; }
+        .settings-group-chevron.open { transform: rotate(90deg); }
+
+        /* ── Detail Panel (section settings) ── */
+        .detail-header {
+            display: flex; align-items: center; gap: 8px;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        .detail-back {
+            display: flex; align-items: center;
+            padding: 4px; border-radius: 4px;
+            cursor: pointer; color: var(--text-secondary);
+            background: none; border: none; transition: all 0.15s;
+        }
+        .detail-back:hover { background: var(--bg-hover); color: var(--text); }
+        .detail-title { font-size: 14px; font-weight: 600; flex: 1; }
+
+        .detail-body { padding: 16px; }
+
+        /* Form controls */
+        .setting-field { margin-bottom: 16px; }
+        .setting-label {
+            display: block; margin-bottom: 4px;
+            font-size: 12px; font-weight: 500; color: var(--text-secondary);
+        }
+        .setting-input {
+            width: 100%; padding: 8px 10px;
+            border: 1px solid var(--border); border-radius: 6px;
+            font-size: 13px; font-family: var(--font);
+            background: var(--bg-surface); transition: border-color 0.15s;
+        }
+        .setting-input:focus {
+            outline: none; border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(0,128,96,0.15);
+        }
+        textarea.setting-input { resize: vertical; min-height: 80px; }
+
+        /* Color input */
+        .color-field {
+            display: flex; align-items: center; gap: 8px;
+        }
+        .color-swatch {
+            width: 36px; height: 36px; border-radius: 6px;
+            border: 1px solid var(--border); cursor: pointer; padding: 0;
+            flex-shrink: 0;
+        }
+        .color-swatch::-webkit-color-swatch-wrapper { padding: 2px; }
+        .color-swatch::-webkit-color-swatch { border: none; border-radius: 4px; }
+        .color-hex {
+            flex: 1; padding: 8px 10px;
+            border: 1px solid var(--border); border-radius: 6px;
+            font-size: 13px; font-family: monospace;
+        }
+        .color-hex:focus { outline: none; border-color: var(--primary); }
+
+        /* Range input */
+        .range-field { display: flex; align-items: center; gap: 8px; }
+        .range-slider {
+            flex: 1; accent-color: var(--primary);
+            height: 4px;
+        }
+        .range-value {
+            min-width: 40px; text-align: right;
+            font-size: 12px; font-weight: 500; color: var(--text-secondary);
+        }
+
+        /* Select */
+        select.setting-input {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23616161' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 28px;
+        }
+
+        /* Checkbox */
+        .checkbox-field {
+            display: flex; align-items: center; gap: 8px;
+        }
+        .checkbox-field input[type="checkbox"] {
+            width: 16px; height: 16px; accent-color: var(--primary);
+        }
+        .checkbox-label {
+            font-size: 13px; color: var(--text); cursor: pointer;
+        }
+
+        /* Image upload */
+        .image-field-preview {
+            width: 100%; height: 120px;
+            border: 1px dashed var(--border-dark); border-radius: 6px;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--bg-subdued); color: var(--text-disabled);
+            font-size: 12px; cursor: pointer; overflow: hidden; position: relative;
+        }
+        .image-field-preview img {
+            width: 100%; height: 100%; object-fit: cover;
+        }
+        .image-field-preview .remove-image {
+            position: absolute; top: 4px; right: 4px;
+            background: rgba(0,0,0,0.6); color: #fff;
+            border: none; border-radius: 4px; padding: 2px 6px;
+            cursor: pointer; font-size: 11px;
+        }
+
+        /* Blocks */
+        .blocks-section { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 16px; }
+        .blocks-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 8px;
+        }
+        .blocks-title { font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); }
+        .add-block-btn {
+            padding: 4px 10px; font-size: 11px; font-weight: 500;
+            background: transparent; border: 1px solid var(--border);
+            border-radius: 4px; cursor: pointer; color: var(--text-secondary);
+            font-family: var(--font); transition: all 0.15s;
+        }
+        .add-block-btn:hover { border-color: var(--primary); color: var(--primary); }
+        .block-item {
+            border: 1px solid var(--border); border-radius: 6px;
+            margin-bottom: 8px; overflow: hidden;
+        }
+        .block-header {
+            display: flex; align-items: center; gap: 6px;
+            padding: 8px 12px; background: var(--bg-subdued);
+            cursor: pointer; font-size: 12px; font-weight: 500;
+        }
+        .block-header .block-drag { cursor: grab; color: var(--text-disabled); }
+        .block-header .block-name { flex: 1; }
+        .block-header .block-toggle { color: var(--text-disabled); font-size: 10px; }
+        .block-header .block-remove {
+            background: none; border: none; cursor: pointer;
+            color: var(--text-disabled); font-size: 14px; padding: 0 2px;
+        }
+        .block-header .block-remove:hover { color: var(--danger); }
+        .block-body { padding: 12px; display: none; border-top: 1px solid var(--border); }
+        .block-body.open { display: block; }
+
+        /* Remove section button */
+        .remove-section-btn {
+            display: block; width: 100%; margin-top: 20px;
+            padding: 8px; background: transparent;
+            border: 1px solid var(--danger); border-radius: 6px;
+            color: var(--danger); cursor: pointer; font-size: 12px;
+            font-family: var(--font); font-weight: 500; transition: all 0.15s;
+        }
+        .remove-section-btn:hover { background: var(--danger); color: #fff; }
+
+        /* ── Preview ── */
+        .customizer-preview {
+            flex: 1;
+            background: var(--bg-app);
+            display: flex;
+            align-items: stretch;
+            justify-content: center;
+            padding: 16px;
+        }
+        .preview-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: var(--radius);
+            background: #fff;
+            box-shadow: var(--shadow-md);
+        }
+
+        /* ── Add Section Modal ── */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+            align-items: center; justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal-card {
+            background: #fff; border-radius: 12px;
+            width: 560px; max-width: 90vw; max-height: 80vh;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+            display: flex; flex-direction: column;
+        }
+        .modal-head {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 16px 20px; border-bottom: 1px solid var(--border);
+        }
+        .modal-head h3 { font-size: 16px; font-weight: 600; }
+        .modal-close {
+            background: none; border: none; font-size: 20px;
+            cursor: pointer; color: var(--text-secondary); line-height: 1;
+        }
+        .modal-search {
+            padding: 12px 20px; border-bottom: 1px solid var(--border);
+        }
+        .modal-search input {
+            width: 100%; padding: 8px 12px;
+            border: 1px solid var(--border); border-radius: 6px;
+            font-size: 13px; font-family: var(--font);
+        }
+        .modal-search input:focus { outline: none; border-color: var(--primary); }
+        .modal-body {
+            flex: 1; overflow-y: auto; padding: 16px 20px;
+        }
+        .section-picker-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        .section-picker-item {
+            border: 1px solid var(--border); border-radius: 8px;
+            padding: 16px; cursor: pointer; transition: all 0.15s;
+            text-align: center;
+        }
+        .section-picker-item:hover {
+            border-color: var(--primary);
+            background: rgba(0,128,96,0.03);
+        }
+        .section-picker-icon {
+            width: 40px; height: 40px; margin: 0 auto 8px;
+            background: var(--bg-subdued); border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+        }
+        .section-picker-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+        .section-picker-desc { font-size: 11px; color: var(--text-secondary); line-height: 1.4; }
+
+        /* ── Toast ── */
+        .toast {
+            position: fixed; bottom: 24px; right: 24px;
+            padding: 12px 20px; border-radius: 8px;
+            font-size: 13px; font-weight: 500;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            z-index: 300; transition: all 0.3s;
+            transform: translateY(80px); opacity: 0;
+        }
+        .toast.visible { transform: translateY(0); opacity: 1; }
+        .toast-success { background: #047B5D; color: #fff; }
+        .toast-error { background: #D72C0D; color: #fff; }
+    </style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="customizer-topbar">
+    <div class="topbar-left">
+        <a href="/cms/themes/{{ theme.getSlug() }}" class="topbar-back">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+            Exit
+        </a>
+        <span class="topbar-title">{{ theme.getName() }}</span>
+        <span class="topbar-unsaved" id="unsavedBadge">Unsaved changes</span>
+    </div>
+    <div class="topbar-right">
+        <button class="topbar-btn topbar-btn-outline" id="discardBtn">Discard</button>
+        <button class="topbar-btn topbar-btn-primary" id="saveBtn" disabled>Save</button>
+    </div>
+</div>
+
+<!-- Main Layout -->
+<div class="customizer-body">
+
+    <!-- Sidebar -->
+    <div class="customizer-sidebar">
+        <div class="sidebar-panels">
+
+            <!-- Main Panel -->
+            <div class="sidebar-panel panel-main" id="panelMain">
+                <!-- Page Selector -->
+                <div class="page-selector">
+                    <select class="page-select" id="pageSelect">
+                        {% for page in pages %}
+                        <option value="{{ page.template }}" {% if page.template == currentPage %}selected{% endif %}>
+                            {{ page.title }} ({{ page.slug }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Sections List -->
+                <div class="sidebar-section-label">Sections</div>
+                <ul class="section-list" id="sectionList">
+                    <!-- Populated by JS -->
+                </ul>
+                <button class="add-section-btn" id="addSectionBtn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                    Add section
+                </button>
+
+                <!-- Theme Settings Groups -->
+                <div class="sidebar-section-label" style="border-top:1px solid var(--border); padding-top:12px;">Theme Settings</div>
+                <div id="themeSettingsGroups">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Detail Panel (section settings) -->
+            <div class="sidebar-panel panel-detail" id="panelDetail">
+                <div class="detail-header">
+                    <button class="detail-back" id="detailBack">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+                    </button>
+                    <span class="detail-title" id="detailTitle">Section</span>
+                </div>
+                <div class="detail-body" id="detailBody">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Preview -->
+    <div class="customizer-preview">
+        <iframe class="preview-frame" id="previewFrame" src="/cms/themes/{{ theme.getSlug() }}/customize/preview?page={{ currentPage }}"></iframe>
+    </div>
+
+</div>
+
+<!-- Add Section Modal -->
+<div class="modal-overlay" id="addSectionModal">
+    <div class="modal-card">
+        <div class="modal-head">
+            <h3>Add Section</h3>
+            <button class="modal-close" id="closeSectionModal">&times;</button>
+        </div>
+        <div class="modal-search">
+            <input type="text" id="sectionSearch" placeholder="Search sections...">
+        </div>
+        <div class="modal-body">
+            <div class="section-picker-grid" id="sectionPickerGrid">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+(function() {
+    'use strict';
+
+    // ── Config ──
+    var THEME_SLUG = '{{ theme.getSlug() }}';
+    var CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+    // Section icon map
+    var SECTION_ICONS = {
+        'hero-banner': '🖼️', 'rich-text': '📝', 'image-with-text': '🖼️',
+        'collection-grid': '📊', 'collection-list': '📋', 'feature-columns': '⚡',
+        'testimonials': '💬', 'faq': '❓', 'newsletter': '📧',
+        'cta-banner': '📢', 'gallery': '🖼️', 'spacer': '↕️'
+    };
+
+    // ── State ──
+    var state = {
+        currentPage: '{{ currentPage }}',
+        settingsData: {{ settingsData|json_encode|raw }},
+        availableSections: {{ sections|json_encode|raw }},
+        collections: {{ collections|json_encode|raw }},
+        settingsSchema: {{ settingsSchema|json_encode|raw }},
+        pages: {{ pages|json_encode|raw }},
+        dirty: false,
+        activeSection: null
+    };
+
+    // Ensure state structure
+    if (!state.settingsData.current) state.settingsData.current = {};
+    if (!state.settingsData.pages) state.settingsData.pages = {};
+
+    function getPageData() {
+        if (!state.settingsData.pages[state.currentPage]) {
+            state.settingsData.pages[state.currentPage] = { sections: {}, order: [] };
+        }
+        return state.settingsData.pages[state.currentPage];
+    }
+
+    function markDirty() {
+        state.dirty = true;
+        document.getElementById('unsavedBadge').classList.add('visible');
+        document.getElementById('saveBtn').disabled = false;
+    }
+
+    function markClean() {
+        state.dirty = false;
+        document.getElementById('unsavedBadge').classList.remove('visible');
+        document.getElementById('saveBtn').disabled = true;
+    }
+
+    // ── Section List Rendering ──
+    function renderSectionList() {
+        var list = document.getElementById('sectionList');
+        var pageData = getPageData();
+        var order = pageData.order || [];
+        var sections = pageData.sections || {};
+
+        list.innerHTML = '';
+
+        if (order.length === 0) {
+            list.innerHTML = '<li style="padding:20px 16px; text-align:center; color:var(--text-disabled); font-size:12px;">No sections yet. Click "Add section" to start.</li>';
+            return;
+        }
+
+        order.forEach(function(sectionId) {
+            var sec = sections[sectionId];
+            if (!sec) return;
+
+            var schema = state.availableSections[sec.type] || {};
+            var li = document.createElement('li');
+            li.className = 'section-item' + (state.activeSection === sectionId ? ' active' : '');
+            li.dataset.sectionId = sectionId;
+            li.innerHTML =
+                '<span class="drag-handle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01"/></svg></span>' +
+                '<span class="section-name">' + (schema.name || sec.type) + '</span>' +
+                '<span class="section-chevron"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 18l6-6-6-6"/></svg></span>';
+
+            li.addEventListener('click', function(e) {
+                if (e.target.closest('.drag-handle')) return;
+                openSectionDetail(sectionId);
+            });
+
+            list.appendChild(li);
+        });
+
+        // Init drag-and-drop
+        if (window.Sortable) {
+            Sortable.create(list, {
+                handle: '.drag-handle',
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                onEnd: function(evt) {
+                    var pageData = getPageData();
+                    var item = pageData.order.splice(evt.oldIndex, 1)[0];
+                    pageData.order.splice(evt.newIndex, 0, item);
+                    markDirty();
+                    refreshPreview();
+                }
+            });
+        }
+    }
+
+    // ── Theme Settings Groups ──
+    function renderThemeSettingsGroups() {
+        var container = document.getElementById('themeSettingsGroups');
+        container.innerHTML = '';
+
+        state.settingsSchema.forEach(function(group, groupIdx) {
+            var div = document.createElement('div');
+            div.className = 'settings-group';
+
+            var header = document.createElement('div');
+            header.className = 'settings-group-header';
+            header.innerHTML =
+                '<span class="settings-group-title">' + group.name + '</span>' +
+                '<svg class="settings-group-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>';
+
+            var body = document.createElement('div');
+            body.style.display = 'none';
+            body.style.padding = '0 16px 16px';
+
+            group.settings.forEach(function(setting) {
+                var val = state.settingsData.current[setting.id];
+                if (val === undefined || val === null) val = setting.default || '';
+                body.appendChild(createSettingField(setting, val, function(newVal) {
+                    state.settingsData.current[setting.id] = newVal;
+                    markDirty();
+                    refreshPreview();
+                }));
+            });
+
+            header.addEventListener('click', function() {
+                var chevron = header.querySelector('.settings-group-chevron');
+                if (body.style.display === 'none') {
+                    body.style.display = 'block';
+                    chevron.classList.add('open');
+                } else {
+                    body.style.display = 'none';
+                    chevron.classList.remove('open');
+                }
+            });
+
+            div.appendChild(header);
+            div.appendChild(body);
+            container.appendChild(div);
+        });
+    }
+
+    // ── Section Detail Panel ──
+    function openSectionDetail(sectionId) {
+        state.activeSection = sectionId;
+        var pageData = getPageData();
+        var sec = pageData.sections[sectionId];
+        if (!sec) return;
+
+        var schema = state.availableSections[sec.type] || {};
+        document.getElementById('detailTitle').textContent = schema.name || sec.type;
+
+        var body = document.getElementById('detailBody');
+        body.innerHTML = '';
+
+        // Section settings
+        (schema.settings || []).forEach(function(setting) {
+            var val = sec.settings[setting.id];
+            if (val === undefined || val === null) val = setting.default;
+            if (val === undefined) val = '';
+            body.appendChild(createSettingField(setting, val, function(newVal) {
+                sec.settings[setting.id] = newVal;
+                markDirty();
+                refreshPreview();
+            }));
+        });
+
+        // Blocks
+        if (schema.blocks && schema.blocks.length > 0) {
+            var blocksSection = document.createElement('div');
+            blocksSection.className = 'blocks-section';
+
+            var blocksHeader = document.createElement('div');
+            blocksHeader.className = 'blocks-header';
+
+            var blockTypes = schema.blocks;
+            blocksHeader.innerHTML = '<span class="blocks-title">Blocks (' + (sec.block_order || []).length + ')</span>';
+
+            var addBlockBtn = document.createElement('button');
+            addBlockBtn.className = 'add-block-btn';
+            addBlockBtn.textContent = '+ Add';
+            addBlockBtn.addEventListener('click', function() {
+                var blockType = blockTypes[0];
+                var blockId = 'block_' + Date.now().toString(36);
+                var blockSettings = {};
+                (blockType.settings || []).forEach(function(s) {
+                    if (s.default !== undefined) blockSettings[s.id] = s.default;
+                });
+                if (!sec.blocks) sec.blocks = {};
+                if (!sec.block_order) sec.block_order = [];
+                sec.blocks[blockId] = { type: blockType.type, settings: blockSettings };
+                sec.block_order.push(blockId);
+                markDirty();
+                openSectionDetail(sectionId);
+                refreshPreview();
+            });
+            blocksHeader.appendChild(addBlockBtn);
+            blocksSection.appendChild(blocksHeader);
+
+            // Render blocks
+            var blocksList = document.createElement('div');
+            blocksList.className = 'blocks-list';
+            (sec.block_order || []).forEach(function(blockId) {
+                var block = (sec.blocks || {})[blockId];
+                if (!block) return;
+
+                var blockSchema = blockTypes.find(function(bt) { return bt.type === block.type; });
+                if (!blockSchema) return;
+
+                var blockDiv = document.createElement('div');
+                blockDiv.className = 'block-item';
+
+                var blockHeader = document.createElement('div');
+                blockHeader.className = 'block-header';
+                blockHeader.innerHTML =
+                    '<span class="block-drag"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01"/></svg></span>' +
+                    '<span class="block-name">' + (blockSchema.name || block.type) + '</span>' +
+                    '<span class="block-toggle">▼</span>';
+
+                var removeBtn = document.createElement('button');
+                removeBtn.className = 'block-remove';
+                removeBtn.innerHTML = '&times;';
+                removeBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    delete sec.blocks[blockId];
+                    sec.block_order = sec.block_order.filter(function(id) { return id !== blockId; });
+                    markDirty();
+                    openSectionDetail(sectionId);
+                    refreshPreview();
+                });
+                blockHeader.appendChild(removeBtn);
+
+                var blockBody = document.createElement('div');
+                blockBody.className = 'block-body';
+
+                (blockSchema.settings || []).forEach(function(setting) {
+                    var val = block.settings[setting.id];
+                    if (val === undefined || val === null) val = setting.default || '';
+                    blockBody.appendChild(createSettingField(setting, val, function(newVal) {
+                        block.settings[setting.id] = newVal;
+                        markDirty();
+                        refreshPreview();
+                    }));
+                });
+
+                blockHeader.addEventListener('click', function() {
+                    blockBody.classList.toggle('open');
+                });
+
+                blockDiv.appendChild(blockHeader);
+                blockDiv.appendChild(blockBody);
+                blocksList.appendChild(blockDiv);
+            });
+
+            if (window.Sortable) {
+                Sortable.create(blocksList, {
+                    handle: '.block-drag',
+                    animation: 150,
+                    onEnd: function(evt) {
+                        var item = sec.block_order.splice(evt.oldIndex, 1)[0];
+                        sec.block_order.splice(evt.newIndex, 0, item);
+                        markDirty();
+                        refreshPreview();
+                    }
+                });
+            }
+
+            blocksSection.appendChild(blocksList);
+            body.appendChild(blocksSection);
+        }
+
+        // Remove button
+        var removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-section-btn';
+        removeBtn.textContent = 'Remove section';
+        removeBtn.addEventListener('click', function() {
+            if (!confirm('Remove this section?')) return;
+            var pd = getPageData();
+            delete pd.sections[sectionId];
+            pd.order = pd.order.filter(function(id) { return id !== sectionId; });
+            state.activeSection = null;
+            closeDetail();
+            renderSectionList();
+            markDirty();
+            refreshPreview();
+        });
+        body.appendChild(removeBtn);
+
+        // Show detail panel
+        showDetail();
+        renderSectionList();
+    }
+
+    function showDetail() {
+        document.getElementById('panelMain').classList.add('slide-out');
+        document.getElementById('panelDetail').classList.add('slide-in');
+    }
+
+    function closeDetail() {
+        state.activeSection = null;
+        document.getElementById('panelMain').classList.remove('slide-out');
+        document.getElementById('panelDetail').classList.remove('slide-in');
+        renderSectionList();
+    }
+
+    // ── Create Setting Field ──
+    function createSettingField(setting, value, onChange) {
+        var wrapper = document.createElement('div');
+        wrapper.className = 'setting-field';
+
+        if (setting.type === 'checkbox') {
+            var checkDiv = document.createElement('div');
+            checkDiv.className = 'checkbox-field';
+            var cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.id = 'setting_' + setting.id;
+            cb.checked = !!value;
+            cb.addEventListener('change', function() { onChange(this.checked); });
+            var lbl = document.createElement('label');
+            lbl.className = 'checkbox-label';
+            lbl.htmlFor = cb.id;
+            lbl.textContent = setting.label || setting.id;
+            checkDiv.appendChild(cb);
+            checkDiv.appendChild(lbl);
+            wrapper.appendChild(checkDiv);
+            return wrapper;
+        }
+
+        // Label
+        var label = document.createElement('label');
+        label.className = 'setting-label';
+        label.textContent = setting.label || setting.id;
+        wrapper.appendChild(label);
+
+        if (setting.type === 'color') {
+            var colorDiv = document.createElement('div');
+            colorDiv.className = 'color-field';
+            var swatch = document.createElement('input');
+            swatch.type = 'color';
+            swatch.className = 'color-swatch';
+            swatch.value = value || '#000000';
+            var hex = document.createElement('input');
+            hex.type = 'text';
+            hex.className = 'color-hex';
+            hex.value = value || '';
+            hex.placeholder = '#000000';
+            swatch.addEventListener('input', function() { hex.value = this.value; onChange(this.value); });
+            hex.addEventListener('change', function() { swatch.value = this.value; onChange(this.value); });
+            colorDiv.appendChild(swatch);
+            colorDiv.appendChild(hex);
+            wrapper.appendChild(colorDiv);
+
+        } else if (setting.type === 'range') {
+            var rangeDiv = document.createElement('div');
+            rangeDiv.className = 'range-field';
+            var slider = document.createElement('input');
+            slider.type = 'range';
+            slider.className = 'range-slider';
+            slider.min = setting.min || 0;
+            slider.max = setting.max || 100;
+            slider.step = setting.step || 1;
+            slider.value = value !== undefined && value !== '' ? value : (setting.default || 0);
+            var valSpan = document.createElement('span');
+            valSpan.className = 'range-value';
+            valSpan.textContent = slider.value;
+            slider.addEventListener('input', function() { valSpan.textContent = this.value; onChange(parseInt(this.value)); });
+            rangeDiv.appendChild(slider);
+            rangeDiv.appendChild(valSpan);
+            wrapper.appendChild(rangeDiv);
+
+        } else if (setting.type === 'select') {
+            var sel = document.createElement('select');
+            sel.className = 'setting-input';
+            (setting.options || []).forEach(function(opt) {
+                var option = document.createElement('option');
+                option.value = opt.value;
+                option.textContent = opt.label;
+                if (opt.value === String(value)) option.selected = true;
+                sel.appendChild(option);
+            });
+            sel.addEventListener('change', function() { onChange(this.value); });
+            wrapper.appendChild(sel);
+
+        } else if (setting.type === 'textarea' || setting.type === 'richtext') {
+            var ta = document.createElement('textarea');
+            ta.className = 'setting-input';
+            ta.value = value || '';
+            ta.rows = setting.type === 'richtext' ? 6 : 3;
+            ta.addEventListener('change', function() { onChange(this.value); });
+            wrapper.appendChild(ta);
+
+        } else if (setting.type === 'collection') {
+            var colSel = document.createElement('select');
+            colSel.className = 'setting-input';
+            var emptyOpt = document.createElement('option');
+            emptyOpt.value = '';
+            emptyOpt.textContent = '— Select collection —';
+            colSel.appendChild(emptyOpt);
+            state.collections.forEach(function(col) {
+                var opt = document.createElement('option');
+                opt.value = col.slug;
+                opt.textContent = col.name;
+                if (col.slug === value) opt.selected = true;
+                colSel.appendChild(opt);
+            });
+            colSel.addEventListener('change', function() { onChange(this.value); });
+            wrapper.appendChild(colSel);
+
+        } else if (setting.type === 'image') {
+            var previewDiv = document.createElement('div');
+            previewDiv.className = 'image-field-preview';
+            if (value) {
+                previewDiv.innerHTML = '<img src="/' + value + '" alt=""><button class="remove-image" type="button">Remove</button>';
+                previewDiv.querySelector('.remove-image').addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    onChange('');
+                    previewDiv.innerHTML = 'Click to upload';
+                });
+            } else {
+                previewDiv.textContent = 'Click to upload';
+            }
+            // Basic file upload
+            var fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'image/*';
+            fileInput.style.display = 'none';
+            fileInput.addEventListener('change', function() {
+                if (!this.files[0]) return;
+                var formData = new FormData();
+                formData.append('file', this.files[0]);
+                fetch('/cms/media/upload', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': CSRF_TOKEN },
+                    body: formData
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.path) {
+                        onChange(data.path);
+                        previewDiv.innerHTML = '<img src="/' + data.path + '" alt=""><button class="remove-image" type="button">Remove</button>';
+                        previewDiv.querySelector('.remove-image').addEventListener('click', function(e) {
+                            e.stopPropagation(); onChange(''); previewDiv.innerHTML = 'Click to upload';
+                        });
+                    }
+                });
+            });
+            previewDiv.addEventListener('click', function() { fileInput.click(); });
+            wrapper.appendChild(previewDiv);
+            wrapper.appendChild(fileInput);
+
+        } else if (setting.type === 'number') {
+            var numInput = document.createElement('input');
+            numInput.type = 'number';
+            numInput.className = 'setting-input';
+            numInput.value = value !== undefined && value !== '' ? value : '';
+            if (setting.min !== undefined) numInput.min = setting.min;
+            if (setting.max !== undefined) numInput.max = setting.max;
+            numInput.addEventListener('change', function() { onChange(parseInt(this.value) || 0); });
+            wrapper.appendChild(numInput);
+
+        } else {
+            // text, url, email
+            var input = document.createElement('input');
+            input.type = setting.type === 'url' ? 'url' : 'text';
+            input.className = 'setting-input';
+            input.value = value || '';
+            if (setting.placeholder) input.placeholder = setting.placeholder;
+            input.addEventListener('change', function() { onChange(this.value); });
+            wrapper.appendChild(input);
+        }
+
+        return wrapper;
+    }
+
+    // ── Add Section Modal ──
+    function renderSectionPicker() {
+        var grid = document.getElementById('sectionPickerGrid');
+        grid.innerHTML = '';
+
+        Object.keys(state.availableSections).forEach(function(type) {
+            var schema = state.availableSections[type];
+            var item = document.createElement('div');
+            item.className = 'section-picker-item';
+            item.dataset.type = type;
+            item.innerHTML =
+                '<div class="section-picker-icon">' + (SECTION_ICONS[type] || '📦') + '</div>' +
+                '<div class="section-picker-name">' + (schema.name || type) + '</div>' +
+                '<div class="section-picker-desc">' + (schema.description || '') + '</div>';
+
+            item.addEventListener('click', function() {
+                addSection(type);
+                closeSectionModal();
+            });
+
+            grid.appendChild(item);
+        });
+    }
+
+    function addSection(type) {
+        var schema = state.availableSections[type];
+        var sectionId = type + '_' + Date.now().toString(36);
+
+        // Build default settings from schema
+        var settings = {};
+        (schema.settings || []).forEach(function(s) {
+            if (s.default !== undefined) settings[s.id] = s.default;
+        });
+
+        // Build default blocks from preset
+        var blocks = {};
+        var blockOrder = [];
+        if (schema.presets && schema.presets[0] && schema.presets[0].blocks) {
+            schema.presets[0].blocks.forEach(function(pb) {
+                var blockId = 'block_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 4);
+                blocks[blockId] = { type: pb.type, settings: pb.settings || {} };
+                blockOrder.push(blockId);
+            });
+        }
+
+        var pageData = getPageData();
+        pageData.sections[sectionId] = {
+            type: type,
+            settings: settings,
+            blocks: blocks,
+            block_order: blockOrder
+        };
+        pageData.order.push(sectionId);
+
+        markDirty();
+        renderSectionList();
+        refreshPreview();
+    }
+
+    function openSectionModal() {
+        renderSectionPicker();
+        document.getElementById('addSectionModal').classList.add('open');
+        document.getElementById('sectionSearch').value = '';
+        document.getElementById('sectionSearch').focus();
+    }
+
+    function closeSectionModal() {
+        document.getElementById('addSectionModal').classList.remove('open');
+    }
+
+    // Search filter
+    document.getElementById('sectionSearch').addEventListener('input', function() {
+        var q = this.value.toLowerCase();
+        document.querySelectorAll('.section-picker-item').forEach(function(item) {
+            var name = (item.querySelector('.section-picker-name')?.textContent || '').toLowerCase();
+            var desc = (item.querySelector('.section-picker-desc')?.textContent || '').toLowerCase();
+            item.style.display = (name.includes(q) || desc.includes(q)) ? '' : 'none';
+        });
+    });
+
+    // ── Preview ──
+    var previewDebounce = null;
+    function refreshPreview() {
+        clearTimeout(previewDebounce);
+        previewDebounce = setTimeout(function() {
+            // Save current state to server temporarily and reload iframe
+            fetch('/cms/themes/' + THEME_SLUG + '/customize/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN },
+                body: JSON.stringify(state.settingsData)
+            }).then(function() {
+                var frame = document.getElementById('previewFrame');
+                frame.src = '/cms/themes/' + THEME_SLUG + '/customize/preview?page=' + state.currentPage + '&t=' + Date.now();
+            });
+        }, 600);
+    }
+
+    // ── Save ──
+    function save() {
+        var btn = document.getElementById('saveBtn');
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+
+        fetch('/cms/themes/' + THEME_SLUG + '/customize/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN },
+            body: JSON.stringify(state.settingsData)
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                markClean();
+                showToast('Theme saved successfully', 'success');
+            } else {
+                showToast('Failed to save: ' + (data.error || 'Unknown error'), 'error');
+            }
+            btn.textContent = 'Save';
+        })
+        .catch(function() {
+            showToast('Network error', 'error');
+            btn.textContent = 'Save';
+            btn.disabled = false;
+        });
+    }
+
+    // ── Discard ──
+    function discard() {
+        if (!state.dirty) return;
+        if (!confirm('Discard all unsaved changes?')) return;
+        window.location.reload();
+    }
+
+    // ── Toast ──
+    function showToast(msg, type) {
+        var toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.className = 'toast toast-' + type + ' visible';
+        setTimeout(function() { toast.classList.remove('visible'); }, 3000);
+    }
+
+    // ── Page Switch ──
+    document.getElementById('pageSelect').addEventListener('change', function() {
+        state.currentPage = this.value;
+        state.activeSection = null;
+        closeDetail();
+        renderSectionList();
+        document.getElementById('previewFrame').src = '/cms/themes/' + THEME_SLUG + '/customize/preview?page=' + state.currentPage;
+    });
+
+    // ── Event Bindings ──
+    document.getElementById('addSectionBtn').addEventListener('click', openSectionModal);
+    document.getElementById('closeSectionModal').addEventListener('click', closeSectionModal);
+    document.getElementById('addSectionModal').addEventListener('click', function(e) {
+        if (e.target === this) closeSectionModal();
+    });
+    document.getElementById('detailBack').addEventListener('click', closeDetail);
+    document.getElementById('saveBtn').addEventListener('click', save);
+    document.getElementById('discardBtn').addEventListener('click', discard);
+
+    // Ctrl+S
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault();
+            if (state.dirty) save();
+        }
+    });
+
+    // Warn on leave
+    window.addEventListener('beforeunload', function(e) {
+        if (state.dirty) { e.preventDefault(); e.returnValue = ''; }
+    });
+
+    // ── Init ──
+    renderSectionList();
+    renderThemeSettingsGroups();
+
+})();
+</script>
+
+</body>
+</html>

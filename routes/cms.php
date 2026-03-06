@@ -10,6 +10,7 @@ use ZephyrPHP\Cms\Controllers\PageTypeController;
 use ZephyrPHP\Cms\Controllers\PageController;
 use ZephyrPHP\Cms\Controllers\PageFrontendController;
 use ZephyrPHP\Cms\Controllers\ThemeController;
+use ZephyrPHP\Cms\Controllers\ThemeCustomizerController;
 use ZephyrPHP\Cms\Api\ContentApiController;
 
 // CMS Admin Routes (protected by auth middleware)
@@ -63,6 +64,14 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     Route::get('/pages/{ptSlug}/{id}', [PageController::class, 'edit']);
     Route::post('/pages/{ptSlug}/{id}', [PageController::class, 'update']);
     Route::post('/pages/{ptSlug}/{id}/delete', [PageController::class, 'destroy']);
+
+    // Theme Customizer
+    Route::get('/themes/{slug}/customize', [ThemeCustomizerController::class, 'customize']);
+    Route::get('/themes/{slug}/customize/preview', [ThemeCustomizerController::class, 'preview']);
+    Route::post('/themes/{slug}/customize/save', [ThemeCustomizerController::class, 'save']);
+    Route::get('/themes/{slug}/customize/sections', [ThemeCustomizerController::class, 'listSections']);
+    Route::get('/themes/{slug}/customize/schema/{type}', [ThemeCustomizerController::class, 'sectionSchema']);
+    Route::get('/themes/{slug}/customize/collections', [ThemeCustomizerController::class, 'listCollections']);
 
     // Themes
     Route::get('/themes', [ThemeController::class, 'index']);
