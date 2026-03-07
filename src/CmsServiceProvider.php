@@ -231,7 +231,7 @@ class CmsServiceProvider
                     if ($sectionManager->hasSections(null, $template)) {
                         // Render using sections: use the layout and inject sections
                         $sectionsHtml = $sectionManager->renderSections($template);
-                        echo $view->render('@theme/layouts/' . $layout . '.twig', [
+                        echo $view->render('@theme/layouts/' . $layout, [
                             'page' => [
                                 'title' => $title,
                                 'template' => $template,

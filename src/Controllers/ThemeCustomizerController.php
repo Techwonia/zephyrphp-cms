@@ -151,7 +151,7 @@ class ThemeCustomizerController extends Controller
         // Check if page has sections
         if ($this->sectionManager->hasSections($slug, $pageTemplate)) {
             $sectionsHtml = $this->sectionManager->renderSections($pageTemplate, $slug);
-            return $view->render('@theme/layouts/' . $layout . '.twig', [
+            return $view->render('@theme/layouts/' . $layout, [
                 'page' => ['title' => $title, 'template' => $pageTemplate],
                 'sections_html' => $sectionsHtml,
                 'use_sections' => true,
