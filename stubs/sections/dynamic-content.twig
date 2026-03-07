@@ -1,0 +1,134 @@
+<section class="section-dynamic-content" style="background:{{ section.settings.bg_color|default('#ffffff') }}; padding:{{ section.settings.padding|default(60) }}px 0;">
+    <div class="container" style="max-width:{{ section.settings.max_width|default(1200) }}px; margin:0 auto; padding:0 24px;">
+        {% if section.settings.heading %}
+            <h2 style="text-align:{{ section.settings.text_align|default('center') }}; color:{{ section.settings.heading_color|default('#303030') }}; margin-bottom:8px; font-size:{{ section.settings.heading_size|default(28) }}px;">
+                {{ section.settings.heading }}
+            </h2>
+        {% endif %}
+        {% if section.settings.subheading %}
+            <p style="text-align:{{ section.settings.text_align|default('center') }}; color:{{ section.settings.text_color|default('#616161') }}; max-width:600px; margin:0 auto 40px; font-size:{{ section.settings.subheading_size|default(16) }}px;">
+                {{ section.settings.subheading }}
+            </p>
+        {% endif %}
+
+        {% if section.settings.collection %}
+            {% set tf = section.settings.title_field|default('title') %}
+            {% set df = section.settings.excerpt_field|default('') %}
+            {% set imgf = section.settings.image_field|default('') %}
+            {% set lf = section.settings.link_field|default('slug') %}
+            {% set items = collection(section.settings.collection, {per_page: section.settings.items_count|default(6), sort_dir: section.settings.sort_dir|default('DESC')}) %}
+
+            {% if items.data|length > 0 %}
+                {% if section.settings.layout == 'list' %}
+                {# ── LIST LAYOUT ── #}
+                <div style="display:flex; flex-direction:column; gap:{{ section.settings.gap|default(0) }}px;">
+                    {% for item in items.data %}
+                        <div style="display:flex; gap:16px; align-items:center; padding:{{ section.settings.card_padding|default(16) }}px;{% if section.settings.card_radius > 0 %} border-radius:{{ section.settings.card_radius }}px; border:1px solid {{ section.settings.card_border|default('#eeeeee') }}; margin-bottom:{{ section.settings.gap|default(8) }}px;{% else %} border-bottom:1px solid {{ section.settings.card_border|default('#eeeeee') }};{% endif %}{% if section.settings.card_bg and section.settings.card_bg != '#ffffff' %} background:{{ section.settings.card_bg }};{% endif %}">
+                            {% if section.settings.show_image and imgf and attribute(item, imgf) is defined and attribute(item, imgf) %}
+                                <img src="/{{ attribute(item, imgf) }}" alt="" style="width:{{ section.settings.image_height|default(80) }}px; height:{{ section.settings.image_height|default(80) }}px; object-fit:cover; border-radius:{{ section.settings.card_radius|default(6) }}px; flex-shrink:0;">
+                            {% endif %}
+                            <div style="flex:1; min-width:0;">
+                                {% if tf and attribute(item, tf) is defined and attribute(item, tf) %}
+                                    <h3 style="margin:0 0 4px; color:{{ section.settings.heading_color|default('#303030') }}; font-size:{{ section.settings.title_size|default(16) }}px;">{{ attribute(item, tf) }}</h3>
+                                {% endif %}
+                                {% if section.settings.show_excerpt and df and attribute(item, df) is defined and attribute(item, df) %}
+                                    <p style="margin:0; color:{{ section.settings.text_color|default('#616161') }}; font-size:{{ section.settings.excerpt_size|default(14) }}px; line-height:1.4;">{{ attribute(item, df)|striptags|slice(0, section.settings.excerpt_length|default(120)) }}{% if attribute(item, df)|length > section.settings.excerpt_length|default(120) %}...{% endif %}</p>
+                                {% endif %}
+                            </div>
+                            {% if section.settings.show_link and lf and attribute(item, lf) is defined %}
+                                <a href="{{ attribute(item, lf) }}" style="color:{{ section.settings.link_color|default('#008060') }}; text-decoration:none; font-weight:500; white-space:nowrap; font-size:{{ section.settings.link_size|default(14) }}px;">{{ section.settings.link_text|default('View') }} &rarr;</a>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+
+                {% else %}
+                {# ── GRID LAYOUT (default) ── #}
+                <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax({{ section.settings.card_min_width|default(280) }}px, 1fr)); gap:{{ section.settings.gap|default(24) }}px;">
+                    {% for item in items.data %}
+                        <div style="background:{{ section.settings.card_bg|default('#fafafa') }}; border-radius:{{ section.settings.card_radius|default(8) }}px; overflow:hidden; border:1px solid {{ section.settings.card_border|default('#eeeeee') }};">
+                            {% if section.settings.show_image and imgf and attribute(item, imgf) is defined and attribute(item, imgf) %}
+                                <div style="height:{{ section.settings.image_height|default(200) }}px; overflow:hidden;">
+                                    <img src="/{{ attribute(item, imgf) }}" alt="" style="width:100%; height:100%; object-fit:cover;">
+                                </div>
+                            {% endif %}
+                            <div style="padding:{{ section.settings.card_padding|default(20) }}px;">
+                                {% if tf and attribute(item, tf) is defined and attribute(item, tf) %}
+                                    <h3 style="margin:0 0 8px; color:{{ section.settings.heading_color|default('#303030') }}; font-size:{{ section.settings.title_size|default(18) }}px;">{{ attribute(item, tf) }}</h3>
+                                {% endif %}
+                                {% if section.settings.show_excerpt and df and attribute(item, df) is defined and attribute(item, df) %}
+                                    <p style="color:{{ section.settings.text_color|default('#616161') }}; font-size:{{ section.settings.excerpt_size|default(14) }}px; margin:0; line-height:1.5;">{{ attribute(item, df)|striptags|slice(0, section.settings.excerpt_length|default(120)) }}{% if attribute(item, df)|length > section.settings.excerpt_length|default(120) %}...{% endif %}</p>
+                                {% endif %}
+                                {% if section.settings.show_link and lf and attribute(item, lf) is defined %}
+                                    <a href="{{ attribute(item, lf) }}" style="display:inline-block; margin-top:12px; color:{{ section.settings.link_color|default('#008060') }}; text-decoration:none; font-weight:500; font-size:{{ section.settings.link_size|default(14) }}px;">{{ section.settings.link_text|default('Read More') }} &rarr;</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            {% else %}
+                <p style="text-align:center; color:#999; padding:40px 0;">No entries found in this collection.</p>
+            {% endif %}
+        {% else %}
+            <p style="text-align:center; color:#999; padding:40px 0;">Select a collection to display.</p>
+        {% endif %}
+    </div>
+</section>
+
+{% schema %}
+{
+    "name": "Dynamic Content",
+    "description": "Display collection entries in grid or list layout with full customization",
+    "icon": "dynamic",
+    "settings": [
+        {"type": "layout_select", "id": "layout", "label": "Layout", "default": "grid", "group": "Layout",
+         "options": [{"value": "grid", "label": "Grid"}, {"value": "list", "label": "List"}]},
+        {"type": "range", "id": "card_min_width", "label": "Card Min Width (px)", "min": 200, "max": 400, "step": 10, "default": 280, "group": "Layout"},
+        {"type": "range", "id": "max_width", "label": "Max Width (px)", "min": 600, "max": 1400, "step": 50, "default": 1200, "group": "Layout"},
+
+        {"type": "collection", "id": "collection", "label": "Collection", "group": "Data Source"},
+        {"type": "range", "id": "items_count", "label": "Items to Show", "min": 1, "max": 24, "step": 1, "default": 6, "group": "Data Source"},
+        {"type": "select", "id": "sort_dir", "label": "Sort Order", "default": "DESC", "group": "Data Source",
+         "options": [{"value": "DESC", "label": "Newest First"}, {"value": "ASC", "label": "Oldest First"}]},
+
+        {"type": "field_select", "id": "title_field", "label": "Title Field", "collection_setting": "collection", "default": "title", "group": "Field Mapping"},
+        {"type": "field_select", "id": "excerpt_field", "label": "Description Field", "collection_setting": "collection", "default": "", "group": "Field Mapping"},
+        {"type": "field_select", "id": "image_field", "label": "Image Field", "collection_setting": "collection", "default": "", "group": "Field Mapping"},
+        {"type": "field_select", "id": "link_field", "label": "Link Field", "collection_setting": "collection", "default": "slug", "group": "Field Mapping"},
+
+        {"type": "text", "id": "heading", "label": "Heading", "default": "", "group": "Content"},
+        {"type": "text", "id": "subheading", "label": "Subheading", "group": "Content"},
+        {"type": "select", "id": "text_align", "label": "Header Alignment", "default": "center", "group": "Content",
+         "options": [{"value": "left", "label": "Left"}, {"value": "center", "label": "Center"}]},
+        {"type": "checkbox", "id": "show_image", "label": "Show Image", "default": true, "group": "Content"},
+        {"type": "checkbox", "id": "show_excerpt", "label": "Show Description", "default": true, "group": "Content"},
+        {"type": "checkbox", "id": "show_link", "label": "Show Link", "default": true, "group": "Content"},
+        {"type": "text", "id": "link_text", "label": "Link Text", "default": "Read More", "group": "Content"},
+
+        {"type": "range", "id": "heading_size", "label": "Heading Size (px)", "min": 18, "max": 48, "step": 1, "default": 28, "group": "Typography"},
+        {"type": "range", "id": "subheading_size", "label": "Subheading Size (px)", "min": 12, "max": 24, "step": 1, "default": 16, "group": "Typography"},
+        {"type": "range", "id": "title_size", "label": "Title Size (px)", "min": 14, "max": 32, "step": 1, "default": 18, "group": "Typography"},
+        {"type": "range", "id": "excerpt_size", "label": "Excerpt Size (px)", "min": 12, "max": 18, "step": 1, "default": 14, "group": "Typography"},
+        {"type": "range", "id": "excerpt_length", "label": "Excerpt Length (chars)", "min": 50, "max": 300, "step": 10, "default": 120, "group": "Typography"},
+        {"type": "range", "id": "link_size", "label": "Link Size (px)", "min": 12, "max": 18, "step": 1, "default": 14, "group": "Typography"},
+
+        {"type": "range", "id": "image_height", "label": "Image Height (px)", "min": 60, "max": 400, "step": 10, "default": 200, "group": "Card Style"},
+        {"type": "range", "id": "card_padding", "label": "Card Padding (px)", "min": 8, "max": 40, "step": 4, "default": 20, "group": "Card Style"},
+        {"type": "range", "id": "card_radius", "label": "Card Radius (px)", "min": 0, "max": 24, "step": 2, "default": 8, "group": "Card Style"},
+        {"type": "range", "id": "gap", "label": "Spacing (px)", "min": 0, "max": 48, "step": 4, "default": 24, "group": "Card Style"},
+
+        {"type": "color", "id": "bg_color", "label": "Background", "default": "#ffffff", "group": "Colors"},
+        {"type": "color", "id": "card_bg", "label": "Card Background", "default": "#fafafa", "group": "Colors"},
+        {"type": "color", "id": "card_border", "label": "Card Border", "default": "#eeeeee", "group": "Colors"},
+        {"type": "color", "id": "heading_color", "label": "Heading Color", "default": "#303030", "group": "Colors"},
+        {"type": "color", "id": "text_color", "label": "Text Color", "default": "#616161", "group": "Colors"},
+        {"type": "color", "id": "link_color", "label": "Link Color", "default": "#008060", "group": "Colors"},
+
+        {"type": "range", "id": "padding", "label": "Section Padding (px)", "min": 0, "max": 120, "step": 4, "default": 60, "group": "Spacing"}
+    ],
+    "presets": [
+        {"name": "Dynamic Content", "settings": {"heading": "", "layout": "grid", "items_count": 6}}
+    ]
+}
+{% endschema %}

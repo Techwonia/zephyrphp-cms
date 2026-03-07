@@ -227,6 +227,10 @@
         .detail-title { font-size: 14px; font-weight: 600; flex: 1; }
 
         .detail-body { padding: 16px; }
+        .detail-body .settings-group { border-bottom: 1px solid var(--border); margin: 0 -16px; }
+        .detail-body .settings-group .settings-group-header { padding: 12px 16px; }
+        .detail-body .settings-group:last-of-type { border-bottom: none; }
+        .detail-body .settings-group .setting-field { padding: 0 16px; }
 
         /* Form controls */
         .setting-field { margin-bottom: 16px; }
@@ -558,7 +562,7 @@
     // Section icon map
     var SECTION_ICONS = {
         'hero-banner': '🖼️', 'rich-text': '📝', 'image-with-text': '🖼️',
-        'collection-grid': '📊', 'collection-list': '📋', 'feature-columns': '⚡',
+        'dynamic-content': '📊', 'feature-columns': '⚡',
         'testimonials': '💬', 'faq': '❓', 'newsletter': '📧',
         'cta-banner': '📢', 'gallery': '🖼️', 'spacer': '↕️',
         'custom-code': '🧩'
@@ -730,17 +734,71 @@
         var body = document.getElementById('detailBody');
         body.innerHTML = '';
 
-        // Section settings
-        (schema.settings || []).forEach(function(setting) {
-            var val = sec.settings[setting.id];
-            if (val === undefined || val === null) val = setting.default;
-            if (val === undefined) val = '';
-            body.appendChild(createSettingField(setting, val, function(newVal) {
-                sec.settings[setting.id] = newVal;
-                markDirty();
-                refreshPreview();
-            }));
-        });
+        // Section settings — grouped or flat
+        var allSettings = schema.settings || [];
+        var hasGroups = allSettings.some(function(s) { return !!s.group; });
+
+        if (hasGroups) {
+            var groupOrder = [];
+            var groupMap = {};
+            allSettings.forEach(function(setting) {
+                var g = setting.group || 'Other';
+                if (!groupMap[g]) { groupMap[g] = []; groupOrder.push(g); }
+                groupMap[g].push(setting);
+            });
+
+            groupOrder.forEach(function(groupName, idx) {
+                var groupDiv = document.createElement('div');
+                groupDiv.className = 'settings-group';
+
+                var groupHeader = document.createElement('div');
+                groupHeader.className = 'settings-group-header';
+                groupHeader.innerHTML =
+                    '<span class="settings-group-title">' + groupName + '</span>' +
+                    '<svg class="settings-group-chevron' + (idx === 0 ? ' open' : '') + '" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>';
+
+                var groupBody = document.createElement('div');
+                groupBody.style.display = idx === 0 ? 'block' : 'none';
+                groupBody.style.padding = '0 0 12px';
+
+                groupMap[groupName].forEach(function(setting) {
+                    var val = sec.settings[setting.id];
+                    if (val === undefined || val === null) val = setting.default;
+                    if (val === undefined) val = '';
+                    groupBody.appendChild(createSettingField(setting, val, function(newVal) {
+                        sec.settings[setting.id] = newVal;
+                        markDirty();
+                        refreshPreview();
+                    }));
+                });
+
+                groupHeader.addEventListener('click', function() {
+                    var chevron = groupHeader.querySelector('.settings-group-chevron');
+                    if (groupBody.style.display === 'none') {
+                        groupBody.style.display = 'block';
+                        chevron.classList.add('open');
+                    } else {
+                        groupBody.style.display = 'none';
+                        chevron.classList.remove('open');
+                    }
+                });
+
+                groupDiv.appendChild(groupHeader);
+                groupDiv.appendChild(groupBody);
+                body.appendChild(groupDiv);
+            });
+        } else {
+            allSettings.forEach(function(setting) {
+                var val = sec.settings[setting.id];
+                if (val === undefined || val === null) val = setting.default;
+                if (val === undefined) val = '';
+                body.appendChild(createSettingField(setting, val, function(newVal) {
+                    sec.settings[setting.id] = newVal;
+                    markDirty();
+                    refreshPreview();
+                }));
+            });
+        }
 
         // Blocks
         if (schema.blocks && schema.blocks.length > 0) {
@@ -957,6 +1015,39 @@
             });
             sel.addEventListener('change', function() { onChange(this.value); });
             wrapper.appendChild(sel);
+
+        } else if (setting.type === 'layout_select') {
+            var layoutDiv = document.createElement('div');
+            layoutDiv.style.cssText = 'display:flex; gap:8px;';
+
+            (setting.options || []).forEach(function(opt) {
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                var isActive = (String(value) === String(opt.value));
+                btn.style.cssText = 'flex:1; padding:12px 8px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:500; font-family:var(--font); display:flex; flex-direction:column; align-items:center; gap:6px; transition:all 0.15s;'
+                    + 'background:' + (isActive ? 'rgba(0,128,96,0.08)' : 'var(--bg-subdued)') + ';'
+                    + 'border:' + (isActive ? '2px solid var(--primary)' : '1px solid var(--border)') + ';'
+                    + 'color:' + (isActive ? 'var(--primary)' : 'var(--text-secondary)') + ';';
+
+                var iconSvg = '';
+                if (opt.value === 'grid') {
+                    iconSvg = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>';
+                } else if (opt.value === 'list') {
+                    iconSvg = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="4" cy="6" r="1" fill="currentColor"/><circle cx="4" cy="12" r="1" fill="currentColor"/><circle cx="4" cy="18" r="1" fill="currentColor"/></svg>';
+                }
+
+                btn.innerHTML = iconSvg + '<span>' + opt.label + '</span>';
+                btn.addEventListener('click', function() {
+                    onChange(opt.value);
+                    // Re-render detail panel to update active state
+                    if (state.activeSection) {
+                        setTimeout(function() { openSectionDetail(state.activeSection); }, 50);
+                    }
+                });
+                layoutDiv.appendChild(btn);
+            });
+
+            wrapper.appendChild(layoutDiv);
 
         } else if (setting.type === 'textarea' || setting.type === 'richtext') {
             var ta = document.createElement('textarea');
