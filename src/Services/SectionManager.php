@@ -319,17 +319,22 @@ class SectionManager
 
     /**
      * Render a single section by loading its Twig template.
+     * Uses getSectionTemplate() to strip {% schema %} blocks before rendering,
+     * since Twig does not recognize the schema tag natively.
      */
     private function renderSingleSection(string $type, array $settings, array $blocks, array $themeSettings, string $slug): string
     {
         try {
+            $templateContent = $this->getSectionTemplate($type, $slug);
+            if (!$templateContent) {
+                return '<!-- Section "' . htmlspecialchars($type) . '" template not found -->';
+            }
+
             $view = \ZephyrPHP\View\View::getInstance();
+            $twig = $view->getEngine();
+            $template = $twig->createTemplate($templateContent);
 
-            // The section template is at sections/{type}.twig within the theme
-            // We need to render it with the section context
-            $templatePath = '@theme/sections/' . $type . '.twig';
-
-            return $view->render($templatePath, [
+            return $template->render([
                 'section' => [
                     'type' => $type,
                     'settings' => $settings,
