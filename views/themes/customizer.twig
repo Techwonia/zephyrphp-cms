@@ -584,7 +584,11 @@
         if (!state.settingsData.pages[state.currentPage]) {
             state.settingsData.pages[state.currentPage] = { sections: {}, order: [] };
         }
-        return state.settingsData.pages[state.currentPage];
+        var pd = state.settingsData.pages[state.currentPage];
+        // PHP may encode empty objects as [] — ensure sections is always an object
+        if (!pd.sections || Array.isArray(pd.sections)) pd.sections = {};
+        if (!pd.order) pd.order = [];
+        return pd;
     }
 
     function markDirty() {
@@ -1100,8 +1104,8 @@
                     // Fetch updated sections list
                     return fetch('/cms/themes/' + THEME_SLUG + '/customize/sections')
                         .then(function(r) { return r.json(); })
-                        .then(function(sections) {
-                            state.availableSections = sections;
+                        .then(function(result) {
+                            state.availableSections = result.sections || result;
                             // Auto-add the newly created section
                             addSection(data.type);
                             closeSectionModal();

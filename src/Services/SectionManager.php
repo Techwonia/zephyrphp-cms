@@ -169,6 +169,28 @@ class SectionManager
             $data['pages'] = new \stdClass();
         }
 
+        // Ensure nested sections/blocks encode as JSON objects, not arrays
+        if (is_array($data['pages'])) {
+            foreach ($data['pages'] as &$pageData) {
+                if (is_array($pageData)) {
+                    if (empty($pageData['sections'])) {
+                        $pageData['sections'] = new \stdClass();
+                    } elseif (is_array($pageData['sections'])) {
+                        foreach ($pageData['sections'] as &$section) {
+                            if (is_array($section) && isset($section['blocks']) && empty($section['blocks'])) {
+                                $section['blocks'] = new \stdClass();
+                            }
+                            if (is_array($section) && isset($section['settings']) && empty($section['settings'])) {
+                                $section['settings'] = new \stdClass();
+                            }
+                        }
+                        unset($section);
+                    }
+                }
+            }
+            unset($pageData);
+        }
+
         return file_put_contents(
             $path,
             json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
@@ -204,7 +226,7 @@ class SectionManager
         $data = $this->getSettingsData($slug);
 
         $data['pages'][$pageTemplate] = [
-            'sections' => $sections,
+            'sections' => empty($sections) ? new \stdClass() : $sections,
             'order' => $order,
         ];
 
