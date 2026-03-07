@@ -7,7 +7,7 @@
     <title>Customize: {{ theme.getName() }}</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-    <style>
+    <style nonce="{{ csp_style_nonce() }}">
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
@@ -546,7 +546,7 @@
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<script>
+<script nonce="{{ csp_nonce() }}">
 (function() {
     'use strict';
 
@@ -574,9 +574,9 @@
         activeSection: null
     };
 
-    // Ensure state structure
-    if (!state.settingsData.current) state.settingsData.current = {};
-    if (!state.settingsData.pages) state.settingsData.pages = {};
+    // Ensure state structure (PHP may encode empty arrays as [] instead of {})
+    if (!state.settingsData.current || Array.isArray(state.settingsData.current)) state.settingsData.current = {};
+    if (!state.settingsData.pages || Array.isArray(state.settingsData.pages)) state.settingsData.pages = {};
 
     function getPageData() {
         if (!state.settingsData.pages[state.currentPage]) {

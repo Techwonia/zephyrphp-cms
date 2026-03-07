@@ -130,15 +130,23 @@ class SectionManager
         $path = $this->themeManager->getThemePath($slug) . '/config/settings_data.json';
 
         if (!file_exists($path)) {
-            return ['current' => [], 'pages' => []];
+            return ['current' => new \stdClass(), 'pages' => new \stdClass()];
         }
 
         $data = json_decode(file_get_contents($path), true);
         if (!is_array($data)) {
-            return ['current' => [], 'pages' => []];
+            return ['current' => new \stdClass(), 'pages' => new \stdClass()];
         }
 
-        return array_merge(['current' => [], 'pages' => []], $data);
+        // Ensure current and pages are associative (objects in JSON, not arrays)
+        if (!isset($data['current']) || (is_array($data['current']) && empty($data['current']))) {
+            $data['current'] = new \stdClass();
+        }
+        if (!isset($data['pages']) || (is_array($data['pages']) && empty($data['pages']))) {
+            $data['pages'] = new \stdClass();
+        }
+
+        return $data;
     }
 
     /**
@@ -151,6 +159,14 @@ class SectionManager
 
         if (!is_dir($dir)) {
             mkdir($dir, 0755, true);
+        }
+
+        // Ensure current and pages encode as JSON objects (not arrays) when empty
+        if (empty($data['current'])) {
+            $data['current'] = new \stdClass();
+        }
+        if (empty($data['pages'])) {
+            $data['pages'] = new \stdClass();
         }
 
         return file_put_contents(
