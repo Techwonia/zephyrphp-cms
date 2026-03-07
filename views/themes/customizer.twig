@@ -432,6 +432,7 @@
         }
         .section-picker-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
         .section-picker-desc { font-size: 11px; color: var(--text-secondary); line-height: 1.4; }
+        .section-picker-create { border-style: dashed; border-color: var(--primary); }
 
         /* ── Toast ── */
         .toast {
@@ -559,7 +560,8 @@
         'hero-banner': '🖼️', 'rich-text': '📝', 'image-with-text': '🖼️',
         'collection-grid': '📊', 'collection-list': '📋', 'feature-columns': '⚡',
         'testimonials': '💬', 'faq': '❓', 'newsletter': '📧',
-        'cta-banner': '📢', 'gallery': '🖼️', 'spacer': '↕️'
+        'cta-banner': '📢', 'gallery': '🖼️', 'spacer': '↕️',
+        'custom-code': '🧩'
     };
 
     // ── State ──
@@ -1048,6 +1050,78 @@
             });
 
             grid.appendChild(item);
+        });
+
+        // "Create New Section" card
+        var createItem = document.createElement('div');
+        createItem.className = 'section-picker-item section-picker-create';
+        createItem.innerHTML =
+            '<div class="section-picker-icon" style="background:#e8f5e9; color:var(--primary); font-size:24px;">+</div>' +
+            '<div class="section-picker-name">Create New</div>' +
+            '<div class="section-picker-desc">Create a custom section type</div>';
+        createItem.addEventListener('click', function() {
+            showCreateSectionForm();
+        });
+        grid.appendChild(createItem);
+    }
+
+    function showCreateSectionForm() {
+        var grid = document.getElementById('sectionPickerGrid');
+        grid.innerHTML =
+            '<div style="grid-column: 1/-1; padding: 12px 0;">' +
+            '  <div style="margin-bottom:12px;">' +
+            '    <label style="display:block; font-size:13px; font-weight:600; margin-bottom:6px;">Section Name</label>' +
+            '    <input type="text" id="newSectionNameInput" placeholder="e.g. Pricing Table" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:6px; font-size:13px; font-family:var(--font);">' +
+            '  </div>' +
+            '  <div style="display:flex; gap:8px;">' +
+            '    <button id="createNewSectionBtn" style="padding:8px 16px; background:var(--primary); color:#fff; border:none; border-radius:6px; font-size:13px; cursor:pointer; font-weight:500;">Create & Add</button>' +
+            '    <button id="cancelNewSectionBtn" style="padding:8px 16px; background:transparent; color:var(--text); border:1px solid var(--border); border-radius:6px; font-size:13px; cursor:pointer;">Back</button>' +
+            '  </div>' +
+            '</div>';
+
+        document.getElementById('newSectionNameInput').focus();
+
+        document.getElementById('createNewSectionBtn').addEventListener('click', function() {
+            var name = document.getElementById('newSectionNameInput').value.trim();
+            if (!name) { alert('Section name is required'); return; }
+
+            var btn = this;
+            btn.disabled = true;
+            btn.textContent = 'Creating...';
+
+            fetch('/cms/themes/' + THEME_SLUG + '/sections/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN },
+                body: JSON.stringify({ name: name })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    // Fetch updated sections list
+                    return fetch('/cms/themes/' + THEME_SLUG + '/customize/sections')
+                        .then(function(r) { return r.json(); })
+                        .then(function(sections) {
+                            state.availableSections = sections;
+                            // Auto-add the newly created section
+                            addSection(data.type);
+                            closeSectionModal();
+                            showToast('Section "' + data.name + '" created and added', 'success');
+                        });
+                } else {
+                    alert(data.error || 'Failed to create section');
+                    btn.disabled = false;
+                    btn.textContent = 'Create & Add';
+                }
+            })
+            .catch(function() {
+                alert('Network error');
+                btn.disabled = false;
+                btn.textContent = 'Create & Add';
+            });
+        });
+
+        document.getElementById('cancelNewSectionBtn').addEventListener('click', function() {
+            renderSectionPicker();
         });
     }
 

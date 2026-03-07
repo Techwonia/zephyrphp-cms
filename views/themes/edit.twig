@@ -143,11 +143,35 @@
         </div>
     </div>
 
+    {# New Section Modal #}
+    <div class="modal-overlay" id="newSectionModal" style="display:none">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Create New Section</h3>
+                <button class="modal-close" id="closeNewSectionModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="sectionName">Section Name *</label>
+                    <input type="text" id="sectionName" class="form-control" placeholder="e.g. Pricing Table">
+                    <small class="text-muted">A .twig file will be created in the sections/ directory.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="cancelNewSectionModal">Cancel</button>
+                <button class="btn btn-primary" id="createSectionBtn">Create Section</button>
+            </div>
+        </div>
+    </div>
+
     {# File Editor Tab #}
     <div class="tab-panel" id="tab-editor">
         <div class="editor-layout">
             <div class="editor-sidebar">
-                <h4>Files</h4>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <h4 style="margin:0;">Files</h4>
+                    <button class="btn btn-xs btn-primary" id="newSectionBtn" title="Create new section">+ Section</button>
+                </div>
                 {% for folder, fileList in files %}
                 <div class="file-folder">
                     <div class="folder-name">{{ folder }}/</div>
@@ -549,6 +573,50 @@ document.addEventListener('DOMContentLoaded', function() {
         if (editTemplate) return; // Don't auto-generate on edit
         var slug = '/' + this.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
         document.getElementById('pageSlug').value = slug;
+    });
+
+    // --- New Section Management ---
+    document.getElementById('newSectionBtn')?.addEventListener('click', function() {
+        document.getElementById('newSectionModal').style.display = 'flex';
+        document.getElementById('sectionName').value = '';
+        document.getElementById('sectionName').focus();
+    });
+
+    document.getElementById('closeNewSectionModal')?.addEventListener('click', function() {
+        document.getElementById('newSectionModal').style.display = 'none';
+    });
+    document.getElementById('cancelNewSectionModal')?.addEventListener('click', function() {
+        document.getElementById('newSectionModal').style.display = 'none';
+    });
+
+    document.getElementById('createSectionBtn')?.addEventListener('click', function() {
+        var btn = this;
+        var name = document.getElementById('sectionName').value.trim();
+        if (!name) { alert('Section name is required'); return; }
+
+        btn.disabled = true;
+        btn.textContent = 'Creating...';
+
+        fetch('/cms/themes/' + themeSlug + '/sections/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+            body: JSON.stringify({ name: name })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert(data.error || 'Failed to create section');
+                btn.disabled = false;
+                btn.textContent = 'Create Section';
+            }
+        })
+        .catch(function() {
+            alert('Network error');
+            btn.disabled = false;
+            btn.textContent = 'Create Section';
+        });
     });
 });
 </script>

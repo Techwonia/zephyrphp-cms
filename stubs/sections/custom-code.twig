@@ -1,0 +1,18 @@
+<section class="section-custom-code" style="padding:{{ section.settings.padding|default(0) }}px 0;">
+    {{ section.settings.code|raw }}
+</section>
+
+{% schema %}
+{
+    "name": "Custom Code",
+    "description": "Paste custom HTML, CSS, or embed code",
+    "icon": "code",
+    "settings": [
+        {"type": "richtext", "id": "code", "label": "HTML Code", "default": "<div>Your custom code here</div>"},
+        {"type": "range", "id": "padding", "label": "Section Padding (px)", "min": 0, "max": 120, "step": 4, "default": 0}
+    ],
+    "presets": [
+        {"name": "Custom Code", "settings": {"code": "<div style=\"padding: 40px; text-align: center;\"><p>Your custom HTML code here</p></div>"}}
+    ]
+}
+{% endschema %}

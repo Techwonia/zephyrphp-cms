@@ -8,15 +8,18 @@ use ZephyrPHP\Core\Controllers\Controller;
 use ZephyrPHP\Auth\Auth;
 use ZephyrPHP\Cms\Models\Theme;
 use ZephyrPHP\Cms\Services\ThemeManager;
+use ZephyrPHP\Cms\Services\SectionManager;
 
 class ThemeController extends Controller
 {
     private ThemeManager $themeManager;
+    private SectionManager $sectionManager;
 
     public function __construct()
     {
         parent::__construct();
         $this->themeManager = new ThemeManager();
+        $this->sectionManager = new SectionManager($this->themeManager);
     }
 
     private function requireAdmin(): void
@@ -323,15 +326,9 @@ class ThemeController extends Controller
             return;
         }
 
-        // Create template file
+        // Create a minimal template file (sections handle the content)
         $templateContent = "{% extends \"@theme/layouts/{$layout}.twig\" %}\n\n";
-        $templateContent .= "{% block title %}{{ page.title }}{% endblock %}\n\n";
-        $templateContent .= "{% block content %}\n";
-        $templateContent .= "<div class=\"container\">\n";
-        $templateContent .= "    <h1>{{ page.title }}</h1>\n";
-        $templateContent .= "    <p>Edit this page from the theme editor.</p>\n";
-        $templateContent .= "</div>\n";
-        $templateContent .= "{% endblock %}\n";
+        $templateContent .= "{% block title %}{{ page.title }}{% endblock %}\n";
 
         $this->themeManager->writeTemplate($templateName . '.twig', $templateContent, $slug);
 
@@ -343,6 +340,9 @@ class ThemeController extends Controller
             'layout' => $layout,
         ];
         $this->themeManager->savePage($slug, $page);
+
+        // Initialize empty sections in settings_data.json
+        $this->sectionManager->savePageSections($slug, $templateName, [], []);
 
         echo json_encode(['success' => true, 'page' => $page]);
     }
@@ -414,10 +414,98 @@ class ThemeController extends Controller
         }
 
         if ($this->themeManager->deletePage($slug, $template)) {
+            // Clean up section data from settings_data.json
+            $data = $this->sectionManager->getSettingsData($slug);
+            if (isset($data['pages'][$template])) {
+                unset($data['pages'][$template]);
+                $this->sectionManager->saveSettingsData($slug, $data);
+            }
+
             echo json_encode(['success' => true]);
         } else {
             http_response_code(404);
             echo json_encode(['error' => 'Page not found']);
+        }
+    }
+
+    /**
+     * AJAX: Create a new section .twig file in the theme.
+     */
+    public function createSection(string $slug): void
+    {
+        $this->requireAdmin();
+        header('Content-Type: application/json');
+
+        $theme = Theme::findOneBy(['slug' => $slug]);
+        if (!$theme) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Theme not found']);
+            return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        $name = trim($input['name'] ?? '');
+
+        if (empty($name)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Section name is required']);
+            return;
+        }
+
+        // Generate type slug from name
+        $typeSlug = $this->generateSlug($name);
+        if (empty($typeSlug)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Invalid section name']);
+            return;
+        }
+
+        // Check if section already exists
+        $sectionPath = $this->themeManager->getThemePath($slug) . '/sections/' . $typeSlug . '.twig';
+        if (file_exists($sectionPath)) {
+            http_response_code(409);
+            echo json_encode(['error' => 'A section with this name already exists']);
+            return;
+        }
+
+        // Generate section template content
+        $templateContent = '<section class="section-' . htmlspecialchars($typeSlug) . '" style="padding:{{ section.settings.padding|default(40) }}px 0; background:{{ section.settings.bg_color|default(\'#ffffff\') }};">' . "\n";
+        $templateContent .= '    <div class="container">' . "\n";
+        $templateContent .= '        {% if section.settings.heading %}' . "\n";
+        $templateContent .= '            <h2 style="color:{{ section.settings.heading_color|default(\'#303030\') }}; text-align:{{ section.settings.text_align|default(\'left\') }};">{{ section.settings.heading }}</h2>' . "\n";
+        $templateContent .= '        {% endif %}' . "\n";
+        $templateContent .= '        {% if section.settings.content %}' . "\n";
+        $templateContent .= '            <div style="color:{{ section.settings.text_color|default(\'#616161\') }};">{{ section.settings.content|raw }}</div>' . "\n";
+        $templateContent .= '        {% endif %}' . "\n";
+        $templateContent .= '    </div>' . "\n";
+        $templateContent .= '</section>' . "\n\n";
+        $templateContent .= '{% schema %}' . "\n";
+        $templateContent .= json_encode([
+            'name' => $name,
+            'description' => 'Custom section: ' . $name,
+            'icon' => 'layout',
+            'settings' => [
+                ['type' => 'text', 'id' => 'heading', 'label' => 'Heading', 'default' => $name],
+                ['type' => 'richtext', 'id' => 'content', 'label' => 'Content', 'default' => '<p>Add your content here.</p>'],
+                ['type' => 'select', 'id' => 'text_align', 'label' => 'Text Alignment', 'default' => 'left',
+                 'options' => [['value' => 'left', 'label' => 'Left'], ['value' => 'center', 'label' => 'Center'], ['value' => 'right', 'label' => 'Right']]],
+                ['type' => 'color', 'id' => 'bg_color', 'label' => 'Background Color', 'default' => '#ffffff'],
+                ['type' => 'color', 'id' => 'heading_color', 'label' => 'Heading Color', 'default' => '#303030'],
+                ['type' => 'color', 'id' => 'text_color', 'label' => 'Text Color', 'default' => '#616161'],
+                ['type' => 'range', 'id' => 'padding', 'label' => 'Section Padding (px)', 'min' => 0, 'max' => 120, 'step' => 4, 'default' => 40],
+            ],
+            'presets' => [
+                ['name' => $name, 'settings' => ['heading' => $name]],
+            ],
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        $templateContent .= '{% endschema %}' . "\n";
+
+        // Write file
+        if ($this->themeManager->writeFile('sections/' . $typeSlug . '.twig', $templateContent, $slug)) {
+            echo json_encode(['success' => true, 'type' => $typeSlug, 'name' => $name]);
+        } else {
+            http_response_code(500);
+            echo json_encode(['error' => 'Failed to create section file']);
         }
     }
 
