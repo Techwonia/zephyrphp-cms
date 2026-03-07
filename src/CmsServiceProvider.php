@@ -88,24 +88,34 @@ class CmsServiceProvider
     {
         // collection(slug, options) - Query collection/page type entries from templates
         $view->addFunction('collection', function (string $slug, array $options = []) {
+            $emptyResult = ['data' => [], 'total' => 0, 'per_page' => 10, 'current_page' => 1, 'last_page' => 1];
             try {
                 $schema = new SchemaManager();
+                $tableName = null;
+                $defaultPerPage = 10;
+
+                // Try PageType first
                 $pageType = PageType::findOneBy(['slug' => $slug]);
-
-                if (!$pageType) {
-                    return ['data' => [], 'total' => 0, 'per_page' => 10, 'current_page' => 1, 'last_page' => 1];
+                if ($pageType) {
+                    $tableName = $pageType->getTableName();
+                    $defaultPerPage = $pageType->getItemsPerPage();
+                } else {
+                    // Fall back to Collection
+                    $collection = \ZephyrPHP\Cms\Models\Collection::findOneBy(['slug' => $slug]);
+                    if ($collection) {
+                        $tableName = $collection->getTableName();
+                    }
                 }
 
-                $tableName = $pageType->getTableName();
-                if (!$schema->tableExists($tableName)) {
-                    return ['data' => [], 'total' => 0, 'per_page' => 10, 'current_page' => 1, 'last_page' => 1];
+                if (!$tableName || !$schema->tableExists($tableName)) {
+                    return $emptyResult;
                 }
 
-                // Default to published-only entries
+                // Default to published-only entries (only for PageType which has status column)
                 if (!isset($options['filters'])) {
                     $options['filters'] = [];
                 }
-                if (!isset($options['filters']['status'])) {
+                if ($pageType && !isset($options['filters']['status'])) {
                     $options['filters']['status'] = 'published';
                 }
 
@@ -113,7 +123,7 @@ class CmsServiceProvider
                 if (isset($options['per_page'])) {
                     $options['per_page'] = (int) $options['per_page'];
                 } else {
-                    $options['per_page'] = $pageType->getItemsPerPage();
+                    $options['per_page'] = $defaultPerPage;
                 }
 
                 if (!isset($options['sort_by'])) {
@@ -130,7 +140,7 @@ class CmsServiceProvider
 
                 return $schema->listEntries($tableName, $options);
             } catch (\Exception $e) {
-                return ['data' => [], 'total' => 0, 'per_page' => 10, 'current_page' => 1, 'last_page' => 1];
+                return $emptyResult;
             }
         });
 
@@ -138,12 +148,20 @@ class CmsServiceProvider
         $view->addFunction('entry', function (string $ptSlug, string|int $identifier) {
             try {
                 $schema = new SchemaManager();
+                $tableName = null;
+
+                // Try PageType first, then Collection
                 $pageType = PageType::findOneBy(['slug' => $ptSlug]);
+                if ($pageType) {
+                    $tableName = $pageType->getTableName();
+                } else {
+                    $collection = \ZephyrPHP\Cms\Models\Collection::findOneBy(['slug' => $ptSlug]);
+                    if ($collection) {
+                        $tableName = $collection->getTableName();
+                    }
+                }
 
-                if (!$pageType) return null;
-
-                $tableName = $pageType->getTableName();
-                if (!$schema->tableExists($tableName)) return null;
+                if (!$tableName || !$schema->tableExists($tableName)) return null;
 
                 $conn = $schema->getConnection();
 
