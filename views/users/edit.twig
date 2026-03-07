@@ -1,0 +1,73 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Edit User{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / <a href="/cms/users">Users</a> / Edit
+</div>
+
+<div class="page-header">
+    <h1>Edit User</h1>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" action="/cms/users/{{ editUser.getId() }}">
+            {{ csrf_field() | raw }}
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
+                <div class="form-group">
+                    <label for="name">Name *</label>
+                    <input type="text" id="name" name="name" class="form-control"
+                           value="{{ flash('_old_input').name ?? editUser.getName() }}"
+                           placeholder="Full name" required>
+                    {% if flash('errors').name is defined %}
+                        <div class="invalid-feedback">{{ flash('errors').name }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email *</label>
+                    <input type="email" id="email" name="email" class="form-control"
+                           value="{{ flash('_old_input').email ?? editUser.getEmail() }}"
+                           placeholder="user@example.com" required>
+                    {% if flash('errors').email is defined %}
+                        <div class="invalid-feedback">{{ flash('errors').email }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="password">New Password</label>
+                <input type="password" id="password" name="password" class="form-control"
+                       placeholder="Leave blank to keep current password">
+                <small style="color: var(--text-secondary);">Only fill this if you want to change the password.</small>
+                {% if flash('errors').password is defined %}
+                    <div class="invalid-feedback">{{ flash('errors').password }}</div>
+                {% endif %}
+            </div>
+
+            {% if roles|length > 0 %}
+            <div class="form-group">
+                <label>Roles</label>
+                <div style="display: flex; flex-wrap: wrap; gap: var(--space-300);">
+                    {% for role in roles %}
+                    <label style="display: flex; align-items: center; gap: var(--space-100); cursor: pointer; font-weight: normal;">
+                        <input type="checkbox" name="roles[]" value="{{ role.getId() }}"
+                               {% if role.getId() in userRoleIds %}checked{% endif %}>
+                        {{ role.getName() }}
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <a href="/cms/users" class="btn btn-outline">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Roles{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / Roles
+</div>
+
+<div class="page-header">
+    <h1>Roles</h1>
+    <div class="page-actions">
+        <a href="/cms/roles/create" class="btn btn-primary">+ New Role</a>
+    </div>
+</div>
+
+{% if roles|length > 0 %}
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Slug</th>
+                        <th>Description</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for role in roles %}
+                    <tr>
+                        <td><strong>{{ role.getName() }}</strong></td>
+                        <td><code>{{ role.getSlug() }}</code></td>
+                        <td>{{ role.getDescription() ?? '&mdash;' }}</td>
+                        <td class="actions-cell">
+                            <a href="/cms/roles/{{ role.getId() }}" class="btn btn-sm btn-outline">Edit</a>
+                            {% if role.getSlug() != 'admin' %}
+                            <form method="POST" action="/cms/roles/{{ role.getId() }}/delete"
+                                  style="display:inline" class="confirm-delete" data-message="Delete role {{ role.getName() }}?">
+                                {{ csrf_field() | raw }}
+                                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="empty-state">
+    <h3>No roles yet</h3>
+    <p>Create roles to manage user permissions.</p>
+    <a href="/cms/roles/create" class="btn btn-primary">+ Create Role</a>
+</div>
+{% endif %}
+{% endblock %}

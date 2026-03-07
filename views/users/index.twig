@@ -1,0 +1,68 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Users{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / Users
+</div>
+
+<div class="page-header">
+    <h1>Users</h1>
+    <div class="page-actions">
+        <a href="/cms/users/create" class="btn btn-primary">+ New User</a>
+    </div>
+</div>
+
+{% if users|length > 0 %}
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Roles</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr>
+                        <td><strong>{{ u.getName() }}</strong></td>
+                        <td>{{ u.getEmail() }}</td>
+                        <td>
+                            {% for role in u.getRoles() %}
+                                <span class="badge badge-info">{{ role.getName() }}</span>
+                            {% else %}
+                                <span class="text-muted">&mdash;</span>
+                            {% endfor %}
+                        </td>
+                        <td>{{ u.getCreatedAt() ? u.getCreatedAt()|date('M d, Y') : '&mdash;' }}</td>
+                        <td class="actions-cell">
+                            <a href="/cms/users/{{ u.getId() }}" class="btn btn-sm btn-outline">Edit</a>
+                            {% if u.getId() != user.getId() %}
+                            <form method="POST" action="/cms/users/{{ u.getId() }}/delete"
+                                  style="display:inline" class="confirm-delete" data-message="Delete user {{ u.getName() }}?">
+                                {{ csrf_field() | raw }}
+                                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="empty-state">
+    <h3>No users yet</h3>
+    <p>Create your first user to get started.</p>
+    <a href="/cms/users/create" class="btn btn-primary">+ Create User</a>
+</div>
+{% endif %}
+{% endblock %}

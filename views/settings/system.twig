@@ -1,0 +1,101 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}System Settings{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / Settings / System
+</div>
+
+<div class="page-header">
+    <h1>System Settings</h1>
+</div>
+
+{# Application Settings #}
+<div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card-header">
+        <h3 style="margin: 0; font-size: 1rem;">Application Settings</h3>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="/cms/settings/system">
+            {{ csrf_field() | raw }}
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
+                <div class="form-group">
+                    <label for="APP_NAME">App Name</label>
+                    <input type="text" id="APP_NAME" name="APP_NAME" class="form-control"
+                           value="{{ appSettings.APP_NAME }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="APP_URL">App URL</label>
+                    <input type="text" id="APP_URL" name="APP_URL" class="form-control"
+                           value="{{ appSettings.APP_URL }}" placeholder="https://example.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="APP_ENV">Environment</label>
+                    <select id="APP_ENV" name="APP_ENV" class="form-control">
+                        <option value="dev" {% if appSettings.APP_ENV == 'dev' %}selected{% endif %}>Development</option>
+                        <option value="staging" {% if appSettings.APP_ENV == 'staging' %}selected{% endif %}>Staging</option>
+                        <option value="production" {% if appSettings.APP_ENV == 'production' %}selected{% endif %}>Production</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="APP_DEBUG">Debug Mode</label>
+                    <select id="APP_DEBUG" name="APP_DEBUG" class="form-control">
+                        <option value="true" {% if appSettings.APP_DEBUG == 'true' %}selected{% endif %}>Enabled</option>
+                        <option value="false" {% if appSettings.APP_DEBUG == 'false' %}selected{% endif %}>Disabled</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="APP_TIMEZONE">Timezone</label>
+                    <input type="text" id="APP_TIMEZONE" name="APP_TIMEZONE" class="form-control"
+                           value="{{ appSettings.APP_TIMEZONE }}" placeholder="UTC">
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Save Settings</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# System Information #}
+<div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card-header">
+        <h3 style="margin: 0; font-size: 1rem;">System Information</h3>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="data-table">
+                <tbody>
+                    {% for label, value in systemInfo %}
+                    <tr>
+                        <td style="width: 200px;"><strong>{{ label|replace({'_': ' '})|title }}</strong></td>
+                        <td><code>{{ value }}</code></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{# PHP Extensions #}
+<div class="card">
+    <div class="card-header">
+        <h3 style="margin: 0; font-size: 1rem;">Loaded PHP Extensions ({{ extensions|length }})</h3>
+    </div>
+    <div class="card-body">
+        <div style="display: flex; flex-wrap: wrap; gap: var(--space-200);">
+            {% for ext in extensions %}
+                <span class="badge" style="background: var(--bg-subdued); color: var(--text-secondary);">{{ ext }}</span>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

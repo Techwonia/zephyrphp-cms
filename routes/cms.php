@@ -11,6 +11,10 @@ use ZephyrPHP\Cms\Controllers\PageController;
 use ZephyrPHP\Cms\Controllers\PageFrontendController;
 use ZephyrPHP\Cms\Controllers\ThemeController;
 use ZephyrPHP\Cms\Controllers\ThemeCustomizerController;
+use ZephyrPHP\Cms\Controllers\UserController;
+use ZephyrPHP\Cms\Controllers\RoleController;
+use ZephyrPHP\Cms\Controllers\ProfileController;
+use ZephyrPHP\Cms\Controllers\SystemSettingsController;
 use ZephyrPHP\Cms\Api\ContentApiController;
 
 // CMS Admin Routes (protected by auth middleware)
@@ -90,6 +94,30 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     Route::post('/themes/{slug}/pages/add', [ThemeController::class, 'addPage']);
     Route::post('/themes/{slug}/pages/update', [ThemeController::class, 'updatePage']);
     Route::post('/themes/{slug}/pages/delete', [ThemeController::class, 'removePage']);
+
+    // Users
+    Route::get('/users', [UserController::class, 'index']);
+    Route::get('/users/create', [UserController::class, 'create']);
+    Route::post('/users', [UserController::class, 'store']);
+    Route::get('/users/{id}', [UserController::class, 'edit']);
+    Route::post('/users/{id}', [UserController::class, 'update']);
+    Route::post('/users/{id}/delete', [UserController::class, 'destroy']);
+
+    // Roles
+    Route::get('/roles', [RoleController::class, 'index']);
+    Route::get('/roles/create', [RoleController::class, 'create']);
+    Route::post('/roles', [RoleController::class, 'store']);
+    Route::get('/roles/{id}', [RoleController::class, 'edit']);
+    Route::post('/roles/{id}', [RoleController::class, 'update']);
+    Route::post('/roles/{id}/delete', [RoleController::class, 'destroy']);
+
+    // Profile Settings
+    Route::get('/settings/profile', [ProfileController::class, 'index']);
+    Route::post('/settings/profile', [ProfileController::class, 'update']);
+
+    // System Settings
+    Route::get('/settings/system', [SystemSettingsController::class, 'index']);
+    Route::post('/settings/system', [SystemSettingsController::class, 'update']);
 
     // Database Settings
     Route::get('/settings/database', [DatabaseSettingsController::class, 'index']);

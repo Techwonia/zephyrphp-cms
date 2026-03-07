@@ -349,7 +349,10 @@ class SectionManager
         try {
             $templateContent = $this->getSectionTemplate($type, $slug);
             if (!$templateContent) {
-                return '<!-- Section "' . htmlspecialchars($type) . '" template not found -->';
+                $safeType = htmlspecialchars($type);
+                return '<div style="background:#f8d7da;border:1px solid #f5c6cb;color:#721c24;padding:16px 20px;margin:8px 0;border-radius:6px;font-family:monospace;font-size:13px;">'
+                    . '<strong>Section &ldquo;' . $safeType . '&rdquo;:</strong> Template file not found (sections/' . $safeType . '.twig)'
+                    . '</div>';
             }
 
             $view = \ZephyrPHP\View\View::getInstance();
@@ -365,8 +368,12 @@ class SectionManager
                 'theme_settings' => $themeSettings,
             ]);
         } catch (\Exception $e) {
-            // If template not found or render error, return error comment
-            return '<!-- Section "' . htmlspecialchars($type) . '" render error: ' . htmlspecialchars($e->getMessage()) . ' -->';
+            // Show a visible error so users can diagnose broken sections
+            $safeType = htmlspecialchars($type);
+            $safeMsg = htmlspecialchars($e->getMessage());
+            return '<div style="background:#fff3cd;border:1px solid #ffc107;color:#856404;padding:16px 20px;margin:8px 0;border-radius:6px;font-family:monospace;font-size:13px;">'
+                . '<strong>Section &ldquo;' . $safeType . '&rdquo; render error:</strong><br>' . $safeMsg
+                . '</div>';
         }
     }
 

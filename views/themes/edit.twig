@@ -186,9 +186,69 @@
             <div class="editor-main">
                 <div class="editor-toolbar">
                     <span class="editor-file-name" id="editorFileName">{{ activeFile ?: 'Select a file to edit' }}</span>
-                    <button class="btn btn-sm btn-primary" id="saveFileBtn" {% if not activeFile %}disabled{% endif %}>Save</button>
+                    <div class="editor-toolbar-right">
+                        <div class="designer-toggle" id="designerToggle" style="display:none;">
+                            <button class="toggle-btn active" id="btnDesigner">Designer</button>
+                            <button class="toggle-btn" id="btnSource">Source</button>
+                        </div>
+                        <button class="btn btn-sm btn-primary" id="saveFileBtn" {% if not activeFile %}disabled{% endif %}>Save</button>
+                    </div>
                 </div>
-                <textarea id="codeEditor" class="code-editor">{{ fileContent }}</textarea>
+                <div id="sourceEditorPane">
+                    <textarea id="codeEditor" class="code-editor">{{ fileContent }}</textarea>
+                </div>
+                <div id="designerPane" style="display:none;">
+                    <div class="designer-tabs">
+                        <button class="designer-tab active" data-dtab="dtab-content">Content</button>
+                        <button class="designer-tab" data-dtab="dtab-style">Style</button>
+                        <button class="designer-tab" data-dtab="dtab-js">JavaScript</button>
+                        <button class="designer-tab" data-dtab="dtab-schema">Schema</button>
+                        <button class="designer-tab-ref" id="refToggleBtn" title="Toggle reference panel">Reference</button>
+                    </div>
+                    <div class="designer-panel-split active" id="dtab-content">
+                        <div class="editor-side">
+                            <textarea id="designerContentEditor"></textarea>
+                        </div>
+                        <div class="ref-side" id="refPanel">
+                            <div class="ref-side-header">Reference</div>
+                            <div id="refPanelBody"></div>
+                        </div>
+                    </div>
+                    <div class="designer-panel" id="dtab-style">
+                        <textarea id="designerStyleEditor"></textarea>
+                    </div>
+                    <div class="designer-panel" id="dtab-js">
+                        <textarea id="designerJsEditor"></textarea>
+                    </div>
+                    <div class="designer-panel" id="dtab-schema">
+                        <div class="schema-builder" id="schemaBuilder">
+                            <div class="schema-section">
+                                <h4 class="schema-section-title">Section Info</h4>
+                                <div class="schema-form-row">
+                                    <div class="schema-field"><label>Name</label><input type="text" class="form-control" id="schemaName"></div>
+                                    <div class="schema-field"><label>Icon</label><input type="text" class="form-control" id="schemaIcon" placeholder="layout"></div>
+                                </div>
+                                <div class="schema-field"><label>Description</label><input type="text" class="form-control" id="schemaDescription"></div>
+                            </div>
+                            <div class="schema-section">
+                                <div class="schema-section-header"><h4 class="schema-section-title">Settings</h4><button class="btn btn-xs btn-primary" id="addSettingBtn">+ Add</button></div>
+                                <div id="settingsList"></div>
+                            </div>
+                            <div class="schema-section">
+                                <div class="schema-section-header"><h4 class="schema-section-title">Block Types</h4><button class="btn btn-xs btn-primary" id="addBlockTypeBtn">+ Add</button></div>
+                                <div id="blockTypesList"></div>
+                            </div>
+                            <div class="schema-section">
+                                <div class="schema-section-header"><h4 class="schema-section-title">Presets</h4><button class="btn btn-xs btn-primary" id="addPresetBtn">+ Add</button></div>
+                                <div id="presetsList"></div>
+                            </div>
+                            <div class="schema-section">
+                                <div class="schema-section-header schema-json-toggle" id="jsonPreviewToggle"><h4 class="schema-section-title">JSON Preview</h4><span class="chevron">&#9654;</span></div>
+                                <div id="jsonPreviewBody" style="display:none;"><pre id="jsonPreviewContent" class="json-preview"></pre></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -198,7 +258,9 @@
 {% block styles %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/theme/dracula.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/hint/show-hint.min.css">
 <style nonce="{{ csp_nonce() }}">
+#tab-editor { padding: 0; }
 .editor-layout {
     display: flex;
     min-height: 500px;
@@ -262,9 +324,21 @@
     font-family: monospace;
     color: var(--text-secondary, #616161);
 }
+.editor-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+#sourceEditorPane, #designerPane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 450px;
+}
 .CodeMirror {
     flex: 1;
     height: auto;
+    min-height: 450px;
     font-size: 13px;
 }
 .code-editor {
@@ -377,6 +451,398 @@
     color: #b8860b;
     border: 1px solid rgba(255, 184, 0, 0.2);
 }
+
+/* ── Designer/Source Toggle ── */
+.designer-toggle {
+    display: inline-flex;
+    border: 1px solid var(--border-default, #E3E3E3);
+    border-radius: var(--radius-100, 4px);
+    overflow: hidden;
+}
+.toggle-btn {
+    padding: 4px 12px;
+    font-size: var(--font-size-xs, 0.75rem);
+    font-weight: 500;
+    font-family: inherit;
+    background: var(--bg-surface, #fff);
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary, #616161);
+    transition: all 0.15s;
+}
+.toggle-btn:not(:last-child) {
+    border-right: 1px solid var(--border-default, #E3E3E3);
+}
+.toggle-btn.active {
+    background: var(--color-primary, #008060);
+    color: #fff;
+}
+
+/* ── Designer Tabs ── */
+.designer-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-default, #E3E3E3);
+    background: var(--bg-subdued, #FAFAFA);
+    padding: 0 12px;
+}
+.designer-tab {
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-secondary, #616161);
+    cursor: pointer;
+    font-size: var(--font-size-sm, 0.8125rem);
+    font-weight: 500;
+    font-family: inherit;
+    transition: color 0.15s, border-color 0.15s;
+}
+.designer-tab:hover { color: var(--text-primary, #303030); }
+.designer-tab.active {
+    color: var(--color-primary, #008060);
+    border-bottom-color: var(--color-primary, #008060);
+}
+.designer-tab-ref {
+    margin-left: auto;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    color: var(--text-secondary, #616161);
+    cursor: pointer;
+    font-size: var(--font-size-sm, 0.8125rem);
+    font-weight: 500;
+    font-family: inherit;
+    transition: color 0.15s;
+}
+.designer-tab-ref:hover { color: var(--text-primary, #303030); }
+.designer-tab-ref.active {
+    color: var(--color-primary, #008060);
+}
+
+/* ── Designer Panels ── */
+.designer-panel { display: none; flex: 1; }
+.designer-panel.active { display: flex; flex-direction: column; }
+.designer-panel .CodeMirror, .designer-panel-split .editor-side .CodeMirror { flex: 1; height: auto; min-height: 400px; font-size: 13px; }
+
+/* ── Schema Builder ── */
+.schema-builder { padding: 16px; overflow-y: auto; max-height: calc(100vh - 240px); }
+.schema-section {
+    margin-bottom: 16px;
+    border: 1px solid var(--border-default, #E3E3E3);
+    border-radius: var(--radius-200, 8px);
+    padding: 16px;
+    background: #fff;
+}
+.schema-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+.schema-section-title {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary, #303030);
+}
+.schema-section-header .schema-section-title { margin-bottom: 0; }
+.schema-form-row { display: flex; gap: 12px; }
+.schema-form-row .schema-field { flex: 1; }
+.schema-field { margin-bottom: 12px; }
+.schema-field:last-child { margin-bottom: 0; }
+.schema-field label {
+    display: block;
+    font-size: var(--font-size-xs, 0.75rem);
+    font-weight: 500;
+    color: var(--text-secondary, #616161);
+    margin-bottom: 4px;
+}
+.schema-field .form-control { font-size: 13px; }
+
+/* ── Setting Cards ── */
+.setting-card {
+    border: 1px solid var(--border-default, #E3E3E3);
+    border-radius: 6px;
+    margin-bottom: 8px;
+    background: #fff;
+    overflow: hidden;
+}
+.setting-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--bg-subdued, #FAFAFA);
+    cursor: pointer;
+    font-size: 13px;
+    user-select: none;
+}
+.drag-handle {
+    cursor: grab;
+    color: var(--text-disabled, #B5B5B5);
+    flex-shrink: 0;
+    font-size: 11px;
+    letter-spacing: 2px;
+}
+.drag-handle:active { cursor: grabbing; }
+.type-badge {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 9999px;
+    font-size: 10px;
+    font-weight: 600;
+    background: rgba(0,128,96,0.08);
+    color: var(--color-primary, #008060);
+    flex-shrink: 0;
+}
+.setting-id {
+    font-family: monospace;
+    font-size: 11px;
+    color: var(--text-secondary, #616161);
+    flex-shrink: 0;
+}
+.setting-label-text {
+    flex: 1;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.delete-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-disabled, #B5B5B5);
+    font-size: 16px;
+    padding: 0 4px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+.delete-btn:hover { color: #D72C0D; }
+
+.setting-card-body {
+    display: none;
+    padding: 12px;
+    border-top: 1px solid var(--border-default, #E3E3E3);
+}
+.setting-card-body.open { display: block; }
+.form-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+.form-row .schema-field { flex: 1; margin-bottom: 0; }
+
+/* Options editor for select */
+.option-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 6px;
+    align-items: center;
+}
+.option-row input {
+    flex: 1;
+    padding: 4px 8px;
+    font-size: 12px;
+    border: 1px solid var(--border-default, #E3E3E3);
+    border-radius: 4px;
+}
+.add-option-btn {
+    font-size: 12px;
+    padding: 4px 8px;
+    background: none;
+    border: 1px dashed var(--border-default, #E3E3E3);
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--text-secondary, #616161);
+    font-family: inherit;
+}
+.add-option-btn:hover {
+    border-color: var(--color-primary, #008060);
+    color: var(--color-primary, #008060);
+}
+
+/* Block type / Preset cards */
+.block-type-card, .preset-card {
+    border: 1px solid var(--border-default, #E3E3E3);
+    border-radius: 6px;
+    margin-bottom: 8px;
+    overflow: hidden;
+}
+.block-type-header, .preset-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--bg-subdued, #FAFAFA);
+    cursor: pointer;
+    font-size: 13px;
+    user-select: none;
+}
+.block-type-name, .preset-name { flex: 1; font-weight: 500; }
+.block-type-body, .preset-body {
+    display: none;
+    padding: 12px;
+    border-top: 1px solid var(--border-default, #E3E3E3);
+}
+.block-type-body.open, .preset-body.open { display: block; }
+.preset-body textarea {
+    width: 100%;
+    min-height: 80px;
+    font-family: monospace;
+    font-size: 12px;
+    padding: 8px;
+    border: 1px solid var(--border-default, #E3E3E3);
+    border-radius: 4px;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+/* JSON Preview */
+.json-preview {
+    background: #282a36;
+    color: #f8f8f2;
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    max-height: 400px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin: 12px 0 0 0;
+}
+.schema-json-toggle { cursor: pointer; margin-bottom: 0 !important; }
+.schema-json-toggle .chevron {
+    transition: transform 0.2s;
+    font-size: 10px;
+    color: var(--text-secondary, #616161);
+}
+.schema-json-toggle.open .chevron { transform: rotate(90deg); }
+.sortable-ghost { opacity: 0.4; }
+
+/* ── Autocomplete Hints ── */
+.CodeMirror-hints {
+    z-index: 9999 !important;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 12px;
+    max-height: 260px;
+    border: 1px solid var(--border-default, #E3E3E3);
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    background: #282a36;
+    color: #f8f8f2;
+}
+.CodeMirror-hint {
+    padding: 4px 10px;
+    border-radius: 0;
+    white-space: nowrap;
+    cursor: pointer;
+    line-height: 1.6;
+}
+.CodeMirror-hint-active {
+    background: #44475a !important;
+    color: #50fa7b !important;
+}
+.hint-kind {
+    display: inline-block;
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    margin-right: 6px;
+    font-weight: 600;
+    vertical-align: middle;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.hint-kind-var { background: #6272a4; color: #f8f8f2; }
+.hint-kind-fn { background: #bd93f9; color: #282a36; }
+.hint-kind-tag { background: #ff79c6; color: #282a36; }
+.hint-kind-filter { background: #ffb86c; color: #282a36; }
+.hint-kind-field { background: #50fa7b; color: #282a36; }
+
+/* ── Reference Panel ── */
+.designer-panel-split { display: none; flex: 1; }
+.designer-panel-split.active { display: flex; }
+.designer-panel-split .editor-side { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.designer-panel-split .ref-side {
+    width: 280px;
+    flex-shrink: 0;
+    border-left: 1px solid var(--border-default, #E3E3E3);
+    overflow-y: auto;
+    background: var(--bg-subdued, #FAFAFA);
+    font-size: 12px;
+}
+.designer-panel-split .ref-side.hidden {
+    display: none;
+}
+.ref-side-header {
+    padding: 10px 12px;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary, #616161);
+    border-bottom: 1px solid var(--border-default, #E3E3E3);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.ref-section { border-bottom: 1px solid var(--border-default, #E3E3E3); }
+.ref-section-title {
+    padding: 8px 12px;
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--text-primary, #303030);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+}
+.ref-section-title:hover { background: rgba(0,0,0,0.03); }
+.ref-section-body { padding: 0 12px 8px; }
+.ref-item {
+    padding: 3px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-primary, #303030);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.ref-item:hover { color: var(--color-primary, #008060); }
+.ref-item code {
+    background: rgba(0,0,0,0.06);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 10px;
+}
+.ref-item-badge {
+    font-size: 9px;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+.ref-toggle-btn {
+    background: none;
+    border: 1px solid var(--border-default, #E3E3E3);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 10px;
+    cursor: pointer;
+    color: var(--text-secondary, #616161);
+    font-family: inherit;
+}
+.ref-toggle-btn:hover { border-color: var(--color-primary, #008060); color: var(--color-primary, #008060); }
+.block-settings-wrap { margin-top: 12px; }
+.block-settings-wrap h5 {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary, #616161);
+    margin: 0 0 8px 0;
+}
 </style>
 {% endblock %}
 
@@ -386,6 +852,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/xml/xml.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/javascript/javascript.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/css/css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/hint/show-hint.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 <script nonce="{{ csp_nonce() }}">
 document.addEventListener('DOMContentLoaded', function() {
     var textarea = document.getElementById('codeEditor');
@@ -400,29 +868,1118 @@ document.addEventListener('DOMContentLoaded', function() {
 
     var currentFile = '{{ activeFile }}';
     var themeSlug = '{{ theme.getSlug() }}';
+    var csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
 
     // File tree click
     document.querySelectorAll('.file-item').forEach(function(link) {
         link.addEventListener('click', function(e) {
             e.preventDefault();
             var file = this.dataset.file;
-
-            // Load file via AJAX (use GET with query param)
-            fetch('/cms/themes/' + themeSlug + '?file=' + encodeURIComponent(file))
-                .then(function(r) { return r.text(); })
-                .then(function(html) {
-                    // Extract file content from response — simpler: reload page
-                    window.location.href = '/cms/themes/' + themeSlug + '?file=' + encodeURIComponent(file);
-                });
+            window.location.href = '/cms/themes/' + themeSlug + '?file=' + encodeURIComponent(file);
         });
     });
 
     // Switch to editor tab if file is loaded
     if (currentFile) {
         document.querySelector('[data-tab="tab-editor"]').click();
+        setTimeout(function() { editor.refresh(); }, 50);
     }
 
-    // Save file
+    // Refresh CodeMirror whenever editor tab is clicked (tab may have been hidden)
+    document.querySelector('[data-tab="tab-editor"]')?.addEventListener('click', function() {
+        setTimeout(function() {
+            editor.refresh();
+            if (cmContent) cmContent.refresh();
+            if (cmStyle) cmStyle.refresh();
+            if (cmJs) cmJs.refresh();
+        }, 50);
+    });
+
+    // ════════════════════════════════════════════
+    //  SECTION DESIGNER
+    // ════════════════════════════════════════════
+    var isSectionFile = currentFile && currentFile.indexOf('sections/') === 0 && currentFile.indexOf('.twig') > 0;
+    var designerMode = false;
+    var designerInitialized = false;
+    var cmContent = null, cmStyle = null, cmJs = null;
+    var schemaState = null;
+    var SETTING_TYPES = ['text','textarea','richtext','url','email','number','color','range','select','checkbox','image','collection','field_select','layout_select'];
+
+    // Show toggle if section file
+    if (isSectionFile) {
+        document.getElementById('designerToggle').style.display = 'inline-flex';
+    }
+
+    // ── Escape HTML ──
+    function esc(s) {
+        var d = document.createElement('div');
+        d.textContent = s || '';
+        return d.innerHTML;
+    }
+
+    // ── Auto-slug from label ──
+    function autoSlug(text) {
+        return (text || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+    }
+
+    // ── Parse section file into parts ──
+    function parseSectionFile(raw) {
+        var result = { content: '', style: '', js: '', schema: null };
+
+        // Extract schema
+        var schemaMatch = raw.match(new RegExp('\\{' + '%[-\\s]*schema\\s*[-\\s]*%' + '\\}([\\s\\S]*?)\\{' + '%[-\\s]*endschema\\s*[-\\s]*%' + '\\}'));
+        var rest = raw;
+        if (schemaMatch) {
+            try { result.schema = JSON.parse(schemaMatch[1].trim()); }
+            catch(e) { result.schema = { name: '', description: '', icon: '', settings: [], blocks: [], presets: [] }; }
+            rest = raw.replace(schemaMatch[0], '');
+        } else {
+            result.schema = { name: '', description: '', icon: '', settings: [], blocks: [], presets: [] };
+        }
+
+        // Extract first inline <style> (no src)
+        var styleMatch = rest.match(new RegExp('<style(?:\\s[^>]*)?>([\\s\\S]*?)</' + 'style>', 'i'));
+        if (styleMatch) {
+            result.style = (styleMatch[1] || '').trim();
+            rest = rest.replace(styleMatch[0], '');
+        }
+
+        // Extract first inline <script> without src
+        var scriptMatch = rest.match(new RegExp('<script(?![^>]*\\bsrc\\b)(?:\\s[^>]*)?>([\\s\\S]*?)</' + 'script>', 'i'));
+        if (scriptMatch) {
+            result.js = (scriptMatch[1] || '').trim();
+            rest = rest.replace(scriptMatch[0], '');
+        }
+
+        result.content = rest.trim();
+        return result;
+    }
+
+    // ── Recombine parts into file ──
+    function recombineSectionFile(content, style, js, schema) {
+        var parts = [content];
+        if (style && style.trim()) {
+            parts.push('\n<style nonce="' + '{' + '{ csp_nonce() }' + '}">\n' + style.trim() + '\n</' + 'style>');
+        }
+        if (js && js.trim()) {
+            parts.push('\n<scr' + 'ipt nonce="' + '{' + '{ csp_nonce() }' + '}">\n' + js.trim() + '\n</' + 'script>');
+        }
+        if (schema) {
+            parts.push('\n' + '{' + '% schema %' + '}\n' + JSON.stringify(schema, null, 4) + '\n' + '{' + '% endschema %' + '}\n');
+        }
+        return parts.join('\n');
+    }
+
+    // ── Build schema from current state ──
+    function buildSchemaFromState() {
+        var s = {
+            name: document.getElementById('schemaName').value || '',
+            description: document.getElementById('schemaDescription').value || '',
+            icon: document.getElementById('schemaIcon').value || ''
+        };
+        if (schemaState.settings && schemaState.settings.length) {
+            s.settings = schemaState.settings.map(function(st) {
+                var clean = {};
+                ['type','id','label','default','group','min','max','step','options','collection_setting','placeholder'].forEach(function(k) {
+                    if (st[k] !== undefined && st[k] !== '' && st[k] !== null) clean[k] = st[k];
+                });
+                return clean;
+            });
+        } else {
+            s.settings = [];
+        }
+        if (schemaState.blocks && schemaState.blocks.length) {
+            s.blocks = schemaState.blocks.map(function(b) {
+                var clean = { type: b.type || '', name: b.name || '' };
+                if (b.settings && b.settings.length) {
+                    clean.settings = b.settings.map(function(st) {
+                        var c = {};
+                        ['type','id','label','default','group','min','max','step','options','collection_setting','placeholder'].forEach(function(k) {
+                            if (st[k] !== undefined && st[k] !== '' && st[k] !== null) c[k] = st[k];
+                        });
+                        return c;
+                    });
+                }
+                return clean;
+            });
+        }
+        if (schemaState.presets && schemaState.presets.length) {
+            s.presets = schemaState.presets;
+        }
+        return s;
+    }
+
+    // ── Update JSON preview ──
+    function updateJsonPreview() {
+        var el = document.getElementById('jsonPreviewContent');
+        if (el) el.textContent = JSON.stringify(buildSchemaFromState(), null, 4);
+        // Refresh reference panel when schema changes
+        if (designerInitialized) renderRefPanel();
+    }
+
+    // ── Get content to save ──
+    function getContentToSave() {
+        if (designerMode) {
+            return recombineSectionFile(
+                cmContent.getValue(),
+                cmStyle.getValue(),
+                cmJs.getValue(),
+                buildSchemaFromState()
+            );
+        }
+        return editor.getValue();
+    }
+
+    // ════════════════════════════════════════════
+    //  AUTOCOMPLETE & REFERENCE
+    // ════════════════════════════════════════════
+
+    // Build completions list from current schema state
+    function getCompletions() {
+        var completions = [];
+        var settings = (schemaState && schemaState.settings) || [];
+        var blocks = (schemaState && schemaState.blocks) || [];
+
+        // Section settings
+        settings.forEach(function(s) {
+            if (!s.id) return;
+            completions.push({ text: 'section.settings.' + s.id, kind: 'var', detail: s.type + (s.label ? ' — ' + s.label : '') });
+        });
+
+        // Core section variables
+        completions.push({ text: 'section.settings', kind: 'var', detail: 'All section settings object' });
+        completions.push({ text: 'section.type', kind: 'var', detail: 'Section type name' });
+        completions.push({ text: 'section.blocks', kind: 'var', detail: 'Array of blocks' });
+        completions.push({ text: 'theme_settings', kind: 'var', detail: 'Global theme settings object' });
+
+        // Block variables (for use inside for block in section.blocks loop)
+        completions.push({ text: 'block.type', kind: 'var', detail: 'Block type name' });
+        completions.push({ text: 'block.id', kind: 'var', detail: 'Block unique ID' });
+        completions.push({ text: 'block.settings', kind: 'var', detail: 'Block settings object' });
+        blocks.forEach(function(b) {
+            (b.settings || []).forEach(function(bs) {
+                if (!bs.id) return;
+                completions.push({ text: 'block.settings.' + bs.id, kind: 'field', detail: (b.name || b.type) + ' — ' + (bs.label || bs.id) });
+            });
+        });
+
+        // Twig functions
+        completions.push({ text: 'collection(slug, {per_page: 10})', kind: 'fn', detail: 'Fetch entries from a collection' });
+        completions.push({ text: 'entry(slug, id_or_slug)', kind: 'fn', detail: 'Fetch single entry by slug or ID' });
+        completions.push({ text: 'attribute(item, field_name)', kind: 'fn', detail: 'Access dynamic property on object' });
+        completions.push({ text: 'config(key, default)', kind: 'fn', detail: 'Get app config value' });
+        completions.push({ text: 'csp_nonce()', kind: 'fn', detail: 'CSP nonce for inline scripts' });
+        completions.push({ text: 'csp_style_nonce()', kind: 'fn', detail: 'CSP nonce for inline styles' });
+        completions.push({ text: 'theme_settings()', kind: 'fn', detail: 'Get global theme settings' });
+        completions.push({ text: 'has_sections(template)', kind: 'fn', detail: 'Check if page has sections' });
+        completions.push({ text: 'render_sections(template)', kind: 'fn', detail: 'Render page sections' });
+
+        // Twig tags
+        completions.push({ text: 'if condition %}', kind: 'tag', detail: 'Conditional block' });
+        completions.push({ text: 'endif %}', kind: 'tag', detail: 'End if' });
+        completions.push({ text: 'for item in items %}', kind: 'tag', detail: 'Loop block' });
+        completions.push({ text: 'endfor %}', kind: 'tag', detail: 'End for' });
+        completions.push({ text: 'set variable = value %}', kind: 'tag', detail: 'Set variable' });
+        completions.push({ text: 'include "@theme/snippets/file.twig" %}', kind: 'tag', detail: 'Include template' });
+        completions.push({ text: 'block name %}', kind: 'tag', detail: 'Define block' });
+        completions.push({ text: 'endblock %}', kind: 'tag', detail: 'End block' });
+
+        // Twig filters
+        completions.push({ text: 'raw', kind: 'filter', detail: 'Output unescaped HTML' });
+        completions.push({ text: 'escape', kind: 'filter', detail: 'Escape HTML entities' });
+        completions.push({ text: 'default(value)', kind: 'filter', detail: 'Fallback value if empty' });
+        completions.push({ text: 'length', kind: 'filter', detail: 'String/array length' });
+        completions.push({ text: 'upper', kind: 'filter', detail: 'Uppercase text' });
+        completions.push({ text: 'lower', kind: 'filter', detail: 'Lowercase text' });
+        completions.push({ text: 'capitalize', kind: 'filter', detail: 'Capitalize first letter' });
+        completions.push({ text: 'title', kind: 'filter', detail: 'Title case text' });
+        completions.push({ text: 'trim', kind: 'filter', detail: 'Trim whitespace' });
+        completions.push({ text: 'striptags', kind: 'filter', detail: 'Remove HTML tags' });
+        completions.push({ text: 'slice(start, length)', kind: 'filter', detail: 'Substring/slice array' });
+        completions.push({ text: 'split(delimiter)', kind: 'filter', detail: 'Split into array' });
+        completions.push({ text: 'join(glue)', kind: 'filter', detail: 'Join array to string' });
+        completions.push({ text: 'date(format)', kind: 'filter', detail: 'Format date (e.g. "Y-m-d")' });
+        completions.push({ text: 'number_format(decimals)', kind: 'filter', detail: 'Format number' });
+        completions.push({ text: 'json_encode', kind: 'filter', detail: 'Encode as JSON' });
+        completions.push({ text: 'nl2br', kind: 'filter', detail: 'Newlines to <br>' });
+        completions.push({ text: 'batch(size)', kind: 'filter', detail: 'Split array into chunks' });
+        completions.push({ text: 'first', kind: 'filter', detail: 'First item of array' });
+        completions.push({ text: 'last', kind: 'filter', detail: 'Last item of array' });
+        completions.push({ text: 'reverse', kind: 'filter', detail: 'Reverse array/string' });
+        completions.push({ text: 'sort', kind: 'filter', detail: 'Sort array' });
+        completions.push({ text: 'keys', kind: 'filter', detail: 'Get array keys' });
+        completions.push({ text: 'merge(array)', kind: 'filter', detail: 'Merge arrays' });
+
+        // Collection result patterns (snippets)
+        var collSettings = settings.filter(function(s) { return s.type === 'collection'; });
+        collSettings.forEach(function(cs) {
+            completions.push({ text: 'set items = collection(section.settings.' + cs.id + ', {per_page: 6})', kind: 'tag', detail: 'Load entries from ' + (cs.label || cs.id) });
+        });
+
+        return completions;
+    }
+
+    // CodeMirror hint function
+    function twigSectionHint(cm) {
+        var cur = cm.getCursor();
+        var line = cm.getLine(cur.line);
+        var end = cur.ch;
+        var start = end;
+
+        // Walk back to find start of current word/expression
+        while (start > 0 && /[\w.\|(]/.test(line.charAt(start - 1))) {
+            start--;
+        }
+        var word = line.slice(start, end).toLowerCase();
+
+        // Detect context
+        var beforeWord = line.slice(0, start).trimEnd();
+        var inTag = new RegExp('\\{' + '%\\s*$').test(beforeWord) || new RegExp('\\{' + '%-?\\s*$').test(beforeWord);
+        var inPrint = new RegExp('\\{' + '\\{\\s*$').test(beforeWord);
+        var afterPipe = /\|\s*$/.test(beforeWord);
+
+        var allCompletions = getCompletions();
+        var filtered;
+
+        if (afterPipe) {
+            // After | only show filters
+            filtered = allCompletions.filter(function(c) { return c.kind === 'filter'; });
+        } else if (inTag) {
+            // After tag opener show tags and variables
+            filtered = allCompletions.filter(function(c) { return c.kind === 'tag' || c.kind === 'var' || c.kind === 'fn'; });
+        } else {
+            filtered = allCompletions;
+        }
+
+        // Filter by typed word
+        if (word) {
+            filtered = filtered.filter(function(c) {
+                return c.text.toLowerCase().indexOf(word) >= 0;
+            });
+        }
+
+        var kindClass = { 'var': 'hint-kind-var', 'fn': 'hint-kind-fn', 'tag': 'hint-kind-tag', 'filter': 'hint-kind-filter', 'field': 'hint-kind-field' };
+        var kindLabel = { 'var': 'VAR', 'fn': 'FN', 'tag': 'TAG', 'filter': 'FILTER', 'field': 'FIELD' };
+
+        var list = filtered.map(function(c) {
+            return {
+                text: c.text,
+                displayText: c.text,
+                className: '',
+                render: function(el, self, data) {
+                    var badge = document.createElement('span');
+                    badge.className = 'hint-kind ' + (kindClass[c.kind] || '');
+                    badge.textContent = kindLabel[c.kind] || c.kind;
+                    el.appendChild(badge);
+                    var txt = document.createElement('span');
+                    txt.textContent = c.text;
+                    el.appendChild(txt);
+                    if (c.detail) {
+                        var det = document.createElement('span');
+                        det.style.cssText = 'margin-left:auto;padding-left:12px;opacity:0.5;font-size:10px;';
+                        det.textContent = c.detail;
+                        el.appendChild(det);
+                    }
+                    el.style.display = 'flex';
+                    el.style.alignItems = 'center';
+                }
+            };
+        });
+
+        return {
+            list: list,
+            from: CodeMirror.Pos(cur.line, start),
+            to: CodeMirror.Pos(cur.line, end)
+        };
+    }
+
+    // ── Render reference panel ──
+    function renderRefPanel() {
+        var body = document.getElementById('refPanelBody');
+        if (!body) return;
+        body.innerHTML = '';
+
+        var settings = (schemaState && schemaState.settings) || [];
+        var blocks = (schemaState && schemaState.blocks) || [];
+
+        function makeSection(title, items, open) {
+            var sec = document.createElement('div');
+            sec.className = 'ref-section';
+            var hdr = document.createElement('div');
+            hdr.className = 'ref-section-title';
+            hdr.innerHTML = title + ' <span style="font-size:10px;">' + (open ? '&#9660;' : '&#9654;') + '</span>';
+            var bd = document.createElement('div');
+            bd.className = 'ref-section-body';
+            bd.style.display = open ? 'block' : 'none';
+            hdr.addEventListener('click', function() {
+                var showing = bd.style.display !== 'none';
+                bd.style.display = showing ? 'none' : 'block';
+                hdr.querySelector('span').innerHTML = showing ? '&#9654;' : '&#9660;';
+            });
+            items.forEach(function(item) {
+                var row = document.createElement('div');
+                row.className = 'ref-item';
+                row.title = item.detail || '';
+                if (item.badge) {
+                    var b = document.createElement('span');
+                    b.className = 'ref-item-badge';
+                    b.style.cssText = item.badgeStyle || 'background:#6272a4;color:#fff;';
+                    b.textContent = item.badge;
+                    row.appendChild(b);
+                }
+                var code = document.createElement('code');
+                code.textContent = item.text;
+                row.appendChild(code);
+                // Click to insert
+                row.addEventListener('click', function() {
+                    if (cmContent) {
+                        var cur = cmContent.getCursor();
+                        cmContent.replaceRange(item.insert || item.text, cur);
+                        cmContent.focus();
+                    }
+                });
+                bd.appendChild(row);
+            });
+            sec.appendChild(hdr);
+            sec.appendChild(bd);
+            body.appendChild(sec);
+        }
+
+        // Section settings
+        if (settings.length) {
+            makeSection('Settings (' + settings.length + ')', settings.map(function(s) {
+                return {
+                    text: s.id || '?',
+                    badge: s.type,
+                    badgeStyle: s.type === 'collection' ? 'background:#50fa7b;color:#282a36;' : 'background:#6272a4;color:#fff;',
+                    detail: s.label || '',
+                    insert: 'section.settings.' + (s.id || '')
+                };
+            }), true);
+        }
+
+        // Block settings
+        if (blocks.length) {
+            var blockItems = [];
+            blocks.forEach(function(b) {
+                blockItems.push({ text: b.type || '?', badge: 'block', badgeStyle: 'background:#ff79c6;color:#282a36;', detail: b.name || '', insert: 'block.type' });
+                (b.settings || []).forEach(function(bs) {
+                    blockItems.push({ text: bs.id || '?', badge: bs.type, badgeStyle: 'background:#bd93f9;color:#282a36;', detail: (b.name || b.type) + '.' + (bs.label || bs.id), insert: 'block.settings.' + (bs.id || '') });
+                });
+            });
+            makeSection('Blocks (' + blocks.length + ')', blockItems, false);
+        }
+
+        // Collection patterns
+        var collSettings = settings.filter(function(s) { return s.type === 'collection'; });
+        if (collSettings.length) {
+            var patterns = [];
+            collSettings.forEach(function(cs) {
+                patterns.push({ text: 'Load ' + (cs.label || cs.id), badge: 'snippet', badgeStyle: 'background:#50fa7b;color:#282a36;', detail: 'Fetch entries', insert: '{' + '% set items = collection(section.settings.' + cs.id + ', {per_page: 6}) %' + '}\n{' + '% for item in items.data %' + '}\n    <div>{' + '{ attribute(item, "title") }' + '}</div>\n{' + '% endfor %' + '}' });
+            });
+            makeSection('Collection Snippets', patterns, true);
+        }
+
+        // Functions reference
+        makeSection('Functions', [
+            { text: 'collection(slug, opts)', badge: 'fn', badgeStyle: 'background:#bd93f9;color:#282a36;', detail: 'Fetch collection entries', insert: 'collection(section.settings.collection, {per_page: 6})' },
+            { text: 'entry(slug, id)', badge: 'fn', badgeStyle: 'background:#bd93f9;color:#282a36;', detail: 'Fetch single entry', insert: 'entry("posts", "my-slug")' },
+            { text: 'attribute(obj, key)', badge: 'fn', badgeStyle: 'background:#bd93f9;color:#282a36;', detail: 'Dynamic property access', insert: 'attribute(item, field_name)' },
+            { text: 'config(key, default)', badge: 'fn', badgeStyle: 'background:#bd93f9;color:#282a36;', detail: 'App config value', insert: 'config(\'app.name\', \'ZephyrPHP\')' },
+        ], false);
+
+        // Common patterns
+        makeSection('Common Patterns', [
+            { text: 'If setting exists', badge: 'pattern', badgeStyle: 'background:#ffb86c;color:#282a36;', detail: 'Conditional setting', insert: '{' + '% if section.settings.heading %' + '}\n    {' + '{ section.settings.heading }' + '}\n{' + '% endif %' + '}' },
+            { text: 'For each block', badge: 'pattern', badgeStyle: 'background:#ffb86c;color:#282a36;', detail: 'Loop blocks', insert: '{' + '% for block in section.blocks %' + '}\n    <div>{' + '{ block.settings.title }' + '}</div>\n{' + '% endfor %' + '}' },
+            { text: 'Default value', badge: 'pattern', badgeStyle: 'background:#ffb86c;color:#282a36;', detail: 'Setting with fallback', insert: 'section.settings.color|default(\'#333\')' },
+            { text: 'Style binding', badge: 'pattern', badgeStyle: 'background:#ffb86c;color:#282a36;', detail: 'Inline CSS from setting', insert: 'style="color:{' + '{ section.settings.text_color|default(\'#333\') }' + '}; padding:{' + '{ section.settings.padding|default(40) }' + '}px 0;"' },
+            { text: 'Collection grid', badge: 'pattern', badgeStyle: 'background:#ffb86c;color:#282a36;', detail: 'Full collection grid', insert: '{' + '% if section.settings.collection %' + '}\n    {' + '% set items = collection(section.settings.collection, {per_page: section.settings.items_count|default(6)}) %' + '}\n    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:24px;">\n        {' + '% for item in items.data %' + '}\n            <div style="padding:16px;border:1px solid #eee;border-radius:8px;">\n                <h3>{' + '{ attribute(item, section.settings.title_field|default(\'title\')) }' + '}</h3>\n            </div>\n        {' + '% endfor %' + '}\n    </div>\n{' + '% endif %' + '}' },
+        ], false);
+
+        // Filters
+        makeSection('Filters', [
+            { text: 'raw', badge: 'filter', badgeStyle: 'background:#ffb86c;color:#282a36;', detail: 'Unescaped HTML output', insert: '|raw' },
+            { text: 'default(val)', badge: 'filter', badgeStyle: 'background:#ffb86c;color:#282a36;', detail: 'Fallback value', insert: '|default(\'\')' },
+            { text: 'striptags', badge: 'filter', badgeStyle: 'background:#ffb86c;color:#282a36;', detail: 'Remove HTML tags', insert: '|striptags' },
+            { text: 'slice(0, n)', badge: 'filter', badgeStyle: 'background:#ffb86c;color:#282a36;', detail: 'Substring/limit text', insert: '|slice(0, 120)' },
+            { text: 'date("Y-m-d")', badge: 'filter', badgeStyle: 'background:#ffb86c;color:#282a36;', detail: 'Format date', insert: '|date("Y-m-d")' },
+            { text: 'length', badge: 'filter', badgeStyle: 'background:#ffb86c;color:#282a36;', detail: 'String/array length', insert: '|length' },
+            { text: 'upper / lower', badge: 'filter', badgeStyle: 'background:#ffb86c;color:#282a36;', detail: 'Case transform', insert: '|upper' },
+            { text: 'nl2br', badge: 'filter', badgeStyle: 'background:#ffb86c;color:#282a36;', detail: 'Newlines to BR tags', insert: '|nl2br' },
+            { text: 'json_encode', badge: 'filter', badgeStyle: 'background:#ffb86c;color:#282a36;', detail: 'Convert to JSON', insert: '|json_encode' },
+        ], false);
+    }
+
+    // ── Init designer (create 3 CodeMirror instances) ──
+    function initDesigner() {
+        if (designerInitialized) return;
+        designerInitialized = true;
+
+        cmContent = CodeMirror.fromTextArea(document.getElementById('designerContentEditor'), {
+            mode: 'htmlmixed', theme: 'dracula', lineNumbers: true, indentUnit: 4, tabSize: 4, lineWrapping: true,
+            extraKeys: { 'Ctrl-Space': 'autocomplete' },
+            hintOptions: { hint: twigSectionHint, completeSingle: false }
+        });
+        cmStyle = CodeMirror.fromTextArea(document.getElementById('designerStyleEditor'), {
+            mode: 'css', theme: 'dracula', lineNumbers: true, indentUnit: 4, tabSize: 4, lineWrapping: true
+        });
+        cmJs = CodeMirror.fromTextArea(document.getElementById('designerJsEditor'), {
+            mode: 'javascript', theme: 'dracula', lineNumbers: true, indentUnit: 4, tabSize: 4, lineWrapping: true
+        });
+
+        // Auto-trigger hints on typing in content editor
+        cmContent.on('inputRead', function(cm, change) {
+            if (change.origin !== '+input') return;
+            var cur = cm.getCursor();
+            var line = cm.getLine(cur.line);
+            var before = line.slice(0, cur.ch);
+            // Trigger after print/tag openers, section., .settings., pipes, function calls
+            var triggerRe = new RegExp('(\\{' + '\\{|\\{' + '%)\\s*\\w*$');
+            if (triggerRe.test(before) || /section\.\w*$/.test(before) || /\.settings\.\w*$/.test(before) || /\|\s*\w+$/.test(before) || /collection\(/.test(before) || /attribute\(/.test(before)) {
+                cm.showHint({ hint: twigSectionHint, completeSingle: false });
+            }
+        });
+
+        // Ctrl+S in designer editors
+        [cmContent, cmStyle, cmJs].forEach(function(cm) {
+            cm.on('keydown', function(inst, e) {
+                if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                    e.preventDefault();
+                    document.getElementById('saveFileBtn').click();
+                }
+            });
+        });
+
+        // Reference panel toggle
+        var refVisible = true;
+        var refBtn = document.getElementById('refToggleBtn');
+        if (refBtn) refBtn.classList.add('active');
+        refBtn?.addEventListener('click', function() {
+            refVisible = !refVisible;
+            var panel = document.getElementById('refPanel');
+            if (refVisible) { panel.classList.remove('hidden'); this.classList.add('active'); }
+            else { panel.classList.add('hidden'); this.classList.remove('active'); }
+            setTimeout(function() { if (cmContent) cmContent.refresh(); }, 50);
+        });
+
+        // Schema info listeners
+        ['schemaName', 'schemaDescription', 'schemaIcon'].forEach(function(id) {
+            document.getElementById(id).addEventListener('input', function() {
+                updateJsonPreview();
+            });
+        });
+
+        // Add setting
+        document.getElementById('addSettingBtn').addEventListener('click', function() {
+            if (!schemaState.settings) schemaState.settings = [];
+            schemaState.settings.push({ type: 'text', id: '', label: '' });
+            renderSettingsList(schemaState.settings, document.getElementById('settingsList'));
+            updateJsonPreview();
+            // Open the last card
+            var cards = document.getElementById('settingsList').querySelectorAll('.setting-card-body');
+            if (cards.length) cards[cards.length - 1].classList.add('open');
+        });
+
+        // Add block type
+        document.getElementById('addBlockTypeBtn').addEventListener('click', function() {
+            if (!schemaState.blocks) schemaState.blocks = [];
+            schemaState.blocks.push({ type: '', name: '', settings: [] });
+            renderBlockTypes();
+            updateJsonPreview();
+        });
+
+        // Add preset
+        document.getElementById('addPresetBtn').addEventListener('click', function() {
+            if (!schemaState.presets) schemaState.presets = [];
+            schemaState.presets.push({ name: 'Default', settings: {} });
+            renderPresets();
+            updateJsonPreview();
+        });
+
+        // JSON preview toggle
+        document.getElementById('jsonPreviewToggle').addEventListener('click', function() {
+            this.classList.toggle('open');
+            var body = document.getElementById('jsonPreviewBody');
+            body.style.display = body.style.display === 'none' ? 'block' : 'none';
+        });
+
+        // Designer tab switching
+        document.querySelectorAll('.designer-tab').forEach(function(tab) {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.designer-tab').forEach(function(t) { t.classList.remove('active'); });
+                document.querySelectorAll('.designer-panel, .designer-panel-split').forEach(function(p) { p.classList.remove('active'); });
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.dtab).classList.add('active');
+                if (tab.dataset.dtab === 'dtab-content') setTimeout(function() { cmContent.refresh(); }, 10);
+                if (tab.dataset.dtab === 'dtab-style') setTimeout(function() { cmStyle.refresh(); }, 10);
+                if (tab.dataset.dtab === 'dtab-js') setTimeout(function() { cmJs.refresh(); }, 10);
+            });
+        });
+    }
+
+    // ── Switch to Designer mode ──
+    function switchToDesigner() {
+        initDesigner();
+        var parsed = parseSectionFile(editor.getValue());
+        cmContent.setValue(parsed.content);
+        cmStyle.setValue(parsed.style);
+        cmJs.setValue(parsed.js);
+        schemaState = parsed.schema;
+        if (!schemaState.settings) schemaState.settings = [];
+        if (!schemaState.blocks) schemaState.blocks = [];
+        if (!schemaState.presets) schemaState.presets = [];
+
+        renderSchemaBuilder();
+        updateJsonPreview();
+        renderRefPanel();
+
+        document.getElementById('sourceEditorPane').style.display = 'none';
+        var dp = document.getElementById('designerPane');
+        dp.style.display = 'flex';
+        dp.style.flexDirection = 'column';
+        dp.style.flex = '1';
+        designerMode = true;
+
+        document.getElementById('btnDesigner').classList.add('active');
+        document.getElementById('btnSource').classList.remove('active');
+
+        setTimeout(function() { cmContent.refresh(); }, 50);
+    }
+
+    // ── Switch to Source mode ──
+    function switchToSource() {
+        var combined = recombineSectionFile(
+            cmContent.getValue(),
+            cmStyle.getValue(),
+            cmJs.getValue(),
+            buildSchemaFromState()
+        );
+        editor.setValue(combined);
+        document.getElementById('sourceEditorPane').style.display = '';
+        document.getElementById('designerPane').style.display = 'none';
+        designerMode = false;
+
+        document.getElementById('btnSource').classList.add('active');
+        document.getElementById('btnDesigner').classList.remove('active');
+
+        setTimeout(function() { editor.refresh(); }, 50);
+    }
+
+    // Toggle button clicks
+    document.getElementById('btnDesigner')?.addEventListener('click', function() {
+        if (!designerMode) switchToDesigner();
+    });
+    document.getElementById('btnSource')?.addEventListener('click', function() {
+        if (designerMode) switchToSource();
+    });
+
+    // ── Render schema builder ──
+    function renderSchemaBuilder() {
+        document.getElementById('schemaName').value = schemaState.name || '';
+        document.getElementById('schemaDescription').value = schemaState.description || '';
+        document.getElementById('schemaIcon').value = schemaState.icon || '';
+        renderSettingsList(schemaState.settings, document.getElementById('settingsList'));
+        renderBlockTypes();
+        renderPresets();
+    }
+
+    // ════════════════════════════════════════════
+    //  SETTINGS LIST RENDERING
+    // ════════════════════════════════════════════
+    function renderSettingsList(settings, container) {
+        container.innerHTML = '';
+        for (var i = 0; i < settings.length; i++) {
+            (function(index) {
+                var setting = settings[index];
+                var card = document.createElement('div');
+                card.className = 'setting-card';
+
+                var header = document.createElement('div');
+                header.className = 'setting-card-header';
+                header.innerHTML =
+                    '<span class="drag-handle" title="Drag to reorder">&#8942;&#8942;</span>' +
+                    '<span class="type-badge">' + esc(setting.type || 'text') + '</span>' +
+                    '<span class="setting-id">' + esc(setting.id || '') + '</span>' +
+                    '<span class="setting-label-text">' + esc(setting.label || 'Untitled') + '</span>' +
+                    '<button class="delete-btn" title="Remove">&times;</button>';
+
+                var bodyWrap = document.createElement('div');
+                bodyWrap.className = 'setting-card-body';
+
+                renderSettingBody(bodyWrap, setting, index, settings, container);
+
+                header.addEventListener('click', function(e) {
+                    if (e.target.closest('.delete-btn')) {
+                        e.stopPropagation();
+                        settings.splice(index, 1);
+                        renderSettingsList(settings, container);
+                        updateJsonPreview();
+                        return;
+                    }
+                    bodyWrap.classList.toggle('open');
+                });
+
+                card.appendChild(header);
+                card.appendChild(bodyWrap);
+                container.appendChild(card);
+            })(i);
+        }
+
+        // Sortable
+        if (container._sortable) container._sortable.destroy();
+        if (typeof Sortable !== 'undefined' && settings.length > 1) {
+            container._sortable = new Sortable(container, {
+                handle: '.drag-handle',
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                onEnd: function(evt) {
+                    var item = settings.splice(evt.oldIndex, 1)[0];
+                    settings.splice(evt.newIndex, 0, item);
+                    renderSettingsList(settings, container);
+                    updateJsonPreview();
+                }
+            });
+        }
+    }
+
+    // ── Render setting body (fields) ──
+    function renderSettingBody(bodyEl, setting, index, settingsArray, container) {
+        bodyEl.innerHTML = '';
+
+        // Row 1: Type + ID
+        var row1 = document.createElement('div');
+        row1.className = 'form-row';
+
+        var typeField = makeField('Type');
+        var typeSelect = document.createElement('select');
+        typeSelect.className = 'form-control';
+        SETTING_TYPES.forEach(function(t) {
+            var opt = document.createElement('option');
+            opt.value = t; opt.textContent = t;
+            if (t === (setting.type || 'text')) opt.selected = true;
+            typeSelect.appendChild(opt);
+        });
+        typeSelect.addEventListener('change', function() {
+            setting.type = this.value;
+            // Clean type-specific props
+            if (setting.type !== 'range') { delete setting.min; delete setting.max; delete setting.step; }
+            if (setting.type !== 'select' && setting.type !== 'layout_select') { delete setting.options; }
+            if (setting.type !== 'field_select') { delete setting.collection_setting; }
+            renderSettingBody(bodyEl, setting, index, settingsArray, container);
+            bodyEl.classList.add('open');
+            bodyEl.parentElement.querySelector('.type-badge').textContent = setting.type;
+            updateJsonPreview();
+        });
+        typeField.appendChild(typeSelect);
+
+        var idField = makeField('ID');
+        var idInput = document.createElement('input');
+        idInput.type = 'text'; idInput.className = 'form-control';
+        idInput.value = setting.id || ''; idInput.placeholder = 'auto-generated';
+        idInput.addEventListener('input', function() {
+            setting.id = this.value;
+            bodyEl.parentElement.querySelector('.setting-id').textContent = this.value;
+            updateJsonPreview();
+        });
+        idField.appendChild(idInput);
+
+        row1.appendChild(typeField);
+        row1.appendChild(idField);
+        bodyEl.appendChild(row1);
+
+        // Row 2: Label + Group
+        var row2 = document.createElement('div');
+        row2.className = 'form-row';
+
+        var labelField = makeField('Label');
+        var labelInput = document.createElement('input');
+        labelInput.type = 'text'; labelInput.className = 'form-control';
+        labelInput.value = setting.label || '';
+        labelInput.addEventListener('input', function() {
+            setting.label = this.value;
+            bodyEl.parentElement.querySelector('.setting-label-text').textContent = this.value || 'Untitled';
+            // Auto-generate ID if empty
+            if (!setting.id) {
+                setting.id = autoSlug(this.value);
+                idInput.value = setting.id;
+                bodyEl.parentElement.querySelector('.setting-id').textContent = setting.id;
+            }
+            updateJsonPreview();
+        });
+        labelField.appendChild(labelInput);
+
+        var groupField = makeField('Group');
+        var groupInput = document.createElement('input');
+        groupInput.type = 'text'; groupInput.className = 'form-control';
+        groupInput.value = setting.group || ''; groupInput.placeholder = 'e.g. Content, Colors';
+        groupInput.addEventListener('input', function() {
+            if (this.value) { setting.group = this.value; }
+            else { delete setting.group; }
+            updateJsonPreview();
+        });
+        groupField.appendChild(groupInput);
+
+        row2.appendChild(labelField);
+        row2.appendChild(groupField);
+        bodyEl.appendChild(row2);
+
+        // Row 3: Default value (varies by type)
+        var type = setting.type || 'text';
+        var defRow = document.createElement('div');
+        defRow.className = 'form-row';
+
+        if (type === 'color') {
+            var defField = makeField('Default');
+            var colorWrap = document.createElement('div');
+            colorWrap.style.cssText = 'display:flex;gap:6px;';
+            var cInput = document.createElement('input');
+            cInput.type = 'color'; cInput.value = setting.default || '#ffffff';
+            cInput.style.cssText = 'width:36px;height:32px;padding:2px;border:1px solid #E3E3E3;border-radius:4px;cursor:pointer;';
+            var hInput = document.createElement('input');
+            hInput.type = 'text'; hInput.className = 'form-control';
+            hInput.value = setting.default || '#ffffff'; hInput.style.flex = '1';
+            cInput.addEventListener('input', function() { hInput.value = this.value; setting.default = this.value; updateJsonPreview(); });
+            hInput.addEventListener('input', function() { if (/^#[0-9a-fA-F]{3,8}$/.test(this.value)) cInput.value = this.value; setting.default = this.value; updateJsonPreview(); });
+            colorWrap.appendChild(cInput); colorWrap.appendChild(hInput);
+            defField.appendChild(colorWrap);
+            defRow.appendChild(defField);
+        } else if (type === 'checkbox') {
+            var defField = makeField('Default');
+            var chkLabel = document.createElement('label');
+            chkLabel.style.cssText = 'display:flex;align-items:center;gap:6px;font-weight:normal;cursor:pointer;';
+            var chk = document.createElement('input');
+            chk.type = 'checkbox'; chk.checked = !!setting.default;
+            chk.addEventListener('change', function() { setting.default = this.checked; updateJsonPreview(); });
+            chkLabel.appendChild(chk);
+            chkLabel.appendChild(document.createTextNode('Checked by default'));
+            defField.appendChild(chkLabel);
+            defRow.appendChild(defField);
+        } else if (type === 'range' || type === 'number') {
+            var defField = makeField('Default');
+            var numInput = document.createElement('input');
+            numInput.type = 'number'; numInput.className = 'form-control';
+            numInput.value = setting.default !== undefined ? setting.default : '';
+            numInput.addEventListener('input', function() {
+                setting.default = this.value !== '' ? parseFloat(this.value) : undefined;
+                if (setting.default === undefined) delete setting.default;
+                updateJsonPreview();
+            });
+            defField.appendChild(numInput);
+            defRow.appendChild(defField);
+        } else {
+            var defField = makeField('Default');
+            var txtInput = document.createElement('input');
+            txtInput.type = 'text'; txtInput.className = 'form-control';
+            txtInput.value = setting.default !== undefined ? String(setting.default) : '';
+            txtInput.addEventListener('input', function() {
+                if (this.value) { setting.default = this.value; }
+                else { delete setting.default; }
+                updateJsonPreview();
+            });
+            defField.appendChild(txtInput);
+            defRow.appendChild(defField);
+        }
+        bodyEl.appendChild(defRow);
+
+        // Type-specific fields
+        if (type === 'range') {
+            var rangeRow = document.createElement('div');
+            rangeRow.className = 'form-row';
+            ['min', 'max', 'step'].forEach(function(prop) {
+                var f = makeField(prop.charAt(0).toUpperCase() + prop.slice(1));
+                var inp = document.createElement('input');
+                inp.type = 'number'; inp.className = 'form-control';
+                inp.value = setting[prop] !== undefined ? setting[prop] : '';
+                inp.addEventListener('input', function() {
+                    if (this.value !== '') { setting[prop] = parseFloat(this.value); }
+                    else { delete setting[prop]; }
+                    updateJsonPreview();
+                });
+                f.appendChild(inp);
+                rangeRow.appendChild(f);
+            });
+            bodyEl.appendChild(rangeRow);
+        }
+
+        if (type === 'number') {
+            var numRow = document.createElement('div');
+            numRow.className = 'form-row';
+            ['min', 'max'].forEach(function(prop) {
+                var f = makeField(prop.charAt(0).toUpperCase() + prop.slice(1));
+                var inp = document.createElement('input');
+                inp.type = 'number'; inp.className = 'form-control';
+                inp.value = setting[prop] !== undefined ? setting[prop] : '';
+                inp.addEventListener('input', function() {
+                    if (this.value !== '') { setting[prop] = parseFloat(this.value); }
+                    else { delete setting[prop]; }
+                    updateJsonPreview();
+                });
+                f.appendChild(inp);
+                numRow.appendChild(f);
+            });
+            bodyEl.appendChild(numRow);
+        }
+
+        if (type === 'select' || type === 'layout_select') {
+            renderOptionsEditor(bodyEl, setting);
+        }
+
+        if (type === 'field_select') {
+            renderCollectionSettingPicker(bodyEl, setting, settingsArray);
+        }
+
+        if (type === 'collection') {
+            var note = document.createElement('div');
+            note.className = 'schema-field';
+            note.innerHTML = '<small style="color:var(--text-secondary,#616161);">Adds a collection picker dropdown in the customizer. Pair with <code>field_select</code> settings for field mapping.</small>';
+            bodyEl.appendChild(note);
+        }
+    }
+
+    // ── Helper: create field wrapper ──
+    function makeField(label) {
+        var f = document.createElement('div');
+        f.className = 'schema-field';
+        var lbl = document.createElement('label');
+        lbl.textContent = label;
+        f.appendChild(lbl);
+        return f;
+    }
+
+    // ── Options editor for select/layout_select ──
+    function renderOptionsEditor(bodyEl, setting) {
+        if (!setting.options) setting.options = [];
+        var wrap = document.createElement('div');
+        wrap.className = 'schema-field';
+        var lbl = document.createElement('label');
+        lbl.textContent = 'Options';
+        wrap.appendChild(lbl);
+
+        var list = document.createElement('div');
+
+        function renderOpts() {
+            list.innerHTML = '';
+            setting.options.forEach(function(opt, oi) {
+                var row = document.createElement('div');
+                row.className = 'option-row';
+                var valInput = document.createElement('input');
+                valInput.type = 'text'; valInput.placeholder = 'value'; valInput.value = opt.value || '';
+                valInput.addEventListener('input', function() { opt.value = this.value; updateJsonPreview(); });
+                var lblInput = document.createElement('input');
+                lblInput.type = 'text'; lblInput.placeholder = 'label'; lblInput.value = opt.label || '';
+                lblInput.addEventListener('input', function() { opt.label = this.value; updateJsonPreview(); });
+                var removeBtn = document.createElement('button');
+                removeBtn.className = 'delete-btn'; removeBtn.innerHTML = '&times;'; removeBtn.title = 'Remove';
+                removeBtn.addEventListener('click', function() {
+                    setting.options.splice(oi, 1);
+                    renderOpts();
+                    updateJsonPreview();
+                });
+                row.appendChild(valInput);
+                row.appendChild(lblInput);
+                row.appendChild(removeBtn);
+                list.appendChild(row);
+            });
+        }
+        renderOpts();
+
+        var addBtn = document.createElement('button');
+        addBtn.className = 'add-option-btn';
+        addBtn.textContent = '+ Add Option';
+        addBtn.addEventListener('click', function() {
+            setting.options.push({ value: '', label: '' });
+            renderOpts();
+            updateJsonPreview();
+        });
+
+        wrap.appendChild(list);
+        wrap.appendChild(addBtn);
+        bodyEl.appendChild(wrap);
+    }
+
+    // ── Collection setting picker for field_select ──
+    function renderCollectionSettingPicker(bodyEl, setting, allSettings) {
+        var wrap = makeField('Collection Setting');
+        var sel = document.createElement('select');
+        sel.className = 'form-control';
+        var emptyOpt = document.createElement('option');
+        emptyOpt.value = ''; emptyOpt.textContent = '-- Select --';
+        sel.appendChild(emptyOpt);
+
+        // Find all settings of type "collection" in current schema
+        (allSettings || []).forEach(function(s) {
+            if (s.type === 'collection' && s.id) {
+                var opt = document.createElement('option');
+                opt.value = s.id; opt.textContent = s.id + (s.label ? ' (' + s.label + ')' : '');
+                if (s.id === setting.collection_setting) opt.selected = true;
+                sel.appendChild(opt);
+            }
+        });
+        sel.addEventListener('change', function() {
+            if (this.value) { setting.collection_setting = this.value; }
+            else { delete setting.collection_setting; }
+            updateJsonPreview();
+        });
+        wrap.appendChild(sel);
+        bodyEl.appendChild(wrap);
+    }
+
+    // ════════════════════════════════════════════
+    //  BLOCK TYPES RENDERING
+    // ════════════════════════════════════════════
+    function renderBlockTypes() {
+        var container = document.getElementById('blockTypesList');
+        container.innerHTML = '';
+        if (!schemaState.blocks) return;
+
+        schemaState.blocks.forEach(function(block, bi) {
+            var card = document.createElement('div');
+            card.className = 'block-type-card';
+
+            var header = document.createElement('div');
+            header.className = 'block-type-header';
+            header.innerHTML =
+                '<span class="type-badge">block</span>' +
+                '<span class="block-type-name">' + esc(block.name || block.type || 'Untitled') + '</span>' +
+                '<button class="delete-btn" title="Remove">&times;</button>';
+
+            var body = document.createElement('div');
+            body.className = 'block-type-body';
+
+            // Type slug
+            var row1 = document.createElement('div');
+            row1.className = 'form-row';
+            var typeField = makeField('Type (slug)');
+            var typeInput = document.createElement('input');
+            typeInput.type = 'text'; typeInput.className = 'form-control'; typeInput.value = block.type || '';
+            typeInput.addEventListener('input', function() { block.type = this.value; updateJsonPreview(); });
+            typeField.appendChild(typeInput);
+
+            var nameField = makeField('Name');
+            var nameInput = document.createElement('input');
+            nameInput.type = 'text'; nameInput.className = 'form-control'; nameInput.value = block.name || '';
+            nameInput.addEventListener('input', function() {
+                block.name = this.value;
+                header.querySelector('.block-type-name').textContent = this.value || 'Untitled';
+                updateJsonPreview();
+            });
+            nameField.appendChild(nameInput);
+
+            row1.appendChild(typeField);
+            row1.appendChild(nameField);
+            body.appendChild(row1);
+
+            // Block settings
+            if (!block.settings) block.settings = [];
+            var settingsWrap = document.createElement('div');
+            settingsWrap.className = 'block-settings-wrap';
+            var settingsHeader = document.createElement('div');
+            settingsHeader.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;';
+            settingsHeader.innerHTML = '<h5 style="margin:0;">Settings</h5>';
+            var addBlockSettingBtn = document.createElement('button');
+            addBlockSettingBtn.className = 'btn btn-xs btn-primary';
+            addBlockSettingBtn.textContent = '+ Add';
+            addBlockSettingBtn.addEventListener('click', function() {
+                block.settings.push({ type: 'text', id: '', label: '' });
+                renderSettingsList(block.settings, blockSettingsList);
+                updateJsonPreview();
+                var cards = blockSettingsList.querySelectorAll('.setting-card-body');
+                if (cards.length) cards[cards.length - 1].classList.add('open');
+            });
+            settingsHeader.appendChild(addBlockSettingBtn);
+            settingsWrap.appendChild(settingsHeader);
+
+            var blockSettingsList = document.createElement('div');
+            renderSettingsList(block.settings, blockSettingsList);
+            settingsWrap.appendChild(blockSettingsList);
+            body.appendChild(settingsWrap);
+
+            header.addEventListener('click', function(e) {
+                if (e.target.closest('.delete-btn')) {
+                    e.stopPropagation();
+                    schemaState.blocks.splice(bi, 1);
+                    renderBlockTypes();
+                    updateJsonPreview();
+                    return;
+                }
+                body.classList.toggle('open');
+            });
+
+            card.appendChild(header);
+            card.appendChild(body);
+            container.appendChild(card);
+        });
+    }
+
+    // ════════════════════════════════════════════
+    //  PRESETS RENDERING
+    // ════════════════════════════════════════════
+    function renderPresets() {
+        var container = document.getElementById('presetsList');
+        container.innerHTML = '';
+        if (!schemaState.presets) return;
+
+        schemaState.presets.forEach(function(preset, pi) {
+            var card = document.createElement('div');
+            card.className = 'preset-card';
+
+            var header = document.createElement('div');
+            header.className = 'preset-header';
+            header.innerHTML =
+                '<span class="preset-name">' + esc(preset.name || 'Untitled') + '</span>' +
+                '<button class="delete-btn" title="Remove">&times;</button>';
+
+            var body = document.createElement('div');
+            body.className = 'preset-body';
+
+            var nameField = makeField('Preset Name');
+            var nameInput = document.createElement('input');
+            nameInput.type = 'text'; nameInput.className = 'form-control'; nameInput.value = preset.name || '';
+            nameInput.addEventListener('input', function() {
+                preset.name = this.value;
+                header.querySelector('.preset-name').textContent = this.value || 'Untitled';
+                updateJsonPreview();
+            });
+            nameField.appendChild(nameInput);
+            body.appendChild(nameField);
+
+            var settingsField = makeField('Default Settings (JSON)');
+            var ta = document.createElement('textarea');
+            ta.value = JSON.stringify(preset.settings || {}, null, 2);
+            ta.addEventListener('change', function() {
+                try { preset.settings = JSON.parse(this.value); }
+                catch(e) { /* keep old */ }
+                updateJsonPreview();
+            });
+            settingsField.appendChild(ta);
+            body.appendChild(settingsField);
+
+            header.addEventListener('click', function(e) {
+                if (e.target.closest('.delete-btn')) {
+                    e.stopPropagation();
+                    schemaState.presets.splice(pi, 1);
+                    renderPresets();
+                    updateJsonPreview();
+                    return;
+                }
+                body.classList.toggle('open');
+            });
+
+            card.appendChild(header);
+            card.appendChild(body);
+            container.appendChild(card);
+        });
+    }
+
+    // ── Auto-switch to designer for section files ──
+    if (isSectionFile) {
+        setTimeout(function() { switchToDesigner(); }, 100);
+    }
+
+    // ════════════════════════════════════════════
+    //  SAVE FILE
+    // ════════════════════════════════════════════
     document.getElementById('saveFileBtn').addEventListener('click', function() {
         if (!currentFile) return;
 
@@ -434,11 +1991,11 @@ document.addEventListener('DOMContentLoaded', function() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                'X-CSRF-TOKEN': csrfToken
             },
             body: JSON.stringify({
                 file: currentFile,
-                content: editor.getValue()
+                content: getContentToSave()
             })
         })
         .then(function(r) { return r.json(); })
@@ -459,7 +2016,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Ctrl+S shortcut
+    // Ctrl+S shortcut in main editor
     editor.on('keydown', function(cm, e) {
         if ((e.ctrlKey || e.metaKey) && e.key === 's') {
             e.preventDefault();
@@ -467,9 +2024,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // --- Pages Management ---
-    var csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
-
+    // ════════════════════════════════════════════
+    //  PAGES MANAGEMENT (existing)
+    // ════════════════════════════════════════════
     function showModal(isEdit) {
         var modal = document.getElementById('addPageModal');
         modal.style.display = 'flex';
@@ -486,13 +2043,10 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('pageEditTemplate').value = '';
     }
 
-    document.getElementById('addPageBtn')?.addEventListener('click', function() {
-        showModal(false);
-    });
+    document.getElementById('addPageBtn')?.addEventListener('click', function() { showModal(false); });
     document.getElementById('closePageModal')?.addEventListener('click', hideModal);
     document.getElementById('cancelPageModal')?.addEventListener('click', hideModal);
 
-    // Edit page settings
     document.querySelectorAll('.edit-page-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
             document.getElementById('pageEditTemplate').value = this.dataset.template;
@@ -503,7 +2057,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Save page (add or update)
     document.getElementById('savePageBtn')?.addEventListener('click', function() {
         var btn = this;
         var editTemplate = document.getElementById('pageEditTemplate').value;
@@ -515,9 +2068,7 @@ document.addEventListener('DOMContentLoaded', function() {
             slug: document.getElementById('pageSlug').value,
             layout: document.getElementById('pageLayout').value
         };
-        if (isEdit) {
-            payload.template = editTemplate;
-        }
+        if (isEdit) payload.template = editTemplate;
 
         btn.disabled = true;
         btn.textContent = 'Saving...';
@@ -544,7 +2095,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Delete page
     document.querySelectorAll('.delete-page-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
             var template = this.dataset.template;
@@ -567,15 +2117,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Auto-generate slug from title
     document.getElementById('pageTitle')?.addEventListener('input', function() {
         var editTemplate = document.getElementById('pageEditTemplate').value;
-        if (editTemplate) return; // Don't auto-generate on edit
+        if (editTemplate) return;
         var slug = '/' + this.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
         document.getElementById('pageSlug').value = slug;
     });
 
-    // --- New Section Management ---
+    // ── New Section Management ──
     document.getElementById('newSectionBtn')?.addEventListener('click', function() {
         document.getElementById('newSectionModal').style.display = 'flex';
         document.getElementById('sectionName').value = '';
@@ -605,7 +2154,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (data.success) {
-                window.location.reload();
+                window.location.href = '/cms/themes/' + themeSlug + '?file=sections/' + encodeURIComponent(data.type) + '.twig';
             } else {
                 alert(data.error || 'Failed to create section');
                 btn.disabled = false;

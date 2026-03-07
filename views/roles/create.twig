@@ -1,0 +1,69 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Create Role{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / <a href="/cms/roles">Roles</a> / Create
+</div>
+
+<div class="page-header">
+    <h1>Create Role</h1>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" action="/cms/roles">
+            {{ csrf_field() | raw }}
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
+                <div class="form-group">
+                    <label for="name">Name *</label>
+                    <input type="text" id="name" name="name" class="form-control"
+                           value="{{ flash('_old_input').name ?? '' }}"
+                           placeholder="e.g. Editor" required>
+                    {% if flash('errors').name is defined %}
+                        <div class="invalid-feedback">{{ flash('errors').name }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="slug">Slug *</label>
+                    <input type="text" id="slug" name="slug" class="form-control"
+                           value="{{ flash('_old_input').slug ?? '' }}"
+                           placeholder="Auto-generated from name">
+                    <small style="color: var(--text-secondary);">Leave blank to auto-generate from name.</small>
+                    {% if flash('errors').slug is defined %}
+                        <div class="invalid-feedback">{{ flash('errors').slug }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" class="form-control" rows="3"
+                          placeholder="Optional description of this role">{{ flash('_old_input').description ?? '' }}</textarea>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Create Role</button>
+                <a href="/cms/roles" class="btn btn-outline">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ csp_nonce() }}">
+document.getElementById('name').addEventListener('input', function() {
+    var slugField = document.getElementById('slug');
+    if (!slugField.dataset.manual) {
+        slugField.value = this.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    }
+});
+document.getElementById('slug').addEventListener('input', function() {
+    this.dataset.manual = this.value ? '1' : '';
+});
+</script>
+{% endblock %}
