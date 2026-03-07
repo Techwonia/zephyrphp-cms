@@ -580,6 +580,22 @@
     if (!state.settingsData.current || Array.isArray(state.settingsData.current)) state.settingsData.current = {};
     if (!state.settingsData.pages || Array.isArray(state.settingsData.pages)) state.settingsData.pages = {};
 
+    // Cache for collection field lists (keyed by collection slug)
+    var collectionFieldsCache = {};
+
+    function fetchCollectionFields(collectionSlug) {
+        if (!collectionSlug) return Promise.resolve([]);
+        if (collectionFieldsCache[collectionSlug]) return Promise.resolve(collectionFieldsCache[collectionSlug]);
+
+        return fetch('/cms/themes/' + THEME_SLUG + '/customize/collection-fields/' + encodeURIComponent(collectionSlug))
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                collectionFieldsCache[collectionSlug] = data.fields || [];
+                return collectionFieldsCache[collectionSlug];
+            })
+            .catch(function() { return []; });
+    }
+
     function getPageData() {
         if (!state.settingsData.pages[state.currentPage]) {
             state.settingsData.pages[state.currentPage] = { sections: {}, order: [] };
@@ -964,8 +980,50 @@
                 if (col.slug === value) opt.selected = true;
                 colSel.appendChild(opt);
             });
-            colSel.addEventListener('change', function() { onChange(this.value); });
+            colSel.addEventListener('change', function() {
+                onChange(this.value);
+                // Re-render detail panel so field_select dropdowns refresh
+                if (state.activeSection) {
+                    setTimeout(function() { openSectionDetail(state.activeSection); }, 50);
+                }
+            });
             wrapper.appendChild(colSel);
+
+        } else if (setting.type === 'field_select') {
+            // Dynamic field selector — populates based on a linked collection setting
+            var fieldSelect = document.createElement('select');
+            fieldSelect.className = 'setting-input';
+
+            var noneOpt = document.createElement('option');
+            noneOpt.value = '';
+            noneOpt.textContent = '— None —';
+            fieldSelect.appendChild(noneOpt);
+
+            // Find the linked collection slug from the current section's settings
+            var collectionSettingId = setting.collection_setting || 'collection';
+            var linkedCollectionSlug = '';
+            if (state.activeSection) {
+                var pd = getPageData();
+                var activeSec = pd.sections[state.activeSection];
+                if (activeSec) linkedCollectionSlug = activeSec.settings[collectionSettingId] || '';
+            }
+
+            if (linkedCollectionSlug) {
+                (function(sel, currentValue) {
+                    fetchCollectionFields(linkedCollectionSlug).then(function(fields) {
+                        fields.forEach(function(f) {
+                            var opt = document.createElement('option');
+                            opt.value = f.slug;
+                            opt.textContent = f.name + ' (' + f.type + ')';
+                            if (f.slug === currentValue) opt.selected = true;
+                            sel.appendChild(opt);
+                        });
+                    });
+                })(fieldSelect, value);
+            }
+
+            fieldSelect.addEventListener('change', function() { onChange(this.value); });
+            wrapper.appendChild(fieldSelect);
 
         } else if (setting.type === 'image') {
             var previewDiv = document.createElement('div');

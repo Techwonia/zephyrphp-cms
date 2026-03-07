@@ -72,6 +72,7 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     Route::get('/themes/{slug}/customize/sections', [ThemeCustomizerController::class, 'listSections']);
     Route::get('/themes/{slug}/customize/schema/{type}', [ThemeCustomizerController::class, 'sectionSchema']);
     Route::get('/themes/{slug}/customize/collections', [ThemeCustomizerController::class, 'listCollections']);
+    Route::get('/themes/{slug}/customize/collection-fields/{collectionSlug}', [ThemeCustomizerController::class, 'collectionFields']);
 
     // Theme section creation
     Route::post('/themes/{slug}/sections/create', [ThemeController::class, 'createSection']);
