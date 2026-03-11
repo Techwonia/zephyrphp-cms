@@ -35,7 +35,6 @@
     <div class="tab-nav">
         <button class="tab-btn active" data-tab="tab-settings">Settings</button>
         <button class="tab-btn" data-tab="tab-pages">Pages</button>
-        <button class="tab-btn" data-tab="tab-assets">Assets</button>
         <button class="tab-btn" data-tab="tab-editor">File Editor</button>
     </div>
 
@@ -210,83 +209,13 @@
         </div>
     </div>
 
-    {# New Asset File Modal #}
-    <div class="modal-overlay" id="newAssetFileModal" style="display:none">
-        <div class="modal-card">
-            <div class="modal-header">
-                <h3>Create New Asset File</h3>
-                <button class="modal-close" id="closeNewAssetFileModal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="assetFileType">Type *</label>
-                    <select id="assetFileType" class="form-control">
-                        <option value="css">CSS</option>
-                        <option value="js">JavaScript</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="assetFileNameInput">File Name *</label>
-                    <input type="text" id="assetFileNameInput" class="form-control" placeholder="e.g. custom-styles">
-                    <small class="text-muted">Extension will be added automatically (.css or .js).</small>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-outline" id="cancelNewAssetFileModal">Cancel</button>
-                <button class="btn btn-primary" id="createAssetFileBtn">Create File</button>
-            </div>
-        </div>
-    </div>
-
-    {# Assets Tab #}
-    <div class="tab-panel" id="tab-assets">
-        <div class="pages-header">
-            <p class="text-muted" style="margin:0;">Manage theme assets — CSS, JavaScript, and fonts. Use <a href="/cms/media">Media</a> for images.</p>
-        </div>
-
-        <div style="padding: var(--space-400, 16px);">
-            {# Upload Form #}
-            <div style="background: var(--bg-subdued, #fafafa); border: 2px dashed var(--border-default, #e3e3e3); border-radius: 8px; padding: 24px; margin-bottom: 24px; text-align: center;" id="assetDropZone">
-                <form id="assetUploadForm" enctype="multipart/form-data" style="display: inline-flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center;">
-                    <select id="assetCategory" name="category" class="form-control" style="width: auto;">
-                        <option value="css" selected>CSS</option>
-                        <option value="js">JavaScript</option>
-                        <option value="fonts">Fonts</option>
-                    </select>
-                    <label class="btn btn-primary btn-sm" style="cursor: pointer; margin: 0;">
-                        Choose File
-                        <input type="file" id="assetFileInput" name="asset_file" style="display: none;"
-                               accept=".css,.js,.woff,.woff2,.ttf,.otf,.eot,.map">
-                    </label>
-                    <span id="assetFileName" style="color: var(--text-secondary); font-size: 0.8125rem;">or drag & drop files here</span>
-                    <button type="button" class="btn btn-sm btn-outline" id="assetUploadBtn" style="display: none;">Upload</button>
-                </form>
-                <div id="assetUploadProgress" style="display: none; margin-top: 12px;">
-                    <div style="background: var(--border-default); border-radius: 4px; height: 4px; overflow: hidden;">
-                        <div id="assetProgressBar" style="background: var(--color-primary, #008060); height: 100%; width: 0%; transition: width 0.3s;"></div>
-                    </div>
-                </div>
-            </div>
-
-            {# Asset Categories #}
-            <div id="assetsList">
-                <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
-                    Loading assets...
-                </div>
-            </div>
-        </div>
-    </div>
-
     {# File Editor Tab #}
     <div class="tab-panel" id="tab-editor">
         <div class="editor-layout">
             <div class="editor-sidebar">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                     <h4 style="margin:0;">Files</h4>
-                    <div style="display:flex; gap:4px;">
-                        <button class="btn btn-xs btn-outline" id="newAssetFileBtn" title="Create new CSS/JS file">+ Asset</button>
-                        <button class="btn btn-xs btn-primary" id="newSectionBtn" title="Create new section">+ Section</button>
-                    </div>
+                    <button class="btn btn-xs btn-primary" id="newSectionBtn" title="Create new section">+ Section</button>
                 </div>
                 {% for folder, fileList in files %}
                 <div class="file-folder">
@@ -308,9 +237,6 @@
                             <button class="toggle-btn" id="btnSource">Source</button>
                         </div>
                         <button class="btn btn-sm btn-outline" id="editorRefToggleBtn" style="display:none;">Reference</button>
-                        {% if activeFile and activeFile starts with 'assets/' %}
-                        <button class="btn btn-sm btn-danger" id="deleteAssetFileBtn" title="Delete this asset file">Delete</button>
-                        {% endif %}
                         <button class="btn btn-sm btn-primary" id="saveFileBtn" {% if not activeFile %}disabled{% endif %}>Save</button>
                     </div>
                 </div>
@@ -1080,11 +1006,8 @@ document.addEventListener('DOMContentLoaded', function() {
     var textarea = document.getElementById('codeEditor');
     var currentFile = '{{ activeFile }}';
     var isPhpFile = currentFile && currentFile.indexOf('.php') > 0;
-    var isCssFile = currentFile && currentFile.indexOf('.css') > 0;
-    var isJsFile = currentFile && currentFile.indexOf('.js') > 0;
     var isControllerFile = currentFile && currentFile.indexOf('controllers/') === 0;
-    var isAssetFile = currentFile && currentFile.indexOf('assets/') === 0;
-    var editorMode = isPhpFile ? 'php' : (isCssFile ? 'css' : (isJsFile ? 'javascript' : 'htmlmixed'));
+    var editorMode = isPhpFile ? 'php' : 'htmlmixed';
 
     var editor = CodeMirror.fromTextArea(textarea, {
         mode: editorMode,
@@ -2579,314 +2502,6 @@ document.addEventListener('DOMContentLoaded', function() {
             btn.textContent = 'Create Section';
         });
     });
-    // ==================== NEW ASSET FILE ====================
-    document.getElementById('newAssetFileBtn')?.addEventListener('click', function() {
-        document.getElementById('newAssetFileModal').style.display = 'flex';
-        document.getElementById('assetFileNameInput').value = '';
-        document.getElementById('assetFileNameInput').focus();
-    });
-    document.getElementById('closeNewAssetFileModal')?.addEventListener('click', function() {
-        document.getElementById('newAssetFileModal').style.display = 'none';
-    });
-    document.getElementById('cancelNewAssetFileModal')?.addEventListener('click', function() {
-        document.getElementById('newAssetFileModal').style.display = 'none';
-    });
-    document.getElementById('createAssetFileBtn')?.addEventListener('click', function() {
-        var btn = this;
-        var type = document.getElementById('assetFileType').value;
-        var name = document.getElementById('assetFileNameInput').value.trim();
-        if (!name) { alert('File name is required'); return; }
-
-        // Sanitize: only allow alphanumeric, dash, underscore, dot
-        name = name.replace(/[^a-zA-Z0-9._-]/g, '-');
-        if (!name) { alert('Invalid file name'); return; }
-
-        // Add extension if not present
-        var ext = '.' + type;
-        if (!name.endsWith(ext)) name += ext;
-
-        var filePath = 'assets/' + type + '/' + name;
-        var defaultContent = type === 'css'
-            ? '/* ' + name + ' */\n'
-            : '// ' + name + '\n';
-
-        btn.disabled = true;
-        btn.textContent = 'Creating...';
-
-        fetch('/cms/themes/' + themeSlug + '/file', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
-            body: JSON.stringify({ file: filePath, content: defaultContent })
-        })
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            if (data.success) {
-                window.location.href = '/cms/themes/' + themeSlug + '?file=' + encodeURIComponent(filePath);
-            } else {
-                alert(data.error || 'Failed to create asset file');
-                btn.disabled = false;
-                btn.textContent = 'Create File';
-            }
-        })
-        .catch(function() {
-            alert('Network error');
-            btn.disabled = false;
-            btn.textContent = 'Create File';
-        });
-    });
-
-    // ==================== DELETE ASSET FILE ====================
-    document.getElementById('deleteAssetFileBtn')?.addEventListener('click', function() {
-        if (!currentFile || !currentFile.startsWith('assets/')) return;
-        var fileName = currentFile.split('/').pop();
-        if (!confirm('Delete "' + fileName + '"? This cannot be undone.')) return;
-
-        var btn = this;
-        btn.disabled = true;
-        btn.textContent = 'Deleting...';
-
-        fetch('/cms/themes/' + themeSlug + '/assets/delete', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
-            body: JSON.stringify({ path: currentFile })
-        })
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            if (data.success) {
-                window.location.href = '/cms/themes/' + themeSlug;
-            } else {
-                alert(data.error || 'Failed to delete file');
-                btn.disabled = false;
-                btn.textContent = 'Delete';
-            }
-        })
-        .catch(function() {
-            alert('Network error');
-            btn.disabled = false;
-            btn.textContent = 'Delete';
-        });
-    });
-
-    // ==================== ASSET MANAGEMENT ====================
-    var themeSlug = '{{ theme.getSlug() }}';
-    var assetsLoaded = false;
-
-    // Load assets when Assets tab is clicked
-    document.querySelectorAll('.tab-btn').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            if (this.dataset.tab === 'tab-assets' && !assetsLoaded) {
-                loadAssets();
-                assetsLoaded = true;
-            }
-        });
-    });
-
-    function loadAssets() {
-        fetch('/cms/themes/' + themeSlug + '/assets')
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                renderAssets(data.assets || {});
-            })
-            .catch(function() {
-                document.getElementById('assetsList').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-secondary);">Failed to load assets.</div>';
-            });
-    }
-
-    function renderAssets(assets) {
-        var container = document.getElementById('assetsList');
-        var categoryIcons = {
-            css: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M9 9h6v6H9z"/></svg>',
-            js: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 12l2 2 4-4"/></svg>',
-            fonts: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>'
-        };
-        var categoryLabels = { css: 'Stylesheets', js: 'JavaScript', fonts: 'Fonts' };
-        var html = '';
-
-        ['css', 'js', 'fonts'].forEach(function(cat) {
-            var files = assets[cat] || [];
-            html += '<div class="asset-category" style="margin-bottom: 20px;">';
-            html += '<h4 style="font-size:0.875rem; margin:0 0 8px; display:flex; align-items:center; gap:6px; color:var(--text-primary);">';
-            html += (categoryIcons[cat] || '') + ' ' + categoryLabels[cat] + ' <span style="font-weight:normal; color:var(--text-secondary);">(' + files.length + ')</span></h4>';
-
-            if (files.length === 0) {
-                html += '<p style="color:var(--text-secondary); font-size:0.8125rem; margin:0 0 0 22px;">No ' + cat + ' files yet.</p>';
-            } else {
-                html += '<div style="display:grid; gap:4px;">';
-                files.forEach(function(f) {
-                    html += '<div class="asset-item" style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:var(--bg-surface,#fff); border:1px solid var(--border-default,#e3e3e3); border-radius:6px; font-size:0.8125rem;">';
-                    html += '<div style="display:flex; align-items:center; gap:8px; min-width:0;">';
-                    html += '<span style="font-family:monospace; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(f.name) + '</span>';
-                    html += '<span style="color:var(--text-secondary); flex-shrink:0;">' + f.size + '</span>';
-                    html += '</div>';
-                    html += '<div style="display:flex; gap:6px; flex-shrink:0;">';
-                    html += '<button class="btn btn-xs btn-outline copy-path-btn" data-path="/theme/' + f.path.replace('assets/', '') + '" title="Copy URL">Copy URL</button>';
-                    html += '<button class="btn btn-xs btn-danger delete-asset-btn" data-path="' + escapeHtml(f.path) + '" data-name="' + escapeHtml(f.name) + '">Delete</button>';
-                    html += '</div>';
-                    html += '</div>';
-                });
-                html += '</div>';
-            }
-            html += '</div>';
-        });
-
-        // Other files
-        if (assets.other && assets.other.length > 0) {
-            html += '<div class="asset-category" style="margin-bottom:20px;">';
-            html += '<h4 style="font-size:0.875rem; margin:0 0 8px; color:var(--text-primary);">Other Files (' + assets.other.length + ')</h4>';
-            html += '<div style="display:grid; gap:4px;">';
-            assets.other.forEach(function(f) {
-                html += '<div class="asset-item" style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:var(--bg-surface,#fff); border:1px solid var(--border-default,#e3e3e3); border-radius:6px; font-size:0.8125rem;">';
-                html += '<span style="font-family:monospace;">' + escapeHtml(f.name) + '</span> <span style="color:var(--text-secondary);">' + f.size + '</span>';
-                html += '<button class="btn btn-xs btn-danger delete-asset-btn" data-path="' + escapeHtml(f.path) + '" data-name="' + escapeHtml(f.name) + '">Delete</button>';
-                html += '</div>';
-            });
-            html += '</div></div>';
-        }
-
-        container.innerHTML = html;
-
-        // Bind delete buttons
-        container.querySelectorAll('.delete-asset-btn').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                var path = this.dataset.path;
-                var name = this.dataset.name;
-                if (!confirm('Delete "' + name + '"? This cannot be undone.')) return;
-                fetch('/cms/themes/' + themeSlug + '/assets/delete', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' },
-                    body: JSON.stringify({ path: path })
-                })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    if (data.success) { loadAssets(); }
-                    else { alert(data.error || 'Delete failed'); }
-                })
-                .catch(function() { alert('Network error'); });
-            });
-        });
-
-        // Bind copy URL buttons
-        container.querySelectorAll('.copy-path-btn').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                var url = window.location.origin + this.dataset.path;
-                navigator.clipboard.writeText(url).then(function() {
-                    btn.textContent = 'Copied!';
-                    setTimeout(function() { btn.textContent = 'Copy URL'; }, 1500);
-                });
-            });
-        });
-    }
-
-    function escapeHtml(text) {
-        var d = document.createElement('div');
-        d.textContent = text;
-        return d.innerHTML;
-    }
-
-    // File upload handling
-    var fileInput = document.getElementById('assetFileInput');
-    var uploadBtn = document.getElementById('assetUploadBtn');
-    var fileNameDisplay = document.getElementById('assetFileName');
-
-    if (fileInput) {
-        fileInput.addEventListener('change', function() {
-            if (this.files.length > 0) {
-                fileNameDisplay.textContent = this.files[0].name;
-                uploadBtn.style.display = '';
-
-                // Auto-detect category from extension
-                var ext = this.files[0].name.split('.').pop().toLowerCase();
-                var catMap = { css: 'css', js: 'js', map: 'js', woff: 'fonts', woff2: 'fonts', ttf: 'fonts', otf: 'fonts', eot: 'fonts' };
-                if (catMap[ext]) {
-                    document.getElementById('assetCategory').value = catMap[ext];
-                }
-            } else {
-                fileNameDisplay.textContent = 'or drag & drop files here';
-                uploadBtn.style.display = 'none';
-            }
-        });
-    }
-
-    if (uploadBtn) {
-        uploadBtn.addEventListener('click', function() {
-            if (!fileInput.files.length) return;
-            var formData = new FormData();
-            formData.append('asset_file', fileInput.files[0]);
-            formData.append('category', document.getElementById('assetCategory').value);
-
-            var progressWrap = document.getElementById('assetUploadProgress');
-            var progressBar = document.getElementById('assetProgressBar');
-            progressWrap.style.display = '';
-            uploadBtn.disabled = true;
-            uploadBtn.textContent = 'Uploading...';
-
-            var xhr = new XMLHttpRequest();
-            xhr.open('POST', '/cms/themes/' + themeSlug + '/assets/upload');
-            var csrfMeta = document.querySelector('meta[name="csrf-token"]');
-            if (csrfMeta) xhr.setRequestHeader('X-CSRF-TOKEN', csrfMeta.content);
-
-            xhr.upload.addEventListener('progress', function(e) {
-                if (e.lengthComputable) {
-                    progressBar.style.width = Math.round(e.loaded / e.total * 100) + '%';
-                }
-            });
-
-            xhr.addEventListener('load', function() {
-                progressWrap.style.display = 'none';
-                progressBar.style.width = '0%';
-                uploadBtn.disabled = false;
-                uploadBtn.textContent = 'Upload';
-
-                try {
-                    var data = JSON.parse(xhr.responseText);
-                    if (data.success) {
-                        fileInput.value = '';
-                        fileNameDisplay.textContent = 'or drag & drop files here';
-                        uploadBtn.style.display = 'none';
-                        loadAssets();
-                    } else {
-                        alert(data.error || 'Upload failed');
-                    }
-                } catch (e) {
-                    alert('Upload failed');
-                }
-            });
-
-            xhr.addEventListener('error', function() {
-                progressWrap.style.display = 'none';
-                uploadBtn.disabled = false;
-                uploadBtn.textContent = 'Upload';
-                alert('Network error');
-            });
-
-            xhr.send(formData);
-        });
-    }
-
-    // Drag and drop
-    var dropZone = document.getElementById('assetDropZone');
-    if (dropZone) {
-        ['dragenter', 'dragover'].forEach(function(evt) {
-            dropZone.addEventListener(evt, function(e) {
-                e.preventDefault();
-                dropZone.style.borderColor = 'var(--color-primary, #008060)';
-                dropZone.style.background = 'rgba(0,128,96,0.04)';
-            });
-        });
-        ['dragleave', 'drop'].forEach(function(evt) {
-            dropZone.addEventListener(evt, function(e) {
-                e.preventDefault();
-                dropZone.style.borderColor = '';
-                dropZone.style.background = '';
-            });
-        });
-        dropZone.addEventListener('drop', function(e) {
-            if (e.dataTransfer.files.length > 0) {
-                fileInput.files = e.dataTransfer.files;
-                fileInput.dispatchEvent(new Event('change'));
-            }
-        });
-    }
 });
 </script>
 {% endblock %}

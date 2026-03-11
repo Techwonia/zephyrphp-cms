@@ -7,7 +7,6 @@ namespace ZephyrPHP\Cms\Controllers;
 use ZephyrPHP\Core\Controllers\Controller;
 use ZephyrPHP\Auth\Auth;
 use ZephyrPHP\Cms\Services\PermissionService;
-use ZephyrPHP\Cms\Services\ThemeManager;
 
 class AssetSettingsController extends Controller
 {
@@ -34,13 +33,7 @@ class AssetSettingsController extends Controller
         $this->requirePermission('settings.view');
 
         $config = $this->loadAssetsConfig();
-
-        // Get theme assets info
-        $themeManager = new ThemeManager();
-        $liveTheme = $themeManager->getEffectiveTheme();
-        $themeAssets = $this->scanThemeAssets($themeManager, $liveTheme);
-        $publicThemePath = $themeManager->getPublicThemeAssetsPath();
-        $isPublished = is_dir($publicThemePath) && (count(scandir($publicThemePath)) > 2);
+        $publicAssets = $this->scanPublicAssets();
 
         return $this->render('cms::settings/assets', [
             'collections' => $config['collections'] ?? [],
@@ -53,9 +46,7 @@ class AssetSettingsController extends Controller
             'cdnEnabled' => $config['cdn_enabled'] ?? false,
             'minify' => $config['minify'] ?? false,
             'manifest' => $config['manifest'] ?? '',
-            'liveTheme' => $liveTheme,
-            'themeAssets' => $themeAssets,
-            'themeAssetsPublished' => $isPublished,
+            'publicAssets' => $publicAssets,
             'user' => Auth::user(),
         ]);
     }
@@ -163,6 +154,211 @@ class AssetSettingsController extends Controller
         }
     }
 
+    /**
+     * AJAX: Upload a file to public/assets/{category}/.
+     */
+    public function upload(): void
+    {
+        $this->requirePermission('settings.edit');
+        header('Content-Type: application/json');
+
+        $category = $_POST['category'] ?? 'css';
+        $allowedCategories = ['css', 'js', 'fonts'];
+        if (!in_array($category, $allowedCategories, true)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Invalid asset category']);
+            return;
+        }
+
+        if (empty($_FILES['asset_file']) || $_FILES['asset_file']['error'] !== UPLOAD_ERR_OK) {
+            $errorMessages = [
+                UPLOAD_ERR_INI_SIZE => 'File exceeds server upload_max_filesize',
+                UPLOAD_ERR_FORM_SIZE => 'File exceeds form MAX_FILE_SIZE',
+                UPLOAD_ERR_PARTIAL => 'File was only partially uploaded',
+                UPLOAD_ERR_NO_FILE => 'No file was uploaded',
+                UPLOAD_ERR_NO_TMP_DIR => 'Missing server temp folder',
+                UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
+            ];
+            $code = $_FILES['asset_file']['error'] ?? UPLOAD_ERR_NO_FILE;
+            http_response_code(400);
+            echo json_encode(['error' => $errorMessages[$code] ?? 'Upload error (code: ' . $code . ')']);
+            return;
+        }
+
+        $file = $_FILES['asset_file'];
+        $originalName = basename($file['name']);
+        $safeName = preg_replace('/[^a-zA-Z0-9._-]/', '-', $originalName);
+        if (empty($safeName) || $safeName === '-') {
+            http_response_code(400);
+            echo json_encode(['error' => 'Invalid filename']);
+            return;
+        }
+
+        // Validate extension by category
+        $allowedExts = [
+            'css' => ['css', 'map'],
+            'js' => ['js', 'map'],
+            'fonts' => ['woff', 'woff2', 'ttf', 'otf', 'eot'],
+        ];
+
+        $ext = strtolower(pathinfo($safeName, PATHINFO_EXTENSION));
+        if (!in_array($ext, $allowedExts[$category] ?? [], true)) {
+            http_response_code(400);
+            echo json_encode(['error' => "File type .{$ext} is not allowed for {$category}"]);
+            return;
+        }
+
+        // Max file size: 5MB
+        if ($file['size'] > 5 * 1024 * 1024) {
+            http_response_code(400);
+            echo json_encode(['error' => 'File too large. Maximum size is 5MB.']);
+            return;
+        }
+
+        $assetsDir = $this->getPublicAssetsPath();
+        $targetDir = $assetsDir . '/' . $category;
+        if (!is_dir($targetDir)) {
+            mkdir($targetDir, 0755, true);
+        }
+
+        // Verify target is within public/assets
+        $realAssets = realpath($assetsDir);
+        $realTarget = realpath($targetDir);
+        if (!$realAssets || !$realTarget || !str_starts_with($realTarget, $realAssets)) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Path traversal detected']);
+            return;
+        }
+
+        $targetPath = $targetDir . '/' . $safeName;
+
+        if (file_exists($targetPath) && empty($_POST['overwrite'])) {
+            http_response_code(409);
+            echo json_encode(['error' => 'File already exists. Set overwrite=1 to replace.']);
+            return;
+        }
+
+        if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+            echo json_encode([
+                'success' => true,
+                'file' => [
+                    'path' => "assets/{$category}/{$safeName}",
+                    'name' => $safeName,
+                    'size' => $this->formatSize(filesize($targetPath)),
+                ],
+            ]);
+        } else {
+            http_response_code(500);
+            echo json_encode(['error' => 'Failed to move uploaded file']);
+        }
+    }
+
+    /**
+     * AJAX: Delete a file from public/assets/.
+     */
+    public function deleteFile(): void
+    {
+        $this->requirePermission('settings.edit');
+        header('Content-Type: application/json');
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        $filePath = $input['path'] ?? '';
+
+        if (empty($filePath) || !str_starts_with($filePath, 'assets/')) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Invalid asset path']);
+            return;
+        }
+
+        if (str_contains($filePath, '..')) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Access denied']);
+            return;
+        }
+
+        $basePath = defined('BASE_PATH') ? BASE_PATH : getcwd();
+        $publicPath = realpath($basePath . '/public');
+        if (!$publicPath) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Public directory not found']);
+            return;
+        }
+
+        $fullPath = $publicPath . '/' . $filePath;
+        $realPath = realpath($fullPath);
+
+        if (!$realPath || !str_starts_with($realPath, $publicPath . DIRECTORY_SEPARATOR . 'assets')) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Access denied']);
+            return;
+        }
+
+        if (!file_exists($realPath) || !is_file($realPath)) {
+            http_response_code(404);
+            echo json_encode(['error' => 'File not found']);
+            return;
+        }
+
+        if (unlink($realPath)) {
+            echo json_encode(['success' => true]);
+        } else {
+            http_response_code(500);
+            echo json_encode(['error' => 'Failed to delete file']);
+        }
+    }
+
+    /**
+     * AJAX: List all files in public/assets/.
+     */
+    public function listFiles(): void
+    {
+        $this->requirePermission('settings.view');
+        header('Content-Type: application/json');
+
+        echo json_encode(['assets' => $this->scanPublicAssets()]);
+    }
+
+    private function scanPublicAssets(): array
+    {
+        $assetsDir = $this->getPublicAssetsPath();
+        $assets = ['css' => [], 'js' => [], 'fonts' => []];
+
+        if (!is_dir($assetsDir)) {
+            return $assets;
+        }
+
+        $categories = [
+            'css' => ['css', 'map'],
+            'js' => ['js', 'map'],
+            'fonts' => ['woff', 'woff2', 'ttf', 'otf', 'eot'],
+        ];
+
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($assetsDir, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::LEAVES_ONLY
+        );
+
+        foreach ($iterator as $file) {
+            if (!$file->isFile()) continue;
+            $ext = strtolower($file->getExtension());
+            $relativePath = str_replace('\\', '/', $iterator->getSubPathName());
+
+            foreach ($categories as $cat => $exts) {
+                if (in_array($ext, $exts, true)) {
+                    $assets[$cat][] = [
+                        'name' => $file->getFilename(),
+                        'path' => 'assets/' . $relativePath,
+                        'size' => $this->formatSize($file->getSize()),
+                        'modified' => date('Y-m-d H:i', $file->getMTime()),
+                    ];
+                    break;
+                }
+            }
+        }
+
+        return $assets;
+    }
+
     private function loadAssetsConfig(): array
     {
         $path = $this->getConfigPath();
@@ -215,7 +411,6 @@ class AssetSettingsController extends Controller
         if (is_bool($value)) return $value ? 'true' : 'false';
         if (is_int($value) || is_float($value)) return (string) $value;
 
-        // Check if it's an env() call pattern
         if (is_string($value) && preg_match('/^env\(/', $value)) {
             return $value;
         }
@@ -223,69 +418,27 @@ class AssetSettingsController extends Controller
         return "'" . addcslashes((string) $value, "'\\") . "'";
     }
 
-    /**
-     * AJAX: Re-publish live theme assets to /public/theme/.
-     */
-    public function republish(): void
-    {
-        $this->requirePermission('settings.edit');
-        header('Content-Type: application/json');
-
-        $themeManager = new ThemeManager();
-        $liveTheme = $themeManager->getEffectiveTheme();
-
-        if ($themeManager->publishAssets($liveTheme)) {
-            echo json_encode(['success' => true, 'theme' => $liveTheme]);
-        } else {
-            http_response_code(500);
-            echo json_encode(['error' => 'Failed to publish theme assets']);
-        }
-    }
-
-    private function scanThemeAssets(ThemeManager $themeManager, string $slug): array
-    {
-        $themePath = $themeManager->getThemePath($slug);
-        $assetsDir = $themePath . '/assets';
-        $assets = ['css' => [], 'js' => [], 'fonts' => []];
-
-        if (!is_dir($assetsDir)) {
-            return $assets;
-        }
-
-        $categories = [
-            'css' => ['css', 'map'],
-            'js' => ['js', 'map'],
-            'fonts' => ['woff', 'woff2', 'ttf', 'otf', 'eot'],
-        ];
-
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($assetsDir, \FilesystemIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::LEAVES_ONLY
-        );
-
-        foreach ($iterator as $file) {
-            if (!$file->isFile()) continue;
-            $ext = strtolower($file->getExtension());
-            $relativePath = str_replace('\\', '/', $iterator->getSubPathName());
-
-            foreach ($categories as $cat => $exts) {
-                if (in_array($ext, $exts, true)) {
-                    $assets[$cat][] = [
-                        'name' => $file->getFilename(),
-                        'path' => 'theme/' . $relativePath, // public URL path
-                        'themePath' => 'assets/' . $relativePath, // path inside theme
-                    ];
-                    break;
-                }
-            }
-        }
-
-        return $assets;
-    }
-
     private function getConfigPath(): string
     {
         $basePath = defined('BASE_PATH') ? BASE_PATH : getcwd();
         return $basePath . '/config/assets.php';
+    }
+
+    private function getPublicAssetsPath(): string
+    {
+        $basePath = defined('BASE_PATH') ? BASE_PATH : getcwd();
+        return $basePath . '/public/assets';
+    }
+
+    private function formatSize(int $bytes): string
+    {
+        $units = ['B', 'KB', 'MB', 'GB'];
+        $i = 0;
+        $size = (float) $bytes;
+        while ($size >= 1024 && $i < count($units) - 1) {
+            $size /= 1024;
+            $i++;
+        }
+        return round($size, 1) . ' ' . $units[$i];
     }
 }

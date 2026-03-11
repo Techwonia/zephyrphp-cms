@@ -337,27 +337,6 @@ class ThemeManager
             }
         }
 
-        // Asset directories (CSS, JS)
-        $assetDirs = ['assets/css' => ['css'], 'assets/js' => ['js']];
-        foreach ($assetDirs as $assetDir => $extensions) {
-            $dirPath = $themePath . '/' . $assetDir;
-            if (!is_dir($dirPath)) continue;
-
-            $iterator = new \RecursiveIteratorIterator(
-                new \RecursiveDirectoryIterator($dirPath, \FilesystemIterator::SKIP_DOTS),
-                \RecursiveIteratorIterator::LEAVES_ONLY
-            );
-
-            foreach ($iterator as $file) {
-                if (!$file->isFile()) continue;
-                $ext = strtolower($file->getExtension());
-                if (in_array($ext, $extensions, true)) {
-                    $relative = $assetDir . '/' . str_replace('\\', '/', $iterator->getSubPathName());
-                    $files[$assetDir][] = $relative;
-                }
-            }
-        }
-
         // Controllers (PHP)
         $controllersDir = $themePath . '/controllers';
         if (is_dir($controllersDir)) {
@@ -439,57 +418,10 @@ class ThemeManager
             $this->effectiveThemeSlug = null;
             $this->themeConfig = null;
 
-            // Auto-publish assets to /public/theme/
-            $this->publishAssets($slug);
-
             return true;
         } catch (\Exception $e) {
             return false;
         }
-    }
-
-    /**
-     * Publish theme assets to /public/theme/ for direct web server serving.
-     * Clears old assets and copies the current theme's assets/ folder.
-     */
-    public function publishAssets(string $slug): bool
-    {
-        $themePath = $this->getThemePath($slug);
-        $sourceDir = $themePath . '/assets';
-        $publicDir = $this->getPublicThemeAssetsPath();
-
-        // Clean existing published assets
-        if (is_dir($publicDir)) {
-            $this->deleteDirectory($publicDir);
-        }
-
-        // If theme has no assets, just clean up
-        if (!is_dir($sourceDir)) {
-            return true;
-        }
-
-        // Copy theme assets to /public/theme/
-        $this->copyDirectory($sourceDir, $publicDir);
-
-        return true;
-    }
-
-    /**
-     * Get the path to /public/theme/ where published assets are served.
-     */
-    public function getPublicThemeAssetsPath(): string
-    {
-        $basePath = defined('BASE_PATH') ? BASE_PATH : dirname(__DIR__, 4);
-        return $basePath . '/public/theme';
-    }
-
-    /**
-     * Check if a specific theme is currently live.
-     */
-    public function isThemeLive(string $slug): bool
-    {
-        $theme = Theme::findOneBy(['slug' => $slug]);
-        return $theme && $theme->isLive();
     }
 
     /**

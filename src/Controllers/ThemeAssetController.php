@@ -224,11 +224,6 @@ class ThemeAssetController extends Controller
         }
 
         if (move_uploaded_file($file['tmp_name'], $targetPath)) {
-            // Re-publish to /public/theme/ if this theme is live
-            if ($this->themeManager->isThemeLive($slug)) {
-                $this->themeManager->publishAssets($slug);
-            }
-
             echo json_encode([
                 'success' => true,
                 'file' => [
@@ -297,11 +292,6 @@ class ThemeAssetController extends Controller
         }
 
         if (unlink($realPath)) {
-            // Re-publish to /public/theme/ if this theme is live
-            if ($this->themeManager->isThemeLive($slug)) {
-                $this->themeManager->publishAssets($slug);
-            }
-
             echo json_encode(['success' => true]);
         } else {
             http_response_code(500);

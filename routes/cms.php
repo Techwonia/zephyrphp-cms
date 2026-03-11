@@ -16,7 +16,6 @@ use ZephyrPHP\Cms\Controllers\RoleController;
 use ZephyrPHP\Cms\Controllers\ProfileController;
 use ZephyrPHP\Cms\Controllers\SystemSettingsController;
 use ZephyrPHP\Cms\Controllers\ApiKeyController;
-use ZephyrPHP\Cms\Controllers\ThemeAssetController;
 use ZephyrPHP\Cms\Controllers\AssetSettingsController;
 use ZephyrPHP\Cms\Api\ContentApiController;
 
@@ -104,10 +103,6 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     Route::post('/themes/{slug}/pages/update', [ThemeController::class, 'updatePage']);
     Route::post('/themes/{slug}/pages/delete', [ThemeController::class, 'removePage']);
 
-    // Theme Assets
-    Route::get('/themes/{slug}/assets', [ThemeAssetController::class, 'list']);
-    Route::post('/themes/{slug}/assets/upload', [ThemeAssetController::class, 'upload']);
-    Route::post('/themes/{slug}/assets/delete', [ThemeAssetController::class, 'delete']);
 
     // Users
     Route::get('/users', [UserController::class, 'index']);
@@ -133,10 +128,12 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     Route::get('/settings/system', [SystemSettingsController::class, 'index']);
     Route::post('/settings/system', [SystemSettingsController::class, 'update']);
 
-    // Asset Configuration (config/assets.php)
+    // Asset Configuration (config/assets.php + public/assets/)
     Route::get('/settings/assets', [AssetSettingsController::class, 'index']);
     Route::post('/settings/assets', [AssetSettingsController::class, 'update']);
-    Route::post('/settings/assets/republish', [AssetSettingsController::class, 'republish']);
+    Route::post('/settings/assets/upload', [AssetSettingsController::class, 'upload']);
+    Route::post('/settings/assets/delete', [AssetSettingsController::class, 'deleteFile']);
+    Route::get('/settings/assets/files', [AssetSettingsController::class, 'listFiles']);
 
     // Database Settings
     Route::get('/settings/database', [DatabaseSettingsController::class, 'index']);
