@@ -79,14 +79,6 @@ class SystemSettingsController extends Controller
             'USE_ISOLATION_HEADERS' => env('USE_ISOLATION_HEADERS', 'false'),
         ];
 
-        $assetSettings = [
-            'ASSET_BASE_URL' => env('ASSET_BASE_URL', '/assets'),
-            'ASSET_CDN_URL' => env('ASSET_CDN_URL', ''),
-            'ASSET_VERSION_STRATEGY' => env('ASSET_VERSION_STRATEGY', 'timestamp'),
-            'ASSET_INTEGRITY' => env('ASSET_INTEGRITY', 'false'),
-            'ASSET_MINIFY' => env('ASSET_MINIFY', 'false'),
-        ];
-
         $extensions = get_loaded_extensions();
         sort($extensions);
 
@@ -96,7 +88,6 @@ class SystemSettingsController extends Controller
             'authSettings' => $authSettings,
             'cmsSettings' => $cmsSettings,
             'securitySettings' => $securitySettings,
-            'assetSettings' => $assetSettings,
             'extensions' => $extensions,
             'user' => Auth::user(),
         ]);
@@ -132,12 +123,6 @@ class SystemSettingsController extends Controller
             'HSTS_MAX_AGE' => trim($this->input('HSTS_MAX_AGE', '31536000')),
             'HSTS_PRELOAD' => $this->input('HSTS_PRELOAD', 'false'),
             'USE_ISOLATION_HEADERS' => $this->input('USE_ISOLATION_HEADERS', 'false'),
-            // Assets
-            'ASSET_BASE_URL' => trim($this->input('ASSET_BASE_URL', '/assets')),
-            'ASSET_CDN_URL' => trim($this->input('ASSET_CDN_URL', '')),
-            'ASSET_VERSION_STRATEGY' => trim($this->input('ASSET_VERSION_STRATEGY', 'timestamp')),
-            'ASSET_INTEGRITY' => $this->input('ASSET_INTEGRITY', 'false'),
-            'ASSET_MINIFY' => $this->input('ASSET_MINIFY', 'false'),
         ];
 
         $envPath = $this->getEnvPath();

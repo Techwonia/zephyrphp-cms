@@ -190,50 +190,9 @@
 
             <h4 style="margin: var(--space-500) 0 var(--space-300); font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Asset Configuration</h4>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
-                <div class="form-group">
-                    <label for="ASSET_BASE_URL">Asset Base URL</label>
-                    <input type="text" id="ASSET_BASE_URL" name="ASSET_BASE_URL" class="form-control"
-                           value="{{ assetSettings.ASSET_BASE_URL }}" placeholder="/assets">
-                    <small style="color: var(--text-secondary);">Base URL for serving static assets.</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="ASSET_CDN_URL">CDN URL</label>
-                    <input type="text" id="ASSET_CDN_URL" name="ASSET_CDN_URL" class="form-control"
-                           value="{{ assetSettings.ASSET_CDN_URL }}" placeholder="https://cdn.example.com">
-                    <small style="color: var(--text-secondary);">Optional CDN prefix for all assets.</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="ASSET_VERSION_STRATEGY">Versioning Strategy</label>
-                    <select id="ASSET_VERSION_STRATEGY" name="ASSET_VERSION_STRATEGY" class="form-control">
-                        <option value="timestamp" {% if assetSettings.ASSET_VERSION_STRATEGY == 'timestamp' %}selected{% endif %}>Timestamp</option>
-                        <option value="hash" {% if assetSettings.ASSET_VERSION_STRATEGY == 'hash' %}selected{% endif %}>Content Hash</option>
-                        <option value="manifest" {% if assetSettings.ASSET_VERSION_STRATEGY == 'manifest' %}selected{% endif %}>Manifest (Vite/Webpack)</option>
-                        <option value="global" {% if assetSettings.ASSET_VERSION_STRATEGY == 'global' %}selected{% endif %}>Global Version</option>
-                        <option value="none" {% if assetSettings.ASSET_VERSION_STRATEGY == 'none' %}selected{% endif %}>None</option>
-                    </select>
-                    <small style="color: var(--text-secondary);">How asset URLs are cache-busted.</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="ASSET_INTEGRITY">Subresource Integrity (SRI)</label>
-                    <select id="ASSET_INTEGRITY" name="ASSET_INTEGRITY" class="form-control">
-                        <option value="false" {% if assetSettings.ASSET_INTEGRITY == 'false' %}selected{% endif %}>Disabled</option>
-                        <option value="true" {% if assetSettings.ASSET_INTEGRITY == 'true' %}selected{% endif %}>Enabled</option>
-                    </select>
-                    <small style="color: var(--text-secondary);">Add integrity hashes to asset tags for tamper detection.</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="ASSET_MINIFY">Auto-Minify</label>
-                    <select id="ASSET_MINIFY" name="ASSET_MINIFY" class="form-control">
-                        <option value="false" {% if assetSettings.ASSET_MINIFY == 'false' %}selected{% endif %}>Disabled</option>
-                        <option value="true" {% if assetSettings.ASSET_MINIFY == 'true' %}selected{% endif %}>Enabled</option>
-                    </select>
-                    <small style="color: var(--text-secondary);">Use .min.css/.min.js variants in production.</small>
-                </div>
+            <div style="background: var(--bg-subdued); border: 1px solid var(--border-default); border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                <p style="margin: 0 0 8px; font-size: 0.875rem;">Manage asset collections, preloads, preconnects, CDN, and versioning in the dedicated Asset Settings page.</p>
+                <a href="/cms/settings/assets" class="btn btn-sm btn-primary">Open Asset Settings</a>
             </div>
 
             <div class="form-actions">

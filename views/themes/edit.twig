@@ -213,7 +213,7 @@
     {# Assets Tab #}
     <div class="tab-panel" id="tab-assets">
         <div class="pages-header">
-            <p class="text-muted" style="margin:0;">Manage theme assets — CSS, JavaScript, images, and fonts.</p>
+            <p class="text-muted" style="margin:0;">Manage theme assets — CSS, JavaScript, and fonts. Use <a href="/cms/media">Media</a> for images.</p>
         </div>
 
         <div style="padding: var(--space-400, 16px);">
@@ -221,15 +221,14 @@
             <div style="background: var(--bg-subdued, #fafafa); border: 2px dashed var(--border-default, #e3e3e3); border-radius: 8px; padding: 24px; margin-bottom: 24px; text-align: center;" id="assetDropZone">
                 <form id="assetUploadForm" enctype="multipart/form-data" style="display: inline-flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center;">
                     <select id="assetCategory" name="category" class="form-control" style="width: auto;">
-                        <option value="css">CSS</option>
+                        <option value="css" selected>CSS</option>
                         <option value="js">JavaScript</option>
-                        <option value="images" selected>Images</option>
                         <option value="fonts">Fonts</option>
                     </select>
                     <label class="btn btn-primary btn-sm" style="cursor: pointer; margin: 0;">
                         Choose File
                         <input type="file" id="assetFileInput" name="asset_file" style="display: none;"
-                               accept=".css,.js,.jpg,.jpeg,.png,.gif,.svg,.webp,.ico,.woff,.woff2,.ttf,.otf,.eot,.map">
+                               accept=".css,.js,.woff,.woff2,.ttf,.otf,.eot,.map">
                     </label>
                     <span id="assetFileName" style="color: var(--text-secondary); font-size: 0.8125rem;">or drag & drop files here</span>
                     <button type="button" class="btn btn-sm btn-outline" id="assetUploadBtn" style="display: none;">Upload</button>
@@ -2573,13 +2572,12 @@ document.addEventListener('DOMContentLoaded', function() {
         var categoryIcons = {
             css: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M9 9h6v6H9z"/></svg>',
             js: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 12l2 2 4-4"/></svg>',
-            images: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>',
             fonts: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>'
         };
-        var categoryLabels = { css: 'Stylesheets', js: 'JavaScript', images: 'Images', fonts: 'Fonts' };
+        var categoryLabels = { css: 'Stylesheets', js: 'JavaScript', fonts: 'Fonts' };
         var html = '';
 
-        ['css', 'js', 'images', 'fonts'].forEach(function(cat) {
+        ['css', 'js', 'fonts'].forEach(function(cat) {
             var files = assets[cat] || [];
             html += '<div class="asset-category" style="margin-bottom: 20px;">';
             html += '<h4 style="font-size:0.875rem; margin:0 0 8px; display:flex; align-items:center; gap:6px; color:var(--text-primary);">';
@@ -2590,12 +2588,8 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 html += '<div style="display:grid; gap:4px;">';
                 files.forEach(function(f) {
-                    var isImage = cat === 'images';
                     html += '<div class="asset-item" style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:var(--bg-surface,#fff); border:1px solid var(--border-default,#e3e3e3); border-radius:6px; font-size:0.8125rem;">';
                     html += '<div style="display:flex; align-items:center; gap:8px; min-width:0;">';
-                    if (isImage && !f.name.endsWith('.svg')) {
-                        html += '<img src="/theme-assets/' + themeSlug + '/' + f.path.replace('assets/', '') + '" style="width:32px;height:32px;object-fit:cover;border-radius:4px;border:1px solid var(--border-default,#e3e3e3);" loading="lazy">';
-                    }
                     html += '<span style="font-family:monospace; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(f.name) + '</span>';
                     html += '<span style="color:var(--text-secondary); flex-shrink:0;">' + f.size + '</span>';
                     html += '</div>';
@@ -2677,7 +2671,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Auto-detect category from extension
                 var ext = this.files[0].name.split('.').pop().toLowerCase();
-                var catMap = { css: 'css', js: 'js', map: 'js', jpg: 'images', jpeg: 'images', png: 'images', gif: 'images', svg: 'images', webp: 'images', ico: 'images', woff: 'fonts', woff2: 'fonts', ttf: 'fonts', otf: 'fonts', eot: 'fonts' };
+                var catMap = { css: 'css', js: 'js', map: 'js', woff: 'fonts', woff2: 'fonts', ttf: 'fonts', otf: 'fonts', eot: 'fonts' };
                 if (catMap[ext]) {
                     document.getElementById('assetCategory').value = catMap[ext];
                 }

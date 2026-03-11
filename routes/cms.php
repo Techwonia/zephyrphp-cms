@@ -17,6 +17,7 @@ use ZephyrPHP\Cms\Controllers\ProfileController;
 use ZephyrPHP\Cms\Controllers\SystemSettingsController;
 use ZephyrPHP\Cms\Controllers\ApiKeyController;
 use ZephyrPHP\Cms\Controllers\ThemeAssetController;
+use ZephyrPHP\Cms\Controllers\AssetSettingsController;
 use ZephyrPHP\Cms\Api\ContentApiController;
 
 // CMS Admin Routes (protected by auth middleware)
@@ -131,6 +132,10 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     // System Settings
     Route::get('/settings/system', [SystemSettingsController::class, 'index']);
     Route::post('/settings/system', [SystemSettingsController::class, 'update']);
+
+    // Asset Configuration (config/assets.php)
+    Route::get('/settings/assets', [AssetSettingsController::class, 'index']);
+    Route::post('/settings/assets', [AssetSettingsController::class, 'update']);
 
     // Database Settings
     Route::get('/settings/database', [DatabaseSettingsController::class, 'index']);

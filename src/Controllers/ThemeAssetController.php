@@ -56,7 +56,7 @@ class ThemeAssetController extends Controller
         $themePath = $this->themeManager->getThemePath($slug);
         $assetsDir = $themePath . '/assets';
 
-        $assets = ['css' => [], 'js' => [], 'images' => [], 'fonts' => []];
+        $assets = ['css' => [], 'js' => [], 'fonts' => []];
 
         if (!is_dir($assetsDir)) {
             echo json_encode(['assets' => $assets]);
@@ -64,9 +64,8 @@ class ThemeAssetController extends Controller
         }
 
         $categories = [
-            'css' => ['css'],
-            'js' => ['js'],
-            'images' => ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'ico'],
+            'css' => ['css', 'map'],
+            'js' => ['js', 'map'],
             'fonts' => ['woff', 'woff2', 'ttf', 'otf', 'eot'],
         ];
 
@@ -118,19 +117,28 @@ class ThemeAssetController extends Controller
         }
 
         $themePath = $this->themeManager->getThemePath($slug);
-        $category = $_POST['category'] ?? 'images';
+        $category = $_POST['category'] ?? 'css';
 
-        // Validate category
-        $allowedCategories = ['css', 'js', 'images', 'fonts'];
+        // Validate category — images use Media, not theme assets
+        $allowedCategories = ['css', 'js', 'fonts'];
         if (!in_array($category, $allowedCategories, true)) {
             http_response_code(400);
-            echo json_encode(['error' => 'Invalid asset category']);
+            echo json_encode(['error' => 'Invalid asset category. Use Media for images.']);
             return;
         }
 
         if (empty($_FILES['asset_file']) || $_FILES['asset_file']['error'] !== UPLOAD_ERR_OK) {
+            $errorMessages = [
+                UPLOAD_ERR_INI_SIZE => 'File exceeds server upload_max_filesize',
+                UPLOAD_ERR_FORM_SIZE => 'File exceeds form MAX_FILE_SIZE',
+                UPLOAD_ERR_PARTIAL => 'File was only partially uploaded',
+                UPLOAD_ERR_NO_FILE => 'No file was uploaded',
+                UPLOAD_ERR_NO_TMP_DIR => 'Missing server temp folder',
+                UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
+            ];
+            $code = $_FILES['asset_file']['error'] ?? UPLOAD_ERR_NO_FILE;
             http_response_code(400);
-            echo json_encode(['error' => 'No file uploaded or upload error']);
+            echo json_encode(['error' => $errorMessages[$code] ?? 'Upload error (code: ' . $code . ')']);
             return;
         }
 
@@ -149,7 +157,6 @@ class ThemeAssetController extends Controller
         $allowedExts = [
             'css' => ['css', 'map'],
             'js' => ['js', 'map'],
-            'images' => ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'ico'],
             'fonts' => ['woff', 'woff2', 'ttf', 'otf', 'eot'],
         ];
 
@@ -160,34 +167,48 @@ class ThemeAssetController extends Controller
             return;
         }
 
-        // Validate MIME type for images
-        if ($category === 'images') {
+        // Validate MIME type for fonts
+        if ($category === 'fonts') {
             $finfo = new \finfo(FILEINFO_MIME_TYPE);
             $mime = $finfo->file($file['tmp_name']);
-            $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml', 'image/webp', 'image/x-icon', 'image/vnd.microsoft.icon'];
+            $allowedMimes = ['font/woff', 'font/woff2', 'font/ttf', 'font/otf', 'font/sfnt',
+                'application/font-woff', 'application/font-woff2', 'application/x-font-ttf',
+                'application/x-font-opentype', 'application/vnd.ms-fontobject',
+                'application/octet-stream', 'font/collection'];
             if (!in_array($mime, $allowedMimes, true)) {
                 http_response_code(400);
-                echo json_encode(['error' => 'Invalid image file']);
+                echo json_encode(['error' => 'Invalid font file (detected: ' . $mime . ')']);
                 return;
             }
         }
 
-        // Max file size: 10MB
-        if ($file['size'] > 10 * 1024 * 1024) {
+        // Max file size: 5MB for theme assets
+        if ($file['size'] > 5 * 1024 * 1024) {
             http_response_code(400);
-            echo json_encode(['error' => 'File too large. Maximum size is 10MB.']);
+            echo json_encode(['error' => 'File too large. Maximum size is 5MB.']);
+            return;
+        }
+
+        // Ensure theme directory exists first
+        if (!is_dir($themePath)) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Theme directory not found']);
             return;
         }
 
         $targetDir = $themePath . '/assets/' . $category;
         if (!is_dir($targetDir)) {
-            mkdir($targetDir, 0755, true);
+            if (!mkdir($targetDir, 0755, true)) {
+                http_response_code(500);
+                echo json_encode(['error' => 'Failed to create assets directory']);
+                return;
+            }
         }
 
-        // Verify target is within theme
+        // Verify target is within theme (use realpath after mkdir)
         $realTheme = realpath($themePath);
         $realTarget = realpath($targetDir);
-        if (!$realTheme || !$realTarget || !str_starts_with($realTarget, $realTheme)) {
+        if (!$realTheme || !$realTarget || !str_starts_with($realTarget, $realTheme . DIRECTORY_SEPARATOR)) {
             http_response_code(403);
             echo json_encode(['error' => 'Path traversal detected']);
             return;
