@@ -136,6 +136,7 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     // Asset Configuration (config/assets.php)
     Route::get('/settings/assets', [AssetSettingsController::class, 'index']);
     Route::post('/settings/assets', [AssetSettingsController::class, 'update']);
+    Route::post('/settings/assets/republish', [AssetSettingsController::class, 'republish']);
 
     // Database Settings
     Route::get('/settings/database', [DatabaseSettingsController::class, 'index']);
@@ -158,8 +159,6 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     Route::post('/collections/{slug}/import', [\ZephyrPHP\Cms\Controllers\EntryController::class, 'import']);
 });
 
-// Theme Assets (public serving)
-Route::get('/theme-assets/{slug}/{path}', [ThemeAssetController::class, 'serve']);
 
 // Sitemap
 Route::get('/sitemap.xml', [\ZephyrPHP\Cms\Controllers\SitemapController::class, 'index']);

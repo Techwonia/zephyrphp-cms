@@ -12,6 +12,58 @@
     <button class="btn btn-primary" id="saveAllBtn">Save Changes</button>
 </div>
 
+{# Theme Assets (published to /public/theme/) #}
+<div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="margin:0; font-size:1rem;">Theme Assets <span style="font-weight:normal; color:var(--text-secondary); font-size:0.8125rem;">({{ liveTheme }})</span></h3>
+        <div style="display:flex; gap:8px; align-items:center;">
+            {% if themeAssetsPublished %}
+                <span style="display:inline-flex; align-items:center; gap:4px; font-size:0.75rem; color:var(--color-success, #2e7d32); background:rgba(46,125,50,0.08); padding:2px 8px; border-radius:4px;">Published</span>
+            {% else %}
+                <span style="display:inline-flex; align-items:center; gap:4px; font-size:0.75rem; color:var(--color-warning, #e65100); background:rgba(230,81,0,0.08); padding:2px 8px; border-radius:4px;">Not published</span>
+            {% endif %}
+            <button class="btn btn-sm btn-outline" id="republishBtn">Re-publish</button>
+            <a href="/cms/themes/{{ liveTheme }}" class="btn btn-sm btn-outline">Edit Theme</a>
+        </div>
+    </div>
+    <div class="card-body">
+        <p style="color:var(--text-secondary); font-size:0.8125rem; margin:0 0 12px;">
+            Theme assets are served from <code>/theme/</code> (published to <code>/public/theme/</code>). Upload files in the <a href="/cms/themes/{{ liveTheme }}">theme editor</a>, they auto-publish when the theme is live.
+        </p>
+
+        {% set hasThemeAssets = themeAssets.css|length > 0 or themeAssets.js|length > 0 or themeAssets.fonts|length > 0 %}
+
+        {% if hasThemeAssets %}
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">
+            {% for cat, files in themeAssets %}
+                {% if files|length > 0 %}
+                <div>
+                    <h4 style="font-size:0.8125rem; margin:0 0 6px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.05em;">{{ cat }} ({{ files|length }})</h4>
+                    {% for f in files %}
+                    <div style="display:flex; align-items:center; gap:6px; padding:4px 8px; font-size:0.8125rem; font-family:monospace; background:var(--bg-subdued); border-radius:4px; margin-bottom:3px;">
+                        <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">{{ f.name }}</span>
+                        <code style="color:var(--text-secondary); font-size:0.6875rem; flex-shrink:0;">/{{ f.path }}</code>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <div style="margin-top:12px; padding:10px; background:var(--bg-subdued); border-radius:6px;">
+            <p style="margin:0 0 4px; font-size:0.8125rem; font-weight:600;">Use in templates:</p>
+            <code style="font-size:0.75rem; color:var(--text-secondary);">
+                {% for f in themeAssets.css %}&lt;link rel="stylesheet" href="/{{ f.path }}"&gt; {% endfor %}
+                {% for f in themeAssets.js %}&lt;script src="/{{ f.path }}"&gt;&lt;/script&gt; {% endfor %}
+            </code>
+            <p style="margin:8px 0 0; font-size:0.75rem; color:var(--text-secondary);">Or add them to a collection below for managed loading with <code>{{ '{{ load_assets(\'theme\') }}' }}</code></p>
+        </div>
+        {% else %}
+        <p style="color:var(--text-secondary); font-size:0.8125rem; margin:0;">No theme assets yet. <a href="/cms/themes/{{ liveTheme }}">Upload CSS, JS, or fonts</a> in the theme editor.</p>
+        {% endif %}
+    </div>
+</div>
+
 {# Asset Collections #}
 <div class="card" style="margin-bottom: var(--space-500);">
     <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
@@ -385,6 +437,39 @@
 
     document.getElementById('saveAllBtn').addEventListener('click', saveAll);
     document.getElementById('saveAllBtn2').addEventListener('click', saveAll);
+
+    // Re-publish theme assets
+    var republishBtn = document.getElementById('republishBtn');
+    if (republishBtn) {
+        republishBtn.addEventListener('click', function() {
+            republishBtn.disabled = true;
+            republishBtn.textContent = 'Publishing...';
+            var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+            fetch('/cms/settings/assets/republish', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfMeta ? csrfMeta.content : ''
+                }
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(resp) {
+                republishBtn.disabled = false;
+                if (resp.success) {
+                    republishBtn.textContent = 'Published!';
+                    setTimeout(function() { republishBtn.textContent = 'Re-publish'; }, 2000);
+                } else {
+                    republishBtn.textContent = 'Re-publish';
+                    alert(resp.error || 'Publish failed');
+                }
+            })
+            .catch(function() {
+                republishBtn.disabled = false;
+                republishBtn.textContent = 'Re-publish';
+                alert('Network error');
+            });
+        });
+    }
 
     function escapeAttr(s) {
         return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');

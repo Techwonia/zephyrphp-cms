@@ -224,6 +224,11 @@ class ThemeAssetController extends Controller
         }
 
         if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+            // Re-publish to /public/theme/ if this theme is live
+            if ($this->themeManager->isThemeLive($slug)) {
+                $this->themeManager->publishAssets($slug);
+            }
+
             echo json_encode([
                 'success' => true,
                 'file' => [
@@ -292,65 +297,16 @@ class ThemeAssetController extends Controller
         }
 
         if (unlink($realPath)) {
+            // Re-publish to /public/theme/ if this theme is live
+            if ($this->themeManager->isThemeLive($slug)) {
+                $this->themeManager->publishAssets($slug);
+            }
+
             echo json_encode(['success' => true]);
         } else {
             http_response_code(500);
             echo json_encode(['error' => 'Failed to delete file']);
         }
-    }
-
-    /**
-     * Serve a theme asset file (for themes not in public/).
-     */
-    public function serve(string $slug, string $path): void
-    {
-        $themePath = realpath($this->themeManager->getThemePath($slug));
-        if (!$themePath) {
-            http_response_code(404);
-            return;
-        }
-
-        // Block path traversal
-        if (str_contains($path, '..')) {
-            http_response_code(403);
-            return;
-        }
-
-        $fullPath = $themePath . '/assets/' . $path;
-        $realPath = realpath($fullPath);
-
-        if (!$realPath || !str_starts_with($realPath, $themePath . DIRECTORY_SEPARATOR) || !is_file($realPath)) {
-            http_response_code(404);
-            return;
-        }
-
-        $mimeTypes = [
-            'css' => 'text/css',
-            'js' => 'application/javascript',
-            'json' => 'application/json',
-            'jpg' => 'image/jpeg',
-            'jpeg' => 'image/jpeg',
-            'png' => 'image/png',
-            'gif' => 'image/gif',
-            'svg' => 'image/svg+xml',
-            'webp' => 'image/webp',
-            'ico' => 'image/x-icon',
-            'woff' => 'font/woff',
-            'woff2' => 'font/woff2',
-            'ttf' => 'font/ttf',
-            'otf' => 'font/otf',
-            'eot' => 'application/vnd.ms-fontobject',
-            'map' => 'application/json',
-        ];
-
-        $ext = strtolower(pathinfo($realPath, PATHINFO_EXTENSION));
-        $mime = $mimeTypes[$ext] ?? 'application/octet-stream';
-
-        header('Content-Type: ' . $mime);
-        header('Content-Length: ' . filesize($realPath));
-        header('Cache-Control: public, max-age=31536000');
-        readfile($realPath);
-        exit;
     }
 
     private function formatSize(int $bytes): string

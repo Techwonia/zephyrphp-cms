@@ -7,6 +7,7 @@ namespace ZephyrPHP\Cms\Controllers;
 use ZephyrPHP\Core\Controllers\Controller;
 use ZephyrPHP\Auth\Auth;
 use ZephyrPHP\Cms\Services\PermissionService;
+use ZephyrPHP\Cms\Services\ThemeManager;
 
 class AssetSettingsController extends Controller
 {
@@ -34,6 +35,13 @@ class AssetSettingsController extends Controller
 
         $config = $this->loadAssetsConfig();
 
+        // Get theme assets info
+        $themeManager = new ThemeManager();
+        $liveTheme = $themeManager->getEffectiveTheme();
+        $themeAssets = $this->scanThemeAssets($themeManager, $liveTheme);
+        $publicThemePath = $themeManager->getPublicThemeAssetsPath();
+        $isPublished = is_dir($publicThemePath) && (count(scandir($publicThemePath)) > 2);
+
         return $this->render('cms::settings/assets', [
             'collections' => $config['collections'] ?? [],
             'preload' => $config['preload'] ?? [],
@@ -45,6 +53,9 @@ class AssetSettingsController extends Controller
             'cdnEnabled' => $config['cdn_enabled'] ?? false,
             'minify' => $config['minify'] ?? false,
             'manifest' => $config['manifest'] ?? '',
+            'liveTheme' => $liveTheme,
+            'themeAssets' => $themeAssets,
+            'themeAssetsPublished' => $isPublished,
             'user' => Auth::user(),
         ]);
     }
@@ -210,6 +221,66 @@ class AssetSettingsController extends Controller
         }
 
         return "'" . addcslashes((string) $value, "'\\") . "'";
+    }
+
+    /**
+     * AJAX: Re-publish live theme assets to /public/theme/.
+     */
+    public function republish(): void
+    {
+        $this->requirePermission('settings.edit');
+        header('Content-Type: application/json');
+
+        $themeManager = new ThemeManager();
+        $liveTheme = $themeManager->getEffectiveTheme();
+
+        if ($themeManager->publishAssets($liveTheme)) {
+            echo json_encode(['success' => true, 'theme' => $liveTheme]);
+        } else {
+            http_response_code(500);
+            echo json_encode(['error' => 'Failed to publish theme assets']);
+        }
+    }
+
+    private function scanThemeAssets(ThemeManager $themeManager, string $slug): array
+    {
+        $themePath = $themeManager->getThemePath($slug);
+        $assetsDir = $themePath . '/assets';
+        $assets = ['css' => [], 'js' => [], 'fonts' => []];
+
+        if (!is_dir($assetsDir)) {
+            return $assets;
+        }
+
+        $categories = [
+            'css' => ['css', 'map'],
+            'js' => ['js', 'map'],
+            'fonts' => ['woff', 'woff2', 'ttf', 'otf', 'eot'],
+        ];
+
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($assetsDir, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::LEAVES_ONLY
+        );
+
+        foreach ($iterator as $file) {
+            if (!$file->isFile()) continue;
+            $ext = strtolower($file->getExtension());
+            $relativePath = str_replace('\\', '/', $iterator->getSubPathName());
+
+            foreach ($categories as $cat => $exts) {
+                if (in_array($ext, $exts, true)) {
+                    $assets[$cat][] = [
+                        'name' => $file->getFilename(),
+                        'path' => 'theme/' . $relativePath, // public URL path
+                        'themePath' => 'assets/' . $relativePath, // path inside theme
+                    ];
+                    break;
+                }
+            }
+        }
+
+        return $assets;
     }
 
     private function getConfigPath(): string

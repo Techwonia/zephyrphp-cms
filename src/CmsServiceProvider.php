@@ -103,10 +103,9 @@ class CmsServiceProvider
             return $themeManager->getThemeConfig();
         });
 
-        // theme_asset(path) - Generate URL for a theme asset file
-        $view->addFunction('theme_asset', function (string $path) use ($themeManager) {
-            $slug = $themeManager->getEffectiveTheme();
-            return '/theme-assets/' . urlencode($slug) . '/' . ltrim($path, '/');
+        // theme_asset(path) - Generate URL for a theme asset (served from /public/theme/)
+        $view->addFunction('theme_asset', function (string $path) {
+            return '/theme/' . ltrim($path, '/');
         });
 
         // theme_preview(slug) - Generate preview URL with query param

@@ -2594,7 +2594,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     html += '<span style="color:var(--text-secondary); flex-shrink:0;">' + f.size + '</span>';
                     html += '</div>';
                     html += '<div style="display:flex; gap:6px; flex-shrink:0;">';
-                    html += '<button class="btn btn-xs btn-outline copy-path-btn" data-path="/theme-assets/' + themeSlug + '/' + f.path.replace('assets/', '') + '" title="Copy URL">Copy URL</button>';
+                    html += '<button class="btn btn-xs btn-outline copy-path-btn" data-path="/theme/' + f.path.replace('assets/', '') + '" title="Copy URL">Copy URL</button>';
                     html += '<button class="btn btn-xs btn-danger delete-asset-btn" data-path="' + escapeHtml(f.path) + '" data-name="' + escapeHtml(f.name) + '">Delete</button>';
                     html += '</div>';
                     html += '</div>';
