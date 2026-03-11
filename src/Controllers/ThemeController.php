@@ -302,6 +302,11 @@ class ThemeController extends Controller
         }
 
         if ($this->themeManager->writeFile($filePath, $content, $slug)) {
+            // Re-publish theme assets if an asset file was modified and theme is live
+            if (str_starts_with($filePath, 'assets/') && $this->themeManager->isThemeLive($slug)) {
+                $this->themeManager->publishAssets($slug);
+            }
+
             header('Content-Type: application/json');
             echo json_encode(['success' => true]);
         } else {

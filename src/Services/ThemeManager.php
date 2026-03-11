@@ -337,6 +337,27 @@ class ThemeManager
             }
         }
 
+        // Asset directories (CSS, JS)
+        $assetDirs = ['assets/css' => ['css'], 'assets/js' => ['js']];
+        foreach ($assetDirs as $assetDir => $extensions) {
+            $dirPath = $themePath . '/' . $assetDir;
+            if (!is_dir($dirPath)) continue;
+
+            $iterator = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($dirPath, \FilesystemIterator::SKIP_DOTS),
+                \RecursiveIteratorIterator::LEAVES_ONLY
+            );
+
+            foreach ($iterator as $file) {
+                if (!$file->isFile()) continue;
+                $ext = strtolower($file->getExtension());
+                if (in_array($ext, $extensions, true)) {
+                    $relative = $assetDir . '/' . str_replace('\\', '/', $iterator->getSubPathName());
+                    $files[$assetDir][] = $relative;
+                }
+            }
+        }
+
         // Controllers (PHP)
         $controllersDir = $themePath . '/controllers';
         if (is_dir($controllersDir)) {
