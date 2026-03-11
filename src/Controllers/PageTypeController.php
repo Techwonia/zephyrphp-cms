@@ -10,6 +10,7 @@ use ZephyrPHP\Cms\Models\PageType;
 use ZephyrPHP\Cms\Models\PageTypeField;
 use ZephyrPHP\Cms\Services\SchemaManager;
 use ZephyrPHP\Cms\Services\ThemeManager;
+use ZephyrPHP\Cms\Services\PermissionService;
 
 class PageTypeController extends Controller
 {
@@ -23,21 +24,31 @@ class PageTypeController extends Controller
         $this->themeManager = new ThemeManager();
     }
 
-    private function requireAdmin(): void
+    private function requireCmsAccess(): void
     {
         if (!Auth::check()) {
             $this->redirect('/login');
             return;
         }
-        if (!Auth::user()->hasRole('admin')) {
-            $this->flash('errors', ['auth' => 'Access denied. Admin role required.']);
+        if (!PermissionService::can('cms.access')) {
+            Auth::logout();
+            $this->flash('errors', ['auth' => 'Access denied. You do not have CMS access.']);
+            $this->redirect('/login');
+        }
+    }
+
+    private function requirePermission(string $permission): void
+    {
+        $this->requireCmsAccess();
+        if (!PermissionService::can($permission)) {
+            $this->flash('errors', ['auth' => 'You do not have permission to perform this action.']);
             $this->redirect('/cms');
         }
     }
 
     public function index(): string
     {
-        $this->requireAdmin();
+        $this->requirePermission('collections.view');
 
         $pageTypes = PageType::findAll();
 
@@ -59,7 +70,7 @@ class PageTypeController extends Controller
 
     public function create(): string
     {
-        $this->requireAdmin();
+        $this->requirePermission('collections.create');
 
         return $this->render('cms::pages/types/create', [
             'user' => Auth::user(),
@@ -69,7 +80,7 @@ class PageTypeController extends Controller
 
     public function store(): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('collections.create');
 
         $name = trim($this->input('name', ''));
         $slug = trim($this->input('slug', ''));
@@ -153,7 +164,7 @@ class PageTypeController extends Controller
 
     public function edit(string $slug): string
     {
-        $this->requireAdmin();
+        $this->requirePermission('collections.edit');
 
         $pageType = PageType::findOneBy(['slug' => $slug]);
         if (!$pageType) {
@@ -206,7 +217,7 @@ class PageTypeController extends Controller
 
     public function update(string $slug): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('collections.edit');
 
         $pageType = PageType::findOneBy(['slug' => $slug]);
         if (!$pageType) {
@@ -265,7 +276,7 @@ class PageTypeController extends Controller
 
     public function destroy(string $slug): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('collections.delete');
 
         $pageType = PageType::findOneBy(['slug' => $slug]);
         if (!$pageType) {
@@ -292,7 +303,7 @@ class PageTypeController extends Controller
      */
     public function saveTemplate(string $slug): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('collections.edit');
 
         $pageType = PageType::findOneBy(['slug' => $slug]);
         if (!$pageType) {
@@ -328,7 +339,7 @@ class PageTypeController extends Controller
 
     public function addField(string $slug): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('collections.edit');
 
         $pageType = PageType::findOneBy(['slug' => $slug]);
         if (!$pageType) {
@@ -418,7 +429,7 @@ class PageTypeController extends Controller
 
     public function updateField(string $slug, int $id): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('collections.edit');
 
         $pageType = PageType::findOneBy(['slug' => $slug]);
         if (!$pageType) {
@@ -476,7 +487,7 @@ class PageTypeController extends Controller
 
     public function deleteField(string $slug, int $id): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('collections.edit');
 
         $pageType = PageType::findOneBy(['slug' => $slug]);
         if (!$pageType) {

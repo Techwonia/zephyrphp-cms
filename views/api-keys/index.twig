@@ -1,0 +1,123 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}API Keys{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / API Keys
+</div>
+
+<div class="page-header">
+    <h1>API Keys</h1>
+    <div class="page-actions">
+        <a href="/cms/api-keys/create" class="btn btn-primary">+ New API Key</a>
+    </div>
+</div>
+
+{% if flash('new_api_key') %}
+<div class="alert alert-warning" style="background: #fff3cd; border: 1px solid #ffc107; padding: 16px 20px; border-radius: 6px; margin-bottom: 20px;">
+    <strong>Your new API key (copy it now — it won't be shown again):</strong>
+    <div style="margin-top: 8px; font-family: monospace; font-size: 0.95rem; background: #f8f9fa; padding: 10px; border-radius: 4px; word-break: break-all;">
+        {{ flash('new_api_key') }}
+    </div>
+    <button class="btn btn-sm btn-outline" style="margin-top: 8px;" onclick="navigator.clipboard.writeText('{{ flash('new_api_key') }}').then(function(){alert('Copied!')})">Copy Key</button>
+</div>
+{% endif %}
+
+{% if keys|length > 0 %}
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Permissions</th>
+                        <th>Status</th>
+                        <th>Expires</th>
+                        <th>Last Used</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for key in keys %}
+                    <tr>
+                        <td><strong>{{ key.getName() }}</strong></td>
+                        <td>
+                            {% if key.getPermissions() is null %}
+                                <span class="badge">Full Access</span>
+                            {% else %}
+                                {% for perm in key.getPermissions() %}
+                                    <span class="badge">{{ perm }}</span>
+                                {% endfor %}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if key.isActive() %}
+                                <span class="badge" style="background: #d4edda; color: #155724;">Active</span>
+                            {% else %}
+                                <span class="badge" style="background: #f8d7da; color: #721c24;">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if key.getExpiresAt() %}
+                                {{ key.getExpiresAt()|date('M d, Y') }}
+                            {% else %}
+                                Never
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if key.getLastUsedAt() %}
+                                {{ key.getLastUsedAt()|date('M d, Y H:i') }}
+                            {% else %}
+                                Never
+                            {% endif %}
+                        </td>
+                        <td class="actions-cell">
+                            <form method="POST" action="/cms/api-keys/{{ key.getId() }}/toggle" style="display:inline">
+                                {{ csrf_field() | raw }}
+                                <button type="submit" class="btn btn-sm btn-outline">
+                                    {{ key.isActive() ? 'Deactivate' : 'Activate' }}
+                                </button>
+                            </form>
+                            <form method="POST" action="/cms/api-keys/{{ key.getId() }}/delete"
+                                  style="display:inline" class="confirm-delete" data-message="Delete this API key?">
+                                {{ csrf_field() | raw }}
+                                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="empty-state">
+    <h3>No API keys yet</h3>
+    <p>Create an API key to authenticate external API requests.</p>
+    <a href="/cms/api-keys/create" class="btn btn-primary">+ Create API Key</a>
+</div>
+{% endif %}
+
+<div class="card" style="margin-top: 20px;">
+    <div class="card-body">
+        <h3>API Usage</h3>
+        <p>Use your API key with the <code>Authorization</code> header or <code>X-API-Key</code> header:</p>
+        <pre style="background: #f8f9fa; padding: 12px; border-radius: 6px; font-size: 0.85rem;">
+# Using Authorization header
+curl -H "Authorization: Bearer YOUR_API_KEY" {{ url('/api/cms/your-collection') }}
+
+# Using X-API-Key header
+curl -H "X-API-Key: YOUR_API_KEY" {{ url('/api/cms/your-collection') }}
+
+# Endpoints
+GET    /api/cms/{collection}         List entries
+GET    /api/cms/{collection}/{id}    Get single entry
+POST   /api/cms/{collection}         Create entry (requires write permission)
+POST   /api/cms/{collection}/{id}    Update entry (requires write permission)
+POST   /api/cms/{collection}/{id}/delete  Delete entry (requires delete/full permission)</pre>
+    </div>
+</div>
+{% endblock %}

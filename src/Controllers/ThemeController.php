@@ -7,8 +7,10 @@ namespace ZephyrPHP\Cms\Controllers;
 use ZephyrPHP\Core\Controllers\Controller;
 use ZephyrPHP\Auth\Auth;
 use ZephyrPHP\Cms\Models\Theme;
+use ZephyrPHP\Cms\Models\Collection;
 use ZephyrPHP\Cms\Services\ThemeManager;
 use ZephyrPHP\Cms\Services\SectionManager;
+use ZephyrPHP\Cms\Services\PermissionService;
 
 class ThemeController extends Controller
 {
@@ -22,21 +24,31 @@ class ThemeController extends Controller
         $this->sectionManager = new SectionManager($this->themeManager);
     }
 
-    private function requireAdmin(): void
+    private function requireCmsAccess(): void
     {
         if (!Auth::check()) {
             $this->redirect('/login');
             return;
         }
-        if (!Auth::user()->hasRole('admin')) {
-            $this->flash('errors', ['auth' => 'Access denied. Admin role required.']);
+        if (!PermissionService::can('cms.access')) {
+            Auth::logout();
+            $this->flash('errors', ['auth' => 'Access denied. You do not have CMS access.']);
+            $this->redirect('/login');
+        }
+    }
+
+    private function requirePermission(string $permission): void
+    {
+        $this->requireCmsAccess();
+        if (!PermissionService::can($permission)) {
+            $this->flash('errors', ['auth' => 'You do not have permission to perform this action.']);
             $this->redirect('/cms');
         }
     }
 
     public function index(): string
     {
-        $this->requireAdmin();
+        $this->requirePermission('themes.view');
 
         $themes = $this->themeManager->listThemes();
 
@@ -48,7 +60,7 @@ class ThemeController extends Controller
 
     public function create(): string
     {
-        $this->requireAdmin();
+        $this->requirePermission('themes.edit');
 
         $existingThemes = $this->themeManager->listThemes();
 
@@ -60,7 +72,7 @@ class ThemeController extends Controller
 
     public function store(): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('themes.edit');
 
         $name = trim($this->input('name', ''));
         $slug = trim($this->input('slug', ''));
@@ -106,7 +118,7 @@ class ThemeController extends Controller
 
     public function edit(string $slug): string
     {
-        $this->requireAdmin();
+        $this->requirePermission('themes.edit');
 
         $theme = Theme::findOneBy(['slug' => $slug]);
         if (!$theme) {
@@ -127,6 +139,21 @@ class ThemeController extends Controller
             $fileContent = $this->themeManager->readFile($activeFile, $slug) ?? '';
         }
 
+        // Load available collections for the schema editor collection picker
+        $collections = [];
+        try {
+            $pageTypes = \ZephyrPHP\Cms\Models\PageType::findAll();
+            foreach ($pageTypes as $col) {
+                $collections[] = ['slug' => $col->getSlug(), 'name' => $col->getName()];
+            }
+        } catch (\Exception $e) {}
+        try {
+            $cmsCollections = Collection::findAll();
+            foreach ($cmsCollections as $col) {
+                $collections[] = ['slug' => $col->getSlug(), 'name' => $col->getName()];
+            }
+        } catch (\Exception $e) {}
+
         return $this->render('cms::themes/edit', [
             'theme' => $theme,
             'files' => $files,
@@ -135,13 +162,14 @@ class ThemeController extends Controller
             'layouts' => $layouts,
             'activeFile' => $activeFile,
             'fileContent' => $fileContent,
+            'collections' => $collections,
             'user' => Auth::user(),
         ]);
     }
 
     public function update(string $slug): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('themes.edit');
 
         $theme = Theme::findOneBy(['slug' => $slug]);
         if (!$theme) {
@@ -175,7 +203,7 @@ class ThemeController extends Controller
 
     public function publish(string $slug): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('themes.publish');
 
         $theme = Theme::findOneBy(['slug' => $slug]);
         if (!$theme) {
@@ -195,7 +223,7 @@ class ThemeController extends Controller
 
     public function destroy(string $slug): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('themes.edit');
 
         $theme = Theme::findOneBy(['slug' => $slug]);
         if (!$theme) {
@@ -221,7 +249,7 @@ class ThemeController extends Controller
 
     public function preview(string $slug): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('themes.edit');
 
         $theme = Theme::findOneBy(['slug' => $slug]);
         if (!$theme) {
@@ -238,7 +266,7 @@ class ThemeController extends Controller
      */
     public function saveFile(string $slug): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('themes.edit');
 
         $theme = Theme::findOneBy(['slug' => $slug]);
         if (!$theme) {
@@ -258,7 +286,7 @@ class ThemeController extends Controller
         }
 
         // Security: only allow files within known subdirectories
-        $allowedPrefixes = ['layouts/', 'templates/', 'snippets/', 'sections/', 'config/'];
+        $allowedPrefixes = ['layouts/', 'templates/', 'snippets/', 'sections/', 'config/', 'controllers/'];
         $allowed = false;
         foreach ($allowedPrefixes as $prefix) {
             if (str_starts_with($filePath, $prefix)) {
@@ -287,7 +315,7 @@ class ThemeController extends Controller
      */
     public function addPage(string $slug): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('themes.edit');
         header('Content-Type: application/json');
 
         $theme = Theme::findOneBy(['slug' => $slug]);
@@ -301,6 +329,8 @@ class ThemeController extends Controller
         $title = trim($input['title'] ?? '');
         $pageSlug = trim($input['slug'] ?? '');
         $layout = trim($input['layout'] ?? 'base');
+        $authRequired = (bool) ($input['auth_required'] ?? false);
+        $allowedRoles = $input['allowed_roles'] ?? [];
 
         if (empty($title) || empty($pageSlug)) {
             http_response_code(400);
@@ -326,11 +356,33 @@ class ThemeController extends Controller
             return;
         }
 
-        // Create a minimal template file (sections handle the content)
+        // Create a minimal template file
         $templateContent = "{% extends \"@theme/layouts/{$layout}.twig\" %}\n\n";
-        $templateContent .= "{% block title %}{{ page.title }}{% endblock %}\n";
+        $templateContent .= "{% block title %}{{ page.title }}{% endblock %}\n\n";
+        $templateContent .= "{% block content %}\n";
+        $templateContent .= "<div class=\"container\" style=\"padding: 60px 24px;\">\n";
+        $templateContent .= "    <h1>{{ page.title }}</h1>\n";
+        $templateContent .= "</div>\n";
+        $templateContent .= "{% endblock %}\n";
 
         $this->themeManager->writeTemplate($templateName . '.twig', $templateContent, $slug);
+
+        // Check if this is a dynamic route (has {param} patterns)
+        $hasDynamicParams = (bool) preg_match('/\{(\w+)\}/', $pageSlug);
+        $collection = trim($input['collection'] ?? '');
+        $controllerName = null;
+
+        if ($hasDynamicParams || !empty($collection)) {
+            $controllerName = $templateName;
+            $controllerContent = $this->generateControllerContent($title, $pageSlug, $collection);
+
+            // Write controller file
+            $controllerDir = $this->themeManager->getThemePath($slug) . '/controllers';
+            if (!is_dir($controllerDir)) {
+                mkdir($controllerDir, 0755, true);
+            }
+            file_put_contents($controllerDir . '/' . $controllerName . '.php', $controllerContent);
+        }
 
         // Add to pages.json
         $page = [
@@ -339,6 +391,18 @@ class ThemeController extends Controller
             'template' => $templateName,
             'layout' => $layout,
         ];
+        if ($controllerName) {
+            $page['controller'] = $controllerName;
+        }
+        if (!empty($collection)) {
+            $page['collection'] = $collection;
+        }
+        if ($authRequired) {
+            $page['auth_required'] = true;
+        }
+        if (!empty($allowedRoles) && is_array($allowedRoles)) {
+            $page['allowed_roles'] = array_values(array_filter(array_map('trim', $allowedRoles)));
+        }
         $this->themeManager->savePage($slug, $page);
 
         // Initialize empty sections in settings_data.json
@@ -352,7 +416,7 @@ class ThemeController extends Controller
      */
     public function updatePage(string $slug): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('themes.edit');
         header('Content-Type: application/json');
 
         $theme = Theme::findOneBy(['slug' => $slug]);
@@ -367,6 +431,8 @@ class ThemeController extends Controller
         $title = trim($input['title'] ?? '');
         $pageSlug = trim($input['slug'] ?? '');
         $layout = trim($input['layout'] ?? 'base');
+        $authRequired = (bool) ($input['auth_required'] ?? false);
+        $allowedRoles = $input['allowed_roles'] ?? [];
 
         if (empty($template) || empty($title) || empty($pageSlug)) {
             http_response_code(400);
@@ -384,6 +450,24 @@ class ThemeController extends Controller
             'template' => $template,
             'layout' => $layout,
         ];
+
+        // Preserve existing controller/collection settings from pages.json
+        $existingPages = $this->themeManager->getPages($slug);
+        foreach ($existingPages as $ep) {
+            if (($ep['template'] ?? '') === $template) {
+                if (isset($ep['controller'])) $page['controller'] = $ep['controller'];
+                if (isset($ep['collection'])) $page['collection'] = $ep['collection'];
+                break;
+            }
+        }
+
+        if ($authRequired) {
+            $page['auth_required'] = true;
+        }
+        if (!empty($allowedRoles) && is_array($allowedRoles)) {
+            $page['allowed_roles'] = array_values(array_filter(array_map('trim', $allowedRoles)));
+        }
+
         $this->themeManager->savePage($slug, $page);
 
         echo json_encode(['success' => true, 'page' => $page]);
@@ -394,7 +478,7 @@ class ThemeController extends Controller
      */
     public function removePage(string $slug): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('themes.edit');
         header('Content-Type: application/json');
 
         $theme = Theme::findOneBy(['slug' => $slug]);
@@ -433,7 +517,7 @@ class ThemeController extends Controller
      */
     public function createSection(string $slug): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('themes.edit');
         header('Content-Type: application/json');
 
         $theme = Theme::findOneBy(['slug' => $slug]);
@@ -515,5 +599,63 @@ class ThemeController extends Controller
         $slug = preg_replace('/[^a-z0-9-]/', '-', $slug);
         $slug = preg_replace('/-+/', '-', $slug);
         return trim($slug, '-');
+    }
+
+    private function generateControllerContent(string $title, string $route, string $collection): string
+    {
+        $lines = ["<?php"];
+        $lines[] = "// Controller: {$title}";
+        $lines[] = "// Route: {$route}";
+        $lines[] = "";
+
+        // Extract route parameter names
+        preg_match_all('/\{(\w+)\}/', $route, $matches);
+        $paramNames = $matches[1] ?? [];
+        $hasDynamicParams = !empty($paramNames);
+
+        $lines[] = "return function(array \$params) {";
+
+        if ($hasDynamicParams && !empty($collection)) {
+            // Detail page: fetch single entry by slug
+            $paramName = $paramNames[0]; // use first param
+            $lines[] = "    // Fetch entry from '{$collection}' collection";
+            $lines[] = "    \$item = entry('{$collection}', \$params['{$paramName}']);";
+            $lines[] = "";
+            $lines[] = "    if (!\$item) {";
+            $lines[] = "        abort(404);";
+            $lines[] = "    }";
+            $lines[] = "";
+            $lines[] = "    return [";
+            $lines[] = "        'item' => \$item,";
+            $lines[] = "    ];";
+        } elseif (!$hasDynamicParams && !empty($collection)) {
+            // Listing page: fetch collection with pagination
+            $lines[] = "    // Fetch entries from '{$collection}' collection";
+            $lines[] = "    \$page = max(1, (int)(\$params['_query']['page'] ?? 1));";
+            $lines[] = "    \$items = collection('{$collection}', [";
+            $lines[] = "        'per_page' => 10,";
+            $lines[] = "        'page' => \$page,";
+            $lines[] = "        'sort_by' => 'id',";
+            $lines[] = "        'sort_dir' => 'DESC',";
+            $lines[] = "    ]);";
+            $lines[] = "";
+            $lines[] = "    return [";
+            $lines[] = "        'items' => \$items,";
+            $lines[] = "    ];";
+        } else {
+            // Generic: just pass params
+            if (!empty($paramNames)) {
+                $lines[] = "    // Route parameters: " . implode(', ', array_map(fn($p) => "\$params['{$p}']", $paramNames));
+            }
+            $lines[] = "";
+            $lines[] = "    return [";
+            $lines[] = "        // Add your data here";
+            $lines[] = "    ];";
+        }
+
+        $lines[] = "};";
+        $lines[] = "";
+
+        return implode("\n", $lines);
     }
 }

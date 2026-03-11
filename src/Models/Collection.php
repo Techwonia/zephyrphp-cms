@@ -35,6 +35,12 @@ class Collection extends Model
     #[ORM\Column(name: 'primary_key_type', type: 'string', length: 10)]
     protected string $primaryKeyType = 'integer';
 
+    #[ORM\Column(name: 'has_slug', type: 'boolean')]
+    protected bool $hasSlug = false;
+
+    #[ORM\Column(name: 'slug_source_field', type: 'string', length: 100, nullable: true)]
+    protected ?string $slugSourceField = null;
+
     #[ORM\Column(name: 'sort_order', type: 'integer')]
     protected int $sortOrder = 0;
 
@@ -90,6 +96,16 @@ class Collection extends Model
     public function isUuid(): bool
     {
         return $this->primaryKeyType === 'uuid';
+    }
+
+    public function hasSlug(): bool
+    {
+        return $this->hasSlug;
+    }
+
+    public function getSlugSourceField(): ?string
+    {
+        return $this->slugSourceField;
     }
 
     public function getSortOrder(): int
@@ -180,6 +196,18 @@ class Collection extends Model
     public function setPrimaryKeyType(string $type): self
     {
         $this->primaryKeyType = in_array($type, ['integer', 'uuid']) ? $type : 'integer';
+        return $this;
+    }
+
+    public function setHasSlug(bool $hasSlug): self
+    {
+        $this->hasSlug = $hasSlug;
+        return $this;
+    }
+
+    public function setSlugSourceField(?string $slugSourceField): self
+    {
+        $this->slugSourceField = $slugSourceField;
         return $this;
     }
 

@@ -50,8 +50,10 @@
         <a href="/cms/pages" class="btn btn-outline">Pages</a>
         <a href="/cms/media" class="btn btn-outline">Media</a>
         <a href="/cms/themes" class="btn btn-outline">Themes</a>
-        {% if user.hasRole('admin') %}
+        {% if cms_can('users.view') %}
         <a href="/cms/users" class="btn btn-outline">Users</a>
+        {% endif %}
+        {% if cms_can('roles.manage') %}
         <a href="/cms/roles" class="btn btn-outline">Roles</a>
         {% endif %}
         <a href="/cms/settings/profile" class="btn btn-outline">Profile</a>

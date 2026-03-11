@@ -343,6 +343,11 @@ class SectionManager
      * Render a single section by loading its Twig template.
      * Uses getSectionTemplate() to strip {% schema %} blocks before rendering,
      * since Twig does not recognize the schema tag natively.
+     *
+     * If the section schema declares a "collection" property, the collection data
+     * and field definitions are auto-loaded and passed to the template as:
+     *   - section.collection_data  → paginated result from collection() helper
+     *   - section.collection_fields → array of field definitions [{slug, name, type, options}, ...]
      */
     private function renderSingleSection(string $type, array $settings, array $blocks, array $themeSettings, string $slug): string
     {
@@ -355,6 +360,34 @@ class SectionManager
                     . '</div>';
             }
 
+            // Auto-load collection data if schema declares "collection"
+            $collectionData = null;
+            $collectionFields = [];
+            $schema = $this->getSectionSchema($slug, $type);
+
+            if ($schema && !empty($schema['collection']) && function_exists('collection')) {
+                $collSlug = $schema['collection'];
+                $perPage = (int) ($settings['count'] ?? $settings['per_page'] ?? $settings['limit'] ?? 6);
+                $collectionData = collection($collSlug, [
+                    'per_page' => $perPage,
+                    'sort_by' => $settings['sort_by'] ?? 'id',
+                    'sort_dir' => $settings['sort_dir'] ?? 'DESC',
+                ]);
+
+                // Load field definitions for the collection
+                if (function_exists('_cms_get_fields')) {
+                    $fieldObjects = _cms_get_fields($collSlug);
+                    foreach ($fieldObjects as $field) {
+                        $collectionFields[] = [
+                            'slug' => $field->getSlug(),
+                            'name' => $field->getName(),
+                            'type' => $field->getType(),
+                            'options' => $field->getOptions(),
+                        ];
+                    }
+                }
+            }
+
             $view = \ZephyrPHP\View\View::getInstance();
             $twig = $view->getEngine();
             $template = $twig->createTemplate($templateContent);
@@ -364,6 +397,8 @@ class SectionManager
                     'type' => $type,
                     'settings' => $settings,
                     'blocks' => $blocks,
+                    'collection_data' => $collectionData,
+                    'collection_fields' => $collectionFields,
                 ],
                 'theme_settings' => $themeSettings,
             ]);

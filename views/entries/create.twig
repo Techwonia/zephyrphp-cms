@@ -18,6 +18,16 @@
         <form method="POST" action="/cms/collections/{{ collection.getSlug() }}/entries" enctype="multipart/form-data">
             {{ csrf_field() | raw }}
 
+            {% if collection.hasSlug() %}
+            <div class="form-group">
+                <label for="entry-slug">Slug</label>
+                <input type="text" id="entry-slug" name="slug" class="form-control"
+                       value="{{ flash('_old_input').slug ?? '' }}"
+                       placeholder="Auto-generated from {{ collection.getSlugSourceField() ?? 'title' }}">
+                <p class="text-muted">Leave blank to auto-generate. Edit to customize.</p>
+            </div>
+            {% endif %}
+
             {% for field in fields %}
             <div class="form-group">
                 <label for="field_{{ field.getSlug() }}">
@@ -98,6 +108,7 @@
 
                 {% elseif field.getType() == 'relation' %}
                     {% set relationType = field.getOptions().relation_type ?? 'one_to_one' %}
+                    {% set displayField = field.getOptions().display_field ?? null %}
                     {% set isMulti = relationType != 'one_to_one' %}
                     <select id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}{% if isMulti %}[]{% endif %}"
                             class="form-control{% if hasError %} is-invalid{% endif %}"
@@ -106,14 +117,18 @@
                         {% if not isMulti %}<option value="">— Select —</option>{% endif %}
                         {% if relationData[field.getSlug()] is defined %}
                             {% for relEntry in relationData[field.getSlug()].entries %}
-                                {% set relLabel = '' %}
-                                {% for rk, rv in relEntry %}
-                                    {% if rk not in ['id', 'status', 'published_at', 'created_by', 'created_at', 'updated_at'] and rv is not null and relLabel == '' %}
-                                        {% set relLabel = rv %}
-                                    {% endif %}
-                                {% endfor %}
+                                {% if displayField and relEntry[displayField] is defined %}
+                                    {% set relLabel = relEntry[displayField] %}
+                                {% else %}
+                                    {% set relLabel = '' %}
+                                    {% for rk, rv in relEntry %}
+                                        {% if rk not in ['id', 'slug', 'status', 'published_at', 'created_by', 'created_at', 'updated_at'] and rv is not null and relLabel == '' %}
+                                            {% set relLabel = rv %}
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
                                 <option value="{{ relEntry.id }}" {% if oldVal == relEntry.id ~ '' %}selected{% endif %}>
-                                    #{{ relEntry.id }}{% if relLabel %} — {{ relLabel }}{% endif %}
+                                    {{ relLabel ? relLabel : '#' ~ relEntry.id }}
                                 </option>
                             {% endfor %}
                         {% endif %}
@@ -123,9 +138,23 @@
                     {% endif %}
 
                 {% elseif field.getType() == 'image' or field.getType() == 'file' %}
-                    <input type="file" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
-                           class="form-control{% if hasError %} is-invalid{% endif %}"
-                           {% if field.getType() == 'image' %}accept="image/*"{% endif %}>
+                    <input type="hidden" id="field_{{ field.getSlug() }}_path" name="{{ field.getSlug() }}_from_media" value="">
+                    <div style="display: flex; gap: 8px; align-items: flex-start;">
+                        <input type="file" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                               class="form-control{% if hasError %} is-invalid{% endif %}"
+                               {% if field.getType() == 'image' %}accept="image/*"{% endif %}
+                               style="flex: 1;">
+                        <button type="button" class="btn btn-outline media-browse-btn"
+                                data-field="{{ field.getSlug() }}"
+                                data-filter="{{ field.getType() == 'image' ? 'images' : 'all' }}">
+                            Browse Media
+                        </button>
+                    </div>
+                    <div id="media-preview-{{ field.getSlug() }}" style="margin-top: 8px; display: none;">
+                        <img src="" alt="Selected" style="max-height: 80px; border-radius: 4px; border: 1px solid var(--border);">
+                        <span class="media-selected-name" style="margin-left: 8px;"></span>
+                        <button type="button" class="btn btn-sm btn-outline media-clear-btn" data-field="{{ field.getSlug() }}" style="margin-left: 4px;">Clear</button>
+                    </div>
 
                 {% elseif field.getType() == 'json' %}
                     <textarea id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
@@ -151,10 +180,16 @@
             {% if collection.isPublishable() %}
             <div class="form-group">
                 <label for="status">Status</label>
-                <select id="status" name="status" class="form-control">
+                <select id="status" name="status" class="form-control" onchange="document.getElementById('schedule-group').style.display=this.value==='scheduled'?'':'none'">
                     <option value="draft">Draft</option>
                     <option value="published">Published</option>
+                    <option value="scheduled">Scheduled</option>
                 </select>
+            </div>
+            <div class="form-group" id="schedule-group" style="display: none;">
+                <label for="scheduled_at">Publish At</label>
+                <input type="datetime-local" id="scheduled_at" name="scheduled_at" class="form-control">
+                <p class="text-muted">Entry will be auto-published at this date and time.</p>
             </div>
             {% endif %}
 
@@ -165,4 +200,119 @@
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ csp_nonce() }}">
+(function() {
+    {% if collection.hasSlug() and collection.getSlugSourceField() %}
+    var sourceField = '{{ collection.getSlugSourceField() }}';
+    var sourceInput = document.querySelector('[name="' + sourceField + '"]');
+    var slugInput = document.getElementById('entry-slug');
+    if (sourceInput && slugInput) {
+        sourceInput.addEventListener('input', function() {
+            if (!slugInput.dataset.manual) {
+                slugInput.value = this.value.toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+            }
+        });
+        slugInput.addEventListener('input', function() {
+            this.dataset.manual = this.value ? '1' : '';
+        });
+    }
+    {% endif %}
+
+    // Media Browser
+    document.querySelectorAll('.media-browse-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var fieldSlug = btn.dataset.field;
+            var filter = btn.dataset.filter || 'all';
+            openMediaBrowser(fieldSlug, filter);
+        });
+    });
+
+    document.querySelectorAll('.media-clear-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var fieldSlug = btn.dataset.field;
+            document.getElementById('field_' + fieldSlug + '_path').value = '';
+            document.getElementById('media-preview-' + fieldSlug).style.display = 'none';
+        });
+    });
+
+    function openMediaBrowser(fieldSlug, filter) {
+        var modal = document.createElement('div');
+        modal.className = 'media-modal-overlay';
+        modal.innerHTML = '<div class="media-modal">'
+            + '<div class="media-modal-header">'
+            + '<h3>Select from Media Library</h3>'
+            + '<button type="button" class="media-modal-close">&times;</button>'
+            + '</div>'
+            + '<div class="media-modal-body"><p>Loading...</p></div>'
+            + '</div>';
+        document.body.appendChild(modal);
+
+        modal.querySelector('.media-modal-close').addEventListener('click', function() {
+            modal.remove();
+        });
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) modal.remove();
+        });
+
+        fetch('/cms/media/browse?filter=' + filter + '&per_page=24')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                var body = modal.querySelector('.media-modal-body');
+                if (!data.data || data.data.length === 0) {
+                    body.innerHTML = '<p>No media files found. Upload files first.</p>';
+                    return;
+                }
+                var html = '<div class="media-modal-grid">';
+                data.data.forEach(function(item) {
+                    var thumb = item.is_image ? '<img src="' + item.thumbnail + '" alt="' + item.name + '">' : '<div class="media-file-icon">&#128196;</div>';
+                    html += '<div class="media-modal-item" data-url="' + item.url + '" data-name="' + item.name + '" data-is-image="' + (item.is_image ? '1' : '0') + '">'
+                        + '<div class="media-modal-thumb">' + thumb + '</div>'
+                        + '<div class="media-modal-name">' + item.name + '</div>'
+                        + '</div>';
+                });
+                html += '</div>';
+                body.innerHTML = html;
+
+                body.querySelectorAll('.media-modal-item').forEach(function(item) {
+                    item.addEventListener('click', function() {
+                        var url = item.dataset.url;
+                        var name = item.dataset.name;
+                        var pathInput = document.getElementById('field_' + fieldSlug + '_path');
+                        pathInput.value = url.replace(/^\//, '');
+                        var preview = document.getElementById('media-preview-' + fieldSlug);
+                        if (item.dataset.isImage === '1') {
+                            preview.querySelector('img').src = url;
+                            preview.querySelector('img').style.display = '';
+                        } else {
+                            preview.querySelector('img').style.display = 'none';
+                        }
+                        preview.querySelector('.media-selected-name').textContent = name;
+                        preview.style.display = 'flex';
+                        // Clear the file input since we're using media library
+                        document.getElementById('field_' + fieldSlug).value = '';
+                        modal.remove();
+                    });
+                });
+            });
+    }
+})();
+</script>
+<style nonce="{{ csp_nonce() }}">
+.media-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+.media-modal { background: #fff; border-radius: 12px; width: 90%; max-width: 800px; max-height: 80vh; display: flex; flex-direction: column; }
+.media-modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #e8e8e8; }
+.media-modal-header h3 { margin: 0; font-size: 1.1rem; }
+.media-modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; padding: 0 4px; }
+.media-modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+.media-modal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
+.media-modal-item { border: 2px solid #e8e8e8; border-radius: 8px; cursor: pointer; overflow: hidden; transition: border-color 0.2s; }
+.media-modal-item:hover { border-color: #008060; }
+.media-modal-thumb { height: 100px; display: flex; align-items: center; justify-content: center; background: #f8f9fa; overflow: hidden; }
+.media-modal-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.media-modal-name { padding: 6px 8px; font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+</style>
 {% endblock %}

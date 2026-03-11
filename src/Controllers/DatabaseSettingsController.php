@@ -7,24 +7,35 @@ namespace ZephyrPHP\Cms\Controllers;
 use ZephyrPHP\Core\Controllers\Controller;
 use ZephyrPHP\Auth\Auth;
 use Doctrine\DBAL\DriverManager;
+use ZephyrPHP\Cms\Services\PermissionService;
 
 class DatabaseSettingsController extends Controller
 {
-    private function requireAdmin(): void
+    private function requireCmsAccess(): void
     {
         if (!Auth::check()) {
             $this->redirect('/login');
             return;
         }
-        if (!Auth::user()->hasRole('admin')) {
-            $this->flash('errors', ['auth' => 'Access denied. Admin role required.']);
+        if (!PermissionService::can('cms.access')) {
+            Auth::logout();
+            $this->flash('errors', ['auth' => 'Access denied. You do not have CMS access.']);
+            $this->redirect('/login');
+        }
+    }
+
+    private function requirePermission(string $permission): void
+    {
+        $this->requireCmsAccess();
+        if (!PermissionService::can($permission)) {
+            $this->flash('errors', ['auth' => 'You do not have permission to perform this action.']);
             $this->redirect('/cms');
         }
     }
 
     public function index(): string
     {
-        $this->requireAdmin();
+        $this->requirePermission('settings.view');
 
         $settings = [
             'ENV' => env('ENV', 'dev'),
@@ -49,7 +60,7 @@ class DatabaseSettingsController extends Controller
 
     public function update(): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('settings.edit');
 
         $settings = [
             'ENV' => $this->input('ENV', 'dev'),
@@ -94,7 +105,7 @@ class DatabaseSettingsController extends Controller
 
     public function test(): string
     {
-        $this->requireAdmin();
+        $this->requirePermission('settings.edit');
 
         $config = [
             'driver' => $this->input('DB_CONNECTION', 'pdo_mysql'),
@@ -121,7 +132,7 @@ class DatabaseSettingsController extends Controller
 
     public function listDatabases(): string
     {
-        $this->requireAdmin();
+        $this->requirePermission('settings.edit');
 
         $driver = $this->input('DB_CONNECTION', 'pdo_mysql');
 

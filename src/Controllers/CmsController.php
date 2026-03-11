@@ -10,24 +10,26 @@ use ZephyrPHP\Cms\Models\Collection;
 use ZephyrPHP\Cms\Models\Media;
 use ZephyrPHP\Cms\Models\PageType;
 use ZephyrPHP\Cms\Services\SchemaManager;
+use ZephyrPHP\Cms\Services\PermissionService;
 
 class CmsController extends Controller
 {
-    private function requireAdmin(): void
+    private function requireCmsAccess(): void
     {
         if (!Auth::check()) {
             $this->redirect('/login');
             return;
         }
-        if (!Auth::user()->hasRole('admin')) {
-            $this->flash('errors', ['auth' => 'Access denied. Admin role required.']);
-            $this->redirect('/cms');
+        if (!PermissionService::can('cms.access')) {
+            Auth::logout();
+            $this->flash('errors', ['auth' => 'Access denied. You do not have CMS access.']);
+            $this->redirect('/login');
         }
     }
 
     public function dashboard(): string
     {
-        $this->requireAdmin();
+        $this->requireCmsAccess();
 
         $collections = Collection::findAll();
         $schema = new SchemaManager();

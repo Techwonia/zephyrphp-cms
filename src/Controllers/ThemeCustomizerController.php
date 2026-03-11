@@ -10,6 +10,7 @@ use ZephyrPHP\Cms\Models\Theme;
 use ZephyrPHP\Cms\Models\Collection;
 use ZephyrPHP\Cms\Services\ThemeManager;
 use ZephyrPHP\Cms\Services\SectionManager;
+use ZephyrPHP\Cms\Services\PermissionService;
 
 class ThemeCustomizerController extends Controller
 {
@@ -29,8 +30,8 @@ class ThemeCustomizerController extends Controller
             $this->redirect('/login');
             return false;
         }
-        if (!Auth::user()->hasRole('admin')) {
-            $this->flash('errors', ['auth' => 'Access denied. Admin role required.']);
+        if (!PermissionService::can('themes.edit')) {
+            $this->flash('errors', ['auth' => 'You do not have permission to perform this action.']);
             $this->redirect('/cms');
             return false;
         }

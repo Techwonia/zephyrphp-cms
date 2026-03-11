@@ -8,17 +8,28 @@ use ZephyrPHP\Core\Controllers\Controller;
 use ZephyrPHP\Auth\Auth;
 use ZephyrPHP\Security\Hash;
 use ZephyrPHP\Config\Config;
+use ZephyrPHP\Cms\Services\PermissionService;
 
 class UserController extends Controller
 {
-    private function requireAdmin(): void
+    private function requireCmsAccess(): void
     {
         if (!Auth::check()) {
             $this->redirect('/login');
             return;
         }
-        if (!Auth::user()->hasRole('admin')) {
-            $this->flash('errors', ['auth' => 'Access denied. Admin role required.']);
+        if (!PermissionService::can('cms.access')) {
+            Auth::logout();
+            $this->flash('errors', ['auth' => 'Access denied. You do not have CMS access.']);
+            $this->redirect('/login');
+        }
+    }
+
+    private function requirePermission(string $permission): void
+    {
+        $this->requireCmsAccess();
+        if (!PermissionService::can($permission)) {
+            $this->flash('errors', ['auth' => 'You do not have permission to perform this action.']);
             $this->redirect('/cms');
         }
     }
@@ -37,7 +48,7 @@ class UserController extends Controller
 
     public function index(): string
     {
-        $this->requireAdmin();
+        $this->requirePermission('users.view');
 
         $userModel = $this->getUserModel();
         $users = $userModel::findAll();
@@ -50,7 +61,7 @@ class UserController extends Controller
 
     public function create(): string
     {
-        $this->requireAdmin();
+        $this->requirePermission('users.manage');
 
         $roleModel = $this->getRoleModel();
         $roles = $roleModel::findAll();
@@ -63,7 +74,7 @@ class UserController extends Controller
 
     public function store(): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('users.manage');
 
         $name = trim($this->input('name', ''));
         $email = trim($this->input('email', ''));
@@ -81,8 +92,14 @@ class UserController extends Controller
         }
         if (empty($password)) {
             $errors['password'] = 'Password is required.';
-        } elseif (strlen($password) < 6) {
-            $errors['password'] = 'Password must be at least 6 characters.';
+        } elseif (strlen($password) < 8) {
+            $errors['password'] = 'Password must be at least 8 characters.';
+        } elseif (!preg_match('/[A-Z]/', $password)) {
+            $errors['password'] = 'Password must contain at least one uppercase letter.';
+        } elseif (!preg_match('/[a-z]/', $password)) {
+            $errors['password'] = 'Password must contain at least one lowercase letter.';
+        } elseif (!preg_match('/[0-9]/', $password)) {
+            $errors['password'] = 'Password must contain at least one number.';
         }
 
         // Check unique email
@@ -126,7 +143,7 @@ class UserController extends Controller
 
     public function edit(int $id): string
     {
-        $this->requireAdmin();
+        $this->requirePermission('users.manage');
 
         $userModel = $this->getUserModel();
         $editUser = $userModel::find($id);
@@ -155,7 +172,7 @@ class UserController extends Controller
 
     public function update(int $id): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('users.manage');
 
         $userModel = $this->getUserModel();
         $editUser = $userModel::find($id);
@@ -180,8 +197,16 @@ class UserController extends Controller
         } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $errors['email'] = 'Please enter a valid email address.';
         }
-        if (!empty($password) && strlen($password) < 6) {
-            $errors['password'] = 'Password must be at least 6 characters.';
+        if (!empty($password)) {
+            if (strlen($password) < 8) {
+                $errors['password'] = 'Password must be at least 8 characters.';
+            } elseif (!preg_match('/[A-Z]/', $password)) {
+                $errors['password'] = 'Password must contain at least one uppercase letter.';
+            } elseif (!preg_match('/[a-z]/', $password)) {
+                $errors['password'] = 'Password must contain at least one lowercase letter.';
+            } elseif (!preg_match('/[0-9]/', $password)) {
+                $errors['password'] = 'Password must contain at least one number.';
+            }
         }
 
         // Check unique email (exclude current user)
@@ -223,7 +248,7 @@ class UserController extends Controller
 
     public function destroy(int $id): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('users.manage');
 
         // Prevent self-delete
         if (Auth::user()->getId() === $id) {

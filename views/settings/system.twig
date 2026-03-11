@@ -57,6 +57,49 @@
                 </div>
             </div>
 
+            <h4 style="margin: var(--space-500) 0 var(--space-300); font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Authentication & Session</h4>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
+                <div class="form-group">
+                    <label for="AUTH_HOME">Post-Login Redirect (Customers)</label>
+                    <input type="text" id="AUTH_HOME" name="AUTH_HOME" class="form-control"
+                           value="{{ authSettings.AUTH_HOME }}" placeholder="/">
+                    <small style="color: var(--text-secondary);">Where non-admin users go after login. Admins always go to /cms.</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="SESSION_LIFETIME">Session Lifetime (minutes)</label>
+                    <input type="number" id="SESSION_LIFETIME" name="SESSION_LIFETIME" class="form-control"
+                           value="{{ authSettings.SESSION_LIFETIME }}" placeholder="120" min="1" max="10080">
+                </div>
+
+                <div class="form-group">
+                    <label for="SESSION_DRIVER">Session Driver</label>
+                    <select id="SESSION_DRIVER" name="SESSION_DRIVER" class="form-control">
+                        <option value="file" {% if authSettings.SESSION_DRIVER == 'file' %}selected{% endif %}>File</option>
+                        <option value="database" {% if authSettings.SESSION_DRIVER == 'database' %}selected{% endif %}>Database</option>
+                    </select>
+                </div>
+            </div>
+
+            <h4 style="margin: var(--space-500) 0 var(--space-300); font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">CMS Configuration</h4>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
+                <div class="form-group">
+                    <label for="CMS_THEME">Fallback Theme</label>
+                    <input type="text" id="CMS_THEME" name="CMS_THEME" class="form-control"
+                           value="{{ cmsSettings.CMS_THEME }}" placeholder="default">
+                    <small style="color: var(--text-secondary);">Used when no live theme is set in the database.</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="VIEWS_PATH">Views Path</label>
+                    <input type="text" id="VIEWS_PATH" name="VIEWS_PATH" class="form-control"
+                           value="{{ cmsSettings.VIEWS_PATH }}" placeholder="pages">
+                    <small style="color: var(--text-secondary);">Relative path to the templates directory.</small>
+                </div>
+            </div>
+
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Save Settings</button>
             </div>

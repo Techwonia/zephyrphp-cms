@@ -27,6 +27,12 @@ class Media extends Model
     #[ORM\Column(type: 'integer')]
     protected int $size = 0;
 
+    #[ORM\Column(name: 'alt_text', type: 'string', length: 255, nullable: true)]
+    protected ?string $altText = null;
+
+    #[ORM\Column(name: 'thumbnail_path', type: 'string', length: 500, nullable: true)]
+    protected ?string $thumbnailPath = null;
+
     #[ORM\Column(name: 'uploaded_by', type: 'integer', nullable: true)]
     protected ?int $uploadedBy = null;
 
@@ -57,9 +63,17 @@ class Media extends Model
         return $this->size;
     }
 
+    public function getAltText(): ?string { return $this->altText; }
+    public function getThumbnailPath(): ?string { return $this->thumbnailPath; }
+
     public function getUploadedBy(): ?int
     {
         return $this->uploadedBy;
+    }
+
+    public function getThumbnailUrl(): ?string
+    {
+        return $this->thumbnailPath ? '/' . ltrim($this->thumbnailPath, '/') : null;
     }
 
     public function getUrl(): string
@@ -115,6 +129,9 @@ class Media extends Model
         $this->size = $size;
         return $this;
     }
+
+    public function setAltText(?string $altText): self { $this->altText = $altText; return $this; }
+    public function setThumbnailPath(?string $thumbnailPath): self { $this->thumbnailPath = $thumbnailPath; return $this; }
 
     public function setUploadedBy(?int $uploadedBy): self
     {

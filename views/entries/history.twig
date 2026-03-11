@@ -1,0 +1,103 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Revision History — Entry #{{ entry.id }}{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms/collections">Collections</a> /
+    <a href="/cms/collections/{{ collection.getSlug() }}">{{ collection.getName() }}</a> /
+    <a href="/cms/collections/{{ collection.getSlug() }}/entries">Entries</a> /
+    <a href="/cms/collections/{{ collection.getSlug() }}/entries/{{ entry.id }}">#{{ entry.id }}</a> / History
+</div>
+
+<div class="page-header">
+    <h1>Revision History — Entry #{{ entry.id }}</h1>
+    <div class="page-actions">
+        <a href="/cms/collections/{{ collection.getSlug() }}/entries/{{ entry.id }}" class="btn btn-outline">Back to Entry</a>
+    </div>
+</div>
+
+{% if revisions|length > 0 %}
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Rev #</th>
+                        <th>Action</th>
+                        <th>Changed Fields</th>
+                        <th>By</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for revision in revisions %}
+                    <tr>
+                        <td><strong>#{{ revision.getId() }}</strong></td>
+                        <td>
+                            {% if revision.getAction() == 'create' %}
+                                <span class="badge" style="background: #d4edda; color: #155724;">Created</span>
+                            {% elseif revision.getAction() == 'update' %}
+                                <span class="badge" style="background: #cce5ff; color: #004085;">Updated</span>
+                            {% elseif revision.getAction() == 'delete' %}
+                                <span class="badge" style="background: #f8d7da; color: #721c24;">Deleted</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if revision.getChangedFields() %}
+                                {% for field in revision.getChangedFields() %}
+                                    <code>{{ field }}</code>{% if not loop.last %}, {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <span class="text-muted">All fields</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ revision.getUserName() ?? 'System' }}</td>
+                        <td>{{ revision.getCreatedAt()|date('M d, Y H:i') }}</td>
+                        <td class="actions-cell">
+                            {% if revision.getAction() != 'delete' %}
+                            <button class="btn btn-sm btn-outline toggle-data-btn" data-target="rev-{{ revision.getId() }}">
+                                View Data
+                            </button>
+                            <form method="POST"
+                                  action="/cms/collections/{{ collection.getSlug() }}/entries/{{ entry.id }}/restore/{{ revision.getId() }}"
+                                  style="display:inline" class="confirm-delete" data-message="Restore entry to this revision?">
+                                {{ csrf_field() | raw }}
+                                <button type="submit" class="btn btn-sm btn-primary">Restore</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr id="rev-{{ revision.getId() }}" style="display: none;">
+                        <td colspan="6">
+                            <pre style="background: #f8f9fa; padding: 12px; border-radius: 6px; font-size: 0.8rem; max-height: 300px; overflow: auto;">{{ revision.getData()|json_encode(constant('JSON_PRETTY_PRINT') b-or constant('JSON_UNESCAPED_SLASHES')) }}</pre>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="empty-state">
+    <h3>No revision history</h3>
+    <p>Changes to this entry will be tracked here.</p>
+</div>
+{% endif %}
+
+{% block scripts %}
+<script nonce="{{ csp_nonce() }}">
+document.querySelectorAll('.toggle-data-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        var target = document.getElementById(btn.dataset.target);
+        if (target) {
+            target.style.display = target.style.display === 'none' ? '' : 'none';
+        }
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

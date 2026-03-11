@@ -7,17 +7,28 @@ namespace ZephyrPHP\Cms\Controllers;
 use ZephyrPHP\Core\Controllers\Controller;
 use ZephyrPHP\Auth\Auth;
 use ZephyrPHP\Config\Config;
+use ZephyrPHP\Cms\Services\PermissionService;
 
 class RoleController extends Controller
 {
-    private function requireAdmin(): void
+    private function requireCmsAccess(): void
     {
         if (!Auth::check()) {
             $this->redirect('/login');
             return;
         }
-        if (!Auth::user()->hasRole('admin')) {
-            $this->flash('errors', ['auth' => 'Access denied. Admin role required.']);
+        if (!PermissionService::can('cms.access')) {
+            Auth::logout();
+            $this->flash('errors', ['auth' => 'Access denied. You do not have CMS access.']);
+            $this->redirect('/login');
+        }
+    }
+
+    private function requirePermission(string $permission): void
+    {
+        $this->requireCmsAccess();
+        if (!PermissionService::can($permission)) {
+            $this->flash('errors', ['auth' => 'You do not have permission to perform this action.']);
             $this->redirect('/cms');
         }
     }
@@ -31,7 +42,7 @@ class RoleController extends Controller
 
     public function index(): string
     {
-        $this->requireAdmin();
+        $this->requirePermission('roles.manage');
 
         $roleModel = $this->getRoleModel();
         $roles = $roleModel::findAll();
@@ -44,7 +55,7 @@ class RoleController extends Controller
 
     public function create(): string
     {
-        $this->requireAdmin();
+        $this->requirePermission('roles.manage');
 
         return $this->render('cms::roles/create', [
             'user' => Auth::user(),
@@ -53,7 +64,7 @@ class RoleController extends Controller
 
     public function store(): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('roles.manage');
 
         $name = trim($this->input('name', ''));
         $slug = trim($this->input('slug', ''));
@@ -101,7 +112,7 @@ class RoleController extends Controller
 
     public function edit(int $id): string
     {
-        $this->requireAdmin();
+        $this->requirePermission('roles.manage');
 
         $roleModel = $this->getRoleModel();
         $role = $roleModel::find($id);
@@ -112,15 +123,20 @@ class RoleController extends Controller
             return '';
         }
 
+        $allPermissions = PermissionService::allPermissions();
+        $rolePermissions = PermissionService::getRolePermissions()[$role->getSlug()] ?? [];
+
         return $this->render('cms::roles/edit', [
             'editRole' => $role,
+            'allPermissions' => $allPermissions,
+            'rolePermissions' => $rolePermissions,
             'user' => Auth::user(),
         ]);
     }
 
     public function update(int $id): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('roles.manage');
 
         $roleModel = $this->getRoleModel();
         $role = $roleModel::find($id);
@@ -163,13 +179,21 @@ class RoleController extends Controller
         $role->setDescription($description ?: null);
         $role->save();
 
+        // Save permissions
+        $permissions = $this->input('permissions');
+        if (is_array($permissions)) {
+            PermissionService::saveRolePermissions($slug, $permissions);
+        } else {
+            PermissionService::saveRolePermissions($slug, []);
+        }
+
         $this->flash('success', 'Role updated successfully.');
         $this->redirect('/cms/roles');
     }
 
     public function destroy(int $id): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('roles.manage');
 
         $roleModel = $this->getRoleModel();
         $role = $roleModel::find($id);

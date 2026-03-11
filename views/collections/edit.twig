@@ -70,6 +70,29 @@
                                {% if collection.isPublishable() %}checked{% endif %}>
                         Publishable
                     </label>
+                    <label>
+                        <input type="checkbox" name="has_slug" value="1" id="has_slug_check"
+                               {% if collection.hasSlug() %}checked{% endif %}>
+                        Enable Slug Field
+                    </label>
+                </div>
+
+                <div id="slug-source-group" style="{% if not collection.hasSlug() %}display:none;{% endif %}">
+                    <div class="form-group">
+                        <label for="slug_source_field">Generate Slug From</label>
+                        <select name="slug_source_field" id="slug_source_field" class="form-control">
+                            <option value="">-- Select field --</option>
+                            {% for field in fields %}
+                                {% if field.getType() in ['text', 'email', 'url'] %}
+                                <option value="{{ field.getSlug() }}"
+                                        {% if collection.getSlugSourceField() == field.getSlug() %}selected{% endif %}>
+                                    {{ field.getName() }} ({{ field.getSlug() }})
+                                </option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                        <p class="text-muted">Which text field to auto-generate slugs from. Leave empty to require manual slugs.</p>
+                    </div>
                 </div>
 
                 <div class="form-actions">
@@ -103,6 +126,21 @@
                     </div>
                     <div><span class="field-badge" style="opacity: 0.5;">system</span></div>
                 </div>
+
+                {% if collection.hasSlug() %}
+                <div class="field-row field-system">
+                    <div class="field-info">
+                        <div class="field-name">Slug</div>
+                        <div class="field-meta">
+                            <code>slug</code>
+                            &middot; <span class="field-badge">string (255)</span>
+                            <span class="field-badge unique">unique</span>
+                            <span class="field-badge">auto-generated{% if collection.getSlugSourceField() %} from {{ collection.getSlugSourceField() }}{% endif %}</span>
+                        </div>
+                    </div>
+                    <div><span class="field-badge" style="opacity: 0.5;">system</span></div>
+                </div>
+                {% endif %}
 
                 <div class="field-row field-system">
                     <div class="field-info">
@@ -182,18 +220,25 @@
                                 {% if field.getOptions().relation_collection is defined %}
                                     <span class="field-badge">&rarr; {{ field.getOptions().relation_collection }}</span>
                                 {% endif %}
+                                {% if field.getOptions().display_field is defined and field.getOptions().display_field %}
+                                    <span class="field-badge">display: {{ field.getOptions().display_field }}</span>
+                                {% endif %}
                             {% endif %}
                             {% if field.isRequired() %}<span class="field-badge required">required</span>{% endif %}
                             {% if field.isUnique() %}<span class="field-badge">unique</span>{% endif %}
                             {% if field.isSearchable() %}<span class="field-badge">searchable</span>{% endif %}
                             {% if field.isSortable() %}<span class="field-badge">sortable</span>{% endif %}
                             {% if not field.isListable() %}<span class="field-badge">hidden</span>{% endif %}
+                            {% if collection.hasSlug() and collection.getSlugSourceField() == field.getSlug() %}
+                                <span class="field-badge slug-source">slug source</span>
+                            {% endif %}
                         </div>
                     </div>
                     <div>
                         <form method="POST" action="/cms/collections/{{ collection.getSlug() }}/fields/{{ field.getId() }}/delete"
                               style="display:inline"
-                              class="confirm-delete" data-message="Delete field {{ field.getName() }}? Column data will be lost!">
+                              class="confirm-delete"
+                              data-message="{% if collection.hasSlug() and collection.getSlugSourceField() == field.getSlug() %}WARNING: This field is the slug source. Deleting it will also remove the slug column and all slug data from entries. Continue?{% else %}Delete field {{ field.getName() }}? Column data will be lost!{% endif %}">
                             {{ csrf_field() | raw }}
                             <button type="submit" class="btn btn-sm btn-danger">Delete</button>
                         </form>
@@ -239,6 +284,13 @@
                         <label><input type="checkbox" name="field_searchable" value="1"> Searchable</label>
                         <label><input type="checkbox" name="field_sortable" value="1"> Sortable</label>
                         <label><input type="checkbox" name="field_unique" value="1"> Unique</label>
+                        {% if not collection.hasSlug() %}
+                        <label id="use-as-slug-label" style="display:none;">
+                            <input type="checkbox" name="use_as_slug" value="1" id="useAsSlugCheck">
+                            Use as Slug
+                            <small style="display:block;font-weight:normal;color:var(--text-secondary,#616161);">Auto-generates a URL-friendly slug from this field for each entry.</small>
+                        </label>
+                        {% endif %}
                     </div>
 
                     <div class="form-group" id="select-options-group" style="display: none;">
@@ -267,6 +319,13 @@
                                         {% endif %}
                                     {% endfor %}
                                 </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="field_display_field">Display Field</label>
+                                <select id="field_display_field" name="field_display_field" class="form-control">
+                                    <option value="">-- Select collection first --</option>
+                                </select>
+                                <p class="text-muted">Which field from the related collection to show as the label (e.g. title, name).</p>
                             </div>
                         </div>
                         <p class="text-muted" id="relation-type-hint">One to One: Pick a single related entry.</p>
@@ -297,7 +356,22 @@ document.getElementById('field_slug').addEventListener('input', function() {
     this.dataset.manual = '1';
 });
 
-document.getElementById('field_type').addEventListener('change', function() {
+var fieldTypeSelect = document.getElementById('field_type');
+var slugTextTypes = ['text', 'email', 'url'];
+var useAsSlugLabel = document.getElementById('use-as-slug-label');
+var useAsSlugCheck = document.getElementById('useAsSlugCheck');
+
+function toggleSlugCheckbox() {
+    if (useAsSlugLabel) {
+        useAsSlugLabel.style.display = slugTextTypes.indexOf(fieldTypeSelect.value) !== -1 ? '' : 'none';
+        if (useAsSlugCheck && slugTextTypes.indexOf(fieldTypeSelect.value) === -1) {
+            useAsSlugCheck.checked = false;
+        }
+    }
+}
+toggleSlugCheckbox();
+
+fieldTypeSelect.addEventListener('change', function() {
     var selectGroup = document.getElementById('select-options-group');
     var relationGroup = document.getElementById('relation-options-group');
     var selectInput = document.getElementById('field_options_select');
@@ -315,6 +389,8 @@ document.getElementById('field_type').addEventListener('change', function() {
         relationGroup.style.display = 'block';
         relationInput.name = 'field_options';
     }
+
+    toggleSlugCheckbox();
 });
 
 var relationTypeHints = {
@@ -326,6 +402,43 @@ var relTypeSelect = document.getElementById('field_relation_type');
 if (relTypeSelect) {
     relTypeSelect.addEventListener('change', function() {
         document.getElementById('relation-type-hint').textContent = relationTypeHints[this.value] || '';
+    });
+}
+
+// Load related collection's fields when a collection is selected
+var relCollSelect = document.getElementById('field_options_relation');
+var displayFieldSelect = document.getElementById('field_display_field');
+if (relCollSelect && displayFieldSelect) {
+    relCollSelect.addEventListener('change', function() {
+        var collSlug = this.value;
+        displayFieldSelect.innerHTML = '<option value="">-- Loading... --</option>';
+        if (!collSlug) {
+            displayFieldSelect.innerHTML = '<option value="">-- Select collection first --</option>';
+            return;
+        }
+        fetch('/cms/collections/' + collSlug + '/fields-json')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                displayFieldSelect.innerHTML = '<option value="">-- Auto-detect --</option>';
+                (data.fields || []).forEach(function(f) {
+                    var opt = document.createElement('option');
+                    opt.value = f.slug;
+                    opt.textContent = f.name + ' (' + f.type + ')';
+                    displayFieldSelect.appendChild(opt);
+                });
+            })
+            .catch(function() {
+                displayFieldSelect.innerHTML = '<option value="">-- Failed to load --</option>';
+            });
+    });
+}
+
+// Toggle slug source dropdown when checkbox changes
+var hasSlugCheck = document.getElementById('has_slug_check');
+var slugSourceGroup = document.getElementById('slug-source-group');
+if (hasSlugCheck && slugSourceGroup) {
+    hasSlugCheck.addEventListener('change', function() {
+        slugSourceGroup.style.display = this.checked ? '' : 'none';
     });
 }
 
@@ -346,6 +459,11 @@ document.querySelectorAll('.confirm-delete').forEach(function(form) {
     }
     .field-system .field-name {
         font-size: 0.9rem;
+    }
+    .field-badge.slug-source {
+        background: var(--color-primary, #6366f1);
+        color: #fff;
+        font-weight: 600;
     }
 </style>
 {% endblock %}

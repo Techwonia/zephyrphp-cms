@@ -97,6 +97,11 @@ class ThemeManager
      */
     public function getThemePath(string $slug): string
     {
+        // Sanitize slug to prevent path traversal
+        $slug = preg_replace('/[^a-z0-9_-]/', '', strtolower($slug));
+        if (empty($slug)) {
+            throw new \InvalidArgumentException('Invalid theme slug.');
+        }
         return $this->themesBasePath . '/' . $slug;
     }
 
@@ -210,6 +215,11 @@ class ThemeManager
      */
     public function readTemplate(string $filename, ?string $slug = null): ?string
     {
+        // Block path traversal in filename
+        if (str_contains($filename, '..') || str_starts_with($filename, '/')) {
+            return null;
+        }
+
         $path = $this->getTemplatesPath($slug) . '/' . $filename;
         if (file_exists($path)) {
             return file_get_contents($path);
@@ -222,6 +232,11 @@ class ThemeManager
      */
     public function writeTemplate(string $filename, string $content, ?string $slug = null): bool
     {
+        // Block path traversal in filename
+        if (str_contains($filename, '..') || str_starts_with($filename, '/')) {
+            return false;
+        }
+
         $path = $this->getTemplatesPath($slug) . '/' . $filename;
         $dir = dirname($path);
         if (!is_dir($dir)) {
@@ -243,11 +258,18 @@ class ThemeManager
      */
     public function readFile(string $relativePath, string $slug): ?string
     {
-        $path = $this->getThemePath($slug) . '/' . $relativePath;
-        if (file_exists($path) && !str_contains(realpath($path), '..')) {
-            return file_get_contents($path);
+        $themePath = realpath($this->getThemePath($slug));
+        if (!$themePath) {
+            return null;
         }
-        return null;
+
+        $path = $themePath . '/' . $relativePath;
+        $realPath = realpath($path);
+        if (!$realPath || !str_starts_with($realPath, $themePath . DIRECTORY_SEPARATOR)) {
+            return null; // Path traversal blocked
+        }
+
+        return file_get_contents($realPath);
     }
 
     /**
@@ -255,11 +277,36 @@ class ThemeManager
      */
     public function writeFile(string $relativePath, string $content, string $slug): bool
     {
-        $path = $this->getThemePath($slug) . '/' . $relativePath;
+        $themePath = realpath($this->getThemePath($slug));
+        if (!$themePath) {
+            return false;
+        }
+
+        // Block path traversal: ensure relative path doesn't escape theme dir
+        $normalized = str_replace('\\', '/', $relativePath);
+        if (str_contains($normalized, '..') || str_starts_with($normalized, '/')) {
+            return false;
+        }
+
+        // Only allow safe file extensions
+        $ext = strtolower(pathinfo($relativePath, PATHINFO_EXTENSION));
+        $allowedExts = ['twig', 'json', 'css', 'js', 'html', 'txt', 'svg'];
+        if (!in_array($ext, $allowedExts, true)) {
+            return false;
+        }
+
+        $path = $themePath . '/' . $relativePath;
         $dir = dirname($path);
         if (!is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
+
+        // After mkdir, verify final path is still within theme
+        $realDir = realpath($dir);
+        if (!$realDir || !str_starts_with($realDir, $themePath)) {
+            return false;
+        }
+
         return file_put_contents($path, $content) !== false;
     }
 
@@ -286,6 +333,17 @@ class ThemeManager
                 if ($file->isFile() && str_ends_with($file->getFilename(), '.twig')) {
                     $relative = $dir . '/' . str_replace('\\', '/', $iterator->getSubPathName());
                     $files[$dir][] = $relative;
+                }
+            }
+        }
+
+        // Controllers (PHP)
+        $controllersDir = $themePath . '/controllers';
+        if (is_dir($controllersDir)) {
+            foreach (scandir($controllersDir) as $file) {
+                if ($file === '.' || $file === '..') continue;
+                if (str_ends_with($file, '.php')) {
+                    $files['controllers'][] = 'controllers/' . $file;
                 }
             }
         }

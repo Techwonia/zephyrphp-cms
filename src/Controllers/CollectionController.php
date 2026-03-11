@@ -9,6 +9,7 @@ use ZephyrPHP\Auth\Auth;
 use ZephyrPHP\Cms\Models\Collection;
 use ZephyrPHP\Cms\Models\Field;
 use ZephyrPHP\Cms\Services\SchemaManager;
+use ZephyrPHP\Cms\Services\PermissionService;
 
 class CollectionController extends Controller
 {
@@ -20,21 +21,31 @@ class CollectionController extends Controller
         $this->schema = new SchemaManager();
     }
 
-    private function requireAdmin(): void
+    private function requireCmsAccess(): void
     {
         if (!Auth::check()) {
             $this->redirect('/login');
             return;
         }
-        if (!Auth::user()->hasRole('admin')) {
-            $this->flash('errors', ['auth' => 'Access denied. Admin role required.']);
+        if (!PermissionService::can('cms.access')) {
+            Auth::logout();
+            $this->flash('errors', ['auth' => 'Access denied. You do not have CMS access.']);
+            $this->redirect('/login');
+        }
+    }
+
+    private function requirePermission(string $permission): void
+    {
+        $this->requireCmsAccess();
+        if (!PermissionService::can($permission)) {
+            $this->flash('errors', ['auth' => 'You do not have permission to perform this action.']);
             $this->redirect('/cms');
         }
     }
 
     public function index(): string
     {
-        $this->requireAdmin();
+        $this->requirePermission('collections.view');
 
         $collections = Collection::findAll();
 
@@ -52,7 +63,7 @@ class CollectionController extends Controller
 
     public function create(): string
     {
-        $this->requireAdmin();
+        $this->requirePermission('collections.create');
 
         return $this->render('cms::collections/create', [
             'user' => Auth::user(),
@@ -61,13 +72,14 @@ class CollectionController extends Controller
 
     public function store(): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('collections.create');
 
         $name = trim($this->input('name', ''));
         $slug = trim($this->input('slug', ''));
         $description = $this->input('description', '');
         $isApiEnabled = $this->boolean('is_api_enabled');
         $isPublishable = $this->boolean('is_publishable');
+        $hasSlug = $this->boolean('has_slug');
         $primaryKeyType = $this->input('primary_key_type', 'integer');
 
         // Auto-generate slug from name if empty
@@ -109,6 +121,7 @@ class CollectionController extends Controller
         $collection->setDescription($description ?: null);
         $collection->setIsApiEnabled($isApiEnabled);
         $collection->setIsPublishable($isPublishable);
+        $collection->setHasSlug($hasSlug);
         $collection->setPrimaryKeyType($primaryKeyType);
         $collection->setCreatedBy(Auth::user()?->getId());
         $collection->save();
@@ -122,7 +135,7 @@ class CollectionController extends Controller
 
     public function edit(string $slug): string
     {
-        $this->requireAdmin();
+        $this->requirePermission('collections.edit');
 
         $collection = Collection::findOneBy(['slug' => $slug]);
         if (!$collection) {
@@ -166,7 +179,7 @@ class CollectionController extends Controller
 
     public function update(string $slug): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('collections.edit');
 
         $collection = Collection::findOneBy(['slug' => $slug]);
         if (!$collection) {
@@ -179,6 +192,8 @@ class CollectionController extends Controller
         $description = $this->input('description', '');
         $isApiEnabled = $this->boolean('is_api_enabled');
         $isPublishable = $this->boolean('is_publishable');
+        $hasSlug = $this->boolean('has_slug');
+        $slugSourceField = $this->input('slug_source_field', '');
         $primaryKeyType = $this->input('primary_key_type', $collection->getPrimaryKeyType());
 
         $errors = [];
@@ -192,10 +207,36 @@ class CollectionController extends Controller
             return;
         }
 
+        $oldHasSlug = $collection->hasSlug();
+        $tableName = $collection->getTableName();
+        $conn = $this->schema->getConnection();
+
+        // Handle slug toggle
+        if ($hasSlug && !$oldHasSlug) {
+            // Enabling slug: add slug column to data table
+            try {
+                $conn->executeStatement("ALTER TABLE `{$tableName}` ADD COLUMN `slug` VARCHAR(255) NULL DEFAULT NULL");
+                $conn->executeStatement("ALTER TABLE `{$tableName}` ADD UNIQUE INDEX `uniq_{$tableName}_slug` (`slug`)");
+            } catch (\Exception $e) {
+                // Column may already exist
+            }
+        } elseif (!$hasSlug && $oldHasSlug) {
+            // Disabling slug: remove slug column from data table
+            try {
+                $conn->executeStatement("ALTER TABLE `{$tableName}` DROP INDEX `uniq_{$tableName}_slug`");
+                $conn->executeStatement("ALTER TABLE `{$tableName}` DROP COLUMN `slug`");
+            } catch (\Exception $e) {
+                // Column or index may not exist
+            }
+            $slugSourceField = '';
+        }
+
         $collection->setName($name);
         $collection->setDescription($description ?: null);
         $collection->setIsApiEnabled($isApiEnabled);
         $collection->setIsPublishable($isPublishable);
+        $collection->setHasSlug($hasSlug);
+        $collection->setSlugSourceField($slugSourceField ?: null);
         $collection->setPrimaryKeyType($primaryKeyType);
         $collection->save();
 
@@ -205,7 +246,7 @@ class CollectionController extends Controller
 
     public function destroy(string $slug): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('collections.delete');
 
         $collection = Collection::findOneBy(['slug' => $slug]);
         if (!$collection) {
@@ -232,7 +273,7 @@ class CollectionController extends Controller
 
     public function addField(string $slug): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('collections.edit');
 
         $collection = Collection::findOneBy(['slug' => $slug]);
         if (!$collection) {
@@ -277,7 +318,7 @@ class CollectionController extends Controller
         }
 
         // Check reserved column names
-        $reserved = ['id', 'status', 'published_at', 'created_by', 'created_at', 'updated_at'];
+        $reserved = ['id', 'slug', 'status', 'published_at', 'created_by', 'created_at', 'updated_at'];
         if (in_array($fieldSlug, $reserved)) {
             $errors['field_slug'] = "'{$fieldSlug}' is a reserved column name.";
         }
@@ -300,10 +341,34 @@ class CollectionController extends Controller
             if (!in_array($relationType, ['one_to_one', 'one_to_many', 'many_to_many'])) {
                 $relationType = 'one_to_one';
             }
+            $displayField = trim($this->input('field_display_field', ''));
             $options = [
                 'relation_collection' => trim($optionsRaw),
                 'relation_type' => $relationType,
+                'display_field' => $displayField ?: null,
             ];
+        }
+        // Parse file accept options for image/file types
+        if (in_array($type, ['image', 'file'])) {
+            $acceptPreset = $this->input('field_accept_preset', 'all');
+            $validPresets = ['images', 'documents', 'media', 'all', 'custom'];
+            if (!in_array($acceptPreset, $validPresets)) {
+                $acceptPreset = 'all';
+            }
+            $options = $options ?? [];
+            $options['accept_preset'] = $acceptPreset;
+
+            if ($acceptPreset === 'custom') {
+                $customMimes = $this->request->all()['field_accept_custom'] ?? [];
+                if (is_array($customMimes)) {
+                    $options['accept_custom'] = array_values(array_filter($customMimes));
+                }
+            }
+
+            $maxFileSize = $this->input('field_max_file_size', '');
+            if (!empty($maxFileSize) && is_numeric($maxFileSize)) {
+                $options['max_file_size'] = (int) ((float) $maxFileSize * 1024 * 1024); // MB to bytes
+            }
         }
 
         $maxOrder = 0;
@@ -358,13 +423,31 @@ class CollectionController extends Controller
             $this->schema->addColumn($collection->getTableName(), $field);
         }
 
+        // Handle "Use as Slug" checkbox
+        $useAsSlug = $this->boolean('use_as_slug');
+        if ($useAsSlug && in_array($type, ['text', 'email', 'url']) && !$collection->hasSlug()) {
+            $collection->setHasSlug(true);
+            $collection->setSlugSourceField($fieldSlug);
+            $collection->save();
+
+            // Add slug column to the data table
+            try {
+                $tableName = $collection->getTableName();
+                $conn = $this->schema->getConnection();
+                $conn->executeStatement("ALTER TABLE `{$tableName}` ADD COLUMN `slug` VARCHAR(255) NULL DEFAULT NULL");
+                $conn->executeStatement("ALTER TABLE `{$tableName}` ADD UNIQUE INDEX `uniq_{$tableName}_slug` (`slug`)");
+            } catch (\Exception $e) {
+                // Column may already exist
+            }
+        }
+
         $this->flash('success', "Field \"{$name}\" added successfully.");
         $this->redirect("/cms/collections/{$slug}");
     }
 
     public function updateField(string $slug, int $id): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('collections.edit');
 
         $collection = Collection::findOneBy(['slug' => $slug]);
         if (!$collection) {
@@ -409,10 +492,34 @@ class CollectionController extends Controller
             if (!in_array($relationType, ['one_to_one', 'one_to_many', 'many_to_many'])) {
                 $relationType = 'one_to_one';
             }
+            $displayField = trim($this->input('field_display_field', ''));
             $options = [
                 'relation_collection' => trim($optionsRaw),
                 'relation_type' => $relationType,
+                'display_field' => $displayField ?: null,
             ];
+        }
+        // Parse file accept options for image/file types
+        if (in_array($type, ['image', 'file'])) {
+            $acceptPreset = $this->input('field_accept_preset', 'all');
+            $validPresets = ['images', 'documents', 'media', 'all', 'custom'];
+            if (!in_array($acceptPreset, $validPresets)) {
+                $acceptPreset = 'all';
+            }
+            $options = $options ?? [];
+            $options['accept_preset'] = $acceptPreset;
+
+            if ($acceptPreset === 'custom') {
+                $customMimes = $this->request->all()['field_accept_custom'] ?? [];
+                if (is_array($customMimes)) {
+                    $options['accept_custom'] = array_values(array_filter($customMimes));
+                }
+            }
+
+            $maxFileSize = $this->input('field_max_file_size', '');
+            if (!empty($maxFileSize) && is_numeric($maxFileSize)) {
+                $options['max_file_size'] = (int) ((float) $maxFileSize * 1024 * 1024);
+            }
         }
 
         $field->setName($name);
@@ -436,7 +543,7 @@ class CollectionController extends Controller
 
     public function deleteField(string $slug, int $id): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('collections.edit');
 
         $collection = Collection::findOneBy(['slug' => $slug]);
         if (!$collection) {
@@ -453,6 +560,22 @@ class CollectionController extends Controller
 
         $fieldName = $field->getName();
         $fieldSlug = $field->getSlug();
+        $isSlugSource = $collection->hasSlug() && $collection->getSlugSourceField() === $fieldSlug;
+
+        // If this field is the slug source, remove slug column and reset collection slug settings
+        if ($isSlugSource) {
+            try {
+                $tableName = $collection->getTableName();
+                $conn = $this->schema->getConnection();
+                $conn->executeStatement("ALTER TABLE `{$tableName}` DROP INDEX `uniq_{$tableName}_slug`");
+                $conn->executeStatement("ALTER TABLE `{$tableName}` DROP COLUMN `slug`");
+            } catch (\Exception $e) {
+                // Index or column may not exist
+            }
+            $collection->setHasSlug(false);
+            $collection->setSlugSourceField(null);
+            $collection->save();
+        }
 
         // Drop the column or pivot table from the dynamic table
         if ($field->getType() === 'relation') {
@@ -472,6 +595,33 @@ class CollectionController extends Controller
 
         $this->flash('success', "Field \"{$fieldName}\" deleted.");
         $this->redirect("/cms/collections/{$slug}");
+    }
+
+    /**
+     * Return a collection's fields as JSON (for AJAX use in relation setup)
+     */
+    public function fieldsJson(string $slug): void
+    {
+        $this->requirePermission('collections.view');
+
+        $collection = Collection::findOneBy(['slug' => $slug]);
+        if (!$collection) {
+            header('Content-Type: application/json');
+            echo json_encode(['fields' => []]);
+            return;
+        }
+
+        $fields = [];
+        foreach ($collection->getFields() as $field) {
+            $fields[] = [
+                'slug' => $field->getSlug(),
+                'name' => $field->getName(),
+                'type' => $field->getType(),
+            ];
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode(['fields' => $fields]);
     }
 
     // ========================================================================

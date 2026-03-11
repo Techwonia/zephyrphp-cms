@@ -6,24 +6,35 @@ namespace ZephyrPHP\Cms\Controllers;
 
 use ZephyrPHP\Core\Controllers\Controller;
 use ZephyrPHP\Auth\Auth;
+use ZephyrPHP\Cms\Services\PermissionService;
 
 class SystemSettingsController extends Controller
 {
-    private function requireAdmin(): void
+    private function requireCmsAccess(): void
     {
         if (!Auth::check()) {
             $this->redirect('/login');
             return;
         }
-        if (!Auth::user()->hasRole('admin')) {
-            $this->flash('errors', ['auth' => 'Access denied. Admin role required.']);
+        if (!PermissionService::can('cms.access')) {
+            Auth::logout();
+            $this->flash('errors', ['auth' => 'Access denied. You do not have CMS access.']);
+            $this->redirect('/login');
+        }
+    }
+
+    private function requirePermission(string $permission): void
+    {
+        $this->requireCmsAccess();
+        if (!PermissionService::can($permission)) {
+            $this->flash('errors', ['auth' => 'You do not have permission to perform this action.']);
             $this->redirect('/cms');
         }
     }
 
     public function index(): string
     {
-        $this->requireAdmin();
+        $this->requirePermission('settings.view');
 
         $systemInfo = [
             'php_version' => PHP_VERSION,
@@ -43,12 +54,25 @@ class SystemSettingsController extends Controller
             'APP_TIMEZONE' => env('APP_TIMEZONE', 'UTC'),
         ];
 
+        $authSettings = [
+            'AUTH_HOME' => env('AUTH_HOME', '/'),
+            'SESSION_LIFETIME' => env('SESSION_LIFETIME', '120'),
+            'SESSION_DRIVER' => env('SESSION_DRIVER', 'file'),
+        ];
+
+        $cmsSettings = [
+            'CMS_THEME' => env('CMS_THEME', 'default'),
+            'VIEWS_PATH' => env('VIEWS_PATH', 'pages'),
+        ];
+
         $extensions = get_loaded_extensions();
         sort($extensions);
 
         return $this->render('cms::settings/system', [
             'systemInfo' => $systemInfo,
             'appSettings' => $appSettings,
+            'authSettings' => $authSettings,
+            'cmsSettings' => $cmsSettings,
             'extensions' => $extensions,
             'user' => Auth::user(),
         ]);
@@ -56,14 +80,22 @@ class SystemSettingsController extends Controller
 
     public function update(): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('settings.edit');
 
         $settings = [
+            // Application
             'APP_NAME' => trim($this->input('APP_NAME', '')),
             'APP_ENV' => trim($this->input('APP_ENV', 'dev')),
             'APP_DEBUG' => $this->input('APP_DEBUG', 'false'),
             'APP_URL' => trim($this->input('APP_URL', '')),
             'APP_TIMEZONE' => trim($this->input('APP_TIMEZONE', 'UTC')),
+            // Auth & Session
+            'AUTH_HOME' => trim($this->input('AUTH_HOME', '/')),
+            'SESSION_LIFETIME' => trim($this->input('SESSION_LIFETIME', '120')),
+            'SESSION_DRIVER' => trim($this->input('SESSION_DRIVER', 'file')),
+            // CMS
+            'CMS_THEME' => trim($this->input('CMS_THEME', 'default')),
+            'VIEWS_PATH' => trim($this->input('VIEWS_PATH', 'pages')),
         ];
 
         $envPath = $this->getEnvPath();

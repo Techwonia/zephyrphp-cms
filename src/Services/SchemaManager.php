@@ -97,6 +97,12 @@ class SchemaManager
         }
         $table->setPrimaryKey(['id']);
 
+        // Slug column (auto-managed, like status/published_at)
+        if ($collection->hasSlug()) {
+            $table->addColumn('slug', Types::STRING, ['length' => 255, 'notnull' => false]);
+            $table->addUniqueIndex(['slug'], 'uniq_' . $collection->getTableName() . '_slug');
+        }
+
         // User-defined field columns
         foreach ($fields as $field) {
             $table->addColumn(
@@ -114,6 +120,7 @@ class SchemaManager
         if ($collection->isPublishable()) {
             $table->addColumn('status', Types::STRING, ['length' => 20, 'default' => 'draft']);
             $table->addColumn('published_at', Types::DATETIME_MUTABLE, ['notnull' => false]);
+            $table->addColumn('scheduled_at', Types::DATETIME_MUTABLE, ['notnull' => false]);
         }
 
         // Audit columns
@@ -289,9 +296,14 @@ class SchemaManager
         if ($field->getDefaultValue() !== null && $field->getDefaultValue() !== '') {
             $defaultVal = $field->getDefaultValue();
             if ($isNumericDefault) {
-                $default = "DEFAULT {$defaultVal}";
+                // Ensure numeric defaults are actually numeric to prevent injection
+                if (is_numeric($defaultVal)) {
+                    $default = "DEFAULT {$defaultVal}";
+                }
             } else {
-                $default = "DEFAULT '{$defaultVal}'";
+                // Escape single quotes to prevent SQL injection
+                $escapedVal = str_replace("'", "''", $defaultVal);
+                $default = "DEFAULT '{$escapedVal}'";
             }
         } elseif (!$field->isRequired()) {
             $default = 'DEFAULT NULL';
@@ -543,24 +555,35 @@ class SchemaManager
      */
     public function listEntries(string $tableName, array $options = []): array
     {
+        // Get actual column names from the table to whitelist against
+        $validColumns = $this->getTableColumns($tableName);
+
         $qb = $this->connection->createQueryBuilder();
         $qb->select('*')->from($tableName);
 
-        // Search
+        // Search — only use columns that actually exist in the table
         if (!empty($options['search']) && !empty($options['searchFields'])) {
             $orConditions = [];
-            foreach ($options['searchFields'] as $i => $field) {
-                $orConditions[] = "`{$field}` LIKE :search{$i}";
-                $qb->setParameter("search{$i}", '%' . $options['search'] . '%');
+            $paramIndex = 0;
+            foreach ($options['searchFields'] as $field) {
+                if (!in_array($field, $validColumns, true)) {
+                    continue; // Skip invalid column names
+                }
+                $orConditions[] = "`{$field}` LIKE :search{$paramIndex}";
+                $qb->setParameter("search{$paramIndex}", '%' . $options['search'] . '%');
+                $paramIndex++;
             }
             if (!empty($orConditions)) {
                 $qb->andWhere('(' . implode(' OR ', $orConditions) . ')');
             }
         }
 
-        // Filters
+        // Filters — only use columns that actually exist in the table
         if (!empty($options['filters'])) {
             foreach ($options['filters'] as $field => $value) {
+                if (!in_array($field, $validColumns, true)) {
+                    continue; // Skip invalid column names
+                }
                 $qb->andWhere("`{$field}` = :filter_{$field}")
                     ->setParameter("filter_{$field}", $value);
             }
@@ -571,8 +594,11 @@ class SchemaManager
         $countQb->select('COUNT(*) as total');
         $total = (int) $countQb->executeQuery()->fetchOne();
 
-        // Sort
+        // Sort — whitelist sort_by against actual columns to prevent SQL injection
         $sortBy = $options['sort_by'] ?? 'id';
+        if (!in_array($sortBy, $validColumns, true)) {
+            $sortBy = 'id';
+        }
         $sortDir = strtoupper($options['sort_dir'] ?? 'DESC');
         if (!in_array($sortDir, ['ASC', 'DESC'])) {
             $sortDir = 'DESC';
@@ -594,6 +620,28 @@ class SchemaManager
             'current_page' => $page,
             'last_page' => max(1, (int) ceil($total / $perPage)),
         ];
+    }
+
+    /**
+     * Get the list of column names for a table (cached per request).
+     */
+    private array $columnCache = [];
+
+    private function getTableColumns(string $tableName): array
+    {
+        if (isset($this->columnCache[$tableName])) {
+            return $this->columnCache[$tableName];
+        }
+
+        try {
+            $sm = $this->connection->createSchemaManager();
+            $columns = $sm->listTableColumns($tableName);
+            $this->columnCache[$tableName] = array_map(fn($col) => $col->getName(), $columns);
+        } catch (\Exception $e) {
+            $this->columnCache[$tableName] = ['id'];
+        }
+
+        return $this->columnCache[$tableName];
     }
 
     /**

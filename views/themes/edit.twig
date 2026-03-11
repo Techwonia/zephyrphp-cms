@@ -78,9 +78,10 @@
                 <tr>
                     <th>Title</th>
                     <th>URL</th>
+                    <th>Type</th>
                     <th>Template</th>
                     <th>Layout</th>
-                    <th style="width:180px">Actions</th>
+                    <th style="width:200px">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -88,21 +89,39 @@
                 <tr data-template="{{ page.template }}">
                     <td>{{ page.title }}</td>
                     <td><code>{{ page.slug }}</code></td>
+                    <td>
+                        {% if '{' in page.slug %}
+                            <span class="badge badge-dynamic">Dynamic</span>
+                        {% else %}
+                            <span class="badge badge-static">Static</span>
+                        {% endif %}
+                        {% if page.auth_required is defined and page.auth_required %}
+                            <span class="badge" style="background:rgba(255,152,0,0.1); color:#e65100; font-size:0.7rem;">Protected</span>
+                        {% endif %}
+                        {% if page.controller is defined and page.controller %}
+                            <a href="/cms/themes/{{ theme.getSlug() }}?file=controllers/{{ page.controller }}.php" class="controller-link" title="Edit controller">{{ page.controller }}.php</a>
+                        {% endif %}
+                    </td>
                     <td><code>{{ page.template }}.twig</code></td>
                     <td>{{ page.layout ?? 'base' }}</td>
                     <td>
-                        <a href="/cms/themes/{{ theme.getSlug() }}?file=templates/{{ page.template }}.twig" class="btn btn-xs btn-outline">Edit Content</a>
+                        <a href="/cms/themes/{{ theme.getSlug() }}?file=templates/{{ page.template }}.twig" class="btn btn-xs btn-outline">Edit Template</a>
+                        {% if page.controller is defined and page.controller %}
+                            <a href="/cms/themes/{{ theme.getSlug() }}?file=controllers/{{ page.controller }}.php" class="btn btn-xs btn-outline">Edit Controller</a>
+                        {% endif %}
                         <button class="btn btn-xs btn-outline edit-page-btn"
                             data-template="{{ page.template }}"
                             data-title="{{ page.title }}"
                             data-slug="{{ page.slug }}"
-                            data-layout="{{ page.layout ?? 'base' }}">Settings</button>
+                            data-layout="{{ page.layout ?? 'base' }}"
+                            data-auth-required="{{ page.auth_required is defined and page.auth_required ? '1' : '0' }}"
+                            data-allowed-roles="{{ page.allowed_roles is defined ? page.allowed_roles|join(', ') : '' }}">Settings</button>
                         <button class="btn btn-xs btn-danger delete-page-btn" data-template="{{ page.template }}" data-title="{{ page.title }}">Delete</button>
                     </td>
                 </tr>
                 {% else %}
                 <tr class="empty-row">
-                    <td colspan="5" class="text-center text-muted" style="padding:40px">No pages yet. Click "Add Page" to create one.</td>
+                    <td colspan="6" class="text-center text-muted" style="padding:40px">No pages yet. Click "Add Page" to create one.</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -124,15 +143,41 @@
                     <div class="form-group">
                         <label for="pageSlug">URL Path *</label>
                         <input type="text" id="pageSlug" class="form-control" placeholder="/about">
-                        <small class="text-muted">The URL where this page will be accessible.</small>
+                        <small class="text-muted">Use <code>{slug}</code> for dynamic parameters, e.g. <code>/blog/{slug}</code></small>
                     </div>
-                    <div class="form-group">
-                        <label for="pageLayout">Layout</label>
-                        <select id="pageLayout" class="form-control">
-                            {% for layout in layouts %}
-                            <option value="{{ layout }}">{{ layout|capitalize }}</option>
-                            {% endfor %}
-                        </select>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-400,16px);">
+                        <div class="form-group">
+                            <label for="pageLayout">Layout</label>
+                            <select id="pageLayout" class="form-control">
+                                {% for layout in layouts %}
+                                <option value="{{ layout }}">{{ layout|capitalize }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="pageCollection">Collection <small class="text-muted">(optional)</small></label>
+                            <select id="pageCollection" class="form-control">
+                                <option value="">-- None --</option>
+                            </select>
+                            <small class="text-muted">Auto-generates a controller for data fetching.</small>
+                        </div>
+                    </div>
+                    <div style="margin-top:var(--space-300,12px); padding:12px 14px; background:var(--bg-subdued,#f7f7f7); border:1px solid var(--border-subdued,#e1e1e1); border-radius:8px;">
+                        <div class="form-group" style="margin-bottom:8px;">
+                            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                                <input type="checkbox" id="pageAuthRequired" style="width:16px; height:16px;">
+                                <span>Require Login (Protected Page)</span>
+                            </label>
+                            <small class="text-muted" style="margin-left:24px;">Only authenticated users can access this page.</small>
+                        </div>
+                        <div id="pageRolesGroup" style="display:none; margin-top:8px; margin-left:24px;">
+                            <label style="font-size:0.8125rem; margin-bottom:4px; display:block;">Allowed Roles <small class="text-muted">(leave empty = any logged-in user)</small></label>
+                            <input type="text" id="pageAllowedRoles" class="form-control" placeholder="customer, admin" style="font-size:0.8125rem;">
+                            <small class="text-muted">Comma-separated role slugs. Empty means all authenticated users.</small>
+                        </div>
+                    </div>
+                    <div id="pageDynamicHint" style="display:none; padding:10px 12px; background:rgba(0,128,96,0.06); border:1px solid rgba(0,128,96,0.15); border-radius:6px; font-size:0.8125rem; color:var(--text-primary,#303030); margin-top:8px;">
+                        <strong>Dynamic page</strong> &mdash; A PHP controller will be auto-generated to handle data fetching. You can edit it in the File Editor after creation.
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -191,11 +236,18 @@
                             <button class="toggle-btn active" id="btnDesigner">Designer</button>
                             <button class="toggle-btn" id="btnSource">Source</button>
                         </div>
+                        <button class="btn btn-sm btn-outline" id="editorRefToggleBtn" style="display:none;">Reference</button>
                         <button class="btn btn-sm btn-primary" id="saveFileBtn" {% if not activeFile %}disabled{% endif %}>Save</button>
                     </div>
                 </div>
-                <div id="sourceEditorPane">
-                    <textarea id="codeEditor" class="code-editor">{{ fileContent }}</textarea>
+                <div id="sourceEditorPane" style="display:flex;">
+                    <div style="flex:1;display:flex;flex-direction:column;min-width:0;">
+                        <textarea id="codeEditor" class="code-editor">{{ fileContent }}</textarea>
+                    </div>
+                    <div class="editor-ref-panel hidden" id="editorRefPanel">
+                        <div class="ref-side-header">Controller Reference</div>
+                        <div id="editorRefPanelBody"></div>
+                    </div>
                 </div>
                 <div id="designerPane" style="display:none;">
                     <div class="designer-tabs">
@@ -229,6 +281,17 @@
                                     <div class="schema-field"><label>Icon</label><input type="text" class="form-control" id="schemaIcon" placeholder="layout"></div>
                                 </div>
                                 <div class="schema-field"><label>Description</label><input type="text" class="form-control" id="schemaDescription"></div>
+                                <div class="schema-field">
+                                    <label>Collection <small style="font-weight:normal;color:var(--text-secondary,#616161);">(auto-loads data into section.collection_data)</small></label>
+                                    <select class="form-control" id="schemaCollection">
+                                        <option value="">— None —</option>
+                                        {% if collections is defined %}
+                                        {% for col in collections %}
+                                        <option value="{{ col.slug }}">{{ col.name }} ({{ col.slug }})</option>
+                                        {% endfor %}
+                                        {% endif %}
+                                    </select>
+                                </div>
                             </div>
                             <div class="schema-section">
                                 <div class="schema-section-header"><h4 class="schema-section-title">Settings</h4><button class="btn btn-xs btn-primary" id="addSettingBtn">+ Add</button></div>
@@ -843,6 +906,88 @@
     color: var(--text-secondary, #616161);
     margin: 0 0 8px 0;
 }
+
+/* ── Page Type Badges ── */
+.badge-dynamic {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 10px;
+    font-weight: 600;
+    background: rgba(139,92,246,0.1);
+    color: #7C3AED;
+    border: 1px solid rgba(139,92,246,0.2);
+}
+.badge-static {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 10px;
+    font-weight: 600;
+    background: rgba(107,114,128,0.1);
+    color: #6B7280;
+    border: 1px solid rgba(107,114,128,0.2);
+}
+.controller-link {
+    display: block;
+    font-size: 10px;
+    font-family: monospace;
+    color: var(--color-primary, #008060);
+    text-decoration: none;
+    margin-top: 2px;
+}
+.controller-link:hover { text-decoration: underline; }
+
+/* ── Controller Reference Panel (File Editor) ── */
+.editor-ref-panel {
+    width: 280px;
+    flex-shrink: 0;
+    border-left: 1px solid var(--border-default, #E3E3E3);
+    overflow-y: auto;
+    background: var(--bg-subdued, #FAFAFA);
+    font-size: 12px;
+}
+.editor-ref-panel.hidden { display: none; }
+.editor-ref-panel .ref-side-header {
+    padding: 10px 12px;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary, #616161);
+    border-bottom: 1px solid var(--border-default, #E3E3E3);
+}
+.editor-ref-panel .ref-section { border-bottom: 1px solid var(--border-default, #E3E3E3); }
+.editor-ref-panel .ref-section-title {
+    padding: 8px 12px;
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--text-primary, #303030);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+}
+.editor-ref-panel .ref-section-title:hover { background: rgba(0,0,0,0.03); }
+.editor-ref-panel .ref-section-body { padding: 0 12px 8px; }
+.editor-ref-panel .ref-item {
+    padding: 3px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-primary, #303030);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.editor-ref-panel .ref-item:hover { color: var(--color-primary, #008060); }
+.editor-ref-panel .ref-item code {
+    background: rgba(0,0,0,0.06);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 10px;
+}
 </style>
 {% endblock %}
 
@@ -852,13 +997,20 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/xml/xml.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/javascript/javascript.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/css/css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/clike/clike.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/php/php.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/hint/show-hint.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 <script nonce="{{ csp_nonce() }}">
 document.addEventListener('DOMContentLoaded', function() {
     var textarea = document.getElementById('codeEditor');
+    var currentFile = '{{ activeFile }}';
+    var isPhpFile = currentFile && currentFile.indexOf('.php') > 0;
+    var isControllerFile = currentFile && currentFile.indexOf('controllers/') === 0;
+    var editorMode = isPhpFile ? 'php' : 'htmlmixed';
+
     var editor = CodeMirror.fromTextArea(textarea, {
-        mode: 'htmlmixed',
+        mode: editorMode,
         theme: 'dracula',
         lineNumbers: true,
         indentUnit: 4,
@@ -866,7 +1018,6 @@ document.addEventListener('DOMContentLoaded', function() {
         lineWrapping: true
     });
 
-    var currentFile = '{{ activeFile }}';
     var themeSlug = '{{ theme.getSlug() }}';
     var csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
 
@@ -977,6 +1128,8 @@ document.addEventListener('DOMContentLoaded', function() {
             description: document.getElementById('schemaDescription').value || '',
             icon: document.getElementById('schemaIcon').value || ''
         };
+        var collVal = document.getElementById('schemaCollection').value;
+        if (collVal) s.collection = collVal;
         if (schemaState.settings && schemaState.settings.length) {
             s.settings = schemaState.settings.map(function(st) {
                 var clean = {};
@@ -1369,6 +1522,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 updateJsonPreview();
             });
         });
+        document.getElementById('schemaCollection').addEventListener('change', function() {
+            if (this.value) {
+                schemaState.collection = this.value;
+            } else {
+                delete schemaState.collection;
+            }
+            updateJsonPreview();
+        });
 
         // Add setting
         document.getElementById('addSettingBtn').addEventListener('click', function() {
@@ -1479,6 +1640,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('schemaName').value = schemaState.name || '';
         document.getElementById('schemaDescription').value = schemaState.description || '';
         document.getElementById('schemaIcon').value = schemaState.icon || '';
+        document.getElementById('schemaCollection').value = schemaState.collection || '';
         renderSettingsList(schemaState.settings, document.getElementById('settingsList'));
         renderBlockTypes();
         renderPresets();
@@ -1667,6 +1829,27 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             defField.appendChild(numInput);
             defRow.appendChild(defField);
+        } else if (type === 'collection') {
+            var defField = makeField('Default Collection');
+            var colSel = document.createElement('select');
+            colSel.className = 'form-control';
+            var emptyOpt = document.createElement('option');
+            emptyOpt.value = ''; emptyOpt.textContent = '— Select collection —';
+            colSel.appendChild(emptyOpt);
+            var _availableCollections = {{ collections|json_encode|raw }};
+            (_availableCollections || []).forEach(function(col) {
+                var opt = document.createElement('option');
+                opt.value = col.slug; opt.textContent = col.name + ' (' + col.slug + ')';
+                if (col.slug === (setting.default || '')) opt.selected = true;
+                colSel.appendChild(opt);
+            });
+            colSel.addEventListener('change', function() {
+                if (this.value) { setting.default = this.value; }
+                else { delete setting.default; }
+                updateJsonPreview();
+            });
+            defField.appendChild(colSel);
+            defRow.appendChild(defField);
         } else {
             var defField = makeField('Default');
             var txtInput = document.createElement('input');
@@ -1732,7 +1915,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (type === 'collection') {
             var note = document.createElement('div');
             note.className = 'schema-field';
-            note.innerHTML = '<small style="color:var(--text-secondary,#616161);">Adds a collection picker dropdown in the customizer. Pair with <code>field_select</code> settings for field mapping.</small>';
+            note.innerHTML = '<small style="color:var(--text-secondary,#616161);">Adds a collection picker in the customizer. <strong>Tip:</strong> Use the top-level <em>Collection</em> dropdown in Section Info instead to auto-load data into <code>section.collection_data</code>.</small>';
             bodyEl.appendChild(note);
         }
     }
@@ -1978,6 +2161,112 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ════════════════════════════════════════════
+    //  CONTROLLER REFERENCE PANEL (File Editor)
+    // ════════════════════════════════════════════
+    var editorRefVisible = false;
+    var editorRefBtn = document.getElementById('editorRefToggleBtn');
+    var editorRefPanel = document.getElementById('editorRefPanel');
+
+    if (isControllerFile && editorRefBtn) {
+        editorRefBtn.style.display = '';
+        editorRefVisible = true;
+        editorRefPanel.classList.remove('hidden');
+        editorRefBtn.classList.add('active');
+        renderControllerRefPanel();
+    }
+
+    editorRefBtn?.addEventListener('click', function() {
+        editorRefVisible = !editorRefVisible;
+        if (editorRefVisible) {
+            editorRefPanel.classList.remove('hidden');
+            this.classList.add('active');
+        } else {
+            editorRefPanel.classList.add('hidden');
+            this.classList.remove('active');
+        }
+        setTimeout(function() { editor.refresh(); }, 50);
+    });
+
+    function renderControllerRefPanel() {
+        var body = document.getElementById('editorRefPanelBody');
+        if (!body) return;
+        body.innerHTML = '';
+
+        function makeRefSection(title, items, open) {
+            var sec = document.createElement('div');
+            sec.className = 'ref-section';
+            var hdr = document.createElement('div');
+            hdr.className = 'ref-section-title';
+            hdr.innerHTML = title + ' <span style="font-size:10px;">' + (open ? '&#9660;' : '&#9654;') + '</span>';
+            var bd = document.createElement('div');
+            bd.className = 'ref-section-body';
+            bd.style.display = open ? 'block' : 'none';
+            hdr.addEventListener('click', function() {
+                var showing = bd.style.display !== 'none';
+                bd.style.display = showing ? 'none' : 'block';
+                hdr.querySelector('span').innerHTML = showing ? '&#9654;' : '&#9660;';
+            });
+            items.forEach(function(item) {
+                var row = document.createElement('div');
+                row.className = 'ref-item';
+                row.title = item.detail || '';
+                if (item.badge) {
+                    var b = document.createElement('span');
+                    b.className = 'ref-item-badge';
+                    b.style.cssText = item.badgeStyle || 'background:#6272a4;color:#fff;';
+                    b.textContent = item.badge;
+                    row.appendChild(b);
+                }
+                var code = document.createElement('code');
+                code.textContent = item.text;
+                row.appendChild(code);
+                row.addEventListener('click', function() {
+                    var cur = editor.getCursor();
+                    editor.replaceRange(item.insert || item.text, cur);
+                    editor.focus();
+                });
+                bd.appendChild(row);
+            });
+            sec.appendChild(hdr);
+            sec.appendChild(bd);
+            body.appendChild(sec);
+        }
+
+        makeRefSection('Route Parameters', [
+            { text: "$params['slug']", badge: 'param', badgeStyle: 'background:#6272a4;color:#fff;', detail: 'Route parameter value', insert: "$params['slug']" },
+            { text: "$params['id']", badge: 'param', badgeStyle: 'background:#6272a4;color:#fff;', detail: 'Route parameter value', insert: "$params['id']" },
+            { text: "$params['_query']", badge: 'param', badgeStyle: 'background:#6272a4;color:#fff;', detail: 'Query string ($_GET)', insert: "$params['_query']" },
+            { text: "$params['_query']['page']", badge: 'param', badgeStyle: 'background:#6272a4;color:#fff;', detail: 'Pagination query param', insert: "$params['_query']['page'] ?? 1" },
+        ], true);
+
+        makeRefSection('Data Functions', [
+            { text: "entry(slug, id)", badge: 'fn', badgeStyle: 'background:#bd93f9;color:#282a36;', detail: 'Fetch single entry by slug or ID', insert: "entry('collection_slug', $params['slug'])" },
+            { text: "collection(slug, opts)", badge: 'fn', badgeStyle: 'background:#bd93f9;color:#282a36;', detail: 'Query collection with pagination', insert: "collection('collection_slug', ['per_page' => 10, 'page' => $page])" },
+            { text: "config(key, default)", badge: 'fn', badgeStyle: 'background:#bd93f9;color:#282a36;', detail: 'Get app config value', insert: "config('app.name', 'Default')" },
+            { text: "abort(404)", badge: 'fn', badgeStyle: 'background:#bd93f9;color:#282a36;', detail: 'Return HTTP error (404, 500, etc.)', insert: "abort(404)" },
+        ], true);
+
+        makeRefSection('Return Data', [
+            { text: "return ['key' => $val]", badge: 'return', badgeStyle: 'background:#50fa7b;color:#282a36;', detail: 'Pass variables to template', insert: "return ['items' => $items];" },
+            { text: "return ['item' => $item]", badge: 'return', badgeStyle: 'background:#50fa7b;color:#282a36;', detail: 'Pass single item to template', insert: "return ['item' => $item];" },
+            { text: "return ['page' => [...]]", badge: 'return', badgeStyle: 'background:#50fa7b;color:#282a36;', detail: 'Override page title etc.', insert: "return ['page' => ['title' => $item->getTitle()]];" },
+        ], true);
+
+        makeRefSection('Common Patterns', [
+            { text: 'Detail page', badge: 'pattern', badgeStyle: 'background:#ffb86c;color:#282a36;', detail: 'Fetch single entry with 404', insert: "$item = entry('blogs', $params['slug']);\nif (!$item) { abort(404); }\nreturn ['item' => $item];" },
+            { text: 'Listing page', badge: 'pattern', badgeStyle: 'background:#ffb86c;color:#282a36;', detail: 'Paginated collection listing', insert: "$page = max(1, (int)($params['_query']['page'] ?? 1));\n$items = collection('blogs', ['per_page' => 10, 'page' => $page, 'sort_by' => 'id', 'sort_dir' => 'DESC']);\nreturn ['items' => $items];" },
+            { text: 'Filtered listing', badge: 'pattern', badgeStyle: 'background:#ffb86c;color:#282a36;', detail: 'Filter by category param', insert: "$page = max(1, (int)($params['_query']['page'] ?? 1));\n$category = $params['_query']['category'] ?? null;\n$opts = ['per_page' => 10, 'page' => $page];\nif ($category) { $opts['where'] = ['category' => $category]; }\n$items = collection('blogs', $opts);\nreturn ['items' => $items];" },
+        ], false);
+
+        makeRefSection('Template Variables', [
+            { text: '{' + '{ item.getTitle() }' + '}', badge: 'twig', badgeStyle: 'background:#ff79c6;color:#282a36;', detail: 'Access entry getter in template', insert: '{' + '{ item.getTitle() }' + '}' },
+            { text: '{' + '{ attribute(item, "field") }' + '}', badge: 'twig', badgeStyle: 'background:#ff79c6;color:#282a36;', detail: 'Dynamic field access in template', insert: '{' + '{ attribute(item, "field_name") }' + '}' },
+            { text: '{' + '% for item in items.data %' + '}', badge: 'twig', badgeStyle: 'background:#ff79c6;color:#282a36;', detail: 'Loop collection results', insert: '{' + '% for item in items.data %' + '}' },
+            { text: '{' + '{ params.slug }' + '}', badge: 'twig', badgeStyle: 'background:#ff79c6;color:#282a36;', detail: 'Access route param in template', insert: '{' + '{ params.slug }' + '}' },
+        ], false);
+    }
+
+    // ════════════════════════════════════════════
     //  SAVE FILE
     // ════════════════════════════════════════════
     document.getElementById('saveFileBtn').addEventListener('click', function() {
@@ -2040,8 +2329,43 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('pageTitle').value = '';
         document.getElementById('pageSlug').value = '';
         document.getElementById('pageLayout').value = 'base';
+        document.getElementById('pageCollection').value = '';
         document.getElementById('pageEditTemplate').value = '';
+        document.getElementById('pageDynamicHint').style.display = 'none';
+        document.getElementById('pageAuthRequired').checked = false;
+        document.getElementById('pageAllowedRoles').value = '';
+        document.getElementById('pageRolesGroup').style.display = 'none';
     }
+
+    // Toggle roles field when auth checkbox changes
+    document.getElementById('pageAuthRequired')?.addEventListener('change', function() {
+        document.getElementById('pageRolesGroup').style.display = this.checked ? 'block' : 'none';
+    });
+
+    // Load collections for the dropdown
+    function loadCollections() {
+        fetch('/cms/themes/' + themeSlug + '/customize/collections', {
+            headers: { 'X-CSRF-TOKEN': csrfToken }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var sel = document.getElementById('pageCollection');
+            (data.collections || []).forEach(function(c) {
+                var opt = document.createElement('option');
+                opt.value = c.slug;
+                opt.textContent = c.name;
+                sel.appendChild(opt);
+            });
+        })
+        .catch(function() { /* silent */ });
+    }
+    loadCollections();
+
+    // Show/hide dynamic hint based on URL pattern
+    document.getElementById('pageSlug')?.addEventListener('input', function() {
+        var hint = document.getElementById('pageDynamicHint');
+        hint.style.display = /\{(\w+)\}/.test(this.value) ? 'block' : 'none';
+    });
 
     document.getElementById('addPageBtn')?.addEventListener('click', function() { showModal(false); });
     document.getElementById('closePageModal')?.addEventListener('click', hideModal);
@@ -2053,6 +2377,10 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('pageTitle').value = this.dataset.title;
             document.getElementById('pageSlug').value = this.dataset.slug;
             document.getElementById('pageLayout').value = this.dataset.layout;
+            var authReq = this.dataset.authRequired === '1' || this.dataset.authRequired === 'true';
+            document.getElementById('pageAuthRequired').checked = authReq;
+            document.getElementById('pageAllowedRoles').value = this.dataset.allowedRoles || '';
+            document.getElementById('pageRolesGroup').style.display = authReq ? 'block' : 'none';
             showModal(true);
         });
     });
@@ -2063,10 +2391,17 @@ document.addEventListener('DOMContentLoaded', function() {
         var isEdit = !!editTemplate;
         var endpoint = isEdit ? '/cms/themes/' + themeSlug + '/pages/update' : '/cms/themes/' + themeSlug + '/pages/add';
 
+        var authRequired = document.getElementById('pageAuthRequired').checked;
+        var rolesStr = document.getElementById('pageAllowedRoles').value.trim();
+        var allowedRoles = rolesStr ? rolesStr.split(',').map(function(r) { return r.trim(); }).filter(Boolean) : [];
+
         var payload = {
             title: document.getElementById('pageTitle').value,
             slug: document.getElementById('pageSlug').value,
-            layout: document.getElementById('pageLayout').value
+            layout: document.getElementById('pageLayout').value,
+            collection: document.getElementById('pageCollection').value,
+            auth_required: authRequired,
+            allowed_roles: allowedRoles
         };
         if (isEdit) payload.template = editTemplate;
 

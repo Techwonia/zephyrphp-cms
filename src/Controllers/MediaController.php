@@ -7,24 +7,37 @@ namespace ZephyrPHP\Cms\Controllers;
 use ZephyrPHP\Core\Controllers\Controller;
 use ZephyrPHP\Auth\Auth;
 use ZephyrPHP\Cms\Models\Media;
+use ZephyrPHP\Cms\Services\ImageService;
+use ZephyrPHP\Cms\Services\FileValidator;
+use ZephyrPHP\Cms\Services\PermissionService;
 
 class MediaController extends Controller
 {
-    private function requireAdmin(): void
+    private function requireCmsAccess(): void
     {
         if (!Auth::check()) {
             $this->redirect('/login');
             return;
         }
-        if (!Auth::user()->hasRole('admin')) {
-            $this->flash('errors', ['auth' => 'Access denied. Admin role required.']);
+        if (!PermissionService::can('cms.access')) {
+            Auth::logout();
+            $this->flash('errors', ['auth' => 'Access denied. You do not have CMS access.']);
+            $this->redirect('/login');
+        }
+    }
+
+    private function requirePermission(string $permission): void
+    {
+        $this->requireCmsAccess();
+        if (!PermissionService::can($permission)) {
+            $this->flash('errors', ['auth' => 'You do not have permission to perform this action.']);
             $this->redirect('/cms');
         }
     }
 
     public function index(): string
     {
-        $this->requireAdmin();
+        $this->requirePermission('media.view');
 
         $page = max(1, (int) ($this->input('page') ?? 1));
         $perPage = 24;
@@ -43,23 +56,24 @@ class MediaController extends Controller
 
     public function upload(): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('media.upload');
 
         $file = $_FILES['file'] ?? null;
-
-        if (!$file || $file['error'] !== UPLOAD_ERR_OK) {
-            $this->flash('errors', ['file' => 'File upload failed.']);
+        if (!$file) {
+            $this->flash('errors', ['file' => 'No file uploaded.']);
             $this->back();
             return;
         }
 
-        // Validate file size (10MB max)
-        $maxSize = 10 * 1024 * 1024;
-        if ($file['size'] > $maxSize) {
-            $this->flash('errors', ['file' => 'File size exceeds 10MB limit.']);
+        // Validate file using FileValidator (checks size, real MIME, extension, dangerous files)
+        $validation = FileValidator::validate($file);
+        if (!$validation['valid']) {
+            $this->flash('errors', ['file' => $validation['error']]);
             $this->back();
             return;
         }
+
+        $realMime = $validation['mime'];
 
         $basePath = defined('BASE_PATH') ? BASE_PATH : getcwd();
         $publicPath = defined('PUBLIC_PATH') ? PUBLIC_PATH : $basePath . '/public';
@@ -69,19 +83,34 @@ class MediaController extends Controller
             mkdir($uploadDir, 0755, true);
         }
 
-        $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
         $filename = uniqid() . '_' . time() . '.' . $ext;
         $filePath = $uploadDir . '/' . $filename;
 
         if (move_uploaded_file($file['tmp_name'], $filePath)) {
             $relativePath = 'storage/cms/uploads/' . date('Y') . '/' . date('m') . '/' . $filename;
+            $thumbnailRelPath = null;
+
+            // Optimize and generate thumbnail for images
+            if (str_starts_with($realMime, 'image/') && $realMime !== 'image/svg+xml') {
+                ImageService::optimizeImage($filePath, 1920, 1920, 85);
+
+                $thumbAbsPath = ImageService::createThumbnail($filePath, 400, 400, 80);
+                if ($thumbAbsPath) {
+                    $thumbFilename = basename($thumbAbsPath);
+                    $thumbnailRelPath = 'storage/cms/uploads/' . date('Y') . '/' . date('m') . '/' . $thumbFilename;
+                }
+
+                $file['size'] = filesize($filePath);
+            }
 
             $media = new Media();
             $media->setFilename($filename);
             $media->setOriginalName($file['name']);
             $media->setPath($relativePath);
-            $media->setMimeType($file['type']);
-            $media->setSize($file['size']);
+            $media->setMimeType($realMime);
+            $media->setSize((int) $file['size']);
+            $media->setThumbnailPath($thumbnailRelPath);
             $media->setUploadedBy(Auth::user()?->getId());
             $media->save();
 
@@ -93,9 +122,60 @@ class MediaController extends Controller
         $this->back();
     }
 
+    /**
+     * JSON endpoint for media browser modal in entry forms.
+     */
+    public function browse(): string
+    {
+        $this->requirePermission('media.view');
+
+        $page = max(1, (int) ($this->input('page') ?? 1));
+        $perPage = 24;
+        $search = $this->input('search', '');
+
+        $allMedia = Media::findBy([], ['createdAt' => 'DESC']);
+
+        // Search by original name
+        if (!empty($search)) {
+            $searchLower = strtolower($search);
+            $allMedia = array_filter($allMedia, fn($m) => str_contains(strtolower($m->getOriginalName()), $searchLower));
+        }
+
+        // Filter images only if requested
+        $filter = $this->input('filter', 'all');
+        if ($filter === 'images') {
+            $allMedia = array_filter($allMedia, fn($m) => $m->isImage());
+        }
+
+        $total = count($allMedia);
+        $media = array_slice(array_values($allMedia), ($page - 1) * $perPage, $perPage);
+
+        $items = [];
+        foreach ($media as $item) {
+            $items[] = [
+                'id' => $item->getId(),
+                'url' => $item->getUrl(),
+                'thumbnail' => $item->getThumbnailUrl() ?? $item->getUrl(),
+                'name' => $item->getOriginalName(),
+                'size' => $item->getHumanSize(),
+                'mime' => $item->getMimeType(),
+                'is_image' => $item->isImage(),
+                'alt' => $item->getAltText() ?? '',
+            ];
+        }
+
+        $this->json([
+            'data' => $items,
+            'total' => $total,
+            'current_page' => $page,
+            'last_page' => max(1, (int) ceil($total / $perPage)),
+        ]);
+        return '';
+    }
+
     public function destroy(int $id): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('media.delete');
 
         $media = Media::find($id);
         if (!$media) {
@@ -104,12 +184,21 @@ class MediaController extends Controller
             return;
         }
 
-        // Delete the actual file
         $basePath = defined('BASE_PATH') ? BASE_PATH : getcwd();
         $publicPath = defined('PUBLIC_PATH') ? PUBLIC_PATH : $basePath . '/public';
+
+        // Delete the actual file
         $filePath = $publicPath . '/' . $media->getPath();
         if (file_exists($filePath)) {
             unlink($filePath);
+        }
+
+        // Delete thumbnail
+        if ($media->getThumbnailPath()) {
+            $thumbPath = $publicPath . '/' . $media->getThumbnailPath();
+            if (file_exists($thumbPath)) {
+                unlink($thumbPath);
+            }
         }
 
         $media->delete();

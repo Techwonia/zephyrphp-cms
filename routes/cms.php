@@ -15,6 +15,7 @@ use ZephyrPHP\Cms\Controllers\UserController;
 use ZephyrPHP\Cms\Controllers\RoleController;
 use ZephyrPHP\Cms\Controllers\ProfileController;
 use ZephyrPHP\Cms\Controllers\SystemSettingsController;
+use ZephyrPHP\Cms\Controllers\ApiKeyController;
 use ZephyrPHP\Cms\Api\ContentApiController;
 
 // CMS Admin Routes (protected by auth middleware)
@@ -30,6 +31,9 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     Route::post('/collections/{slug}', [CollectionController::class, 'update']);
     Route::post('/collections/{slug}/delete', [CollectionController::class, 'destroy']);
 
+    // Collection fields API (JSON)
+    Route::get('/collections/{slug}/fields-json', [CollectionController::class, 'fieldsJson']);
+
     // Fields (nested under collection)
     Route::post('/collections/{slug}/fields', [CollectionController::class, 'addField']);
     Route::post('/collections/{slug}/fields/{id}', [CollectionController::class, 'updateField']);
@@ -40,11 +44,14 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     Route::get('/collections/{slug}/entries/create', [EntryController::class, 'create']);
     Route::post('/collections/{slug}/entries', [EntryController::class, 'store']);
     Route::get('/collections/{slug}/entries/{id}', [EntryController::class, 'edit']);
+    Route::get('/collections/{slug}/entries/{id}/history', [EntryController::class, 'history']);
+    Route::post('/collections/{slug}/entries/{id}/restore/{revisionId}', [EntryController::class, 'restore']);
     Route::post('/collections/{slug}/entries/{id}', [EntryController::class, 'update']);
     Route::post('/collections/{slug}/entries/{id}/delete', [EntryController::class, 'destroy']);
 
     // Media
     Route::get('/media', [MediaController::class, 'index']);
+    Route::get('/media/browse', [MediaController::class, 'browse']);
     Route::post('/media/upload', [MediaController::class, 'upload']);
     Route::post('/media/{id}/delete', [MediaController::class, 'destroy']);
 
@@ -124,7 +131,24 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     Route::post('/settings/database', [DatabaseSettingsController::class, 'update']);
     Route::post('/settings/database/test', [DatabaseSettingsController::class, 'test']);
     Route::post('/settings/database/list', [DatabaseSettingsController::class, 'listDatabases']);
+
+    // API Keys
+    Route::get('/api-keys', [ApiKeyController::class, 'index']);
+    Route::get('/api-keys/create', [ApiKeyController::class, 'create']);
+    Route::post('/api-keys', [ApiKeyController::class, 'store']);
+    Route::post('/api-keys/{id}/toggle', [ApiKeyController::class, 'toggleStatus']);
+    Route::post('/api-keys/{id}/delete', [ApiKeyController::class, 'destroy']);
+
+    // Bulk Operations
+    Route::post('/collections/{slug}/entries/bulk', [\ZephyrPHP\Cms\Controllers\EntryController::class, 'bulk']);
+
+    // Import/Export
+    Route::get('/collections/{slug}/export', [\ZephyrPHP\Cms\Controllers\EntryController::class, 'export']);
+    Route::post('/collections/{slug}/import', [\ZephyrPHP\Cms\Controllers\EntryController::class, 'import']);
 });
+
+// Sitemap
+Route::get('/sitemap.xml', [\ZephyrPHP\Cms\Controllers\SitemapController::class, 'index']);
 
 // Public Page Frontend
 Route::get('/page/{slug}', [PageFrontendController::class, 'show']);

@@ -65,6 +65,9 @@ class CmsServiceProvider
             $view->addGlobal('preview_theme_slug', $previewTheme);
         }
 
+        // Load CMS global helper functions (entry, collection)
+        require_once __DIR__ . '/helpers.php';
+
         // Register Twig helper functions
         $this->registerTwigHelpers($view, $themeManager);
 
@@ -86,108 +89,13 @@ class CmsServiceProvider
 
     private function registerTwigHelpers(\ZephyrPHP\View\View $view, ThemeManager $themeManager): void
     {
-        // collection(slug, options) - Query collection/page type entries from templates
+        // collection() and entry() - delegate to global helpers from cms/src/helpers.php
         $view->addFunction('collection', function (string $slug, array $options = []) {
-            $emptyResult = ['data' => [], 'total' => 0, 'per_page' => 10, 'current_page' => 1, 'last_page' => 1];
-            try {
-                $schema = new SchemaManager();
-                $tableName = null;
-                $defaultPerPage = 10;
-
-                // Try PageType first
-                $pageType = PageType::findOneBy(['slug' => $slug]);
-                if ($pageType) {
-                    $tableName = $pageType->getTableName();
-                    $defaultPerPage = $pageType->getItemsPerPage();
-                } else {
-                    // Fall back to Collection
-                    $collection = \ZephyrPHP\Cms\Models\Collection::findOneBy(['slug' => $slug]);
-                    if ($collection) {
-                        $tableName = $collection->getTableName();
-                    }
-                }
-
-                if (!$tableName || !$schema->tableExists($tableName)) {
-                    return $emptyResult;
-                }
-
-                // Default to published-only entries (only for PageType which has status column)
-                if (!isset($options['filters'])) {
-                    $options['filters'] = [];
-                }
-                if ($pageType && !isset($options['filters']['status'])) {
-                    $options['filters']['status'] = 'published';
-                }
-
-                // Map friendly option names
-                if (isset($options['per_page'])) {
-                    $options['per_page'] = (int) $options['per_page'];
-                } else {
-                    $options['per_page'] = $defaultPerPage;
-                }
-
-                if (!isset($options['sort_by'])) {
-                    $options['sort_by'] = 'id';
-                }
-                if (!isset($options['sort_dir'])) {
-                    $options['sort_dir'] = 'DESC';
-                }
-
-                // Support page from query string
-                if (!isset($options['page'])) {
-                    $options['page'] = max(1, (int) ($_GET['page'] ?? 1));
-                }
-
-                return $schema->listEntries($tableName, $options);
-            } catch (\Exception $e) {
-                return $emptyResult;
-            }
+            return collection($slug, $options);
         });
 
-        // entry(slug, identifier) - Fetch a single entry by slug or ID
         $view->addFunction('entry', function (string $ptSlug, string|int $identifier) {
-            try {
-                $schema = new SchemaManager();
-                $tableName = null;
-
-                // Try PageType first, then Collection
-                $pageType = PageType::findOneBy(['slug' => $ptSlug]);
-                if ($pageType) {
-                    $tableName = $pageType->getTableName();
-                } else {
-                    $collection = \ZephyrPHP\Cms\Models\Collection::findOneBy(['slug' => $ptSlug]);
-                    if ($collection) {
-                        $tableName = $collection->getTableName();
-                    }
-                }
-
-                if (!$tableName || !$schema->tableExists($tableName)) return null;
-
-                $conn = $schema->getConnection();
-
-                // Try by slug first if string, otherwise by ID
-                if (is_string($identifier) && !is_numeric($identifier)) {
-                    $entry = $conn->createQueryBuilder()
-                        ->select('*')
-                        ->from($tableName)
-                        ->where('slug = :slug')
-                        ->setParameter('slug', $identifier)
-                        ->executeQuery()
-                        ->fetchAssociative();
-                } else {
-                    $entry = $conn->createQueryBuilder()
-                        ->select('*')
-                        ->from($tableName)
-                        ->where('id = :id')
-                        ->setParameter('id', $identifier)
-                        ->executeQuery()
-                        ->fetchAssociative();
-                }
-
-                return $entry ?: null;
-            } catch (\Exception $e) {
-                return null;
-            }
+            return entry($ptSlug, $identifier);
         });
 
         // theme_config() - Expose theme info to templates
@@ -229,6 +137,11 @@ class CmsServiceProvider
                 return '<!-- Section render error: ' . htmlspecialchars($e->getMessage()) . ' -->';
             }
         });
+
+        // cms_can(permission) - Check if current user has a CMS permission
+        $view->addFunction('cms_can', function (string $permission) {
+            return \ZephyrPHP\Cms\Services\PermissionService::can($permission);
+        });
     }
 
     private function registerThemePageRoutes(ThemeManager $themeManager): void
@@ -240,36 +153,117 @@ class CmsServiceProvider
                 $slug = $page['slug'] ?? '/';
                 $title = $page['title'] ?? '';
                 $layout = $page['layout'] ?? 'base';
+                $controllerName = $page['controller'] ?? null;
+                $authRequired = (bool) ($page['auth_required'] ?? false);
+                $allowedRoles = $page['allowed_roles'] ?? [];
 
-                \ZephyrPHP\Router\Route::get($slug, function () use ($template, $title, $layout, $themeManager) {
-                    $view = \ZephyrPHP\View\View::getInstance();
-                    $sectionManager = new SectionManager($themeManager);
+                // Check if this route has dynamic parameters like {slug}
+                $isDynamic = (bool) preg_match('/\{(\w+)\}/', $slug);
 
-                    // Check if this page has sections configured
-                    if ($sectionManager->hasSections(null, $template)) {
-                        // Render using sections: use the layout and inject sections
-                        $sectionsHtml = $sectionManager->renderSections($template);
-                        echo $view->render('@theme/layouts/' . $layout, [
-                            'page' => [
-                                'title' => $title,
-                                'template' => $template,
-                            ],
-                            'sections_html' => $sectionsHtml,
-                            'use_sections' => true,
-                            'theme_settings' => $sectionManager->getGlobalSettings(),
-                        ]);
-                    } else {
-                        // Fall back to static template rendering
-                        echo $view->render($template, [
-                            'page' => [
-                                'title' => $title,
-                            ],
-                        ]);
-                    }
-                });
+                // Build middleware array
+                $middleware = [];
+                if ($authRequired) {
+                    $middleware[] = \ZephyrPHP\Middleware\AuthMiddleware::class;
+                }
+
+                if ($isDynamic) {
+                    \ZephyrPHP\Router\Route::get($slug, function (...$args) use ($template, $title, $layout, $controllerName, $themeManager, $authRequired, $allowedRoles) {
+                        if ($authRequired) {
+                            $this->enforcePageAuth($allowedRoles);
+                        }
+                        $params = $args;
+                        $params['_query'] = $_GET;
+                        $this->renderThemePage($themeManager, $template, $title, $layout, $controllerName, $params);
+                    }, $middleware);
+                } else {
+                    \ZephyrPHP\Router\Route::get($slug, function () use ($template, $title, $layout, $controllerName, $themeManager, $authRequired, $allowedRoles) {
+                        if ($authRequired) {
+                            $this->enforcePageAuth($allowedRoles);
+                        }
+                        $params = ['_query' => $_GET];
+                        $this->renderThemePage($themeManager, $template, $title, $layout, $controllerName, $params);
+                    }, $middleware);
+                }
             }
         } catch (\Exception $e) {
             // pages.json may not exist yet
+        }
+    }
+
+    /**
+     * Enforce auth and role checks for protected theme pages.
+     */
+    private function enforcePageAuth(array $allowedRoles): void
+    {
+        // AuthMiddleware already handles the redirect-to-login,
+        // this method adds role-based access on top
+        if (empty($allowedRoles)) {
+            return; // Any authenticated user can access
+        }
+
+        try {
+            $user = \ZephyrPHP\Auth\Auth::user();
+            if (!$user || !method_exists($user, 'hasAnyRole')) {
+                return; // Can't check roles, allow access if authenticated
+            }
+
+            if ($user->hasAnyRole($allowedRoles)) {
+                return; // User has an allowed role
+            }
+
+            // User is logged in but doesn't have the required role
+            http_response_code(403);
+            $view = \ZephyrPHP\View\View::getInstance();
+            if ($view->exists('errors/403')) {
+                echo $view->render('errors/403', []);
+            } else {
+                echo '<!DOCTYPE html><html><head><title>Access Denied</title></head><body>';
+                echo '<div style="max-width:600px;margin:4rem auto;text-align:center;font-family:system-ui;">';
+                echo '<h1>403 — Access Denied</h1>';
+                echo '<p>You do not have permission to view this page.</p>';
+                echo '<a href="/">Go Home</a>';
+                echo '</div></body></html>';
+            }
+            exit;
+        } catch (\Exception $e) {
+            // Auth not available, allow through
+        }
+    }
+
+    private function renderThemePage(ThemeManager $themeManager, string $template, string $title, string $layout, ?string $controllerName, array $params): void
+    {
+        $view = \ZephyrPHP\View\View::getInstance();
+        $sectionManager = new SectionManager($themeManager);
+
+        // Execute controller if one exists
+        $controllerData = [];
+        if ($controllerName) {
+            $controllerPath = $themeManager->getActiveThemePath() . '/controllers/' . $controllerName . '.php';
+            if (file_exists($controllerPath)) {
+                $handler = require $controllerPath;
+                if (is_callable($handler)) {
+                    $result = $handler($params);
+                    if (is_array($result)) {
+                        $controllerData = $result;
+                    }
+                }
+            }
+        }
+
+        $pageData = array_merge($controllerData, [
+            'page' => array_merge(['title' => $title, 'template' => $template], $controllerData['page'] ?? []),
+            'params' => $params,
+            'theme_settings' => $sectionManager->getGlobalSettings(),
+        ]);
+
+        // Check if this page has sections configured
+        if ($sectionManager->hasSections(null, $template)) {
+            $sectionsHtml = $sectionManager->renderSections($template);
+            $pageData['sections_html'] = $sectionsHtml;
+            $pageData['use_sections'] = true;
+            echo $view->render('@theme/layouts/' . $layout, $pageData);
+        } else {
+            echo $view->render('@theme/templates/' . $template, $pageData);
         }
     }
 
@@ -409,6 +403,71 @@ class CmsServiceProvider
                     `createdAt` DATETIME NULL DEFAULT NULL,
                     `updatedAt` DATETIME NULL DEFAULT NULL,
                     CONSTRAINT `fk_ptf_page_type` FOREIGN KEY (`page_type_id`) REFERENCES `cms_page_types`(`id`) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            }
+            // Migrate cms_collections: add has_slug and slug_source_field columns
+            if ($sm->tablesExist(['cms_collections'])) {
+                $columns = $sm->listTableColumns('cms_collections');
+                if (!isset($columns['has_slug'])) {
+                    $conn->executeStatement("ALTER TABLE `cms_collections` ADD COLUMN `has_slug` TINYINT(1) NOT NULL DEFAULT 0");
+                }
+                if (!isset($columns['slug_source_field'])) {
+                    $conn->executeStatement("ALTER TABLE `cms_collections` ADD COLUMN `slug_source_field` VARCHAR(100) NULL DEFAULT NULL");
+                }
+            }
+
+            // Migrate cms_media: add alt_text and thumbnail_path columns
+            if ($sm->tablesExist(['cms_media'])) {
+                $columns = $sm->listTableColumns('cms_media');
+                if (!isset($columns['alt_text'])) {
+                    $conn->executeStatement("ALTER TABLE `cms_media` ADD COLUMN `alt_text` VARCHAR(255) NULL DEFAULT NULL");
+                }
+                if (!isset($columns['thumbnail_path'])) {
+                    $conn->executeStatement("ALTER TABLE `cms_media` ADD COLUMN `thumbnail_path` VARCHAR(500) NULL DEFAULT NULL");
+                }
+            }
+
+            // API Keys table
+            if (!$sm->tablesExist(['cms_api_keys'])) {
+                $conn->executeStatement("CREATE TABLE `cms_api_keys` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `name` VARCHAR(255) NOT NULL,
+                    `key` VARCHAR(64) NOT NULL,
+                    `permissions` JSON NULL DEFAULT NULL,
+                    `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+                    `expires_at` DATETIME NULL DEFAULT NULL,
+                    `last_used_at` DATETIME NULL DEFAULT NULL,
+                    `created_by` INT NULL DEFAULT NULL,
+                    `createdAt` DATETIME NULL DEFAULT NULL,
+                    `updatedAt` DATETIME NULL DEFAULT NULL,
+                    UNIQUE KEY `uniq_api_key` (`key`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            }
+
+            // Revisions table
+            if (!$sm->tablesExist(['cms_revisions'])) {
+                $conn->executeStatement("CREATE TABLE `cms_revisions` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `table_name` VARCHAR(255) NOT NULL,
+                    `entry_id` VARCHAR(50) NOT NULL,
+                    `data` JSON NOT NULL,
+                    `changed_fields` JSON NULL DEFAULT NULL,
+                    `action` VARCHAR(20) NOT NULL DEFAULT 'update',
+                    `user_id` INT NULL DEFAULT NULL,
+                    `user_name` VARCHAR(255) NULL DEFAULT NULL,
+                    `createdAt` DATETIME NULL DEFAULT NULL,
+                    `updatedAt` DATETIME NULL DEFAULT NULL,
+                    INDEX `idx_rev_table_entry` (`table_name`, `entry_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            }
+
+            // Role permissions table
+            if (!$sm->tablesExist(['cms_role_permissions'])) {
+                $conn->executeStatement("CREATE TABLE `cms_role_permissions` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `role_slug` VARCHAR(100) NOT NULL,
+                    `permissions` JSON NOT NULL,
+                    UNIQUE KEY `uniq_role_slug` (`role_slug`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
             }
         } catch (\Exception $e) {

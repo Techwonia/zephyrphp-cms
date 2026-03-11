@@ -11,6 +11,9 @@ use ZephyrPHP\Cms\Models\PageTypeField;
 use ZephyrPHP\Cms\Models\Media;
 use ZephyrPHP\Cms\Services\SchemaManager;
 use ZephyrPHP\Cms\Services\ThemeManager;
+use ZephyrPHP\Cms\Services\FileValidator;
+use ZephyrPHP\Cms\Services\PermissionService;
+use ZephyrPHP\Cms\Api\ContentApiController;
 
 class PageController extends Controller
 {
@@ -24,14 +27,24 @@ class PageController extends Controller
         $this->themeManager = new ThemeManager();
     }
 
-    private function requireAdmin(): void
+    private function requireCmsAccess(): void
     {
         if (!Auth::check()) {
             $this->redirect('/login');
             return;
         }
-        if (!Auth::user()->hasRole('admin')) {
-            $this->flash('errors', ['auth' => 'Access denied. Admin role required.']);
+        if (!PermissionService::can('cms.access')) {
+            Auth::logout();
+            $this->flash('errors', ['auth' => 'Access denied. You do not have CMS access.']);
+            $this->redirect('/login');
+        }
+    }
+
+    private function requirePermission(string $permission): void
+    {
+        $this->requireCmsAccess();
+        if (!PermissionService::can($permission)) {
+            $this->flash('errors', ['auth' => 'You do not have permission to perform this action.']);
             $this->redirect('/cms');
         }
     }
@@ -49,7 +62,7 @@ class PageController extends Controller
 
     public function index(string $ptSlug): string
     {
-        $this->requireAdmin();
+        $this->requirePermission('entries.view');
 
         $pageType = $this->resolvePageType($ptSlug);
         if (!$pageType) return '';
@@ -85,7 +98,7 @@ class PageController extends Controller
 
     public function create(string $ptSlug): string
     {
-        $this->requireAdmin();
+        $this->requirePermission('entries.create');
 
         $pageType = $this->resolvePageType($ptSlug);
         if (!$pageType) return '';
@@ -99,7 +112,7 @@ class PageController extends Controller
 
     public function store(string $ptSlug): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('entries.create');
 
         $pageType = $this->resolvePageType($ptSlug);
         if (!$pageType) return;
@@ -165,7 +178,7 @@ class PageController extends Controller
 
     public function edit(string $ptSlug, string $id): string
     {
-        $this->requireAdmin();
+        $this->requirePermission('entries.edit');
 
         $pageType = $this->resolvePageType($ptSlug);
         if (!$pageType) return '';
@@ -187,7 +200,7 @@ class PageController extends Controller
 
     public function update(string $ptSlug, string $id): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('entries.edit');
 
         $pageType = $this->resolvePageType($ptSlug);
         if (!$pageType) return;
@@ -252,7 +265,7 @@ class PageController extends Controller
 
     public function destroy(string $ptSlug, string $id): void
     {
-        $this->requireAdmin();
+        $this->requirePermission('entries.delete');
 
         $pageType = $this->resolvePageType($ptSlug);
         if (!$pageType) return;
@@ -269,7 +282,7 @@ class PageController extends Controller
 
     public function preview(string $ptSlug, string $id): string
     {
-        $this->requireAdmin();
+        $this->requirePermission('entries.view');
 
         $pageType = $this->resolvePageType($ptSlug);
         if (!$pageType) return '';
@@ -327,7 +340,7 @@ class PageController extends Controller
             if ($val) {
                 $html .= '<div style="margin:1rem 0;"><strong>' . htmlspecialchars($field->getName()) . ':</strong> ';
                 if ($field->getType() === 'richtext') {
-                    $html .= $val;
+                    $html .= ContentApiController::sanitizeHtml((string) $val);
                 } else {
                     $html .= htmlspecialchars((string) $val);
                 }
@@ -405,6 +418,16 @@ class PageController extends Controller
             return $existing[$field->getSlug()] ?? null;
         }
 
+        // Validate file using FileValidator with field options
+        $fieldOptions = method_exists($field, 'getOptions') ? $field->getOptions() : [];
+        $validation = FileValidator::validate($file, $fieldOptions);
+        if (!$validation['valid']) {
+            $this->flash('errors', [$field->getSlug() => $validation['error']]);
+            return $existing[$field->getSlug()] ?? null;
+        }
+
+        $realMime = $validation['mime'];
+
         $basePath = defined('BASE_PATH') ? BASE_PATH : getcwd();
         $publicPath = defined('PUBLIC_PATH') ? PUBLIC_PATH : $basePath . '/public';
         $uploadDir = $publicPath . '/storage/cms/uploads/' . date('Y') . '/' . date('m');
@@ -413,7 +436,7 @@ class PageController extends Controller
             mkdir($uploadDir, 0755, true);
         }
 
-        $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
         $filename = uniqid() . '_' . time() . '.' . $ext;
         $filePath = $uploadDir . '/' . $filename;
 
@@ -424,7 +447,7 @@ class PageController extends Controller
             $media->setFilename($filename);
             $media->setOriginalName($file['name']);
             $media->setPath($relativePath);
-            $media->setMimeType($file['type']);
+            $media->setMimeType($realMime);
             $media->setSize($file['size']);
             $media->setUploadedBy(Auth::user()?->getId());
             $media->save();
@@ -443,6 +466,13 @@ class PageController extends Controller
             return null;
         }
 
+        // SEO images must be actual images
+        $validation = FileValidator::validate($file, ['accept_preset' => 'images']);
+        if (!$validation['valid']) {
+            $this->flash('errors', ['seo_image' => $validation['error']]);
+            return null;
+        }
+
         $basePath = defined('BASE_PATH') ? BASE_PATH : getcwd();
         $publicPath = defined('PUBLIC_PATH') ? PUBLIC_PATH : $basePath . '/public';
         $uploadDir = $publicPath . '/storage/cms/uploads/' . date('Y') . '/' . date('m');
@@ -451,7 +481,7 @@ class PageController extends Controller
             mkdir($uploadDir, 0755, true);
         }
 
-        $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
         $filename = 'seo_' . uniqid() . '.' . $ext;
         $filePath = $uploadDir . '/' . $filename;
 

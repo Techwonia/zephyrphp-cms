@@ -1,0 +1,51 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Create API Key{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> /
+    <a href="/cms/api-keys">API Keys</a> / New
+</div>
+
+<div class="page-header">
+    <h1>Create API Key</h1>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" action="/cms/api-keys">
+            {{ csrf_field() | raw }}
+
+            <div class="form-group">
+                <label for="name">Key Name *</label>
+                <input type="text" id="name" name="name" class="form-control" required
+                       placeholder="e.g. Mobile App, External Service" value="{{ flash('_old_input').name ?? '' }}">
+                {% if flash('errors').name is defined %}
+                    <div class="invalid-feedback">{{ flash('errors').name }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="permission_type">Permissions</label>
+                <select id="permission_type" name="permission_type" class="form-control">
+                    <option value="full">Full Access (read, write, delete)</option>
+                    <option value="readwrite">Read & Write</option>
+                    <option value="readonly">Read Only</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="expires_at">Expires At (optional)</label>
+                <input type="date" id="expires_at" name="expires_at" class="form-control">
+                <p class="text-muted">Leave empty for no expiration.</p>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Generate API Key</button>
+                <a href="/cms/api-keys" class="btn btn-outline">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -64,8 +64,14 @@ class ProfileController extends Controller
             } elseif (!Hash::check($currentPassword, $currentUser->getAuthPassword())) {
                 $errors['current_password'] = 'Current password is incorrect.';
             }
-            if (strlen($newPassword) < 6) {
-                $errors['new_password'] = 'New password must be at least 6 characters.';
+            if (strlen($newPassword) < 8) {
+                $errors['new_password'] = 'New password must be at least 8 characters.';
+            } elseif (!preg_match('/[A-Z]/', $newPassword)) {
+                $errors['new_password'] = 'Password must contain at least one uppercase letter.';
+            } elseif (!preg_match('/[a-z]/', $newPassword)) {
+                $errors['new_password'] = 'Password must contain at least one lowercase letter.';
+            } elseif (!preg_match('/[0-9]/', $newPassword)) {
+                $errors['new_password'] = 'Password must contain at least one number.';
             }
             if ($newPassword !== $confirmPassword) {
                 $errors['confirm_password'] = 'Passwords do not match.';

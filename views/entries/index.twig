@@ -11,7 +11,28 @@
 <div class="page-header">
     <h1>{{ collection.getName() }}</h1>
     <div class="page-actions">
-        <a href="/cms/collections/{{ collection.getSlug() }}/entries/create" class="btn btn-primary">+ New Entry</a>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <a href="/cms/collections/{{ collection.getSlug() }}/export?format=csv" class="btn btn-outline" title="Export CSV">Export CSV</a>
+            <a href="/cms/collections/{{ collection.getSlug() }}/export?format=json" class="btn btn-outline" title="Export JSON">Export JSON</a>
+            <button class="btn btn-outline" id="toggle-import-btn">Import</button>
+            <a href="/cms/collections/{{ collection.getSlug() }}/entries/create" class="btn btn-primary">+ New Entry</a>
+        </div>
+    </div>
+</div>
+
+{# Import Form #}
+<div id="import-form" class="card" style="display: none; margin-bottom: 16px;">
+    <div class="card-body">
+        <form method="POST" action="/cms/collections/{{ collection.getSlug() }}/import" enctype="multipart/form-data">
+            {{ csrf_field() | raw }}
+            <div style="display: flex; gap: 12px; align-items: flex-end;">
+                <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                    <label for="import_file">Import File (CSV or JSON)</label>
+                    <input type="file" id="import_file" name="import_file" class="form-control" accept=".csv,.json" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Import</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -28,12 +49,31 @@
 {% endif %}
 
 {% if entries.data|length > 0 %}
+{# Bulk Actions Bar #}
+<div id="bulk-bar" style="display: none; margin-bottom: 12px; padding: 10px 16px; background: #e8f5e9; border-radius: 8px; align-items: center; gap: 12px;">
+    <span id="bulk-count">0</span> selected
+    <form method="POST" action="/cms/collections/{{ collection.getSlug() }}/entries/bulk" style="display: inline; margin-left: 12px;">
+        {{ csrf_field() | raw }}
+        <input type="hidden" name="selected_ids" id="bulk-ids" value="">
+        <select name="bulk_action" class="form-control" style="display: inline-block; width: auto;">
+            <option value="">— Bulk Action —</option>
+            <option value="delete">Delete Selected</option>
+            {% if collection.isPublishable() %}
+            <option value="publish">Publish Selected</option>
+            <option value="unpublish">Unpublish Selected</option>
+            {% endif %}
+        </select>
+        <button type="submit" class="btn btn-sm btn-primary" onclick="return confirm('Apply bulk action to selected entries?')">Apply</button>
+    </form>
+</div>
+
 <div class="card">
     <div class="card-body">
         <div class="table-responsive">
             <table class="data-table">
                 <thead>
                     <tr>
+                        <th style="width: 32px;"><input type="checkbox" id="select-all"></th>
                         <th>ID</th>
                         {% for field in listableFields %}
                         <th>
@@ -55,6 +95,7 @@
                 <tbody>
                     {% for entry in entries.data %}
                     <tr>
+                        <td><input type="checkbox" class="entry-checkbox" value="{{ entry.id }}"></td>
                         <td>{{ entry.id }}</td>
                         {% for field in listableFields %}
                         <td>
@@ -62,13 +103,24 @@
                                 {{ entry[field.getSlug()] ? 'Yes' : 'No' }}
                             {% elseif field.getType() == 'image' and entry[field.getSlug()] %}
                                 <img src="/{{ entry[field.getSlug()] }}" alt="" style="max-height: 30px;">
+                            {% elseif field.getType() == 'relation' and entry[field.getSlug()] %}
+                                {% if relationLabels[field.getSlug()] is defined and relationLabels[field.getSlug()][entry[field.getSlug()]] is defined %}
+                                    <span class="truncate">{{ relationLabels[field.getSlug()][entry[field.getSlug()]] }}</span>
+                                {% else %}
+                                    <span class="truncate text-muted">#{{ entry[field.getSlug()] }}</span>
+                                {% endif %}
                             {% else %}
                                 <span class="truncate">{{ entry[field.getSlug()] ?? '—' }}</span>
                             {% endif %}
                         </td>
                         {% endfor %}
                         {% if collection.isPublishable() %}
-                        <td><span class="badge">{{ entry.status ?? 'draft' }}</span></td>
+                        <td>
+                            {% set st = entry.status ?? 'draft' %}
+                            <span class="badge" style="{% if st == 'published' %}background:#d4edda;color:#155724{% elseif st == 'scheduled' %}background:#fff3cd;color:#856404{% else %}background:#e2e3e5;color:#383d41{% endif %}">
+                                {{ st }}
+                            </span>
+                        </td>
                         {% endif %}
                         <td class="actions-cell">
                             <a href="/cms/collections/{{ collection.getSlug() }}/entries/{{ entry.id }}" class="btn btn-sm btn-outline">Edit</a>
@@ -113,4 +165,53 @@
     <a href="/cms/collections/{{ collection.getSlug() }}/entries/create" class="btn btn-primary">+ Create Entry</a>
 </div>
 {% endif %}
+
+{% block scripts %}
+<script nonce="{{ csp_nonce() }}">
+document.addEventListener('DOMContentLoaded', function() {
+    // Import toggle
+    var importBtn = document.getElementById('toggle-import-btn');
+    var importForm = document.getElementById('import-form');
+    if (importBtn && importForm) {
+        importBtn.addEventListener('click', function() {
+            importForm.style.display = importForm.style.display === 'none' ? 'block' : 'none';
+        });
+    }
+
+    // Bulk selection
+    var selectAll = document.getElementById('select-all');
+    var checkboxes = document.querySelectorAll('.entry-checkbox');
+    var bulkBar = document.getElementById('bulk-bar');
+    var bulkCount = document.getElementById('bulk-count');
+    var bulkIds = document.getElementById('bulk-ids');
+
+    function updateBulk() {
+        var selected = document.querySelectorAll('.entry-checkbox:checked');
+        var ids = Array.from(selected).map(function(cb) { return cb.value; });
+        if (bulkBar) bulkBar.style.display = ids.length > 0 ? 'flex' : 'none';
+        if (bulkCount) bulkCount.textContent = ids.length;
+        if (bulkIds) bulkIds.value = ids.join(',');
+    }
+
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            checkboxes.forEach(function(cb) { cb.checked = selectAll.checked; });
+            updateBulk();
+        });
+    }
+    checkboxes.forEach(function(cb) {
+        cb.addEventListener('change', updateBulk);
+    });
+
+    // Confirm delete forms
+    document.querySelectorAll('.confirm-delete').forEach(function(form) {
+        form.addEventListener('submit', function(e) {
+            if (!confirm(form.dataset.message || 'Are you sure?')) {
+                e.preventDefault();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
 {% endblock %}
