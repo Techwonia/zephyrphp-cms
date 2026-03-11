@@ -286,7 +286,7 @@ class ThemeController extends Controller
         }
 
         // Security: only allow files within known subdirectories
-        $allowedPrefixes = ['layouts/', 'templates/', 'snippets/', 'sections/', 'config/', 'controllers/'];
+        $allowedPrefixes = ['layouts/', 'templates/', 'snippets/', 'sections/', 'config/', 'controllers/', 'assets/'];
         $allowed = false;
         foreach ($allowedPrefixes as $prefix) {
             if (str_starts_with($filePath, $prefix)) {

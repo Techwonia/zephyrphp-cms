@@ -16,6 +16,7 @@ use ZephyrPHP\Cms\Controllers\RoleController;
 use ZephyrPHP\Cms\Controllers\ProfileController;
 use ZephyrPHP\Cms\Controllers\SystemSettingsController;
 use ZephyrPHP\Cms\Controllers\ApiKeyController;
+use ZephyrPHP\Cms\Controllers\ThemeAssetController;
 use ZephyrPHP\Cms\Api\ContentApiController;
 
 // CMS Admin Routes (protected by auth middleware)
@@ -102,6 +103,11 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     Route::post('/themes/{slug}/pages/update', [ThemeController::class, 'updatePage']);
     Route::post('/themes/{slug}/pages/delete', [ThemeController::class, 'removePage']);
 
+    // Theme Assets
+    Route::get('/themes/{slug}/assets', [ThemeAssetController::class, 'list']);
+    Route::post('/themes/{slug}/assets/upload', [ThemeAssetController::class, 'upload']);
+    Route::post('/themes/{slug}/assets/delete', [ThemeAssetController::class, 'delete']);
+
     // Users
     Route::get('/users', [UserController::class, 'index']);
     Route::get('/users/create', [UserController::class, 'create']);
@@ -146,6 +152,9 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     Route::get('/collections/{slug}/export', [\ZephyrPHP\Cms\Controllers\EntryController::class, 'export']);
     Route::post('/collections/{slug}/import', [\ZephyrPHP\Cms\Controllers\EntryController::class, 'import']);
 });
+
+// Theme Assets (public serving)
+Route::get('/theme-assets/{slug}/{path}', [ThemeAssetController::class, 'serve']);
 
 // Sitemap
 Route::get('/sitemap.xml', [\ZephyrPHP\Cms\Controllers\SitemapController::class, 'index']);

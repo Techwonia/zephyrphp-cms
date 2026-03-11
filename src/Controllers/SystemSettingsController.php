@@ -65,6 +65,28 @@ class SystemSettingsController extends Controller
             'VIEWS_PATH' => env('VIEWS_PATH', 'pages'),
         ];
 
+        $securitySettings = [
+            'CSP_ENABLED' => env('CSP_ENABLED', 'true'),
+            'CSP_LEVEL' => env('CSP_LEVEL', 'moderate'),
+            'CSP_REPORT_URI' => env('CSP_REPORT_URI', ''),
+            'CSP_SCRIPT_SRC' => env('CSP_SCRIPT_SRC', ''),
+            'CSP_STYLE_SRC' => env('CSP_STYLE_SRC', ''),
+            'CSP_IMG_SRC' => env('CSP_IMG_SRC', ''),
+            'CSP_FONT_SRC' => env('CSP_FONT_SRC', ''),
+            'CSP_CONNECT_SRC' => env('CSP_CONNECT_SRC', ''),
+            'HSTS_MAX_AGE' => env('HSTS_MAX_AGE', '31536000'),
+            'HSTS_PRELOAD' => env('HSTS_PRELOAD', 'false'),
+            'USE_ISOLATION_HEADERS' => env('USE_ISOLATION_HEADERS', 'false'),
+        ];
+
+        $assetSettings = [
+            'ASSET_BASE_URL' => env('ASSET_BASE_URL', '/assets'),
+            'ASSET_CDN_URL' => env('ASSET_CDN_URL', ''),
+            'ASSET_VERSION_STRATEGY' => env('ASSET_VERSION_STRATEGY', 'timestamp'),
+            'ASSET_INTEGRITY' => env('ASSET_INTEGRITY', 'false'),
+            'ASSET_MINIFY' => env('ASSET_MINIFY', 'false'),
+        ];
+
         $extensions = get_loaded_extensions();
         sort($extensions);
 
@@ -73,6 +95,8 @@ class SystemSettingsController extends Controller
             'appSettings' => $appSettings,
             'authSettings' => $authSettings,
             'cmsSettings' => $cmsSettings,
+            'securitySettings' => $securitySettings,
+            'assetSettings' => $assetSettings,
             'extensions' => $extensions,
             'user' => Auth::user(),
         ]);
@@ -96,6 +120,24 @@ class SystemSettingsController extends Controller
             // CMS
             'CMS_THEME' => trim($this->input('CMS_THEME', 'default')),
             'VIEWS_PATH' => trim($this->input('VIEWS_PATH', 'pages')),
+            // Security & CSP
+            'CSP_ENABLED' => $this->input('CSP_ENABLED', 'true'),
+            'CSP_LEVEL' => trim($this->input('CSP_LEVEL', 'moderate')),
+            'CSP_REPORT_URI' => trim($this->input('CSP_REPORT_URI', '')),
+            'CSP_SCRIPT_SRC' => trim($this->input('CSP_SCRIPT_SRC', '')),
+            'CSP_STYLE_SRC' => trim($this->input('CSP_STYLE_SRC', '')),
+            'CSP_IMG_SRC' => trim($this->input('CSP_IMG_SRC', '')),
+            'CSP_FONT_SRC' => trim($this->input('CSP_FONT_SRC', '')),
+            'CSP_CONNECT_SRC' => trim($this->input('CSP_CONNECT_SRC', '')),
+            'HSTS_MAX_AGE' => trim($this->input('HSTS_MAX_AGE', '31536000')),
+            'HSTS_PRELOAD' => $this->input('HSTS_PRELOAD', 'false'),
+            'USE_ISOLATION_HEADERS' => $this->input('USE_ISOLATION_HEADERS', 'false'),
+            // Assets
+            'ASSET_BASE_URL' => trim($this->input('ASSET_BASE_URL', '/assets')),
+            'ASSET_CDN_URL' => trim($this->input('ASSET_CDN_URL', '')),
+            'ASSET_VERSION_STRATEGY' => trim($this->input('ASSET_VERSION_STRATEGY', 'timestamp')),
+            'ASSET_INTEGRITY' => $this->input('ASSET_INTEGRITY', 'false'),
+            'ASSET_MINIFY' => $this->input('ASSET_MINIFY', 'false'),
         ];
 
         $envPath = $this->getEnvPath();

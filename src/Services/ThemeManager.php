@@ -569,7 +569,7 @@ class ThemeManager
 
     private function createStarterTheme(string $path, string $name): void
     {
-        $dirs = ['layouts', 'templates', 'snippets', 'sections', 'config'];
+        $dirs = ['layouts', 'templates', 'snippets', 'sections', 'config', 'assets/css', 'assets/js', 'assets/images', 'assets/fonts'];
         foreach ($dirs as $dir) {
             mkdir($path . '/' . $dir, 0755, true);
         }
