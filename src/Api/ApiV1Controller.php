@@ -32,16 +32,9 @@ class ApiV1Controller extends Controller
     private function requireScope(string $scope): void
     {
         if (!OAuthMiddleware::hasScope($scope)) {
-            $this->jsonResponse(['error' => 'insufficient_scope', 'error_description' => "Required scope: {$scope}"], 403);
+            $this->json(['error' => 'insufficient_scope', 'error_description' => "Required scope: {$scope}"], 403);
             exit;
         }
-    }
-
-    private function jsonResponse(array $data, int $status = 200): void
-    {
-        http_response_code($status);
-        header('Content-Type: application/json');
-        echo json_encode($data);
     }
 
     // ========================================================================
@@ -69,9 +62,9 @@ class ApiV1Controller extends Controller
                 ];
             }
 
-            $this->jsonResponse(['data' => $result, 'meta' => ['total' => count($result)]]);
+            $this->json(['data' => $result, 'meta' => ['total' => count($result)]]);
         } catch (\Exception $e) {
-            $this->jsonResponse(['error' => 'server_error', 'error_description' => 'Failed to fetch pages.'], 500);
+            $this->json(['error' => 'server_error', 'error_description' => 'Failed to fetch pages.'], 500);
         }
     }
 
@@ -85,11 +78,11 @@ class ApiV1Controller extends Controller
         try {
             $pt = PageType::find((int) $id);
             if (!$pt) {
-                $this->jsonResponse(['error' => 'not_found', 'error_description' => 'Page type not found.'], 404);
+                $this->json(['error' => 'not_found', 'error_description' => 'Page type not found.'], 404);
                 return;
             }
 
-            $this->jsonResponse(['data' => [
+            $this->json(['data' => [
                 'id' => $pt->getId(),
                 'name' => $pt->getName(),
                 'slug' => $pt->getSlug(),
@@ -100,7 +93,7 @@ class ApiV1Controller extends Controller
                 'is_publishable' => $pt->isPublishable(),
             ]]);
         } catch (\Exception $e) {
-            $this->jsonResponse(['error' => 'server_error'], 500);
+            $this->json(['error' => 'server_error'], 500);
         }
     }
 
@@ -128,9 +121,9 @@ class ApiV1Controller extends Controller
                 ];
             }
 
-            $this->jsonResponse(['data' => $result, 'meta' => ['total' => count($result)]]);
+            $this->json(['data' => $result, 'meta' => ['total' => count($result)]]);
         } catch (\Exception $e) {
-            $this->jsonResponse(['error' => 'server_error'], 500);
+            $this->json(['error' => 'server_error'], 500);
         }
     }
 
@@ -148,7 +141,7 @@ class ApiV1Controller extends Controller
         try {
             $collection = Collection::findBySlug($slug);
             if (!$collection) {
-                $this->jsonResponse(['error' => 'not_found', 'error_description' => 'Collection not found.'], 404);
+                $this->json(['error' => 'not_found', 'error_description' => 'Collection not found.'], 404);
                 return;
             }
 
@@ -164,7 +157,7 @@ class ApiV1Controller extends Controller
                 [\Doctrine\DBAL\ParameterType::INTEGER, \Doctrine\DBAL\ParameterType::INTEGER]
             );
 
-            $this->jsonResponse([
+            $this->json([
                 'data' => $rows,
                 'pagination' => [
                     'total' => $total,
@@ -174,7 +167,7 @@ class ApiV1Controller extends Controller
                 ],
             ]);
         } catch (\Exception $e) {
-            $this->jsonResponse(['error' => 'server_error', 'error_description' => $e->getMessage()], 500);
+            $this->json(['error' => 'server_error', 'error_description' => $e->getMessage()], 500);
         }
     }
 
@@ -189,14 +182,14 @@ class ApiV1Controller extends Controller
         $input = json_decode(file_get_contents('php://input'), true);
 
         if (!is_array($input)) {
-            $this->jsonResponse(['error' => 'invalid_request', 'error_description' => 'Request body must be JSON.'], 400);
+            $this->json(['error' => 'invalid_request', 'error_description' => 'Request body must be JSON.'], 400);
             return;
         }
 
         try {
             $collection = Collection::findBySlug($slug);
             if (!$collection) {
-                $this->jsonResponse(['error' => 'not_found'], 404);
+                $this->json(['error' => 'not_found'], 404);
                 return;
             }
 
@@ -225,9 +218,9 @@ class ApiV1Controller extends Controller
                 'data' => $data,
             ]);
 
-            $this->jsonResponse(['data' => array_merge($data, ['id' => $id])], 201);
+            $this->json(['data' => array_merge($data, ['id' => $id])], 201);
         } catch (\Exception $e) {
-            $this->jsonResponse(['error' => 'server_error', 'error_description' => $e->getMessage()], 500);
+            $this->json(['error' => 'server_error', 'error_description' => $e->getMessage()], 500);
         }
     }
 
@@ -243,7 +236,7 @@ class ApiV1Controller extends Controller
         $input = json_decode(file_get_contents('php://input'), true);
 
         if (!is_array($input)) {
-            $this->jsonResponse(['error' => 'invalid_request'], 400);
+            $this->json(['error' => 'invalid_request'], 400);
             return;
         }
 
@@ -253,7 +246,7 @@ class ApiV1Controller extends Controller
 
             $existing = $conn->fetchAssociative("SELECT * FROM `{$table}` WHERE id = ?", [$id]);
             if (!$existing) {
-                $this->jsonResponse(['error' => 'not_found'], 404);
+                $this->json(['error' => 'not_found'], 404);
                 return;
             }
 
@@ -274,9 +267,9 @@ class ApiV1Controller extends Controller
                 'data' => $data,
             ]);
 
-            $this->jsonResponse(['data' => array_merge($existing, $data)]);
+            $this->json(['data' => array_merge($existing, $data)]);
         } catch (\Exception $e) {
-            $this->jsonResponse(['error' => 'server_error'], 500);
+            $this->json(['error' => 'server_error'], 500);
         }
     }
 
@@ -296,7 +289,7 @@ class ApiV1Controller extends Controller
 
             $affected = $conn->delete($table, ['id' => $id]);
             if ($affected === 0) {
-                $this->jsonResponse(['error' => 'not_found'], 404);
+                $this->json(['error' => 'not_found'], 404);
                 return;
             }
 
@@ -305,9 +298,9 @@ class ApiV1Controller extends Controller
                 'id' => $id,
             ]);
 
-            $this->jsonResponse(['data' => ['deleted' => true]], 200);
+            $this->json(['data' => ['deleted' => true]], 200);
         } catch (\Exception $e) {
-            $this->jsonResponse(['error' => 'server_error'], 500);
+            $this->json(['error' => 'server_error'], 500);
         }
     }
 
@@ -336,9 +329,9 @@ class ApiV1Controller extends Controller
                 ];
             }
 
-            $this->jsonResponse(['data' => $result]);
+            $this->json(['data' => $result]);
         } catch (\Exception $e) {
-            $this->jsonResponse(['error' => 'server_error'], 500);
+            $this->json(['error' => 'server_error'], 500);
         }
     }
 
@@ -359,9 +352,9 @@ class ApiV1Controller extends Controller
                 'SELECT id, name, email, role, createdAt FROM users ORDER BY id ASC LIMIT 100'
             );
 
-            $this->jsonResponse(['data' => $rows, 'meta' => ['total' => count($rows)]]);
+            $this->json(['data' => $rows, 'meta' => ['total' => count($rows)]]);
         } catch (\Exception $e) {
-            $this->jsonResponse(['error' => 'server_error'], 500);
+            $this->json(['error' => 'server_error'], 500);
         }
     }
 
@@ -376,7 +369,7 @@ class ApiV1Controller extends Controller
     {
         $clientId = $_REQUEST['_oauth_client_id'] ?? '';
         $subscriptions = WebhookDispatcher::getInstance()->listSubscriptions($clientId);
-        $this->jsonResponse(['data' => $subscriptions]);
+        $this->json(['data' => $subscriptions]);
     }
 
     /**
@@ -388,7 +381,7 @@ class ApiV1Controller extends Controller
         $input = json_decode(file_get_contents('php://input'), true);
 
         if (!is_array($input) || empty($input['topic']) || empty($input['url'])) {
-            $this->jsonResponse(['error' => 'invalid_request', 'error_description' => 'topic and url are required.'], 400);
+            $this->json(['error' => 'invalid_request', 'error_description' => 'topic and url are required.'], 400);
             return;
         }
 
@@ -400,7 +393,7 @@ class ApiV1Controller extends Controller
         );
 
         if ($result['success']) {
-            $this->jsonResponse([
+            $this->json([
                 'data' => [
                     'id' => $result['id'],
                     'secret' => $result['secret'],
@@ -409,7 +402,7 @@ class ApiV1Controller extends Controller
                 ],
             ], 201);
         } else {
-            $this->jsonResponse(['error' => 'invalid_request', 'error_description' => $result['error']], 400);
+            $this->json(['error' => 'invalid_request', 'error_description' => $result['error']], 400);
         }
     }
 
@@ -421,9 +414,9 @@ class ApiV1Controller extends Controller
         $clientId = $_REQUEST['_oauth_client_id'] ?? '';
 
         if (WebhookDispatcher::getInstance()->unsubscribe((int) $id, $clientId)) {
-            $this->jsonResponse(['data' => ['deleted' => true]]);
+            $this->json(['data' => ['deleted' => true]]);
         } else {
-            $this->jsonResponse(['error' => 'not_found'], 404);
+            $this->json(['error' => 'not_found'], 404);
         }
     }
 }
