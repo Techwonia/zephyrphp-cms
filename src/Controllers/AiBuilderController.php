@@ -172,7 +172,7 @@ class AiBuilderController extends Controller
                 'path' => $slug . '.twig',
                 'message' => "Page saved as {$slug}.twig",
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->json(['success' => false, 'error' => 'Failed to save page: ' . $e->getMessage()], 500);
         }
     }
@@ -230,7 +230,7 @@ class AiBuilderController extends Controller
                 'slug' => $slug,
                 'message' => "Section saved as {$slug}.twig",
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->json(['success' => false, 'error' => 'Failed to save section: ' . $e->getMessage()], 500);
         }
     }
@@ -332,7 +332,7 @@ class AiBuilderController extends Controller
         try {
             $this->updateEnvFile($envPath, $settings);
             $this->flash('success', 'AI settings updated successfully.');
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->flash('errors', ['Failed to update settings: ' . $e->getMessage()]);
         }
 
