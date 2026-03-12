@@ -9,6 +9,7 @@ use ZephyrPHP\Auth\Auth;
 use ZephyrPHP\Cms\Models\Theme;
 use ZephyrPHP\Cms\Models\Collection;
 use ZephyrPHP\Cms\Services\ThemeManager;
+use ZephyrPHP\Cms\Services\ThemeInstaller;
 use ZephyrPHP\Cms\Services\SectionManager;
 use ZephyrPHP\Cms\Services\PermissionService;
 
@@ -591,6 +592,107 @@ class ThemeController extends Controller
             http_response_code(500);
             echo json_encode(['error' => 'Failed to create section file']);
         }
+    }
+
+    /**
+     * Install a theme from an uploaded ZIP file.
+     */
+    public function installUpload(): void
+    {
+        $this->requirePermission('themes.edit');
+
+        $file = $_FILES['theme_zip'] ?? null;
+
+        if (!$file || $file['error'] !== UPLOAD_ERR_OK) {
+            $errorMessages = [
+                UPLOAD_ERR_INI_SIZE => 'File exceeds server upload_max_filesize.',
+                UPLOAD_ERR_FORM_SIZE => 'File exceeds form MAX_FILE_SIZE.',
+                UPLOAD_ERR_PARTIAL => 'File was only partially uploaded.',
+                UPLOAD_ERR_NO_FILE => 'No file was uploaded.',
+                UPLOAD_ERR_NO_TMP_DIR => 'Missing server temp folder.',
+                UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk.',
+            ];
+            $code = $file['error'] ?? UPLOAD_ERR_NO_FILE;
+            $this->flash('errors', [$errorMessages[$code] ?? 'Upload error (code: ' . $code . ')']);
+            $this->redirect('/cms/themes');
+            return;
+        }
+
+        // Validate MIME type — must be a ZIP
+        $finfo = new \finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->file($file['tmp_name']);
+        $allowedMimes = ['application/zip', 'application/x-zip-compressed', 'application/x-zip', 'application/octet-stream'];
+        if (!in_array($mime, $allowedMimes, true)) {
+            $this->flash('errors', ['Only ZIP files are allowed. Detected: ' . $mime]);
+            $this->redirect('/cms/themes');
+            return;
+        }
+
+        // Validate file extension
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if ($ext !== 'zip') {
+            $this->flash('errors', ['Only .zip files are allowed.']);
+            $this->redirect('/cms/themes');
+            return;
+        }
+
+        // Check file size (max 50MB)
+        if ($file['size'] > 50 * 1024 * 1024) {
+            $this->flash('errors', ['ZIP file exceeds maximum size of 50MB.']);
+            $this->redirect('/cms/themes');
+            return;
+        }
+
+        $overwrite = (bool) $this->input('overwrite', false);
+        $installer = new ThemeInstaller($this->themeManager);
+        $result = $installer->install($file['tmp_name'], $overwrite);
+
+        if ($result['success']) {
+            $this->flash('success', "Theme \"{$result['name']}\" installed successfully.");
+        } else {
+            $this->flash('errors', [$result['error']]);
+        }
+
+        $this->redirect('/cms/themes');
+    }
+
+    /**
+     * Uninstall a theme — removes files, published assets, and DB record.
+     */
+    public function uninstallTheme(string $slug): void
+    {
+        $this->requirePermission('themes.edit');
+
+        // Validate slug format
+        if (!preg_match('/^[a-z0-9_-]+$/', $slug)) {
+            $this->flash('errors', ['Invalid theme slug.']);
+            $this->redirect('/cms/themes');
+            return;
+        }
+
+        $theme = Theme::findOneBy(['slug' => $slug]);
+        if (!$theme) {
+            $this->flash('errors', ['Theme not found.']);
+            $this->redirect('/cms/themes');
+            return;
+        }
+
+        if ($theme->isLive()) {
+            $this->flash('errors', ['Cannot uninstall the active (live) theme. Publish another theme first.']);
+            $this->redirect('/cms/themes');
+            return;
+        }
+
+        $installer = new ThemeInstaller($this->themeManager);
+        $result = $installer->uninstall($slug);
+
+        if ($result['success']) {
+            $this->flash('success', "Theme \"{$theme->getName()}\" has been uninstalled.");
+        } else {
+            $this->flash('errors', [$result['error'] ?? 'Failed to uninstall theme.']);
+        }
+
+        $this->redirect('/cms/themes');
     }
 
     private function generateSlug(string $text): string

@@ -1,0 +1,186 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}OAuth Clients{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / <a href="/cms/apps">Apps</a> / OAuth Clients
+</div>
+
+<div class="page-header">
+    <h1>OAuth Clients</h1>
+    <div class="page-actions">
+        <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('create-modal').style.display='flex'">Register App</button>
+    </div>
+</div>
+
+{# Show client secret once after creation #}
+{% set newSecret = flash('client_secret') %}
+{% if newSecret %}
+<div class="alert alert-warning" style="margin-bottom:16px;">
+    <strong>Client Secret (shown once — save it now):</strong>
+    <code style="display:block;margin-top:8px;padding:8px;background:rgba(0,0,0,0.05);border-radius:4px;word-break:break-all;">{{ newSecret }}</code>
+</div>
+{% endif %}
+
+{# Create Client Modal #}
+<div id="create-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>Register OAuth App</h3>
+            <button type="button" class="modal-close" onclick="document.getElementById('create-modal').style.display='none'">&times;</button>
+        </div>
+        <form method="POST" action="/cms/oauth-clients">
+            {{ csrf_field() | raw }}
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="name">App Name</label>
+                    <input type="text" id="name" name="name" required class="form-control" placeholder="My External App">
+                </div>
+                <div class="form-group" style="margin-top:12px;">
+                    <label for="redirect_uri">Redirect URI</label>
+                    <input type="url" id="redirect_uri" name="redirect_uri" required class="form-control" placeholder="https://myapp.com/callback">
+                    <small class="text-muted">Where users are redirected after authorization.</small>
+                </div>
+                <div class="form-group" style="margin-top:12px;">
+                    <label>Scopes</label>
+                    <div class="scopes-grid">
+                        {% for key, desc in scopes %}
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="scopes[]" value="{{ key }}">
+                            <span>{{ desc }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="document.getElementById('create-modal').style.display='none'">Cancel</button>
+                <button type="submit" class="btn btn-primary">Register</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if clients|length > 0 %}
+<div class="table-responsive">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Client ID</th>
+                <th>Redirect URI</th>
+                <th>Scopes</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for client in clients %}
+            <tr>
+                <td><strong>{{ client.getName() }}</strong></td>
+                <td><code style="font-size:0.75rem;">{{ client.getClientId() }}</code></td>
+                <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ client.getRedirectUri() }}">{{ client.getRedirectUri() }}</td>
+                <td>
+                    {% for scope in client.getScopes() %}
+                        <span class="badge badge-info" style="font-size:0.7rem;">{{ scope }}</span>
+                    {% endfor %}
+                </td>
+                <td>
+                    {% if client.isActive() %}
+                        <span class="badge badge-success">Active</span>
+                    {% else %}
+                        <span class="badge badge-muted">Inactive</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <form method="POST" action="/cms/oauth-clients/{{ client.getId() }}/delete" style="display:inline" class="confirm-delete" data-message="Remove OAuth client '{{ client.getName() }}'? All tokens will be revoked.">
+                        {{ csrf_field() | raw }}
+                        <button type="submit" class="btn btn-sm btn-danger">Remove</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body empty-state">
+        <h3>No OAuth clients registered</h3>
+        <p>Register an external app to allow it to integrate with your CMS via OAuth 2.0.</p>
+        <button type="button" class="btn btn-primary" onclick="document.getElementById('create-modal').style.display='flex'">Register App</button>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block styles %}
+<style nonce="{{ csp_nonce() }}">
+.scopes-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+.checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    font-size: var(--font-size-sm, 0.8125rem);
+    cursor: pointer;
+}
+.checkbox-label input { margin-top: 2px; }
+.alert-warning {
+    background: rgba(255,184,0,0.1);
+    border: 1px solid rgba(255,184,0,0.3);
+    border-radius: var(--radius-200, 6px);
+    padding: 12px 16px;
+    color: #856404;
+}
+.modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center; z-index: 1000;
+}
+.modal-box {
+    background: var(--bg-surface, #fff); border-radius: var(--radius-300, 8px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2); width: 100%; max-width: 520px; overflow: hidden;
+}
+.modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; border-bottom: 1px solid var(--border-color, #e5e5e5);
+}
+.modal-header h3 { margin: 0; font-size: 1.05rem; }
+.modal-close {
+    background: none; border: none; font-size: 1.4rem; cursor: pointer;
+    color: var(--text-secondary, #616161); line-height: 1; padding: 0 4px;
+}
+.modal-body { padding: 20px; }
+.modal-footer {
+    padding: 12px 20px; border-top: 1px solid var(--border-color, #e5e5e5);
+    display: flex; gap: 8px; justify-content: flex-end;
+}
+.badge-info {
+    background: rgba(0,123,255,0.1); color: #0056b3;
+    border: 1px solid rgba(0,123,255,0.2);
+}
+.badge-success {
+    background: rgba(4,123,93,0.1); color: var(--color-success, #047B5D);
+    border: 1px solid rgba(4,123,93,0.2);
+}
+.badge-muted {
+    background: var(--bg-subdued, #f5f5f5); color: var(--text-disabled, #999);
+    border: 1px solid var(--border-color, #e5e5e5);
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ csp_nonce() }}">
+document.getElementById('create-modal').addEventListener('click', function(e) {
+    if (e.target === this) this.style.display = 'none';
+});
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') document.getElementById('create-modal').style.display = 'none';
+});
+</script>
+{% endblock %}

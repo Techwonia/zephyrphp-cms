@@ -17,12 +17,33 @@ use ZephyrPHP\Cms\Controllers\ProfileController;
 use ZephyrPHP\Cms\Controllers\SystemSettingsController;
 use ZephyrPHP\Cms\Controllers\ApiKeyController;
 use ZephyrPHP\Cms\Controllers\AssetSettingsController;
+use ZephyrPHP\Cms\Controllers\AppController;
 use ZephyrPHP\Cms\Api\ContentApiController;
+use ZephyrPHP\Cms\Api\ApiV1Controller;
+use ZephyrPHP\Cms\Api\OAuthController;
+use ZephyrPHP\Cms\Api\MarketplaceApiController;
+use ZephyrPHP\Cms\Controllers\OAuthClientController;
+use ZephyrPHP\Cms\Controllers\MarketplaceController;
+use ZephyrPHP\Cms\Controllers\SellerController;
+use ZephyrPHP\Cms\Controllers\AiBuilderController;
 
 // CMS Admin Routes (protected by auth middleware)
 Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMiddleware::class]], function () {
     // Dashboard
     Route::get('/', [CmsController::class, 'dashboard']);
+
+    // Marketplace Apps
+    Route::get('/apps', [AppController::class, 'index']);
+    Route::post('/apps/install', [AppController::class, 'installUpload']);
+    Route::post('/apps/{slug}/enable', [AppController::class, 'enable']);
+    Route::post('/apps/{slug}/disable', [AppController::class, 'disable']);
+    Route::post('/apps/{slug}/uninstall', [AppController::class, 'uninstallApp']);
+    Route::post('/apps/{slug}/update', [AppController::class, 'updateApp']);
+
+    // OAuth Client Management
+    Route::get('/oauth-clients', [OAuthClientController::class, 'index']);
+    Route::post('/oauth-clients', [OAuthClientController::class, 'store']);
+    Route::post('/oauth-clients/{id}/delete', [OAuthClientController::class, 'destroy']);
 
     // Collections
     Route::get('/collections', [CollectionController::class, 'index']);
@@ -89,6 +110,10 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     // Theme section creation
     Route::post('/themes/{slug}/sections/create', [ThemeController::class, 'createSection']);
 
+    // Theme Install/Uninstall (before slug routes to avoid collision)
+    Route::post('/themes/install', [ThemeController::class, 'installUpload']);
+    Route::post('/themes/{slug}/uninstall', [ThemeController::class, 'uninstallTheme']);
+
     // Themes
     Route::get('/themes', [ThemeController::class, 'index']);
     Route::get('/themes/create', [ThemeController::class, 'create']);
@@ -154,6 +179,23 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     // Import/Export
     Route::get('/collections/{slug}/export', [\ZephyrPHP\Cms\Controllers\EntryController::class, 'export']);
     Route::post('/collections/{slug}/import', [\ZephyrPHP\Cms\Controllers\EntryController::class, 'import']);
+
+    // Marketplace Browse
+    Route::get('/marketplace', [MarketplaceController::class, 'index']);
+    Route::get('/marketplace/{slug}', [MarketplaceController::class, 'show']);
+    Route::post('/marketplace/{slug}/install', [MarketplaceController::class, 'install']);
+
+    // Seller Portal
+    Route::get('/seller', [SellerController::class, 'index']);
+    Route::get('/seller/submit', [SellerController::class, 'create']);
+    Route::post('/seller/submit', [SellerController::class, 'store']);
+
+    // AI Builder
+    Route::get('/ai-builder', [AiBuilderController::class, 'index']);
+    Route::post('/ai-builder/generate', [AiBuilderController::class, 'generatePage']);
+    Route::post('/ai-builder/save-page', [AiBuilderController::class, 'savePage']);
+    Route::post('/ai-builder/save-section', [AiBuilderController::class, 'saveSection']);
+    Route::get('/ai-builder/settings', [AiBuilderController::class, 'settings']);
 });
 
 
@@ -163,11 +205,52 @@ Route::get('/sitemap.xml', [\ZephyrPHP\Cms\Controllers\SitemapController::class,
 // Public Page Frontend
 Route::get('/page/{slug}', [PageFrontendController::class, 'show']);
 
-// CMS Public API Routes
+// CMS Public API Routes (legacy, API-key based)
 Route::group(['prefix' => '/api/cms'], function () {
     Route::get('/{slug}', [ContentApiController::class, 'index']);
     Route::get('/{slug}/{id}', [ContentApiController::class, 'show']);
     Route::post('/{slug}', [ContentApiController::class, 'store']);
     Route::post('/{slug}/{id}', [ContentApiController::class, 'update']);
     Route::post('/{slug}/{id}/delete', [ContentApiController::class, 'destroy']);
+});
+
+// Marketplace Public API (server-side)
+Route::group(['prefix' => '/marketplace/api/v1'], function () {
+    Route::get('/items', [MarketplaceApiController::class, 'index']);
+    Route::get('/items/{slug}', [MarketplaceApiController::class, 'show']);
+    Route::get('/items/{slug}/download', [MarketplaceApiController::class, 'download']);
+    Route::get('/items/{slug}/reviews', [MarketplaceApiController::class, 'reviews']);
+    Route::post('/items/{slug}/reviews', [MarketplaceApiController::class, 'submitReview']);
+    Route::post('/check-updates', [MarketplaceApiController::class, 'checkUpdates']);
+});
+
+// OAuth 2.0 Endpoints
+Route::get('/oauth/authorize', [OAuthController::class, 'authorize']);
+Route::post('/oauth/authorize', [OAuthController::class, 'authorizeApprove']);
+Route::post('/oauth/token', [OAuthController::class, 'token']);
+Route::post('/oauth/revoke', [OAuthController::class, 'revoke']);
+
+// REST API v1 (OAuth-protected)
+Route::group(['prefix' => '/api/v1', 'middleware' => [\ZephyrPHP\OAuth\OAuthMiddleware::class]], function () {
+    // Pages
+    Route::get('/pages', [ApiV1Controller::class, 'listPages']);
+    Route::get('/pages/{id}', [ApiV1Controller::class, 'getPage']);
+
+    // Collections + Entries
+    Route::get('/collections', [ApiV1Controller::class, 'listCollections']);
+    Route::get('/collections/{slug}/entries', [ApiV1Controller::class, 'listEntries']);
+    Route::post('/collections/{slug}/entries', [ApiV1Controller::class, 'createEntry']);
+    Route::put('/collections/{slug}/entries/{id}', [ApiV1Controller::class, 'updateEntry']);
+    Route::delete('/collections/{slug}/entries/{id}', [ApiV1Controller::class, 'deleteEntry']);
+
+    // Themes
+    Route::get('/themes', [ApiV1Controller::class, 'listThemes']);
+
+    // Users
+    Route::get('/users', [ApiV1Controller::class, 'listUsers']);
+
+    // Webhooks (self-service)
+    Route::get('/webhooks', [ApiV1Controller::class, 'listWebhooks']);
+    Route::post('/webhooks', [ApiV1Controller::class, 'createWebhook']);
+    Route::delete('/webhooks/{id}', [ApiV1Controller::class, 'deleteWebhook']);
 });

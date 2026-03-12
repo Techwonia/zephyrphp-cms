@@ -1,0 +1,42 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Authorize Application{% endblock %}
+
+{% block content %}
+<div style="max-width:480px;margin:40px auto;">
+    <div class="card">
+        <div class="card-header">
+            <h3>Authorize Application</h3>
+        </div>
+        <div class="card-body">
+            <p><strong>{{ client.getName() }}</strong> is requesting access to your account.</p>
+
+            {% if scopes|length > 0 %}
+            <p style="margin-top:12px;">This app wants to:</p>
+            <ul style="margin:8px 0 16px 20px;">
+                {% for scope in scopes %}
+                <li>{{ scopeDescriptions[scope] ?? scope }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+
+            <form method="POST" action="/oauth/authorize">
+                {{ csrf_field() | raw }}
+                <input type="hidden" name="client_id" value="{{ client.getClientId() }}">
+                <input type="hidden" name="redirect_uri" value="{{ redirect_uri }}">
+                <input type="hidden" name="scopes" value="{{ scopes|join(' ') }}">
+                <input type="hidden" name="state" value="{{ state }}">
+                {% if code_challenge %}
+                <input type="hidden" name="code_challenge" value="{{ code_challenge }}">
+                <input type="hidden" name="code_challenge_method" value="{{ code_challenge_method }}">
+                {% endif %}
+
+                <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px;">
+                    <button type="submit" name="approve" value="0" class="btn btn-outline">Deny</button>
+                    <button type="submit" name="approve" value="1" class="btn btn-primary">Authorize</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

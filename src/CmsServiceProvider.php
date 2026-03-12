@@ -8,8 +8,15 @@ use ZephyrPHP\Container\Container;
 use ZephyrPHP\Cms\Services\SchemaManager;
 use ZephyrPHP\Cms\Services\ThemeManager;
 use ZephyrPHP\Cms\Services\SectionManager;
+use ZephyrPHP\Cms\Services\SidebarManager;
+use ZephyrPHP\Cms\Services\DashboardManager;
+use ZephyrPHP\Cms\Services\SettingsManager;
+use ZephyrPHP\Cms\Services\ThemeInstaller;
+use ZephyrPHP\App\AppManager;
+use ZephyrPHP\App\AppInstaller;
 use ZephyrPHP\Cms\Models\PageType;
 use ZephyrPHP\Database\EntityManager;
+use ZephyrPHP\Hook\HookManager;
 
 class CmsServiceProvider
 {
@@ -32,6 +39,26 @@ class CmsServiceProvider
         });
 
         $container->alias('cms.sections', SectionManager::class);
+
+        // Register admin extension managers
+        $container->singleton(SidebarManager::class, fn() => SidebarManager::getInstance());
+        $container->alias('cms.sidebar', SidebarManager::class);
+
+        $container->singleton(DashboardManager::class, fn() => DashboardManager::getInstance());
+        $container->alias('cms.dashboard', DashboardManager::class);
+
+        $container->singleton(SettingsManager::class, fn() => SettingsManager::getInstance());
+        $container->alias('cms.settings', SettingsManager::class);
+
+        $container->singleton(ThemeInstaller::class, fn() => new ThemeInstaller(new ThemeManager()));
+        $container->alias('cms.theme_installer', ThemeInstaller::class);
+
+        // Register App Manager and Installer
+        $container->singleton(AppManager::class, fn() => AppManager::getInstance());
+        $container->alias('cms.apps', AppManager::class);
+
+        $container->singleton(AppInstaller::class, fn() => new AppInstaller(AppManager::getInstance()));
+        $container->alias('cms.app_installer', AppInstaller::class);
 
         // Register CMS models path with Doctrine
         $em = EntityManager::getInstance();
@@ -68,6 +95,64 @@ class CmsServiceProvider
         // Load CMS global helper functions (entry, collection)
         require_once __DIR__ . '/helpers.php';
 
+        // Initialize sidebar with default CMS items
+        $sidebar = SidebarManager::getInstance();
+        $sidebar->registerDefaults();
+
+        // Add dynamic collection sub-items to sidebar
+        $this->registerCollectionSidebarItems($sidebar);
+
+        // Add Apps sidebar item
+        $sidebar->addItem('content', [
+            'id' => 'apps',
+            'label' => 'Apps',
+            'url' => '/cms/apps',
+            'icon' => 'puzzle',
+            'match' => 'prefix:/cms/apps',
+        ]);
+
+        // Add Marketplace sidebar item
+        $sidebar->addItem('content', [
+            'id' => 'marketplace',
+            'label' => 'Marketplace',
+            'url' => '/cms/marketplace',
+            'icon' => 'store',
+            'match' => 'prefix:/cms/marketplace',
+        ]);
+
+        // Add Seller Portal sidebar item
+        $sidebar->addItem('content', [
+            'id' => 'seller',
+            'label' => 'Seller Portal',
+            'url' => '/cms/seller',
+            'icon' => 'tag',
+            'match' => 'prefix:/cms/seller',
+        ]);
+
+        // Add AI Builder sidebar item
+        $sidebar->addItem('content', [
+            'id' => 'ai-builder',
+            'label' => 'AI Builder',
+            'url' => '/cms/ai-builder',
+            'icon' => 'sparkles',
+            'match' => 'prefix:/cms/ai-builder',
+        ]);
+
+        // Discover and boot marketplace apps
+        $appManager = AppManager::getInstance();
+        $appManager->discoverAndLoad();
+        $appManager->registerAll();
+        $appManager->bootAll();
+
+        // Fire hook so apps can add sidebar items, dashboard widgets, settings pages
+        $hooks = HookManager::getInstance();
+        $hooks->doAction('cms.sidebar.rendering', $sidebar);
+        $hooks->doAction('cms.dashboard.rendering', DashboardManager::getInstance());
+        $hooks->doAction('cms.settings.rendering', SettingsManager::getInstance());
+
+        // Register app settings pages as sidebar items
+        SettingsManager::getInstance()->registerSidebarItems($sidebar);
+
         // Register Twig helper functions
         $this->registerTwigHelpers($view, $themeManager);
 
@@ -89,6 +174,23 @@ class CmsServiceProvider
 
     private function registerTwigHelpers(\ZephyrPHP\View\View $view, ThemeManager $themeManager): void
     {
+        // Register sidebar and dashboard as Twig globals (lazy-loaded)
+        $view->addFunction('cms_sidebar', function () {
+            return SidebarManager::getInstance()->getSections();
+        });
+
+        $view->addFunction('cms_sidebar_active', function (string $currentPath, array $item) {
+            return SidebarManager::isActive($currentPath, $item);
+        });
+
+        $view->addFunction('cms_dashboard_widgets', function () {
+            return DashboardManager::getInstance()->getWidgets();
+        });
+
+        $view->addFunction('cms_widget_size', function (string $size) {
+            return DashboardManager::sizeClass($size);
+        });
+
         // collection() and entry() - delegate to global helpers from cms/src/helpers.php
         $view->addFunction('collection', function (string $slug, array $options = []) {
             return collection($slug, $options);
@@ -142,6 +244,26 @@ class CmsServiceProvider
         $view->addFunction('cms_can', function (string $permission) {
             return \ZephyrPHP\Cms\Services\PermissionService::can($permission);
         });
+    }
+
+    /**
+     * Add collection entries as sub-items under the Collections sidebar item.
+     */
+    private function registerCollectionSidebarItems(SidebarManager $sidebar): void
+    {
+        try {
+            $pageTypes = PageType::findAll();
+            foreach ($pageTypes as $index => $col) {
+                $sidebar->addChild('collections', [
+                    'id' => 'collection-' . $col->getSlug(),
+                    'label' => $col->getName(),
+                    'url' => '/cms/collections/' . $col->getSlug() . '/entries',
+                    'match' => 'prefix:/cms/collections/' . $col->getSlug(),
+                ]);
+            }
+        } catch (\Exception $e) {
+            // Tables may not exist yet
+        }
     }
 
     private function registerThemePageRoutes(ThemeManager $themeManager): void
@@ -468,6 +590,159 @@ class CmsServiceProvider
                     `role_slug` VARCHAR(100) NOT NULL,
                     `permissions` JSON NOT NULL,
                     UNIQUE KEY `uniq_role_slug` (`role_slug`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            }
+
+            // OAuth 2.0 Clients
+            if (!$sm->tablesExist(['cms_oauth_clients'])) {
+                $conn->executeStatement("CREATE TABLE `cms_oauth_clients` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `name` VARCHAR(255) NOT NULL,
+                    `client_id` VARCHAR(64) NOT NULL,
+                    `client_secret` VARCHAR(128) NOT NULL,
+                    `redirect_uri` VARCHAR(2048) NOT NULL,
+                    `scopes` JSON NULL DEFAULT NULL,
+                    `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+                    `createdAt` DATETIME NULL DEFAULT NULL,
+                    UNIQUE KEY `uniq_client_id` (`client_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            }
+
+            // OAuth Authorization Codes
+            if (!$sm->tablesExist(['cms_oauth_auth_codes'])) {
+                $conn->executeStatement("CREATE TABLE `cms_oauth_auth_codes` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `code` VARCHAR(128) NOT NULL,
+                    `client_id` VARCHAR(64) NOT NULL,
+                    `user_id` INT NOT NULL,
+                    `scopes` JSON NULL DEFAULT NULL,
+                    `redirect_uri` VARCHAR(2048) NOT NULL,
+                    `code_challenge` VARCHAR(128) NULL DEFAULT NULL,
+                    `code_challenge_method` VARCHAR(10) NULL DEFAULT NULL,
+                    `expires_at` DATETIME NOT NULL,
+                    `used` TINYINT(1) NOT NULL DEFAULT 0,
+                    `createdAt` DATETIME NULL DEFAULT NULL,
+                    INDEX `idx_auth_code` (`code`),
+                    INDEX `idx_auth_expires` (`expires_at`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            }
+
+            // OAuth Access + Refresh Tokens
+            if (!$sm->tablesExist(['cms_oauth_tokens'])) {
+                $conn->executeStatement("CREATE TABLE `cms_oauth_tokens` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `token` VARCHAR(128) NOT NULL,
+                    `type` VARCHAR(10) NOT NULL DEFAULT 'access',
+                    `user_id` INT NOT NULL,
+                    `client_id` VARCHAR(64) NOT NULL,
+                    `scopes` JSON NULL DEFAULT NULL,
+                    `expires_at` DATETIME NOT NULL,
+                    `revoked` TINYINT(1) NOT NULL DEFAULT 0,
+                    `createdAt` DATETIME NULL DEFAULT NULL,
+                    INDEX `idx_token` (`token`),
+                    INDEX `idx_token_type` (`type`, `revoked`),
+                    INDEX `idx_token_client` (`client_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            }
+
+            // Webhook Subscriptions
+            if (!$sm->tablesExist(['cms_webhooks'])) {
+                $conn->executeStatement("CREATE TABLE `cms_webhooks` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `topic` VARCHAR(100) NOT NULL,
+                    `url` VARCHAR(2048) NOT NULL,
+                    `client_id` VARCHAR(64) NOT NULL,
+                    `secret` VARCHAR(128) NOT NULL,
+                    `format` VARCHAR(10) NOT NULL DEFAULT 'json',
+                    `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+                    `failure_count` INT NOT NULL DEFAULT 0,
+                    `last_error` TEXT NULL DEFAULT NULL,
+                    `last_success_at` DATETIME NULL DEFAULT NULL,
+                    `createdAt` DATETIME NULL DEFAULT NULL,
+                    INDEX `idx_webhook_topic` (`topic`, `is_active`),
+                    INDEX `idx_webhook_client` (`client_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            }
+
+            // Marketplace Items
+            if (!$sm->tablesExist(['cms_marketplace_items'])) {
+                $conn->executeStatement("CREATE TABLE `cms_marketplace_items` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `slug` VARCHAR(100) NOT NULL,
+                    `name` VARCHAR(255) NOT NULL,
+                    `type` VARCHAR(20) NOT NULL DEFAULT 'theme',
+                    `category` VARCHAR(100) NULL DEFAULT NULL,
+                    `description` TEXT NULL DEFAULT NULL,
+                    `version` VARCHAR(20) NOT NULL DEFAULT '1.0.0',
+                    `seller_id` INT UNSIGNED NOT NULL,
+                    `seller_name` VARCHAR(255) NOT NULL,
+                    `pricing` VARCHAR(20) NOT NULL DEFAULT 'free',
+                    `price_in_cents` INT UNSIGNED NOT NULL DEFAULT 0,
+                    `currency` VARCHAR(3) NOT NULL DEFAULT 'USD',
+                    `status` VARCHAR(20) NOT NULL DEFAULT 'pending',
+                    `package_path` VARCHAR(500) NULL DEFAULT NULL,
+                    `preview_image` VARCHAR(500) NULL DEFAULT NULL,
+                    `screenshots` JSON NULL DEFAULT NULL,
+                    `downloads` INT UNSIGNED NOT NULL DEFAULT 0,
+                    `avg_rating` DECIMAL(3,2) NOT NULL DEFAULT 0.00,
+                    `review_count` INT UNSIGNED NOT NULL DEFAULT 0,
+                    `createdAt` DATETIME NULL DEFAULT NULL,
+                    `updatedAt` DATETIME NULL DEFAULT NULL,
+                    UNIQUE KEY `uniq_mp_slug` (`slug`),
+                    INDEX `idx_mp_type` (`type`),
+                    INDEX `idx_mp_status` (`status`),
+                    INDEX `idx_mp_seller` (`seller_id`),
+                    INDEX `idx_mp_pricing` (`pricing`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            }
+
+            // Marketplace Reviews
+            if (!$sm->tablesExist(['cms_marketplace_reviews'])) {
+                $conn->executeStatement("CREATE TABLE `cms_marketplace_reviews` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `item_id` INT UNSIGNED NOT NULL,
+                    `user_id` INT UNSIGNED NOT NULL,
+                    `user_name` VARCHAR(255) NOT NULL,
+                    `rating` TINYINT UNSIGNED NOT NULL,
+                    `body` TEXT NULL DEFAULT NULL,
+                    `createdAt` DATETIME NULL DEFAULT NULL,
+                    INDEX `idx_review_item` (`item_id`),
+                    UNIQUE KEY `uniq_review_user_item` (`item_id`, `user_id`),
+                    CONSTRAINT `fk_review_item` FOREIGN KEY (`item_id`) REFERENCES `cms_marketplace_items`(`id`) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            }
+
+            // Marketplace Licenses (for paid items)
+            if (!$sm->tablesExist(['cms_marketplace_licenses'])) {
+                $conn->executeStatement("CREATE TABLE `cms_marketplace_licenses` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `item_id` INT UNSIGNED NOT NULL,
+                    `buyer_id` INT UNSIGNED NOT NULL,
+                    `license_key` VARCHAR(128) NOT NULL,
+                    `site_url` VARCHAR(2048) NULL DEFAULT NULL,
+                    `status` VARCHAR(20) NOT NULL DEFAULT 'active',
+                    `expires_at` DATETIME NULL DEFAULT NULL,
+                    `createdAt` DATETIME NULL DEFAULT NULL,
+                    UNIQUE KEY `uniq_license_key` (`license_key`),
+                    INDEX `idx_license_item` (`item_id`),
+                    INDEX `idx_license_buyer` (`buyer_id`),
+                    CONSTRAINT `fk_license_item` FOREIGN KEY (`item_id`) REFERENCES `cms_marketplace_items`(`id`) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            }
+
+            // AI Builder History
+            if (!$sm->tablesExist(['cms_ai_history'])) {
+                $conn->executeStatement("CREATE TABLE `cms_ai_history` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `user_id` INT UNSIGNED NOT NULL,
+                    `prompt` TEXT NOT NULL,
+                    `mode` VARCHAR(20) NOT NULL DEFAULT 'page',
+                    `provider` VARCHAR(50) NOT NULL,
+                    `result_summary` VARCHAR(255) NULL DEFAULT NULL,
+                    `tokens_used` INT UNSIGNED NOT NULL DEFAULT 0,
+                    `createdAt` DATETIME NULL DEFAULT NULL,
+                    INDEX `idx_ai_user` (`user_id`),
+                    INDEX `idx_ai_created` (`createdAt`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
             }
         } catch (\Exception $e) {

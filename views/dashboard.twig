@@ -60,6 +60,27 @@
     </div>
 </div>
 
+{# Plugin Widgets #}
+{% set widgets = cms_dashboard_widgets() %}
+{% if widgets|length > 0 %}
+<div class="widget-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:var(--space-400);margin-bottom:var(--space-500);">
+    {% for id, widget in widgets %}
+    <div class="card {{ cms_widget_size(widget.size) }}" {% if widget.size == 'full' %}style="grid-column:1/-1;"{% endif %}>
+        <div class="card-header">
+            <h3>{{ widget.title }}</h3>
+        </div>
+        <div class="card-body">
+            {% if widget.data._error is defined %}
+                <p class="text-muted">{{ widget.data._error }}</p>
+            {% else %}
+                {% include widget.template with widget.data %}
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
 {% if collections|length > 0 %}
 <div class="card">
     <div class="card-header">
