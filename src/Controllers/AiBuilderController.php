@@ -11,12 +11,21 @@ use ZephyrPHP\Cms\Services\PermissionService;
 
 class AiBuilderController extends Controller
 {
+    private function requirePerm(string $permission): void
+    {
+        if (!PermissionService::can($permission)) {
+            $this->flash('errors', ['auth' => 'You do not have permission to perform this action.']);
+            $this->redirect('/cms');
+            exit;
+        }
+    }
+
     /**
      * AI Builder main page — generate pages, sections, content.
      */
     public function index(): void
     {
-        PermissionService::requirePermission('pages.edit');
+        $this->requirePerm('pages.edit');
 
         $providerManager = AiProviderManager::getInstance();
         $providers = $providerManager->getProviderInfo();
@@ -39,7 +48,7 @@ class AiBuilderController extends Controller
      */
     public function generatePage(): void
     {
-        PermissionService::requirePermission('pages.edit');
+        $this->requirePerm('pages.edit');
 
         $prompt = trim($_POST['prompt'] ?? '');
         $provider = trim($_POST['provider'] ?? '') ?: null;
@@ -96,7 +105,7 @@ class AiBuilderController extends Controller
      */
     public function savePage(): void
     {
-        PermissionService::requirePermission('pages.edit');
+        $this->requirePerm('pages.edit');
 
         $template = $_POST['template'] ?? '';
         $title = trim($_POST['title'] ?? 'AI Generated Page');
@@ -176,7 +185,7 @@ class AiBuilderController extends Controller
      */
     public function saveSection(): void
     {
-        PermissionService::requirePermission('pages.edit');
+        $this->requirePerm('pages.edit');
 
         $template = $_POST['template'] ?? '';
         $slug = trim($_POST['slug'] ?? '');
@@ -236,7 +245,7 @@ class AiBuilderController extends Controller
      */
     public function settings(): void
     {
-        PermissionService::requirePermission('settings.edit');
+        $this->requirePerm('settings.edit');
 
         $providerManager = AiProviderManager::getInstance();
         $providers = $providerManager->getProviderInfo();
