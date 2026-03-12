@@ -136,6 +136,9 @@ class AiBuilderController extends Controller
             return;
         }
 
+        // Safety: if template content is JSON instead of Twig, extract the actual template
+        $template = $this->extractTemplateFromJson($template, $title, $css);
+
         // Sanitize slug
         $slug = $slug ?: strtolower(preg_replace('/[^a-zA-Z0-9-]/', '-', $title));
         $slug = preg_replace('/-+/', '-', trim($slug, '-'));
@@ -212,6 +215,9 @@ class AiBuilderController extends Controller
             $this->json(['success' => false, 'error' => 'Missing template content or slug.'], 422);
             return;
         }
+
+        // Safety: if template content is JSON instead of Twig, extract the actual template
+        $template = $this->extractTemplateFromJson($template);
 
         $slug = preg_replace('/[^a-z0-9-]/', '-', strtolower($slug));
 
@@ -507,6 +513,29 @@ class AiBuilderController extends Controller
         } catch (\Throwable $e) {
             // Non-critical
         }
+    }
+
+    /**
+     * If the content looks like JSON (raw AI response), extract the template field.
+     * This is a safety net in case the backend parsing missed it.
+     */
+    private function extractTemplateFromJson(string $content, ?string &$title = null, ?string &$css = null): string
+    {
+        $trimmed = trim($content);
+        // Only attempt if it starts with { and doesn't look like Twig
+        if (str_starts_with($trimmed, '{') && !str_contains(substr($trimmed, 0, 50), '{%')) {
+            $json = json_decode($trimmed, true);
+            if (is_array($json) && !empty($json['template'])) {
+                if ($title !== null && !empty($json['title'])) {
+                    $title = $json['title'];
+                }
+                if ($css !== null && !empty($json['css'])) {
+                    $css = $json['css'];
+                }
+                return $json['template'];
+            }
+        }
+        return $content;
     }
 
     private function findEnvPath(): ?string
