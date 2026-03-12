@@ -73,7 +73,7 @@ class MarketplaceApiController extends Controller
      * GET /marketplace/api/v1/items/{slug}/download — Download item ZIP.
      * Requires site token or license key.
      */
-    public function download(string $slug): void
+    public function downloadItem(string $slug): void
     {
         $slug = preg_replace('/[^a-z0-9_-]/', '', strtolower($slug));
         $item = MarketplaceItem::findBySlug($slug);

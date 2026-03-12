@@ -218,7 +218,7 @@ Route::group(['prefix' => '/api/cms'], function () {
 Route::group(['prefix' => '/marketplace/api/v1'], function () {
     Route::get('/items', [MarketplaceApiController::class, 'index']);
     Route::get('/items/{slug}', [MarketplaceApiController::class, 'show']);
-    Route::get('/items/{slug}/download', [MarketplaceApiController::class, 'download']);
+    Route::get('/items/{slug}/download', [MarketplaceApiController::class, 'downloadItem']);
     Route::get('/items/{slug}/reviews', [MarketplaceApiController::class, 'reviews']);
     Route::post('/items/{slug}/reviews', [MarketplaceApiController::class, 'submitReview']);
     Route::post('/check-updates', [MarketplaceApiController::class, 'checkUpdates']);
