@@ -428,18 +428,17 @@ class AiBuilderController extends Controller
             $pages = $themeManager->getPages();
             // Check if page already exists
             foreach ($pages as $page) {
-                if (($page['slug'] ?? '') === '/' . $slug) {
+                if (($page['template'] ?? '') === $slug) {
                     return;
                 }
             }
-            $pages[] = [
+            $themeManager->savePage($themeManager->getEffectiveTheme(), [
                 'slug' => '/' . $slug,
                 'template' => $slug,
                 'title' => $title,
                 'layout' => 'base',
-            ];
-            $themeManager->savePages($pages);
-        } catch (\Exception $e) {
+            ]);
+        } catch (\Throwable $e) {
             // Ignore — page registration is optional
         }
     }
@@ -459,7 +458,7 @@ class AiBuilderController extends Controller
             );
 
             return $result->fetchAllAssociative();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return [];
         }
     }
@@ -485,7 +484,7 @@ class AiBuilderController extends Controller
                     $result['usage']['total_tokens'] ?? 0,
                 ]
             );
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             // Non-critical
         }
     }
