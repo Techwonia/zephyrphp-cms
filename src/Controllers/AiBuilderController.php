@@ -94,7 +94,7 @@ class AiBuilderController extends Controller
                 'mode' => $mode,
                 'result' => $result,
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -402,20 +402,20 @@ class AiBuilderController extends Controller
             $sectionManager = new \ZephyrPHP\Cms\Services\SectionManager($themeManager);
             $sections = [];
             try {
-                $sectionTypes = $sectionManager->listTypes();
-                foreach ($sectionTypes as $type) {
+                $sectionList = $sectionManager->listSections();
+                foreach ($sectionList as $slug => $schema) {
                     $sections[] = [
-                        'name' => $type['name'] ?? $type['slug'] ?? 'Unknown',
-                        'description' => $type['description'] ?? '',
+                        'name' => $schema['name'] ?? ucwords(str_replace('-', ' ', $slug)),
+                        'description' => $schema['description'] ?? '',
                     ];
                 }
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 // Ignore
             }
             if (!empty($sections)) {
                 $context['sections'] = $sections;
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             // Theme not available
         }
 
