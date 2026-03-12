@@ -997,7 +997,7 @@
                         <li class="nav-item{% if section.id == 'footer' %}" style="margin-top: var(--space-200);{% endif %}">
                             <a href="{{ item.url }}" class="{% if cms_sidebar_active(current_path, item) %}active{% endif %}">
                                 {% if item.icon %}
-                                <span class="nav-icon">{% include 'cms::partials/sidebar-icon' with {icon: item.icon} only %}</span>
+                                <span class="nav-icon">{% include '@cms/partials/sidebar-icon' with {icon: item.icon} only %}</span>
                                 {% endif %}
                                 {{ item.label }}
                                 {% if item.badge %}
