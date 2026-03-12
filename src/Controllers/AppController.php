@@ -241,7 +241,8 @@ class AppController extends Controller
         $result = $installer->update($slug, $file['tmp_name']);
 
         if ($result['success']) {
-            $this->flash('success', "App \"{$result['name'] ?? $slug}\" updated successfully.");
+            $appName = $result['name'] ?? $slug;
+            $this->flash('success', "App \"{$appName}\" updated successfully.");
         } else {
             $this->flash('errors', [$result['error'] ?? 'Failed to update app.']);
         }
