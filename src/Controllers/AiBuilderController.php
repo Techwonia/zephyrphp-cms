@@ -55,19 +55,19 @@ class AiBuilderController extends Controller
         $mode = $_POST['mode'] ?? 'page'; // page, section, content, explain, fix
 
         if (empty($prompt)) {
-            $this->jsonError('Please enter a prompt describing what you want to generate.', 422);
+            $this->json(['success' => false, 'error' => 'Please enter a prompt describing what you want to generate.'], 422);
             return;
         }
 
         if (strlen($prompt) > 5000) {
-            $this->jsonError('Prompt is too long. Maximum 5000 characters.', 422);
+            $this->json(['success' => false, 'error' => 'Prompt is too long. Maximum 5000 characters.'], 422);
             return;
         }
 
         // Validate provider is available
         $providerManager = AiProviderManager::getInstance();
         if ($provider && !in_array($provider, $providerManager->getAvailable())) {
-            $this->jsonError("Provider '{$provider}' is not available. Check your API key configuration.", 422);
+            $this->json(['success' => false, 'error' => "Provider '{$provider}' is not available. Check your API key configuration."], 422);
             return;
         }
 
@@ -89,14 +89,13 @@ class AiBuilderController extends Controller
             // Save to history
             $this->saveHistory($prompt, $mode, $provider ?? $providerManager->getDefault(), $result);
 
-            header('Content-Type: application/json');
-            echo json_encode([
+            $this->json([
                 'success' => true,
                 'mode' => $mode,
                 'result' => $result,
             ]);
         } catch (\Exception $e) {
-            $this->jsonError($e->getMessage(), 500);
+            $this->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
 
@@ -113,7 +112,7 @@ class AiBuilderController extends Controller
         $css = $_POST['css'] ?? '';
 
         if (empty($template)) {
-            $this->jsonError('No template content to save.', 422);
+            $this->json(['success' => false, 'error' => 'No template content to save.'], 422);
             return;
         }
 
@@ -130,7 +129,7 @@ class AiBuilderController extends Controller
             $themePath = $themeManager->getActiveThemePath();
 
             if (!is_dir($themePath)) {
-                $this->jsonError('No active theme found.', 500);
+                $this->json(['success' => false, 'error' => 'No active theme found.'], 500);
                 return;
             }
 
@@ -144,8 +143,7 @@ class AiBuilderController extends Controller
 
             // Prevent overwriting without confirmation
             if (file_exists($templatePath) && empty($_POST['overwrite'])) {
-                header('Content-Type: application/json');
-                echo json_encode([
+                $this->json([
                     'success' => false,
                     'error' => 'Template already exists.',
                     'exists' => true,
@@ -168,15 +166,14 @@ class AiBuilderController extends Controller
             // Add to pages.json
             $this->addToPages($themeManager, $slug, $title);
 
-            header('Content-Type: application/json');
-            echo json_encode([
+            $this->json([
                 'success' => true,
                 'slug' => $slug,
                 'path' => $slug . '.twig',
                 'message' => "Page saved as {$slug}.twig",
             ]);
         } catch (\Exception $e) {
-            $this->jsonError('Failed to save page: ' . $e->getMessage(), 500);
+            $this->json(['success' => false, 'error' => 'Failed to save page: ' . $e->getMessage()], 500);
         }
     }
 
@@ -192,7 +189,7 @@ class AiBuilderController extends Controller
         $css = $_POST['css'] ?? '';
 
         if (empty($template) || empty($slug)) {
-            $this->jsonError('Missing template content or slug.', 422);
+            $this->json(['success' => false, 'error' => 'Missing template content or slug.'], 422);
             return;
         }
 
@@ -210,8 +207,7 @@ class AiBuilderController extends Controller
             $sectionPath = $sectionDir . '/' . $slug . '.twig';
 
             if (file_exists($sectionPath) && empty($_POST['overwrite'])) {
-                header('Content-Type: application/json');
-                echo json_encode([
+                $this->json([
                     'success' => false,
                     'error' => 'Section already exists.',
                     'exists' => true,
@@ -229,14 +225,13 @@ class AiBuilderController extends Controller
                 file_put_contents($cssDir . '/section-' . $slug . '.css', $css);
             }
 
-            header('Content-Type: application/json');
-            echo json_encode([
+            $this->json([
                 'success' => true,
                 'slug' => $slug,
                 'message' => "Section saved as {$slug}.twig",
             ]);
         } catch (\Exception $e) {
-            $this->jsonError('Failed to save section: ' . $e->getMessage(), 500);
+            $this->json(['success' => false, 'error' => 'Failed to save section: ' . $e->getMessage()], 500);
         }
     }
 
@@ -493,13 +488,6 @@ class AiBuilderController extends Controller
         } catch (\Exception $e) {
             // Non-critical
         }
-    }
-
-    private function jsonError(string $message, int $code = 400): void
-    {
-        http_response_code($code);
-        header('Content-Type: application/json');
-        echo json_encode(['success' => false, 'error' => $message]);
     }
 
     private function findEnvPath(): ?string
