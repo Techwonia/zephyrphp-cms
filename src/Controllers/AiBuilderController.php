@@ -251,10 +251,97 @@ class AiBuilderController extends Controller
         $providers = $providerManager->getProviderInfo();
         $defaultProvider = $providerManager->getDefault();
 
+        // Load current env values for the form
+        $envValues = [
+            'AI_PROVIDER' => env('AI_PROVIDER', 'gemini'),
+            'GEMINI_API_KEY' => env('GEMINI_API_KEY', ''),
+            'GEMINI_MODEL' => env('GEMINI_MODEL', 'gemini-2.0-flash'),
+            'ANTHROPIC_API_KEY' => env('ANTHROPIC_API_KEY', ''),
+            'CLAUDE_MODEL' => env('CLAUDE_MODEL', 'claude-sonnet-4-20250514'),
+            'OPENAI_API_KEY' => env('OPENAI_API_KEY', ''),
+            'OPENAI_MODEL' => env('OPENAI_MODEL', 'gpt-4o'),
+            'GROQ_API_KEY' => env('GROQ_API_KEY', ''),
+            'GROQ_MODEL' => env('GROQ_MODEL', 'llama-3.3-70b-versatile'),
+            'MISTRAL_API_KEY' => env('MISTRAL_API_KEY', ''),
+            'MISTRAL_MODEL' => env('MISTRAL_MODEL', 'mistral-large-latest'),
+            'OPENROUTER_API_KEY' => env('OPENROUTER_API_KEY', ''),
+            'OPENROUTER_MODEL' => env('OPENROUTER_MODEL', 'anthropic/claude-sonnet-4'),
+            'OLLAMA_HOST' => env('OLLAMA_HOST', 'http://localhost:11434'),
+            'OLLAMA_MODEL' => env('OLLAMA_MODEL', 'llama3'),
+        ];
+
         echo $this->render('@cms/ai-builder/settings', [
             'providers' => $providers,
             'defaultProvider' => $defaultProvider,
+            'envValues' => $envValues,
         ]);
+    }
+
+    /**
+     * Update AI settings — save provider API keys and default provider to .env.
+     */
+    public function updateSettings(): void
+    {
+        $this->requirePerm('settings.edit');
+
+        // Whitelist of allowed env keys
+        $allowedKeys = [
+            'AI_PROVIDER',
+            'GEMINI_API_KEY', 'GEMINI_MODEL',
+            'ANTHROPIC_API_KEY', 'CLAUDE_MODEL',
+            'OPENAI_API_KEY', 'OPENAI_MODEL',
+            'GROQ_API_KEY', 'GROQ_MODEL',
+            'MISTRAL_API_KEY', 'MISTRAL_MODEL',
+            'OPENROUTER_API_KEY', 'OPENROUTER_MODEL',
+            'OLLAMA_HOST', 'OLLAMA_MODEL',
+        ];
+
+        // Validate default provider
+        $validProviders = ['gemini', 'claude', 'openai', 'groq', 'mistral', 'openrouter', 'ollama'];
+        $defaultProvider = trim($_POST['AI_PROVIDER'] ?? 'gemini');
+        if (!in_array($defaultProvider, $validProviders, true)) {
+            $this->flash('errors', ['Invalid default provider.']);
+            $this->redirect('/cms/ai-builder/settings');
+            return;
+        }
+
+        // Collect settings from POST
+        $settings = [];
+        foreach ($allowedKeys as $key) {
+            if (isset($_POST[$key])) {
+                $value = trim($_POST[$key]);
+                // Validate model/host fields aren't absurdly long
+                if (strlen($value) > 500) {
+                    $this->flash('errors', ["Value for {$key} is too long."]);
+                    $this->redirect('/cms/ai-builder/settings');
+                    return;
+                }
+                $settings[$key] = $value;
+            }
+        }
+
+        if (empty($settings)) {
+            $this->flash('errors', ['No settings to update.']);
+            $this->redirect('/cms/ai-builder/settings');
+            return;
+        }
+
+        // Find .env file
+        $envPath = $this->findEnvPath();
+        if (!$envPath) {
+            $this->flash('errors', ['Could not locate .env file.']);
+            $this->redirect('/cms/ai-builder/settings');
+            return;
+        }
+
+        try {
+            $this->updateEnvFile($envPath, $settings);
+            $this->flash('success', 'AI settings updated successfully.');
+        } catch (\Exception $e) {
+            $this->flash('errors', ['Failed to update settings: ' . $e->getMessage()]);
+        }
+
+        $this->redirect('/cms/ai-builder/settings');
     }
 
     // ── Private helpers ──
@@ -413,5 +500,53 @@ class AiBuilderController extends Controller
         http_response_code($code);
         header('Content-Type: application/json');
         echo json_encode(['success' => false, 'error' => $message]);
+    }
+
+    private function findEnvPath(): ?string
+    {
+        // Check common locations
+        $candidates = [
+            defined('BASE_PATH') ? BASE_PATH . '/.env' : null,
+            dirname(__DIR__, 4) . '/.env',
+            getcwd() . '/.env',
+        ];
+
+        foreach ($candidates as $path) {
+            if ($path && file_exists($path) && is_writable($path)) {
+                return $path;
+            }
+        }
+
+        return null;
+    }
+
+    private function updateEnvFile(string $envPath, array $settings): void
+    {
+        $content = file_get_contents($envPath);
+        if ($content === false) {
+            throw new \RuntimeException('Could not read .env file.');
+        }
+
+        foreach ($settings as $key => $value) {
+            $escaped = $this->escapeEnvValue($value);
+            if (preg_match("/^{$key}=/m", $content)) {
+                $content = preg_replace("/^{$key}=.*/m", "{$key}={$escaped}", $content);
+            } else {
+                $content = rtrim($content) . "\n{$key}={$escaped}\n";
+            }
+        }
+
+        file_put_contents($envPath, $content);
+    }
+
+    private function escapeEnvValue(string $value): string
+    {
+        if ($value === '') {
+            return '';
+        }
+        if (preg_match('/[\s#"\'\\\\]/', $value)) {
+            return '"' . addslashes($value) . '"';
+        }
+        return $value;
     }
 }

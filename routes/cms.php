@@ -196,6 +196,7 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     Route::post('/ai-builder/save-page', [AiBuilderController::class, 'savePage']);
     Route::post('/ai-builder/save-section', [AiBuilderController::class, 'saveSection']);
     Route::get('/ai-builder/settings', [AiBuilderController::class, 'settings']);
+    Route::post('/ai-builder/settings', [AiBuilderController::class, 'updateSettings']);
 });
 
 
