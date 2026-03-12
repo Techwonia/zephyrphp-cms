@@ -35,11 +35,31 @@ class AiBuilderController extends Controller
         // Load generation history from DB
         $history = $this->loadHistory(20);
 
+        // Load pages and sections for the page selector
+        $pages = [];
+        $sections = [];
+        try {
+            $themeManager = new \ZephyrPHP\Cms\Services\ThemeManager();
+            $pages = $themeManager->getPages();
+            $sectionManager = new \ZephyrPHP\Cms\Services\SectionManager($themeManager);
+            $sectionList = $sectionManager->listSections();
+            foreach ($sectionList as $slug => $schema) {
+                $sections[] = [
+                    'slug' => $slug,
+                    'name' => $schema['name'] ?? ucwords(str_replace('-', ' ', $slug)),
+                ];
+            }
+        } catch (\Throwable $e) {
+            // Ignore
+        }
+
         echo $this->render('@cms/ai-builder/index', [
             'providers' => $providers,
             'defaultProvider' => $defaultProvider,
             'availableProviders' => $availableProviders,
             'history' => $history,
+            'pages' => $pages,
+            'sections' => $sections,
         ]);
     }
 
