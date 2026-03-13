@@ -26,6 +26,9 @@ use ZephyrPHP\Cms\Controllers\OAuthClientController;
 use ZephyrPHP\Cms\Controllers\MarketplaceController;
 use ZephyrPHP\Cms\Controllers\SellerController;
 use ZephyrPHP\Cms\Controllers\AiBuilderController;
+use ZephyrPHP\Cms\Controllers\FormController;
+use ZephyrPHP\Cms\Controllers\FormSubmissionController;
+use ZephyrPHP\Cms\Controllers\FormPaymentController;
 
 // CMS Admin Routes (protected by auth middleware)
 Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMiddleware::class]], function () {
@@ -190,6 +193,34 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     Route::get('/seller/submit', [SellerController::class, 'create']);
     Route::post('/seller/submit', [SellerController::class, 'store']);
 
+    // Form Builder
+    Route::get('/forms', [FormController::class, 'index']);
+    Route::get('/forms/create', [FormController::class, 'create']);
+    Route::post('/forms', [FormController::class, 'store']);
+    Route::get('/forms/templates', [FormController::class, 'templates']);
+    Route::post('/forms/templates/{templateSlug}/create', [FormController::class, 'createFromTemplate']);
+    Route::get('/forms/{slug}', [FormController::class, 'edit']);
+    Route::post('/forms/{slug}', [FormController::class, 'update']);
+    Route::post('/forms/{slug}/delete', [FormController::class, 'destroy']);
+    Route::post('/forms/{slug}/duplicate', [FormController::class, 'duplicate']);
+
+    // Form Fields (AJAX)
+    Route::post('/forms/{slug}/fields', [FormController::class, 'addField']);
+    Route::post('/forms/{slug}/fields/{id}', [FormController::class, 'updateField']);
+    Route::post('/forms/{slug}/fields/{id}/delete', [FormController::class, 'deleteField']);
+    Route::post('/forms/{slug}/fields/reorder', [FormController::class, 'reorderFields']);
+
+    // Form Steps (AJAX)
+    Route::post('/forms/{slug}/steps', [FormController::class, 'addStep']);
+    Route::post('/forms/{slug}/steps/{id}', [FormController::class, 'updateStep']);
+    Route::post('/forms/{slug}/steps/{id}/delete', [FormController::class, 'deleteStep']);
+
+    // Form Submissions
+    Route::get('/forms/{slug}/submissions', [FormController::class, 'submissions']);
+    Route::get('/forms/{slug}/submissions/export', [FormController::class, 'exportSubmissions']);
+    Route::get('/forms/{slug}/submissions/{id}', [FormController::class, 'viewSubmission']);
+    Route::post('/forms/{slug}/submissions/{id}/delete', [FormController::class, 'deleteSubmission']);
+
     // AI Builder
     Route::get('/ai-builder', [AiBuilderController::class, 'index']);
     Route::post('/ai-builder/generate', [AiBuilderController::class, 'generatePage']);
@@ -199,6 +230,12 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     Route::post('/ai-builder/settings', [AiBuilderController::class, 'updateSettings']);
 });
 
+
+// Public Form Routes (no auth)
+Route::post('/forms/{slug}/submit', [FormSubmissionController::class, 'submit']);
+Route::get('/forms/{slug}/success', [FormSubmissionController::class, 'success']);
+Route::get('/forms/payment/callback/{gateway}', [FormPaymentController::class, 'callback']);
+Route::post('/forms/webhooks/{gateway}', [FormPaymentController::class, 'webhook']);
 
 // Sitemap
 Route::get('/sitemap.xml', [\ZephyrPHP\Cms\Controllers\SitemapController::class, 'index']);

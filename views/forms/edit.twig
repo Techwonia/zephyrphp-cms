@@ -1,0 +1,408 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Edit {{ form.name }}{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="/cms-assets/css/form-builder-admin.css">
+{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms/forms">Forms</a> / {{ form.name }}
+</div>
+
+<div class="page-header">
+    <h1>{{ form.name }}</h1>
+    <div class="page-actions">
+        <a href="/cms/forms/{{ form.id }}/submissions" class="btn btn-outline">Submissions ({{ submissions_count ?? 0 }})</a>
+    </div>
+</div>
+
+<div class="tab-nav">
+    <button class="tab-btn active" data-tab="tab-settings">Settings</button>
+    <button class="tab-btn" data-tab="tab-fields">Fields ({{ fields|length }})</button>
+</div>
+
+{# ===== SETTINGS TAB ===== #}
+<div id="tab-settings" class="tab-panel active">
+    <form method="POST" action="/cms/forms/{{ form.id }}">
+        {{ csrf_field() | raw }}
+
+        {# Basic Info #}
+        <div class="card" style="margin-bottom: var(--space-500);">
+            <div class="card-header">
+                <h3>Basic Information</h3>
+            </div>
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="name">Form Name *</label>
+                        <input type="text" id="name" name="name" class="form-control"
+                               value="{{ form.name }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Slug</label>
+                        <input type="text" class="form-control" value="{{ form.slug }}" disabled>
+                        <small class="text-muted">Slug cannot be changed after creation.</small>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="description" class="form-control"
+                              rows="3">{{ form.description ?? '' }}</textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="status">Status</label>
+                        <select id="status" name="status" class="form-control">
+                            <option value="draft" {{ form.status == 'draft' ? 'selected' : '' }}>Draft</option>
+                            <option value="active" {{ form.status == 'active' ? 'selected' : '' }}>Active</option>
+                            <option value="archived" {{ form.status == 'archived' ? 'selected' : '' }}>Archived</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="toggle-label">
+                            Multi-step Form
+                            <span class="toggle-switch">
+                                <input type="checkbox" name="is_multi_step" value="1"
+                                       {{ form.is_multi_step ? 'checked' : '' }}>
+                                <span class="toggle-slider"></span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Settings #}
+        <div class="card" style="margin-bottom: var(--space-500);">
+            <div class="card-header">
+                <h3>Settings</h3>
+            </div>
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="submit_button_text">Submit Button Text</label>
+                        <input type="text" id="submit_button_text" name="settings[submit_button_text]" class="form-control"
+                               value="{{ form.settings.submit_button_text ?? 'Submit' }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="redirect_url">Redirect URL</label>
+                        <input type="url" id="redirect_url" name="settings[redirect_url]" class="form-control"
+                               value="{{ form.settings.redirect_url ?? '' }}"
+                               placeholder="https://example.com/thank-you">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="success_message">Success Message</label>
+                    <textarea id="success_message" name="settings[success_message]" class="form-control"
+                              rows="2">{{ form.settings.success_message ?? '' }}</textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="toggle-label">
+                            Email Notifications
+                            <span class="toggle-switch">
+                                <input type="checkbox" name="settings[notify_email]" value="1" id="notify_email_toggle"
+                                       {{ (form.settings.notify_email ?? false) ? 'checked' : '' }}>
+                                <span class="toggle-slider"></span>
+                            </span>
+                        </label>
+                    </div>
+                    <div class="form-group" id="email_to_group" style="{{ (form.settings.notify_email ?? false) ? '' : 'display:none;' }}">
+                        <label for="notify_email_to">Email To</label>
+                        <input type="email" id="notify_email_to" name="settings[notify_email_to]" class="form-control"
+                               value="{{ form.settings.notify_email_to ?? '' }}">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="storage_mode">Storage Mode</label>
+                        <select id="storage_mode" name="settings[storage_mode]" class="form-control">
+                            <option value="submissions" {{ (form.settings.storage_mode ?? 'submissions') == 'submissions' ? 'selected' : '' }}>Submissions</option>
+                            <option value="collection" {{ (form.settings.storage_mode ?? '') == 'collection' ? 'selected' : '' }}>Collection</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="rate_limit">Rate Limit (per hour)</label>
+                        <input type="number" id="rate_limit" name="settings[rate_limit]" class="form-control"
+                               value="{{ form.settings.rate_limit ?? 60 }}" min="0" max="1000">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="toggle-label">
+                        Honeypot Protection
+                        <span class="toggle-switch">
+                            <input type="checkbox" name="settings[honeypot]" value="1"
+                                   {{ (form.settings.honeypot ?? true) ? 'checked' : '' }}>
+                            <span class="toggle-slider"></span>
+                        </span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        {# Payment #}
+        <div class="card" style="margin-bottom: var(--space-500);">
+            <div class="card-header" style="cursor: pointer;" id="payment-toggle">
+                <h3 style="display: flex; align-items: center; justify-content: space-between;">
+                    Payment Settings
+                    <span id="payment-chevron" style="font-size: 0.75rem; color: var(--text-secondary);">&#9660;</span>
+                </h3>
+            </div>
+            <div class="card-body" id="payment-section" style="{{ (form.settings.payment_enabled ?? false) ? '' : 'display:none;' }}">
+                <div class="form-group">
+                    <label class="toggle-label">
+                        Enable Payment
+                        <span class="toggle-switch">
+                            <input type="checkbox" name="settings[payment_enabled]" value="1" id="payment_enabled_toggle"
+                                   {{ (form.settings.payment_enabled ?? false) ? 'checked' : '' }}>
+                            <span class="toggle-slider"></span>
+                        </span>
+                    </label>
+                </div>
+
+                <div id="payment-fields" style="{{ (form.settings.payment_enabled ?? false) ? '' : 'display:none;' }}">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="payment_gateway">Payment Gateway</label>
+                            <select id="payment_gateway" name="settings[payment_gateway]" class="form-control">
+                                <option value="stripe" {{ (form.settings.payment_gateway ?? '') == 'stripe' ? 'selected' : '' }}>Stripe</option>
+                                <option value="paypal" {{ (form.settings.payment_gateway ?? '') == 'paypal' ? 'selected' : '' }}>PayPal</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="payment_currency">Currency</label>
+                            <input type="text" id="payment_currency" name="settings[payment_currency]" class="form-control"
+                                   value="{{ form.settings.payment_currency ?? 'USD' }}" maxlength="3">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="payment_amount_field">Amount Field Slug</label>
+                            <input type="text" id="payment_amount_field" name="settings[payment_amount_field]" class="form-control"
+                                   value="{{ form.settings.payment_amount_field ?? '' }}"
+                                   placeholder="e.g. amount">
+                            <small class="text-muted">Leave empty to use fixed amount.</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="payment_fixed_amount">Fixed Amount</label>
+                            <input type="number" id="payment_fixed_amount" name="settings[payment_fixed_amount]" class="form-control"
+                                   value="{{ form.settings.payment_fixed_amount ?? '' }}"
+                                   step="0.01" min="0">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save Settings</button>
+        </div>
+    </form>
+</div>
+
+{# ===== FIELDS TAB ===== #}
+<div id="tab-fields" class="tab-panel">
+    <div class="card">
+        <div class="card-header" style="display: flex; align-items: center; justify-content: space-between;">
+            <h3>Fields</h3>
+            {% if form.is_multi_step %}
+            <button type="button" class="btn btn-sm btn-outline" id="add-step-btn">+ Add Step</button>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            {# Step Tabs (multi-step only) #}
+            {% if form.is_multi_step %}
+            <div class="fb-step-tabs" id="step-tabs">
+                {% set steps = form.steps ?? [{label: 'Step 1'}] %}
+                {% for step in steps %}
+                <button type="button" class="fb-step-tab {{ loop.first ? 'active' : '' }}"
+                        data-step="{{ loop.index0 }}">
+                    {{ step.label ?? 'Step ' ~ loop.index }}
+                </button>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {# Field List (sortable) #}
+            <div class="fb-field-list" id="field-list" data-form-id="{{ form.id }}">
+                {% if fields|length > 0 %}
+                    {% for field in fields %}
+                    <div class="fb-field-card" draggable="true"
+                         data-field-id="{{ field.id }}"
+                         data-step="{{ field.step ?? 0 }}">
+                        <div class="fb-drag-handle" title="Drag to reorder">&#x2630;</div>
+                        <div class="fb-field-info">
+                            <div class="fb-field-label">{{ field.label }}</div>
+                            <div class="fb-field-meta">
+                                <code>{{ field.slug }}</code>
+                                <span class="fb-type-badge">{{ field.type }}</span>
+                                {% if field.required %}
+                                    <span class="fb-required-badge">required</span>
+                                {% endif %}
+                                {% if field.width and field.width != 'col-12' %}
+                                    <span class="fb-width-badge">{{ field.width }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="fb-field-actions">
+                            <button type="button" class="btn btn-sm btn-outline fb-edit-field"
+                                    data-field-id="{{ field.id }}">Edit</button>
+                            <button type="button" class="btn btn-sm btn-danger fb-delete-field"
+                                    data-field-id="{{ field.id }}"
+                                    data-field-label="{{ field.label }}">Delete</button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state fb-empty-fields" id="empty-fields">
+                        <p>No fields yet. Add your first field below.</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            {# Add/Edit Field Inline Form #}
+            <div class="fb-add-field-section">
+                <button type="button" class="btn btn-primary" id="add-field-btn">+ Add Field</button>
+            </div>
+
+            <div class="fb-field-form" id="field-form" style="display: none;">
+                <h4 id="field-form-title">Add New Field</h4>
+                <input type="hidden" id="ff-id" value="">
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="ff-label">Label *</label>
+                        <input type="text" id="ff-label" class="form-control" placeholder="e.g. Full Name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="ff-slug">Slug</label>
+                        <input type="text" id="ff-slug" class="form-control" placeholder="Auto from label">
+                    </div>
+                    <div class="form-group">
+                        <label for="ff-type">Type *</label>
+                        <select id="ff-type" class="form-control">
+                            <option value="text">Text</option>
+                            <option value="textarea">Textarea</option>
+                            <option value="email">Email</option>
+                            <option value="number">Number</option>
+                            <option value="tel">Phone</option>
+                            <option value="url">URL</option>
+                            <option value="password">Password</option>
+                            <option value="date">Date</option>
+                            <option value="time">Time</option>
+                            <option value="datetime">Date & Time</option>
+                            <option value="select">Select (Dropdown)</option>
+                            <option value="radio">Radio Buttons</option>
+                            <option value="checkbox">Checkboxes</option>
+                            <option value="file">File Upload</option>
+                            <option value="hidden">Hidden</option>
+                            <option value="heading">Heading (Display)</option>
+                            <option value="paragraph">Paragraph (Display)</option>
+                            <option value="divider">Divider (Display)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="ff-placeholder">Placeholder</label>
+                        <input type="text" id="ff-placeholder" class="form-control" placeholder="Optional">
+                    </div>
+                    <div class="form-group">
+                        <label for="ff-default">Default Value</label>
+                        <input type="text" id="ff-default" class="form-control" placeholder="Optional">
+                    </div>
+                    <div class="form-group">
+                        <label for="ff-width">Width</label>
+                        <select id="ff-width" class="form-control">
+                            <option value="col-12">Full Width</option>
+                            <option value="col-6">Half Width</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="ff-validation">Validation Rules</label>
+                    <input type="text" id="ff-validation" class="form-control"
+                           placeholder="e.g. min:3|max:255|regex:/^[a-z]+$/">
+                    <small class="text-muted">Pipe-separated rules. Leave empty for defaults.</small>
+                </div>
+
+                <div class="form-group" id="ff-options-group" style="display: none;">
+                    <label for="ff-options">Options (JSON)</label>
+                    <textarea id="ff-options" class="form-control" rows="3"
+                              placeholder='["Option 1", "Option 2", "Option 3"]'></textarea>
+                    <small class="text-muted">JSON array of option values for select, radio, or checkbox fields.</small>
+                </div>
+
+                {% if form.is_multi_step %}
+                <div class="form-group">
+                    <label for="ff-step">Step</label>
+                    <select id="ff-step" class="form-control">
+                        {% set steps = form.steps ?? [{label: 'Step 1'}] %}
+                        {% for step in steps %}
+                        <option value="{{ loop.index0 }}">{{ step.label ?? 'Step ' ~ loop.index }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+
+                <div class="form-inline-checks">
+                    <label><input type="checkbox" id="ff-required" value="1"> Required</label>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-primary" id="field-form-save">Save Field</button>
+                    <button type="button" class="btn btn-outline" id="field-form-cancel">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script nonce="{{ csp_nonce() }}">
+document.addEventListener('DOMContentLoaded', function() {
+    // Toggle email-to field
+    var notifyToggle = document.getElementById('notify_email_toggle');
+    var emailGroup = document.getElementById('email_to_group');
+    if (notifyToggle && emailGroup) {
+        notifyToggle.addEventListener('change', function() {
+            emailGroup.style.display = this.checked ? '' : 'none';
+        });
+    }
+
+    // Toggle payment collapse
+    var paymentToggle = document.getElementById('payment-toggle');
+    var paymentSection = document.getElementById('payment-section');
+    var paymentChevron = document.getElementById('payment-chevron');
+    if (paymentToggle && paymentSection) {
+        paymentToggle.addEventListener('click', function() {
+            var hidden = paymentSection.style.display === 'none';
+            paymentSection.style.display = hidden ? '' : 'none';
+            if (paymentChevron) paymentChevron.innerHTML = hidden ? '&#9650;' : '&#9660;';
+        });
+    }
+
+    // Toggle payment fields
+    var paymentEnabled = document.getElementById('payment_enabled_toggle');
+    var paymentFields = document.getElementById('payment-fields');
+    if (paymentEnabled && paymentFields) {
+        paymentEnabled.addEventListener('change', function() {
+            paymentFields.style.display = this.checked ? '' : 'none';
+        });
+    }
+});
+</script>
+<script src="/cms-assets/js/form-builder.js" nonce="{{ csp_nonce() }}"></script>
+{% endblock %}
+{% endblock %}

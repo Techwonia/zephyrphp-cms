@@ -1,0 +1,46 @@
+{
+    "name": "Contact Us",
+    "slug": "contact-us",
+    "description": "A simple contact form for visitors to reach out with questions or inquiries.",
+    "is_multi_step": false,
+    "fields": [
+        {
+            "slug": "name",
+            "label": "Name",
+            "type": "text",
+            "placeholder": "Your full name",
+            "is_required": true,
+            "validation": "required|min:2|max:100"
+        },
+        {
+            "slug": "email",
+            "label": "Email",
+            "type": "email",
+            "placeholder": "your@email.com",
+            "is_required": true,
+            "validation": "required|email"
+        },
+        {
+            "slug": "subject",
+            "label": "Subject",
+            "type": "text",
+            "placeholder": "What is this about?",
+            "is_required": true,
+            "validation": "required|min:3|max:200"
+        },
+        {
+            "slug": "message",
+            "label": "Message",
+            "type": "textarea",
+            "placeholder": "Write your message here...",
+            "is_required": true,
+            "validation": "required|min:10|max:5000"
+        }
+    ],
+    "settings": {
+        "success_message": "Thank you for contacting us! We will get back to you shortly.",
+        "submit_button_text": "Send Message",
+        "honeypot_enabled": true,
+        "email_notify": true
+    }
+}

@@ -1,0 +1,139 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Submission #{{ submission.id }} - {{ form.name }}{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms/forms">Forms</a> /
+    <a href="/cms/forms/{{ form.id }}/edit">{{ form.name }}</a> /
+    <a href="/cms/forms/{{ form.id }}/submissions">Submissions</a> /
+    #{{ submission.id }}
+</div>
+
+<div class="page-header">
+    <h1>Submission #{{ submission.id }}</h1>
+    <div class="page-actions">
+        <a href="/cms/forms/{{ form.id }}/submissions" class="btn btn-outline">Back to Submissions</a>
+        <form method="POST" action="/cms/forms/{{ form.id }}/submissions/{{ submission.id }}/delete"
+              style="display:inline" class="confirm-delete"
+              data-message="Delete this submission? This cannot be undone.">
+            {{ csrf_field() | raw }}
+            <button type="submit" class="btn btn-danger">Delete Submission</button>
+        </form>
+    </div>
+</div>
+
+{# ===== Submission Data ===== #}
+<div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card-header">
+        <h3>Form Data</h3>
+    </div>
+    <div class="card-body">
+        {% if fields|length > 0 %}
+            {% for field in fields %}
+            <div class="field-row">
+                <div class="field-info">
+                    <div class="field-name">{{ field.label }}</div>
+                    <div class="field-meta">
+                        <code>{{ field.slug }}</code>
+                        &middot; <span class="field-badge">{{ field.type }}</span>
+                    </div>
+                </div>
+                <div style="flex: 1; text-align: right; font-size: var(--font-sm); word-break: break-word;">
+                    {% set value = submission.data[field.slug] ?? null %}
+                    {% if value is iterable %}
+                        {{ value|join(', ') }}
+                    {% elseif value is not null and value != '' %}
+                        {{ value }}
+                    {% else %}
+                        <span class="text-muted">&mdash;</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            {# Fallback: show raw data keys #}
+            {% for key, value in submission.data %}
+            <div class="field-row">
+                <div class="field-info">
+                    <div class="field-name">{{ key }}</div>
+                </div>
+                <div style="flex: 1; text-align: right; font-size: var(--font-sm); word-break: break-word;">
+                    {% if value is iterable %}
+                        {{ value|join(', ') }}
+                    {% elseif value is not null and value != '' %}
+                        {{ value }}
+                    {% else %}
+                        <span class="text-muted">&mdash;</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+</div>
+
+{# ===== Metadata ===== #}
+<div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card-header">
+        <h3>Submission Metadata</h3>
+    </div>
+    <div class="card-body">
+        <div class="field-row">
+            <div class="field-info"><div class="field-name">Status</div></div>
+            <div>
+                {% if submission.status == 'completed' %}
+                    <span class="badge badge-success">Completed</span>
+                {% elseif submission.status == 'spam' %}
+                    <span class="badge badge-danger">Spam</span>
+                {% elseif submission.status == 'pending' %}
+                    <span class="badge badge-warning">Pending</span>
+                {% else %}
+                    <span class="badge badge-default">{{ submission.status }}</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="field-row">
+            <div class="field-info"><div class="field-name">Submitted At</div></div>
+            <div style="font-size: var(--font-sm);">{{ submission.created_at ? submission.created_at|date('F d, Y \\a\\t H:i:s') : '&mdash;' }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-info"><div class="field-name">IP Address</div></div>
+            <div><code>{{ submission.ip_address ?? '&mdash;' }}</code></div>
+        </div>
+        <div class="field-row">
+            <div class="field-info"><div class="field-name">User Agent</div></div>
+            <div style="font-size: var(--font-xs); max-width: 400px; word-break: break-word;">{{ submission.user_agent ?? '&mdash;' }}</div>
+        </div>
+
+        {% if submission.payment_status is defined and submission.payment_status %}
+        <div class="field-row">
+            <div class="field-info"><div class="field-name">Payment Status</div></div>
+            <div>
+                {% if submission.payment_status == 'paid' %}
+                    <span class="badge badge-success">Paid</span>
+                {% elseif submission.payment_status == 'failed' %}
+                    <span class="badge badge-danger">Failed</span>
+                {% else %}
+                    <span class="badge badge-warning">{{ submission.payment_status }}</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if submission.payment_amount is defined and submission.payment_amount %}
+        <div class="field-row">
+            <div class="field-info"><div class="field-name">Payment Amount</div></div>
+            <div style="font-size: var(--font-sm);">{{ submission.payment_currency ?? 'USD' }} {{ submission.payment_amount }}</div>
+        </div>
+        {% endif %}
+
+        {% if submission.payment_transaction_id is defined and submission.payment_transaction_id %}
+        <div class="field-row">
+            <div class="field-info"><div class="field-name">Transaction ID</div></div>
+            <div><code>{{ submission.payment_transaction_id }}</code></div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

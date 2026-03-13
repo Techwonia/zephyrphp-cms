@@ -1,0 +1,146 @@
+{
+    "name": "Multi-Step Order Form",
+    "slug": "multi-step-order",
+    "description": "A multi-step order form for collecting personal info, order details, and shipping address.",
+    "is_multi_step": true,
+    "steps": [
+        {
+            "step_number": 1,
+            "title": "Personal Info",
+            "description": "Tell us who you are."
+        },
+        {
+            "step_number": 2,
+            "title": "Order Details",
+            "description": "Choose your product and quantity."
+        },
+        {
+            "step_number": 3,
+            "title": "Shipping",
+            "description": "Where should we deliver your order?"
+        }
+    ],
+    "fields": [
+        {
+            "slug": "full_name",
+            "label": "Full Name",
+            "type": "text",
+            "placeholder": "Your full name",
+            "is_required": true,
+            "validation": "required|min:2|max:150",
+            "step_number": 1
+        },
+        {
+            "slug": "email",
+            "label": "Email",
+            "type": "email",
+            "placeholder": "your@email.com",
+            "is_required": true,
+            "validation": "required|email",
+            "step_number": 1
+        },
+        {
+            "slug": "phone",
+            "label": "Phone",
+            "type": "phone",
+            "placeholder": "+1 (555) 123-4567",
+            "is_required": true,
+            "validation": "required|phone",
+            "step_number": 1
+        },
+        {
+            "slug": "product",
+            "label": "Product",
+            "type": "select",
+            "is_required": true,
+            "validation": "required",
+            "options": {
+                "choices": [
+                    {"label": "Basic Plan - $29", "value": "basic_plan"},
+                    {"label": "Pro Plan - $59", "value": "pro_plan"},
+                    {"label": "Enterprise - $99", "value": "enterprise"}
+                ]
+            },
+            "step_number": 2
+        },
+        {
+            "slug": "quantity",
+            "label": "Quantity",
+            "type": "number",
+            "placeholder": "1",
+            "default_value": "1",
+            "is_required": true,
+            "validation": "required|numeric|min:1|max:100",
+            "step_number": 2
+        },
+        {
+            "slug": "order_notes",
+            "label": "Notes",
+            "type": "textarea",
+            "placeholder": "Any special instructions for your order",
+            "is_required": false,
+            "validation": "max:2000",
+            "step_number": 2
+        },
+        {
+            "slug": "address_line_1",
+            "label": "Address Line 1",
+            "type": "text",
+            "placeholder": "Street address",
+            "is_required": true,
+            "validation": "required|max:255",
+            "step_number": 3
+        },
+        {
+            "slug": "address_line_2",
+            "label": "Address Line 2",
+            "type": "text",
+            "placeholder": "Apartment, suite, unit, etc.",
+            "is_required": false,
+            "validation": "max:255",
+            "step_number": 3
+        },
+        {
+            "slug": "city",
+            "label": "City",
+            "type": "text",
+            "placeholder": "City",
+            "is_required": true,
+            "validation": "required|max:100",
+            "step_number": 3
+        },
+        {
+            "slug": "state_province",
+            "label": "State/Province",
+            "type": "text",
+            "placeholder": "State or Province",
+            "is_required": true,
+            "validation": "required|max:100",
+            "step_number": 3
+        },
+        {
+            "slug": "postal_code",
+            "label": "Postal Code",
+            "type": "text",
+            "placeholder": "Postal / ZIP code",
+            "is_required": true,
+            "validation": "required|max:20",
+            "step_number": 3
+        },
+        {
+            "slug": "country",
+            "label": "Country",
+            "type": "text",
+            "placeholder": "Country",
+            "is_required": true,
+            "validation": "required|max:100",
+            "step_number": 3
+        }
+    ],
+    "settings": {
+        "success_message": "Your order has been placed! You will receive a confirmation email shortly.",
+        "submit_button_text": "Place Order",
+        "honeypot_enabled": true,
+        "email_notify": true
+    }
+}

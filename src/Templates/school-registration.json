@@ -1,0 +1,156 @@
+{
+    "name": "School Registration",
+    "slug": "school-registration",
+    "description": "A multi-step registration form for student enrollment with parent/guardian details.",
+    "is_multi_step": true,
+    "steps": [
+        {
+            "step_number": 1,
+            "title": "Student Information",
+            "description": "Enter the student's personal details."
+        },
+        {
+            "step_number": 2,
+            "title": "Parent/Guardian",
+            "description": "Provide parent or guardian contact information."
+        },
+        {
+            "step_number": 3,
+            "title": "Additional Info",
+            "description": "Any extra details that may be helpful."
+        }
+    ],
+    "fields": [
+        {
+            "slug": "student_name",
+            "label": "Student Name",
+            "type": "text",
+            "placeholder": "Full name of the student",
+            "is_required": true,
+            "validation": "required|min:2|max:150",
+            "step_number": 1
+        },
+        {
+            "slug": "date_of_birth",
+            "label": "Date of Birth",
+            "type": "date",
+            "is_required": true,
+            "validation": "required|date",
+            "step_number": 1
+        },
+        {
+            "slug": "grade_class",
+            "label": "Grade/Class",
+            "type": "select",
+            "is_required": true,
+            "validation": "required",
+            "options": {
+                "choices": [
+                    {"label": "Grade 1", "value": "1"},
+                    {"label": "Grade 2", "value": "2"},
+                    {"label": "Grade 3", "value": "3"},
+                    {"label": "Grade 4", "value": "4"},
+                    {"label": "Grade 5", "value": "5"},
+                    {"label": "Grade 6", "value": "6"},
+                    {"label": "Grade 7", "value": "7"},
+                    {"label": "Grade 8", "value": "8"},
+                    {"label": "Grade 9", "value": "9"},
+                    {"label": "Grade 10", "value": "10"},
+                    {"label": "Grade 11", "value": "11"},
+                    {"label": "Grade 12", "value": "12"}
+                ]
+            },
+            "step_number": 1
+        },
+        {
+            "slug": "gender",
+            "label": "Gender",
+            "type": "radio",
+            "is_required": true,
+            "validation": "required",
+            "options": {
+                "choices": [
+                    {"label": "Male", "value": "male"},
+                    {"label": "Female", "value": "female"},
+                    {"label": "Other", "value": "other"}
+                ]
+            },
+            "step_number": 1
+        },
+        {
+            "slug": "parent_name",
+            "label": "Parent/Guardian Name",
+            "type": "text",
+            "placeholder": "Full name",
+            "is_required": true,
+            "validation": "required|min:2|max:150",
+            "step_number": 2
+        },
+        {
+            "slug": "parent_phone",
+            "label": "Phone",
+            "type": "phone",
+            "placeholder": "+1 (555) 123-4567",
+            "is_required": true,
+            "validation": "required|phone",
+            "step_number": 2
+        },
+        {
+            "slug": "parent_email",
+            "label": "Email",
+            "type": "email",
+            "placeholder": "parent@email.com",
+            "is_required": true,
+            "validation": "required|email",
+            "step_number": 2
+        },
+        {
+            "slug": "address",
+            "label": "Address",
+            "type": "textarea",
+            "placeholder": "Full residential address",
+            "is_required": true,
+            "validation": "required|min:10|max:500",
+            "step_number": 2
+        },
+        {
+            "slug": "medical_notes",
+            "label": "Medical Notes",
+            "type": "textarea",
+            "placeholder": "Any allergies, conditions, or medications",
+            "is_required": false,
+            "validation": "max:1000",
+            "step_number": 3
+        },
+        {
+            "slug": "emergency_contact",
+            "label": "Emergency Contact",
+            "type": "text",
+            "placeholder": "Name and phone number",
+            "is_required": false,
+            "validation": "max:200",
+            "step_number": 3
+        },
+        {
+            "slug": "how_did_you_hear",
+            "label": "How did you hear about us?",
+            "type": "select",
+            "is_required": false,
+            "options": {
+                "choices": [
+                    {"label": "Website", "value": "website"},
+                    {"label": "Social Media", "value": "social_media"},
+                    {"label": "Referral", "value": "referral"},
+                    {"label": "Other", "value": "other"}
+                ]
+            },
+            "step_number": 3
+        }
+    ],
+    "settings": {
+        "success_message": "Registration submitted successfully! We will contact you with next steps.",
+        "submit_button_text": "Submit Registration",
+        "honeypot_enabled": true,
+        "email_notify": true
+    }
+}

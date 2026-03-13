@@ -1,0 +1,85 @@
+{
+    "name": "Event Registration",
+    "slug": "event-registration",
+    "description": "An event registration form for collecting attendee details and ticket preferences.",
+    "is_multi_step": false,
+    "fields": [
+        {
+            "slug": "name",
+            "label": "Name",
+            "type": "text",
+            "placeholder": "Your full name",
+            "is_required": true,
+            "validation": "required|min:2|max:100"
+        },
+        {
+            "slug": "email",
+            "label": "Email",
+            "type": "email",
+            "placeholder": "your@email.com",
+            "is_required": true,
+            "validation": "required|email"
+        },
+        {
+            "slug": "phone",
+            "label": "Phone",
+            "type": "phone",
+            "placeholder": "+1 (555) 123-4567",
+            "is_required": false,
+            "validation": "phone"
+        },
+        {
+            "slug": "ticket_type",
+            "label": "Ticket Type",
+            "type": "select",
+            "is_required": true,
+            "validation": "required",
+            "options": {
+                "choices": [
+                    {"label": "General", "value": "general"},
+                    {"label": "VIP", "value": "vip"},
+                    {"label": "Student", "value": "student"}
+                ]
+            }
+        },
+        {
+            "slug": "number_of_tickets",
+            "label": "Number of Tickets",
+            "type": "number",
+            "placeholder": "1",
+            "default_value": "1",
+            "is_required": true,
+            "validation": "required|numeric|min:1|max:10"
+        },
+        {
+            "slug": "dietary_requirements",
+            "label": "Dietary Requirements",
+            "type": "select",
+            "is_required": false,
+            "options": {
+                "choices": [
+                    {"label": "None", "value": "none"},
+                    {"label": "Vegetarian", "value": "vegetarian"},
+                    {"label": "Vegan", "value": "vegan"},
+                    {"label": "Halal", "value": "halal"},
+                    {"label": "Kosher", "value": "kosher"},
+                    {"label": "Other", "value": "other"}
+                ]
+            }
+        },
+        {
+            "slug": "notes",
+            "label": "Notes",
+            "type": "textarea",
+            "placeholder": "Any special requests or notes",
+            "is_required": false,
+            "validation": "max:2000"
+        }
+    ],
+    "settings": {
+        "success_message": "You are registered! A confirmation email has been sent to you.",
+        "submit_button_text": "Register Now",
+        "honeypot_enabled": true,
+        "email_notify": true
+    }
+}
