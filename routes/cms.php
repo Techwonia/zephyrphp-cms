@@ -231,6 +231,26 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
 });
 
 
+// CMS Module Assets
+Route::get('/cms-assets/css/{file}', function (string $file) {
+    $file = basename($file);
+    $filePath = dirname(__DIR__) . '/assets/css/' . $file;
+    if (!file_exists($filePath)) { http_response_code(404); return ''; }
+    header('Content-Type: text/css');
+    header('Cache-Control: public, max-age=86400');
+    readfile($filePath);
+    exit;
+});
+Route::get('/cms-assets/js/{file}', function (string $file) {
+    $file = basename($file);
+    $filePath = dirname(__DIR__) . '/assets/js/' . $file;
+    if (!file_exists($filePath)) { http_response_code(404); return ''; }
+    header('Content-Type: application/javascript');
+    header('Cache-Control: public, max-age=86400');
+    readfile($filePath);
+    exit;
+});
+
 // Public Form Routes (no auth)
 Route::post('/forms/{slug}/submit', [FormSubmissionController::class, 'submit']);
 Route::get('/forms/{slug}/success', [FormSubmissionController::class, 'success']);
