@@ -21,7 +21,7 @@ class FormSubmissionController extends Controller
     /**
      * Handle a public form submission (POST).
      */
-    public function submit(string $slug): string|never
+    public function submit(string $slug): string
     {
         // Validate CSRF token
         if (!$this->request->validateCSRFToken()) {
