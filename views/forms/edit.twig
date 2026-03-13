@@ -275,11 +275,20 @@
             {% endif %}
 
             {# Field List (sortable) #}
-            <div class="fb-field-list" id="field-list" data-form-id="{{ form.id }}">
+            <div class="fb-field-list" id="field-list" data-form-slug="{{ form.slug }}">
                 {% if fields|length > 0 %}
                     {% for field in fields %}
                     <div class="fb-field-card" draggable="true"
                          data-field-id="{{ field.id }}"
+                         data-field-slug="{{ field.slug }}"
+                         data-field-label="{{ field.label }}"
+                         data-field-type="{{ field.type }}"
+                         data-field-placeholder="{{ field.placeholder ?? '' }}"
+                         data-field-default="{{ field.default_value ?? '' }}"
+                         data-field-validation="{{ field.validation ?? '' }}"
+                         data-field-required="{{ field.required ? '1' : '0' }}"
+                         data-field-width="{{ field.width ?? 'col-12' }}"
+                         data-field-options="{{ field.options ? field.options|json_encode : '' }}"
                          data-step="{{ field.step ?? 0 }}">
                         <div class="fb-drag-handle" title="Drag to reorder">&#x2630;</div>
                         <div class="fb-field-info">
@@ -452,18 +461,18 @@ document.addEventListener('DOMContentLoaded', function() {
 (function () {
     'use strict';
 
-    var formId = (function () {
+    var formSlug = (function () {
         var el = document.getElementById('field-list');
-        return el ? el.dataset.formId : null;
+        return el ? el.dataset.formSlug : null;
     })();
-    if (!formId) return;
+    if (!formSlug) return;
 
     var csrfToken = (function () {
         var meta = document.querySelector('meta[name="csrf-token"]');
         return meta ? meta.getAttribute('content') : '';
     })();
 
-    var API_BASE = '/cms/forms/' + formId + '/fields';
+    var API_BASE = '/cms/forms/' + formSlug + '/fields';
 
     var fieldList = document.getElementById('field-list');
     var fieldForm = document.getElementById('field-form');
@@ -579,9 +588,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 placeholder: ffPlaceholder ? ffPlaceholder.value.trim() : '',
                 default_value: ffDefault ? ffDefault.value.trim() : '',
                 validation: ffValidation ? ffValidation.value.trim() : '',
-                required: ffRequired ? ffRequired.checked : false,
+                is_required: ffRequired ? ffRequired.checked : false,
                 width: ffWidth ? ffWidth.value : 'col-12',
-                step: ffStep ? parseInt(ffStep.value, 10) : 0
+                step_id: ffStep ? parseInt(ffStep.value, 10) : 0
             };
 
             if (ffOptions && ['select', 'radio', 'checkbox'].indexOf(ffType.value) !== -1) {
@@ -590,7 +599,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             var editingId = ffId.value;
-            var method = editingId ? 'PUT' : 'POST';
+            var method = 'POST';
             var url = editingId ? API_BASE + '/' + editingId : API_BASE;
 
             saveFieldBtn.disabled = true;
@@ -613,7 +622,16 @@ document.addEventListener('DOMContentLoaded', function() {
         card.className = 'fb-field-card';
         card.draggable = true;
         card.dataset.fieldId = field.id;
-        card.dataset.step = field.step || 0;
+        card.dataset.fieldSlug = field.slug || '';
+        card.dataset.fieldLabel = field.label || '';
+        card.dataset.fieldType = field.type || 'text';
+        card.dataset.fieldPlaceholder = field.placeholder || '';
+        card.dataset.fieldDefault = field.default_value || '';
+        card.dataset.fieldValidation = field.validation || '';
+        card.dataset.fieldRequired = field.is_required ? '1' : '0';
+        card.dataset.fieldWidth = field.width || 'col-12';
+        card.dataset.fieldOptions = field.options ? JSON.stringify(field.options) : '';
+        card.dataset.step = field.step_id || field.step || 0;
 
         var meta = '<code>' + escapeHtml(field.slug) + '</code>' +
             '<span class="fb-type-badge">' + escapeHtml(field.type) + '</span>';
@@ -651,32 +669,33 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function handleEditField(fieldId) {
-        apiRequest('GET', API_BASE + '/' + fieldId)
-            .then(function (result) {
-                var field = result.field || result;
-                ffId.value = field.id;
-                ffLabel.value = field.label || '';
-                ffSlug.value = field.slug || '';
-                ffSlug.dataset.manual = '1';
-                ffType.value = field.type || 'text';
-                if (ffPlaceholder) ffPlaceholder.value = field.placeholder || '';
-                if (ffDefault) ffDefault.value = field.default_value || '';
-                if (ffValidation) ffValidation.value = field.validation || '';
-                if (ffRequired) ffRequired.checked = !!field.required;
-                if (ffWidth) ffWidth.value = field.width || 'col-12';
-                if (ffStep) ffStep.value = field.step || 0;
-                if (ffOptions && field.options) ffOptions.value = JSON.stringify(field.options, null, 2);
-                if (ffOptionsGroup) {
-                    ffOptionsGroup.style.display = ['select', 'radio', 'checkbox'].indexOf(field.type) !== -1 ? '' : 'none';
-                }
-                showFieldForm(true);
-            })
-            .catch(function (err) { alert('Failed to load field: ' + err.message); });
+        var card = fieldList.querySelector('[data-field-id="' + fieldId + '"]');
+        if (!card) return;
+
+        ffId.value = fieldId;
+        ffLabel.value = card.dataset.fieldLabel || '';
+        ffSlug.value = card.dataset.fieldSlug || '';
+        ffSlug.dataset.manual = '1';
+        ffType.value = card.dataset.fieldType || 'text';
+        if (ffPlaceholder) ffPlaceholder.value = card.dataset.fieldPlaceholder || '';
+        if (ffDefault) ffDefault.value = card.dataset.fieldDefault || '';
+        if (ffValidation) ffValidation.value = card.dataset.fieldValidation || '';
+        if (ffRequired) ffRequired.checked = card.dataset.fieldRequired === '1';
+        if (ffWidth) ffWidth.value = card.dataset.fieldWidth || 'col-12';
+        if (ffStep) ffStep.value = card.dataset.step || 0;
+        if (ffOptions && card.dataset.fieldOptions) {
+            try { ffOptions.value = JSON.stringify(JSON.parse(card.dataset.fieldOptions), null, 2); }
+            catch (e) { ffOptions.value = card.dataset.fieldOptions; }
+        }
+        if (ffOptionsGroup) {
+            ffOptionsGroup.style.display = ['select', 'radio', 'checkbox'].indexOf(card.dataset.fieldType) !== -1 ? '' : 'none';
+        }
+        showFieldForm(true);
     }
 
     function handleDeleteField(fieldId, fieldLabel) {
         if (!confirm('Delete field "' + fieldLabel + '"? This cannot be undone.')) return;
-        apiRequest('DELETE', API_BASE + '/' + fieldId)
+        apiRequest('POST', API_BASE + '/' + fieldId + '/delete')
             .then(function () {
                 var card = fieldList.querySelector('[data-field-id="' + fieldId + '"]');
                 if (card) card.remove();
@@ -743,7 +762,7 @@ document.addEventListener('DOMContentLoaded', function() {
         addStepBtn.addEventListener('click', function () {
             var label = prompt('Step label:', 'Step ' + (stepTabs.children.length + 1));
             if (!label) return;
-            apiRequest('POST', '/cms/forms/' + formId + '/steps', { label: label })
+            apiRequest('POST', '/cms/forms/' + formSlug + '/steps', { label: label })
                 .then(function (result) {
                     var step = result.step || result;
                     var tab = document.createElement('button');

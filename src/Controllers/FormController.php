@@ -349,7 +349,13 @@ class FormController extends Controller
         $field->setValidation($validation ?: null);
         $field->setIsRequired($isRequired);
         $field->setSortOrder($maxOrder + 1);
-        $field->setOptions(is_array($options) ? $options : null);
+
+        $width = $this->input('width', 'col-12');
+        $fieldOptions = is_array($options) ? $options : [];
+        if ($width && $width !== 'col-12') {
+            $fieldOptions['width'] = $width;
+        }
+        $field->setOptions(!empty($fieldOptions) ? $fieldOptions : null);
 
         if ($stepId !== null && $stepId !== '') {
             $field->setStepId((int) $stepId);
@@ -365,8 +371,14 @@ class FormController extends Controller
                 'slug' => $field->getSlug(),
                 'label' => $field->getLabel(),
                 'type' => $field->getType(),
+                'placeholder' => $field->getPlaceholder() ?? '',
+                'default_value' => $field->getDefaultValue() ?? '',
+                'validation' => $field->getValidation() ?? '',
+                'width' => $field->getWidth(),
+                'options' => $field->getOptions(),
                 'sort_order' => $field->getSortOrder(),
                 'is_required' => $field->isRequired(),
+                'step_id' => $field->getStepId(),
             ],
         ]);
     }
@@ -404,7 +416,13 @@ class FormController extends Controller
         $field->setDefaultValue($defaultValue ?: null);
         $field->setValidation($validation ?: null);
         $field->setIsRequired($isRequired);
-        $field->setOptions(is_array($options) ? $options : null);
+
+        $width = $this->input('width', 'col-12');
+        $fieldOptions = is_array($options) ? $options : [];
+        if ($width && $width !== 'col-12') {
+            $fieldOptions['width'] = $width;
+        }
+        $field->setOptions(!empty($fieldOptions) ? $fieldOptions : null);
 
         if ($stepId !== null && $stepId !== '') {
             $field->setStepId((int) $stepId);
@@ -422,8 +440,14 @@ class FormController extends Controller
                 'slug' => $field->getSlug(),
                 'label' => $field->getLabel(),
                 'type' => $field->getType(),
+                'placeholder' => $field->getPlaceholder() ?? '',
+                'default_value' => $field->getDefaultValue() ?? '',
+                'validation' => $field->getValidation() ?? '',
+                'width' => $field->getWidth(),
+                'options' => $field->getOptions(),
                 'sort_order' => $field->getSortOrder(),
                 'is_required' => $field->isRequired(),
+                'step_id' => $field->getStepId(),
             ],
         ]);
     }
