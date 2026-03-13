@@ -3,7 +3,49 @@
 {% block title %}Edit {{ form.name }}{% endblock %}
 
 {% block styles %}
-<link rel="stylesheet" href="/cms-assets/css/form-builder-admin.css">
+<style nonce="{{ csp_nonce() }}">
+/* Form Builder Admin — Field Builder UI */
+.tab-nav { display: flex; gap: 0; border-bottom: 2px solid var(--border-color, #e2e8f0); margin-bottom: var(--space-400, 1.5rem); }
+.tab-btn { padding: 0.6rem 1.2rem; border: none; background: none; cursor: pointer; font-size: 0.95rem; font-weight: 500; color: var(--text-secondary, #64748b); border-bottom: 2px solid transparent; margin-bottom: -2px; transition: color 0.2s, border-color 0.2s; }
+.tab-btn:hover { color: var(--text-primary, #1e293b); }
+.tab-btn.active { color: var(--primary, #3b82f6); border-bottom-color: var(--primary, #3b82f6); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+.fb-field-list { min-height: 60px; }
+.fb-field-card { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border: 1px solid var(--border-color, #e2e8f0); border-radius: 6px; margin-bottom: 0.5rem; background: var(--bg-surface, #fff); transition: box-shadow 0.15s, border-color 0.15s; }
+.fb-field-card:hover { border-color: var(--primary, #3b82f6); box-shadow: 0 1px 4px rgba(59,130,246,0.1); }
+.fb-field-card.dragging { opacity: 0.5; border-style: dashed; }
+.fb-drag-handle { cursor: grab; color: var(--text-secondary, #94a3b8); font-size: 1.1rem; user-select: none; flex-shrink: 0; }
+.fb-drag-handle:active { cursor: grabbing; }
+.fb-field-info { flex: 1; min-width: 0; }
+.fb-field-label { font-weight: 600; font-size: 0.95rem; color: var(--text-primary, #1e293b); }
+.fb-field-meta { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.25rem; flex-wrap: wrap; }
+.fb-field-meta code { font-size: 0.8rem; background: var(--bg-muted, #f1f5f9); padding: 0.1rem 0.4rem; border-radius: 3px; color: var(--text-secondary, #64748b); }
+.fb-type-badge, .fb-required-badge, .fb-width-badge { font-size: 0.75rem; padding: 0.1rem 0.5rem; border-radius: 10px; font-weight: 500; }
+.fb-type-badge { background: var(--bg-muted, #e2e8f0); color: var(--text-secondary, #475569); }
+.fb-required-badge { background: #fef2f2; color: #dc2626; }
+.fb-width-badge { background: #f0fdf4; color: #16a34a; }
+.fb-field-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
+.fb-add-field-section { margin-top: var(--space-300, 1rem); padding-top: var(--space-300, 1rem); border-top: 1px dashed var(--border-color, #e2e8f0); }
+.fb-field-form { margin-top: var(--space-400, 1.5rem); padding: 1.5rem; border: 1px solid var(--border-color, #e2e8f0); border-radius: 8px; background: var(--bg-muted, #f8fafc); }
+.fb-field-form h4 { margin-bottom: var(--space-300, 1rem); font-size: 1rem; }
+.form-inline-checks { margin-bottom: var(--space-300, 1rem); }
+.form-inline-checks label { display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer; font-size: 0.9rem; }
+.fb-step-tabs { display: flex; gap: 0.5rem; margin-bottom: var(--space-300, 1rem); flex-wrap: wrap; }
+.fb-step-tab { padding: 0.4rem 1rem; border: 1px solid var(--border-color, #e2e8f0); border-radius: 20px; background: var(--bg-surface, #fff); cursor: pointer; font-size: 0.85rem; transition: all 0.2s; }
+.fb-step-tab.active { background: var(--primary, #3b82f6); color: #fff; border-color: var(--primary, #3b82f6); }
+.fb-step-tab:hover:not(.active) { border-color: var(--primary, #3b82f6); }
+.fb-empty-fields { padding: 2rem; text-align: center; color: var(--text-secondary, #94a3b8); }
+.toggle-label { display: flex; align-items: center; gap: 0.75rem; cursor: pointer; font-weight: 500; }
+.toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: var(--border-color, #cbd5e1); border-radius: 24px; transition: background 0.2s; }
+.toggle-slider::before { content: ''; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: transform 0.2s; }
+.toggle-switch input:checked + .toggle-slider { background: var(--primary, #3b82f6); }
+.toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
+.confirm-delete { display: inline; }
+.form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-300, 1rem); }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -403,6 +445,319 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-<script src="/cms-assets/js/form-builder.js" nonce="{{ csp_nonce() }}"></script>
+<script nonce="{{ csp_nonce() }}">
+/**
+ * Form Builder Admin - Field Management
+ */
+(function () {
+    'use strict';
+
+    var formId = (function () {
+        var el = document.getElementById('field-list');
+        return el ? el.dataset.formId : null;
+    })();
+    if (!formId) return;
+
+    var csrfToken = (function () {
+        var meta = document.querySelector('meta[name="csrf-token"]');
+        return meta ? meta.getAttribute('content') : '';
+    })();
+
+    var API_BASE = '/cms/forms/' + formId + '/fields';
+
+    var fieldList = document.getElementById('field-list');
+    var fieldForm = document.getElementById('field-form');
+    var fieldFormTitle = document.getElementById('field-form-title');
+    var addFieldBtn = document.getElementById('add-field-btn');
+    var saveFieldBtn = document.getElementById('field-form-save');
+    var cancelFieldBtn = document.getElementById('field-form-cancel');
+    var emptyState = document.getElementById('empty-fields');
+
+    var ffId = document.getElementById('ff-id');
+    var ffLabel = document.getElementById('ff-label');
+    var ffSlug = document.getElementById('ff-slug');
+    var ffType = document.getElementById('ff-type');
+    var ffPlaceholder = document.getElementById('ff-placeholder');
+    var ffDefault = document.getElementById('ff-default');
+    var ffValidation = document.getElementById('ff-validation');
+    var ffRequired = document.getElementById('ff-required');
+    var ffWidth = document.getElementById('ff-width');
+    var ffOptions = document.getElementById('ff-options');
+    var ffOptionsGroup = document.getElementById('ff-options-group');
+    var ffStep = document.getElementById('ff-step');
+
+    function slugify(text) {
+        return text.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+    }
+
+    function apiRequest(method, url, body) {
+        var opts = {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            }
+        };
+        if (body) opts.body = JSON.stringify(body);
+        return fetch(url, opts).then(function (res) {
+            if (!res.ok) {
+                return res.json().then(function (err) {
+                    throw new Error(err.message || 'Request failed');
+                });
+            }
+            return res.json();
+        });
+    }
+
+    if (ffLabel && ffSlug) {
+        ffLabel.addEventListener('input', function () {
+            if (!ffSlug.dataset.manual) {
+                ffSlug.value = slugify(this.value);
+            }
+        });
+        ffSlug.addEventListener('input', function () {
+            this.dataset.manual = '1';
+        });
+    }
+
+    if (ffType && ffOptionsGroup) {
+        ffType.addEventListener('change', function () {
+            var needsOptions = ['select', 'radio', 'checkbox'].indexOf(this.value) !== -1;
+            ffOptionsGroup.style.display = needsOptions ? '' : 'none';
+        });
+    }
+
+    function showFieldForm(editing) {
+        fieldForm.style.display = '';
+        if (addFieldBtn) addFieldBtn.style.display = 'none';
+        fieldFormTitle.textContent = editing ? 'Edit Field' : 'Add New Field';
+        if (!editing) resetFieldForm();
+        ffLabel.focus();
+    }
+
+    function hideFieldForm() {
+        fieldForm.style.display = 'none';
+        if (addFieldBtn) addFieldBtn.style.display = '';
+        resetFieldForm();
+    }
+
+    function resetFieldForm() {
+        ffId.value = '';
+        ffLabel.value = '';
+        ffSlug.value = '';
+        ffSlug.dataset.manual = '';
+        ffType.value = 'text';
+        if (ffPlaceholder) ffPlaceholder.value = '';
+        if (ffDefault) ffDefault.value = '';
+        if (ffValidation) ffValidation.value = '';
+        if (ffRequired) ffRequired.checked = false;
+        if (ffWidth) ffWidth.value = 'col-12';
+        if (ffOptions) ffOptions.value = '';
+        if (ffOptionsGroup) ffOptionsGroup.style.display = 'none';
+        if (ffStep) ffStep.value = '0';
+    }
+
+    if (addFieldBtn) {
+        addFieldBtn.addEventListener('click', function () {
+            showFieldForm(false);
+        });
+    }
+
+    if (cancelFieldBtn) {
+        cancelFieldBtn.addEventListener('click', hideFieldForm);
+    }
+
+    if (saveFieldBtn) {
+        saveFieldBtn.addEventListener('click', function () {
+            var label = ffLabel.value.trim();
+            if (!label) { ffLabel.focus(); return; }
+
+            var slug = ffSlug.value.trim() || slugify(label);
+            var data = {
+                label: label, slug: slug, type: ffType.value,
+                placeholder: ffPlaceholder ? ffPlaceholder.value.trim() : '',
+                default_value: ffDefault ? ffDefault.value.trim() : '',
+                validation: ffValidation ? ffValidation.value.trim() : '',
+                required: ffRequired ? ffRequired.checked : false,
+                width: ffWidth ? ffWidth.value : 'col-12',
+                step: ffStep ? parseInt(ffStep.value, 10) : 0
+            };
+
+            if (ffOptions && ['select', 'radio', 'checkbox'].indexOf(ffType.value) !== -1) {
+                try { data.options = JSON.parse(ffOptions.value || '[]'); }
+                catch (e) { alert('Invalid JSON in Options field.'); ffOptions.focus(); return; }
+            }
+
+            var editingId = ffId.value;
+            var method = editingId ? 'PUT' : 'POST';
+            var url = editingId ? API_BASE + '/' + editingId : API_BASE;
+
+            saveFieldBtn.disabled = true;
+            saveFieldBtn.textContent = 'Saving...';
+
+            apiRequest(method, url, data)
+                .then(function (result) {
+                    if (editingId) { updateFieldCard(result.field || result); }
+                    else { appendFieldCard(result.field || result); }
+                    hideFieldForm();
+                    toggleEmptyState();
+                })
+                .catch(function (err) { alert('Error: ' + err.message); })
+                .finally(function () { saveFieldBtn.disabled = false; saveFieldBtn.textContent = 'Save Field'; });
+        });
+    }
+
+    function createFieldCardEl(field) {
+        var card = document.createElement('div');
+        card.className = 'fb-field-card';
+        card.draggable = true;
+        card.dataset.fieldId = field.id;
+        card.dataset.step = field.step || 0;
+
+        var meta = '<code>' + escapeHtml(field.slug) + '</code>' +
+            '<span class="fb-type-badge">' + escapeHtml(field.type) + '</span>';
+        if (field.required) meta += '<span class="fb-required-badge">required</span>';
+        if (field.width && field.width !== 'col-12') meta += '<span class="fb-width-badge">' + escapeHtml(field.width) + '</span>';
+
+        card.innerHTML =
+            '<div class="fb-drag-handle" title="Drag to reorder">&#x2630;</div>' +
+            '<div class="fb-field-info">' +
+            '  <div class="fb-field-label">' + escapeHtml(field.label) + '</div>' +
+            '  <div class="fb-field-meta">' + meta + '</div>' +
+            '</div>' +
+            '<div class="fb-field-actions">' +
+            '  <button type="button" class="btn btn-sm btn-outline fb-edit-field" data-field-id="' + field.id + '">Edit</button>' +
+            '  <button type="button" class="btn btn-sm btn-danger fb-delete-field" data-field-id="' + field.id + '" data-field-label="' + escapeHtml(field.label) + '">Delete</button>' +
+            '</div>';
+
+        bindCardEvents(card);
+        bindDragEvents(card);
+        return card;
+    }
+
+    function appendFieldCard(field) { fieldList.appendChild(createFieldCardEl(field)); }
+
+    function updateFieldCard(field) {
+        var existing = fieldList.querySelector('[data-field-id="' + field.id + '"]');
+        if (existing) existing.replaceWith(createFieldCardEl(field));
+    }
+
+    function escapeHtml(str) { var div = document.createElement('div'); div.textContent = str || ''; return div.innerHTML; }
+
+    function toggleEmptyState() {
+        if (!emptyState) return;
+        emptyState.style.display = fieldList.querySelectorAll('.fb-field-card').length === 0 ? '' : 'none';
+    }
+
+    function handleEditField(fieldId) {
+        apiRequest('GET', API_BASE + '/' + fieldId)
+            .then(function (result) {
+                var field = result.field || result;
+                ffId.value = field.id;
+                ffLabel.value = field.label || '';
+                ffSlug.value = field.slug || '';
+                ffSlug.dataset.manual = '1';
+                ffType.value = field.type || 'text';
+                if (ffPlaceholder) ffPlaceholder.value = field.placeholder || '';
+                if (ffDefault) ffDefault.value = field.default_value || '';
+                if (ffValidation) ffValidation.value = field.validation || '';
+                if (ffRequired) ffRequired.checked = !!field.required;
+                if (ffWidth) ffWidth.value = field.width || 'col-12';
+                if (ffStep) ffStep.value = field.step || 0;
+                if (ffOptions && field.options) ffOptions.value = JSON.stringify(field.options, null, 2);
+                if (ffOptionsGroup) {
+                    ffOptionsGroup.style.display = ['select', 'radio', 'checkbox'].indexOf(field.type) !== -1 ? '' : 'none';
+                }
+                showFieldForm(true);
+            })
+            .catch(function (err) { alert('Failed to load field: ' + err.message); });
+    }
+
+    function handleDeleteField(fieldId, fieldLabel) {
+        if (!confirm('Delete field "' + fieldLabel + '"? This cannot be undone.')) return;
+        apiRequest('DELETE', API_BASE + '/' + fieldId)
+            .then(function () {
+                var card = fieldList.querySelector('[data-field-id="' + fieldId + '"]');
+                if (card) card.remove();
+                toggleEmptyState();
+            })
+            .catch(function (err) { alert('Error: ' + err.message); });
+    }
+
+    function bindCardEvents(card) {
+        var editBtn = card.querySelector('.fb-edit-field');
+        var deleteBtn = card.querySelector('.fb-delete-field');
+        if (editBtn) editBtn.addEventListener('click', function () { handleEditField(this.dataset.fieldId); });
+        if (deleteBtn) deleteBtn.addEventListener('click', function () { handleDeleteField(this.dataset.fieldId, this.dataset.fieldLabel); });
+    }
+
+    fieldList.querySelectorAll('.fb-field-card').forEach(function (card) { bindCardEvents(card); });
+
+    var dragSrcEl = null;
+
+    function bindDragEvents(card) {
+        card.addEventListener('dragstart', function (e) { dragSrcEl = this; this.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', this.dataset.fieldId); });
+        card.addEventListener('dragend', function () { this.classList.remove('dragging'); fieldList.querySelectorAll('.fb-field-card').forEach(function (c) { c.classList.remove('drag-over'); }); });
+        card.addEventListener('dragover', function (e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; if (this !== dragSrcEl) this.classList.add('drag-over'); });
+        card.addEventListener('dragleave', function () { this.classList.remove('drag-over'); });
+        card.addEventListener('drop', function (e) {
+            e.preventDefault(); e.stopPropagation(); this.classList.remove('drag-over');
+            if (dragSrcEl && dragSrcEl !== this) {
+                var rect = this.getBoundingClientRect();
+                if (e.clientY < rect.top + rect.height / 2) fieldList.insertBefore(dragSrcEl, this);
+                else fieldList.insertBefore(dragSrcEl, this.nextSibling);
+                saveFieldOrder();
+            }
+        });
+    }
+
+    fieldList.querySelectorAll('.fb-field-card').forEach(function (card) { bindDragEvents(card); });
+
+    function saveFieldOrder() {
+        var ids = [];
+        fieldList.querySelectorAll('.fb-field-card').forEach(function (card) { ids.push(card.dataset.fieldId); });
+        apiRequest('POST', API_BASE + '/reorder', { order: ids }).catch(function (err) { console.error('Failed to save field order:', err.message); });
+    }
+
+    var stepTabs = document.getElementById('step-tabs');
+    var addStepBtn = document.getElementById('add-step-btn');
+
+    if (stepTabs) {
+        stepTabs.addEventListener('click', function (e) {
+            var tab = e.target.closest('.fb-step-tab');
+            if (!tab) return;
+            stepTabs.querySelectorAll('.fb-step-tab').forEach(function (t) { t.classList.remove('active'); });
+            tab.classList.add('active');
+            filterFieldsByStep(tab.dataset.step);
+        });
+    }
+
+    function filterFieldsByStep(stepIndex) {
+        fieldList.querySelectorAll('.fb-field-card').forEach(function (card) {
+            card.style.display = ((card.dataset.step || '0') === String(stepIndex)) ? '' : 'none';
+        });
+    }
+
+    if (addStepBtn) {
+        addStepBtn.addEventListener('click', function () {
+            var label = prompt('Step label:', 'Step ' + (stepTabs.children.length + 1));
+            if (!label) return;
+            apiRequest('POST', '/cms/forms/' + formId + '/steps', { label: label })
+                .then(function (result) {
+                    var step = result.step || result;
+                    var tab = document.createElement('button');
+                    tab.type = 'button';
+                    tab.className = 'fb-step-tab';
+                    tab.dataset.step = step.index !== undefined ? step.index : stepTabs.children.length;
+                    tab.textContent = label;
+                    stepTabs.appendChild(tab);
+                    if (ffStep) { var opt = document.createElement('option'); opt.value = tab.dataset.step; opt.textContent = label; ffStep.appendChild(opt); }
+                })
+                .catch(function (err) { alert('Error: ' + err.message); });
+        });
+    }
+})();
+</script>
 {% endblock %}
 {% endblock %}
