@@ -298,7 +298,7 @@ class FormController extends Controller
 
         $form = Form::findOneBy(['slug' => $slug]);
         if (!$form) {
-            return $this->json(['success' => false, 'message' => 'Form not found. Slug received: ' . $slug], 404);
+            return $this->json(['success' => false, 'message' => 'Form not found.'], 404);
         }
 
         $label = trim($this->input('label', ''));

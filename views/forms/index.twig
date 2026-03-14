@@ -34,7 +34,7 @@
                 <tbody>
                     {% for form in forms %}
                     <tr>
-                        <td><a href="/cms/forms/{{ form.id }}/edit"><strong>{{ form.name }}</strong></a></td>
+                        <td><a href="/cms/forms/{{ form.slug }}"><strong>{{ form.name }}</strong></a></td>
                         <td><code>{{ form.slug }}</code></td>
                         <td>
                             {% if form.status == 'active' %}
@@ -49,9 +49,9 @@
                         <td>{{ form.submissions_count ?? 0 }}</td>
                         <td>{{ form.created_at ? form.created_at|date('M d, Y') : '&mdash;' }}</td>
                         <td class="actions-cell">
-                            <a href="/cms/forms/{{ form.id }}/edit" class="btn btn-sm btn-outline">Edit</a>
-                            <a href="/cms/forms/{{ form.id }}/submissions" class="btn btn-sm btn-outline">Submissions</a>
-                            <form method="POST" action="/cms/forms/{{ form.id }}/delete"
+                            <a href="/cms/forms/{{ form.slug }}" class="btn btn-sm btn-outline">Edit</a>
+                            <a href="/cms/forms/{{ form.slug }}/submissions" class="btn btn-sm btn-outline">Submissions</a>
+                            <form method="POST" action="/cms/forms/{{ form.slug }}/delete"
                                   style="display:inline" class="confirm-delete" data-message="Delete form '{{ form.name }}'? All fields and submissions will be lost!">
                                 {{ csrf_field() | raw }}
                                 <button type="submit" class="btn btn-sm btn-danger">Delete</button>
