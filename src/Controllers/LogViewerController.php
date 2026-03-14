@@ -89,7 +89,7 @@ class LogViewerController extends Controller
         $this->redirect('/cms/system/logs');
     }
 
-    public function download(): void
+    public function downloadLog(): void
     {
         $this->requirePermission('settings.view');
 

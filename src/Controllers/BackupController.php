@@ -65,7 +65,7 @@ class BackupController extends Controller
         $this->redirect('/cms/system/backups');
     }
 
-    public function download(string $filename): void
+    public function downloadBackup(string $filename): void
     {
         $this->requirePermission('settings.view');
 

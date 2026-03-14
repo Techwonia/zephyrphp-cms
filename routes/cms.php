@@ -244,7 +244,7 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     Route::get('/system/logs/view', [LogViewerController::class, 'view']);
     Route::post('/system/logs/clear', [LogViewerController::class, 'clear']);
     Route::post('/system/logs/clear-all', [LogViewerController::class, 'clearAll']);
-    Route::get('/system/logs/download', [LogViewerController::class, 'download']);
+    Route::get('/system/logs/download', [LogViewerController::class, 'downloadLog']);
 
     // Maintenance Mode
     Route::get('/system/maintenance', [MaintenanceController::class, 'index']);
@@ -284,7 +284,7 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     // Backups
     Route::get('/system/backups', [BackupController::class, 'index']);
     Route::post('/system/backups/create', [BackupController::class, 'create']);
-    Route::get('/system/backups/{filename}/download', [BackupController::class, 'download']);
+    Route::get('/system/backups/{filename}/download', [BackupController::class, 'downloadBackup']);
     Route::post('/system/backups/{filename}/delete', [BackupController::class, 'destroy']);
 
     // File Manager
