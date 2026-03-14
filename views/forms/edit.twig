@@ -762,7 +762,7 @@ document.addEventListener('DOMContentLoaded', function() {
         addStepBtn.addEventListener('click', function () {
             var label = prompt('Step label:', 'Step ' + (stepTabs.children.length + 1));
             if (!label) return;
-            apiRequest('POST', '/cms/forms/' + formSlug + '/steps', { label: label })
+            apiRequest('POST', '/cms/forms/' + formSlug + '/steps', { title: label })
                 .then(function (result) {
                     var step = result.step || result;
                     var tab = document.createElement('button');

@@ -357,7 +357,7 @@ class FormController extends Controller
         }
         $field->setOptions(!empty($fieldOptions) ? $fieldOptions : null);
 
-        if ($stepId !== null && $stepId !== '') {
+        if ($stepId !== null && $stepId !== '' && (int) $stepId > 0) {
             $field->setStepId((int) $stepId);
         }
 
@@ -424,7 +424,7 @@ class FormController extends Controller
         }
         $field->setOptions(!empty($fieldOptions) ? $fieldOptions : null);
 
-        if ($stepId !== null && $stepId !== '') {
+        if ($stepId !== null && $stepId !== '' && (int) $stepId > 0) {
             $field->setStepId((int) $stepId);
         } else {
             $field->setStepId(null);
