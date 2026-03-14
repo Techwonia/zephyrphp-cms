@@ -138,12 +138,4 @@ class NotificationController extends Controller
         $this->redirect('/cms/notifications/preferences');
     }
 
-    /**
-     * Check if request is AJAX.
-     */
-    private function isAjax(): bool
-    {
-        return ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest'
-            || str_contains($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json');
-    }
 }
