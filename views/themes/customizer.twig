@@ -565,7 +565,8 @@
         'dynamic-content': '📊', 'feature-columns': '⚡',
         'testimonials': '💬', 'faq': '❓', 'newsletter': '📧',
         'cta-banner': '📢', 'gallery': '🖼️', 'spacer': '↕️',
-        'custom-code': '🧩'
+        'custom-code': '🧩',
+        'form': '📋'
     };
 
     // ── State ──
@@ -574,6 +575,7 @@
         settingsData: {{ settingsData|json_encode|raw }},
         availableSections: {{ sections|json_encode|raw }},
         collections: {{ collections|json_encode|raw }},
+        forms: {{ forms|json_encode|raw }},
         settingsSchema: {{ settingsSchema|json_encode|raw }},
         pages: {{ pages|json_encode|raw }},
         dirty: false,
@@ -1115,6 +1117,30 @@
 
             fieldSelect.addEventListener('change', function() { onChange(this.value); });
             wrapper.appendChild(fieldSelect);
+
+        } else if (setting.type === 'form_select') {
+            var formSel = document.createElement('select');
+            formSel.className = 'setting-input';
+            var emptyOpt = document.createElement('option');
+            emptyOpt.value = '';
+            emptyOpt.textContent = '— Select a form —';
+            formSel.appendChild(emptyOpt);
+            (state.forms || []).forEach(function(f) {
+                var opt = document.createElement('option');
+                opt.value = f.slug;
+                opt.textContent = f.name;
+                if (f.slug === value) opt.selected = true;
+                formSel.appendChild(opt);
+            });
+            formSel.addEventListener('change', function() { onChange(this.value); });
+            wrapper.appendChild(formSel);
+
+            if (!state.forms || state.forms.length === 0) {
+                var hint = document.createElement('p');
+                hint.style.cssText = 'font-size:12px; color:var(--text-secondary); margin-top:4px;';
+                hint.textContent = 'No active forms yet. Create one at CMS → Forms.';
+                wrapper.appendChild(hint);
+            }
 
         } else if (setting.type === 'image') {
             var previewDiv = document.createElement('div');

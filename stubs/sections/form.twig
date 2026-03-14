@@ -1,0 +1,48 @@
+<section class="section-form" style="background:{{ section.settings.bg_color|default('#ffffff') }}; padding:{{ section.settings.padding|default(60) }}px 0;">
+    <div class="container" style="max-width:{{ section.settings.max_width|default(640) }}px; margin:0 auto; padding:0 20px;">
+        {% if section.settings.heading %}
+            <h2 style="color:{{ section.settings.heading_color|default('#303030') }}; text-align:{{ section.settings.text_align|default('center') }}; margin-bottom:8px;">
+                {{ section.settings.heading }}
+            </h2>
+        {% endif %}
+        {% if section.settings.subheading %}
+            <p style="color:{{ section.settings.text_color|default('#616161') }}; text-align:{{ section.settings.text_align|default('center') }}; margin-bottom:32px;">
+                {{ section.settings.subheading }}
+            </p>
+        {% endif %}
+
+        {% if section.settings.form_slug %}
+            {{ render_form(section.settings.form_slug) }}
+        {% else %}
+            <p style="color:#999; text-align:center; padding:40px 0; border:2px dashed #ddd; border-radius:8px;">
+                Select a form in the section settings.
+            </p>
+        {% endif %}
+    </div>
+</section>
+
+{% schema %}
+{
+    "name": "Form",
+    "description": "Embed a form created in the Form Builder",
+    "icon": "form",
+    "settings": [
+        {"type": "text", "id": "heading", "label": "Heading"},
+        {"type": "text", "id": "subheading", "label": "Subheading"},
+        {"type": "form_select", "id": "form_slug", "label": "Form"},
+        {"type": "select", "id": "text_align", "label": "Text Alignment", "default": "center", "options": [
+            {"value": "left", "label": "Left"},
+            {"value": "center", "label": "Center"},
+            {"value": "right", "label": "Right"}
+        ]},
+        {"type": "range", "id": "max_width", "label": "Max Width (px)", "min": 400, "max": 1000, "step": 20, "default": 640},
+        {"type": "color", "id": "bg_color", "label": "Background Color", "default": "#ffffff"},
+        {"type": "color", "id": "heading_color", "label": "Heading Color", "default": "#303030"},
+        {"type": "color", "id": "text_color", "label": "Text Color", "default": "#616161"},
+        {"type": "range", "id": "padding", "label": "Section Padding (px)", "min": 20, "max": 120, "step": 4, "default": 60}
+    ],
+    "presets": [
+        {"name": "Form", "settings": {"heading": "Get in Touch", "subheading": "Fill out the form below and we'll get back to you.", "form_slug": ""}}
+    ]
+}
+{% endschema %}

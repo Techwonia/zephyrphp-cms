@@ -22,27 +22,43 @@ class SectionManager
         $slug = $slug ?? $this->themeManager->getEffectiveTheme();
         $sectionsDir = $this->themeManager->getThemePath($slug) . '/sections';
 
-        if (!is_dir($sectionsDir)) {
-            return [];
+        $sections = [];
+
+        // Theme's own sections
+        if (is_dir($sectionsDir)) {
+            foreach (scandir($sectionsDir) as $file) {
+                if ($file === '.' || $file === '..') continue;
+                if (!str_ends_with($file, '.twig')) continue;
+
+                $type = basename($file, '.twig');
+                $filePath = $sectionsDir . '/' . $file;
+                $schema = $this->parseSchema($filePath);
+
+                if ($schema) {
+                    $sections[$type] = $schema;
+                } else {
+                    $sections[$type] = [
+                        'name' => ucwords(str_replace('-', ' ', $type)),
+                        'settings' => [],
+                    ];
+                }
+            }
         }
 
-        $sections = [];
-        foreach (scandir($sectionsDir) as $file) {
-            if ($file === '.' || $file === '..') continue;
-            if (!str_ends_with($file, '.twig')) continue;
+        // Merge in built-in stubs that the theme hasn't overridden
+        $stubsDir = dirname(__DIR__, 2) . '/stubs/sections';
+        if (is_dir($stubsDir)) {
+            foreach (scandir($stubsDir) as $file) {
+                if ($file === '.' || $file === '..') continue;
+                if (!str_ends_with($file, '.twig')) continue;
 
-            $type = basename($file, '.twig');
-            $filePath = $sectionsDir . '/' . $file;
-            $schema = $this->parseSchema($filePath);
+                $type = basename($file, '.twig');
+                if (isset($sections[$type])) continue; // theme override takes priority
 
-            if ($schema) {
-                $sections[$type] = $schema;
-            } else {
-                // Section without schema — provide minimal info
-                $sections[$type] = [
-                    'name' => ucwords(str_replace('-', ' ', $type)),
-                    'settings' => [],
-                ];
+                $schema = $this->parseSchema($stubsDir . '/' . $file);
+                if ($schema) {
+                    $sections[$type] = $schema;
+                }
             }
         }
 
@@ -79,7 +95,16 @@ class SectionManager
     {
         $slug = $slug ?? $this->themeManager->getEffectiveTheme();
         $filePath = $this->themeManager->getThemePath($slug) . '/sections/' . $sectionType . '.twig';
-        return $this->parseSchema($filePath);
+
+        $schema = $this->parseSchema($filePath);
+
+        // Fall back to built-in stubs
+        if (!$schema) {
+            $stubPath = dirname(__DIR__, 2) . '/stubs/sections/' . $sectionType . '.twig';
+            $schema = $this->parseSchema($stubPath);
+        }
+
+        return $schema;
     }
 
     /**
@@ -89,6 +114,11 @@ class SectionManager
     {
         $slug = $slug ?? $this->themeManager->getEffectiveTheme();
         $filePath = $this->themeManager->getThemePath($slug) . '/sections/' . $sectionType . '.twig';
+
+        // Fall back to built-in stubs
+        if (!file_exists($filePath)) {
+            $filePath = dirname(__DIR__, 2) . '/stubs/sections/' . $sectionType . '.twig';
+        }
 
         if (!file_exists($filePath)) {
             return null;
