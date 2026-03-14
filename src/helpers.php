@@ -481,6 +481,9 @@ if (!function_exists('cms_invalidate_cache')) {
     function cms_invalidate_cache(string $collectionSlug): void
     {
         try {
+            if (!class_exists(CacheManager::class)) {
+                return;
+            }
             $cache = CacheManager::getInstance();
             // Clear the entire cache store — cache drivers don't support prefix-based deletion
             // For production, use short TTLs (60s) so stale data auto-expires
