@@ -34,7 +34,10 @@ class FormRenderer
         $formId = $attrs['id'] ?? 'fb-' . $form->getSlug();
         $hasFile = $this->hasFileField($fields);
 
-        $html = '<form method="POST" action="/forms/' . htmlspecialchars($form->getSlug()) . '/submit"';
+        // Include form styles (once per page)
+        $html = $this->getFormStyles();
+
+        $html .= '<form method="POST" action="/forms/' . htmlspecialchars($form->getSlug()) . '/submit"';
         $html .= ' class="' . htmlspecialchars($cssClass) . '"';
         $html .= ' id="' . htmlspecialchars($formId) . '"';
         $html .= ' data-form-slug="' . htmlspecialchars($form->getSlug()) . '"';
@@ -362,6 +365,23 @@ class FormRenderer
         } catch (\Exception $e) {
             return [];
         }
+    }
+
+    private static bool $stylesIncluded = false;
+
+    private function getFormStyles(): string
+    {
+        if (self::$stylesIncluded) {
+            return '';
+        }
+        self::$stylesIncluded = true;
+
+        $cssFile = dirname(__DIR__, 2) . '/assets/css/form-public.css';
+        if (!file_exists($cssFile)) {
+            return '';
+        }
+
+        return '<style>' . file_get_contents($cssFile) . '</style>';
     }
 
     private function getFlashSuccess(): ?string

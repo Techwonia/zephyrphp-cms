@@ -267,6 +267,12 @@
 }
 
 /* ===== Form Grid ===== */
+.fb-form .fb-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 16px;
+}
+
 .fb-form .fb-form-row {
     display: flex;
     flex-wrap: wrap;
@@ -305,7 +311,8 @@
     color: inherit;
 }
 
-.fb-label .fb-required-star {
+.fb-label .fb-required-star,
+.fb-label .fb-required {
     color: #D72C0D;
     margin-left: 2px;
 }
@@ -443,6 +450,11 @@
 }
 
 /* ===== Submit Button ===== */
+.fb-actions {
+    margin-top: 8px;
+    width: 100%;
+}
+
 .fb-btn {
     display: inline-flex;
     align-items: center;
