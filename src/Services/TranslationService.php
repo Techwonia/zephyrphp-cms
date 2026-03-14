@@ -6,7 +6,7 @@ namespace ZephyrPHP\Cms\Services;
 
 use ZephyrPHP\Cms\Models\Language;
 use ZephyrPHP\Cms\Models\Translation;
-use ZephyrPHP\Database\EntityManager;
+use ZephyrPHP\Database\Connection;
 
 class TranslationService
 {
@@ -42,7 +42,7 @@ class TranslationService
      */
     public static function saveTranslations(string $tableName, string|int $entryId, string $locale, array $fieldValues): void
     {
-        $conn = EntityManager::getConnection();
+        $conn = Connection::getInstance()->getConnection();
         $entryIdStr = (string) $entryId;
         $now = (new \DateTime())->format('Y-m-d H:i:s');
 
@@ -131,7 +131,7 @@ class TranslationService
     public static function deleteEntryTranslations(string $tableName, string|int $entryId): void
     {
         try {
-            $conn = EntityManager::getConnection();
+            $conn = Connection::getInstance()->getConnection();
             $conn->executeStatement(
                 "DELETE FROM cms_translations WHERE table_name = ? AND entry_id = ?",
                 [$tableName, (string) $entryId]
@@ -147,7 +147,7 @@ class TranslationService
     public static function getEntryLocales(string $tableName, string|int $entryId): array
     {
         try {
-            $conn = EntityManager::getConnection();
+            $conn = Connection::getInstance()->getConnection();
             return $conn->createQueryBuilder()
                 ->select('DISTINCT locale')
                 ->from('cms_translations')

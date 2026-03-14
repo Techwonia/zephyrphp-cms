@@ -28,7 +28,7 @@ class ScheduledTaskController extends Controller
 
         $this->ensureTable();
 
-        $conn = \ZephyrPHP\Database\DB::connection();
+        $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
         $tasks = $conn->fetchAllAssociative(
             'SELECT * FROM cms_scheduled_tasks ORDER BY sort_order ASC, name ASC'
         );
@@ -77,7 +77,7 @@ class ScheduledTaskController extends Controller
 
         $this->ensureTable();
 
-        $conn = \ZephyrPHP\Database\DB::connection();
+        $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
         $conn->insert('cms_scheduled_tasks', [
             'name' => $name,
             'command' => $command,
@@ -96,7 +96,7 @@ class ScheduledTaskController extends Controller
     {
         $this->requirePermission('settings.edit');
 
-        $conn = \ZephyrPHP\Database\DB::connection();
+        $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
         $task = $conn->fetchAssociative('SELECT * FROM cms_scheduled_tasks WHERE id = ?', [(int) $id]);
 
         if (!$task) {
@@ -118,7 +118,7 @@ class ScheduledTaskController extends Controller
     {
         $this->requirePermission('settings.edit');
 
-        $conn = \ZephyrPHP\Database\DB::connection();
+        $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
         $task = $conn->fetchAssociative('SELECT * FROM cms_scheduled_tasks WHERE id = ?', [(int) $id]);
 
         if (!$task) {
@@ -183,7 +183,7 @@ class ScheduledTaskController extends Controller
     {
         $this->requirePermission('settings.edit');
 
-        $conn = \ZephyrPHP\Database\DB::connection();
+        $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
         $task = $conn->fetchAssociative('SELECT * FROM cms_scheduled_tasks WHERE id = ?', [(int) $id]);
 
         if ($task) {
@@ -198,7 +198,7 @@ class ScheduledTaskController extends Controller
 
     private function ensureTable(): void
     {
-        $conn = \ZephyrPHP\Database\DB::connection();
+        $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
         $sm = $conn->createSchemaManager();
 
         if (!$sm->tablesExist(['cms_scheduled_tasks'])) {

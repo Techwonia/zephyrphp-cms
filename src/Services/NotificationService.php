@@ -149,7 +149,7 @@ class NotificationService
     public static function markAllRead(int $userId): void
     {
         try {
-            $conn = \ZephyrPHP\Database\EntityManager::getConnection();
+            $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
             $conn->executeStatement(
                 "UPDATE cms_notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0",
                 [$userId]

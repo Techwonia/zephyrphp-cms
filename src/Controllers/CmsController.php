@@ -115,7 +115,7 @@ class CmsController extends Controller
 
         $collections = Collection::findAll();
         $schema = new SchemaManager();
-        $conn = \ZephyrPHP\Database\DB::connection();
+        $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
         $now = date('Y-m-d H:i:s');
         $published = 0;
 

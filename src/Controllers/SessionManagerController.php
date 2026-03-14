@@ -28,7 +28,7 @@ class SessionManagerController extends Controller
 
         $this->ensureTable();
 
-        $conn = \ZephyrPHP\Database\DB::connection();
+        $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
 
         // Get active sessions
         $sessions = $conn->fetchAllAssociative(
@@ -69,7 +69,7 @@ class SessionManagerController extends Controller
     {
         $this->requirePermission('users.edit');
 
-        $conn = \ZephyrPHP\Database\DB::connection();
+        $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
         $session = $conn->fetchAssociative(
             'SELECT * FROM cms_sessions WHERE id = ?',
             [(int) $id]
@@ -109,7 +109,7 @@ class SessionManagerController extends Controller
     {
         $this->requirePermission('users.edit');
 
-        $conn = \ZephyrPHP\Database\DB::connection();
+        $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
         $currentSessionId = session_id() ?: '';
 
         // Delete all sessions except current
@@ -141,7 +141,7 @@ class SessionManagerController extends Controller
     {
         $this->requirePermission('users.edit');
 
-        $conn = \ZephyrPHP\Database\DB::connection();
+        $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
         $currentSessionId = session_id() ?: '';
 
         $conn->executeStatement(
@@ -155,7 +155,7 @@ class SessionManagerController extends Controller
 
     private function ensureTable(): void
     {
-        $conn = \ZephyrPHP\Database\DB::connection();
+        $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
         $sm = $conn->createSchemaManager();
 
         if (!$sm->tablesExist(['cms_sessions'])) {
@@ -238,7 +238,7 @@ class SessionManagerController extends Controller
     private function logAction(string $action, ?int $userId, ?string $ip): void
     {
         try {
-            $conn = \ZephyrPHP\Database\DB::connection();
+            $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
             $admin = Auth::user();
             $conn->insert('cms_login_history', [
                 'user_id' => $userId,

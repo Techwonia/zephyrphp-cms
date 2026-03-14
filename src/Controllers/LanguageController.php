@@ -176,7 +176,7 @@ class LanguageController extends Controller
 
         // Delete all translations for this locale
         try {
-            $conn = \ZephyrPHP\Database\EntityManager::getConnection();
+            $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
             $conn->executeStatement(
                 "DELETE FROM cms_translations WHERE locale = ?",
                 [$language->getCode()]
@@ -198,7 +198,7 @@ class LanguageController extends Controller
     private function clearDefaults(): void
     {
         try {
-            $conn = \ZephyrPHP\Database\EntityManager::getConnection();
+            $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
             $conn->executeStatement("UPDATE cms_languages SET is_default = 0 WHERE is_default = 1");
         } catch (\Exception $e) {
             // Non-critical

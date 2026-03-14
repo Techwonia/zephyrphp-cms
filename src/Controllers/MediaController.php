@@ -748,7 +748,7 @@ class MediaController extends Controller
         $path = $media->getPath();
 
         try {
-            $conn = \ZephyrPHP\Database\DB::connection();
+            $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
 
             // Get all collections
             $collections = $conn->fetchAllAssociative('SELECT * FROM cms_collections');

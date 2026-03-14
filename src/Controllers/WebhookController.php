@@ -62,7 +62,7 @@ class WebhookController extends Controller
         }
 
         try {
-            $conn = \ZephyrPHP\Database\DB::connection();
+            $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
 
             // Create webhooks table if not exists
             $this->ensureWebhooksTable($conn);
@@ -89,7 +89,7 @@ class WebhookController extends Controller
         $this->requirePermission('api-keys.manage');
 
         try {
-            $conn = \ZephyrPHP\Database\DB::connection();
+            $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
             $webhook = $conn->fetchAssociative('SELECT * FROM cms_webhooks WHERE id = ?', [(int) $id]);
 
             if (!$webhook) {
@@ -115,7 +115,7 @@ class WebhookController extends Controller
         $this->requirePermission('api-keys.manage');
 
         try {
-            $conn = \ZephyrPHP\Database\DB::connection();
+            $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
             $conn->delete('cms_webhooks', ['id' => (int) $id]);
             $this->flash('success', 'Webhook deleted.');
         } catch (\Throwable $e) {
@@ -130,7 +130,7 @@ class WebhookController extends Controller
         $this->requirePermission('api-keys.manage');
 
         try {
-            $conn = \ZephyrPHP\Database\DB::connection();
+            $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
             $this->ensureDeliveryLogsTable($conn);
             $webhook = $conn->fetchAssociative('SELECT * FROM cms_webhooks WHERE id = ?', [(int) $id]);
 
@@ -184,7 +184,7 @@ class WebhookController extends Controller
     {
         $this->requirePermission('api-keys.manage');
 
-        $conn = \ZephyrPHP\Database\DB::connection();
+        $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
         $this->ensureDeliveryLogsTable($conn);
 
         $webhook = $conn->fetchAssociative('SELECT * FROM cms_webhooks WHERE id = ?', [(int) $id]);
@@ -212,7 +212,7 @@ class WebhookController extends Controller
     {
         $this->requirePermission('api-keys.manage');
 
-        $conn = \ZephyrPHP\Database\DB::connection();
+        $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
         $delivery = $conn->fetchAssociative(
             'SELECT * FROM cms_webhook_deliveries WHERE id = ? AND webhook_id = ?',
             [(int) $deliveryId, (int) $id]
@@ -297,7 +297,7 @@ class WebhookController extends Controller
     private function getWebhooks(): array
     {
         try {
-            $conn = \ZephyrPHP\Database\DB::connection();
+            $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
             $this->ensureWebhooksTable($conn);
             $webhooks = $conn->fetchAllAssociative('SELECT * FROM cms_webhooks ORDER BY created_at DESC');
             foreach ($webhooks as &$wh) {

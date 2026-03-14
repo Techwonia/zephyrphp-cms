@@ -42,7 +42,7 @@ class PermissionBuilderController extends Controller
         // Get collections for per-collection permissions
         $collections = [];
         try {
-            $conn = \ZephyrPHP\Database\DB::connection();
+            $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
             $sm = $conn->createSchemaManager();
             if ($sm->tablesExist(['cms_collections'])) {
                 $collections = $conn->fetchAllAssociative('SELECT id, name, slug, permissions FROM cms_collections ORDER BY name');
@@ -111,7 +111,7 @@ class PermissionBuilderController extends Controller
         }
 
         try {
-            $conn = \ZephyrPHP\Database\DB::connection();
+            $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
 
             foreach ($collectionPerms as $collectionId => $roleActions) {
                 $collectionId = (int) $collectionId;
@@ -182,7 +182,7 @@ class PermissionBuilderController extends Controller
         }
 
         try {
-            $conn = \ZephyrPHP\Database\DB::connection();
+            $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
             $this->ensureCustomPermissionsTable($conn);
 
             // Check uniqueness
@@ -216,7 +216,7 @@ class PermissionBuilderController extends Controller
         $this->requirePermission('roles.manage');
 
         try {
-            $conn = \ZephyrPHP\Database\DB::connection();
+            $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
             $conn->delete('cms_custom_permissions', ['id' => (int) $id]);
             $this->flash('success', 'Custom permission deleted.');
         } catch (\Throwable $e) {
@@ -238,7 +238,7 @@ class PermissionBuilderController extends Controller
     private function getCustomPermissions(): array
     {
         try {
-            $conn = \ZephyrPHP\Database\DB::connection();
+            $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
             $this->ensureCustomPermissionsTable($conn);
             return $conn->fetchAllAssociative('SELECT * FROM cms_custom_permissions ORDER BY group_name, permission_key');
         } catch (\Throwable $e) {

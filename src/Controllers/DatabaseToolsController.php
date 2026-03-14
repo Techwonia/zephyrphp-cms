@@ -30,7 +30,7 @@ class DatabaseToolsController extends Controller
         $dbInfo = [];
 
         try {
-            $conn = \ZephyrPHP\Database\DB::connection();
+            $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
             $sm = $conn->createSchemaManager();
             $tableNames = $sm->listTableNames();
             sort($tableNames);
@@ -105,7 +105,7 @@ class DatabaseToolsController extends Controller
         $this->requirePermission('settings.edit');
 
         try {
-            $conn = \ZephyrPHP\Database\DB::connection();
+            $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
             $params = $conn->getParams();
             $sm = $conn->createSchemaManager();
             $tableNames = $sm->listTableNames();
@@ -172,7 +172,7 @@ class DatabaseToolsController extends Controller
         $total = 0;
 
         try {
-            $conn = \ZephyrPHP\Database\DB::connection();
+            $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
 
             // Validate table name exists
             $sm = $conn->createSchemaManager();

@@ -6,7 +6,7 @@ namespace ZephyrPHP\Cms\Services;
 
 use ZephyrPHP\Cms\Models\Collection;
 use ZephyrPHP\Cms\Models\WorkflowTransition;
-use ZephyrPHP\Database\EntityManager;
+use ZephyrPHP\Database\Connection;
 
 class WorkflowService
 {
@@ -114,7 +114,7 @@ class WorkflowService
         ?string $comment = null
     ): ?string {
         $tableName = $collection->getTableName();
-        $conn = EntityManager::getConnection();
+        $conn = Connection::getInstance()->getConnection();
 
         $entry = $conn->createQueryBuilder()
             ->select('status')
@@ -169,7 +169,7 @@ class WorkflowService
         ?string $comment = null
     ): ?string {
         $tableName = $collection->getTableName();
-        $conn = EntityManager::getConnection();
+        $conn = Connection::getInstance()->getConnection();
 
         $entry = $conn->createQueryBuilder()
             ->select('status')

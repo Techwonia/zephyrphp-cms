@@ -27,7 +27,7 @@ class QueueMonitorController extends Controller
         $this->requirePermission();
         $this->ensureTable();
 
-        $conn = \ZephyrPHP\Database\DB::connection();
+        $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
 
         // Counts by status
         $statusCounts = $conn->fetchAllAssociative(
@@ -96,7 +96,7 @@ class QueueMonitorController extends Controller
         $this->requirePermission();
         $this->ensureTable();
 
-        $conn = \ZephyrPHP\Database\DB::connection();
+        $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
         $job = $conn->fetchAssociative(
             "SELECT * FROM cms_jobs WHERE id = ? AND status = 'failed'",
             [(int) $id]
@@ -125,7 +125,7 @@ class QueueMonitorController extends Controller
         $this->requirePermission();
         $this->ensureTable();
 
-        $conn = \ZephyrPHP\Database\DB::connection();
+        $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
         $affected = $conn->executeStatement(
             "UPDATE cms_jobs SET status = 'pending', error = NULL, started_at = NULL, completed_at = NULL, attempts = attempts + 1 WHERE status = 'failed'"
         );
@@ -139,7 +139,7 @@ class QueueMonitorController extends Controller
         $this->requirePermission();
         $this->ensureTable();
 
-        $conn = \ZephyrPHP\Database\DB::connection();
+        $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
         $job = $conn->fetchAssociative('SELECT * FROM cms_jobs WHERE id = ?', [(int) $id]);
 
         if ($job) {
@@ -157,7 +157,7 @@ class QueueMonitorController extends Controller
         $this->requirePermission();
         $this->ensureTable();
 
-        $conn = \ZephyrPHP\Database\DB::connection();
+        $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
         $cutoff = date('Y-m-d H:i:s', strtotime('-7 days'));
         $affected = $conn->executeStatement(
             "DELETE FROM cms_jobs WHERE status = 'completed' AND completed_at < ?",
@@ -170,7 +170,7 @@ class QueueMonitorController extends Controller
 
     private function ensureTable(): void
     {
-        $conn = \ZephyrPHP\Database\DB::connection();
+        $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
         $sm = $conn->createSchemaManager();
 
         if (!$sm->tablesExist(['cms_jobs'])) {

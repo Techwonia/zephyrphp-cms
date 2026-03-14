@@ -145,7 +145,7 @@ class BackupController extends Controller
 
     private function backupDatabase(string $backupDir, string $timestamp): void
     {
-        $conn = \ZephyrPHP\Database\DB::connection();
+        $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
         $params = $conn->getParams();
         $sm = $conn->createSchemaManager();
         $tableNames = $sm->listTableNames();

@@ -126,7 +126,7 @@ class SystemHealthController extends Controller
                 return ['status' => 'Module not installed', 'connected' => false];
             }
 
-            $conn = \ZephyrPHP\Database\DB::connection();
+            $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
             $params = $conn->getParams();
 
             // Get table count

@@ -27,7 +27,7 @@ class ApiAnalyticsController extends Controller
         $this->requirePermission();
 
         try {
-            $conn = \ZephyrPHP\Database\DB::connection();
+            $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
             $this->ensureTable($conn);
 
             $now = new \DateTime();

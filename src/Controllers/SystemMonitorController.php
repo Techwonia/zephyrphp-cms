@@ -164,7 +164,7 @@ class SystemMonitorController extends Controller
                 return ['connected' => false, 'status' => 'Module not installed'];
             }
 
-            $conn = \ZephyrPHP\Database\DB::connection();
+            $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
             $params = $conn->getParams();
 
             // Table count
