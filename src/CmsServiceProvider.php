@@ -183,10 +183,38 @@ class CmsServiceProvider
 
     private function registerTwigHelpers(\ZephyrPHP\View\View $view, ThemeManager $themeManager): void
     {
-        // render_form('slug') — Render a form by its slug
+        // render_form('slug') — Render a form by its slug (auto-generated HTML)
         $view->addFunction('render_form', function (string $slug, array $attrs = []) {
             return \ZephyrPHP\Cms\Services\FormRenderer::renderBySlug($slug, $attrs);
         }, ['is_safe' => ['html']]);
+
+        // get_form('slug') — Get form data for custom-designed forms in theme sections
+        $view->addFunction('get_form', function (string $slug) {
+            $form = \ZephyrPHP\Cms\Models\Form::findOneBy(['slug' => $slug]);
+            if (!$form || !$form->isActive()) return null;
+
+            $fields = [];
+            foreach ($form->getFields() as $field) {
+                $fields[] = [
+                    'slug'        => $field->getSlug(),
+                    'label'       => $field->getLabel(),
+                    'type'        => $field->getType(),
+                    'placeholder' => $field->getPlaceholder(),
+                    'required'    => $field->isRequired(),
+                    'validation'  => $field->getValidation(),
+                    'options'     => $field->getOptions(),
+                    'default'     => $field->getDefaultValue(),
+                ];
+            }
+
+            return [
+                'name'     => $form->getName(),
+                'slug'     => $form->getSlug(),
+                'fields'   => $fields,
+                'settings' => $form->getSettings(),
+                'action'   => '/forms/' . $form->getSlug() . '/submit',
+            ];
+        });
 
         // Register sidebar and dashboard as Twig globals (lazy-loaded)
         $view->addFunction('cms_sidebar', function () {
