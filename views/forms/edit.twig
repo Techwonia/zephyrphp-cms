@@ -4,47 +4,314 @@
 
 {% block styles %}
 <style nonce="{{ csp_nonce() }}">
-/* Form Builder Admin — Field Builder UI */
-.tab-nav { display: flex; gap: 0; border-bottom: 2px solid var(--border-color, #e2e8f0); margin-bottom: var(--space-400, 1.5rem); }
-.tab-btn { padding: 0.6rem 1.2rem; border: none; background: none; cursor: pointer; font-size: 0.95rem; font-weight: 500; color: var(--text-secondary, #64748b); border-bottom: 2px solid transparent; margin-bottom: -2px; transition: color 0.2s, border-color 0.2s; }
-.tab-btn:hover { color: var(--text-primary, #1e293b); }
-.tab-btn.active { color: var(--primary, #3b82f6); border-bottom-color: var(--primary, #3b82f6); }
-.tab-panel { display: none; }
-.tab-panel.active { display: block; }
-.fb-field-list { min-height: 60px; }
-.fb-field-card { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border: 1px solid var(--border-color, #e2e8f0); border-radius: 6px; margin-bottom: 0.5rem; background: var(--bg-surface, #fff); transition: box-shadow 0.15s, border-color 0.15s; }
-.fb-field-card:hover { border-color: var(--primary, #3b82f6); box-shadow: 0 1px 4px rgba(59,130,246,0.1); }
-.fb-field-card.dragging { opacity: 0.5; border-style: dashed; }
-.fb-drag-handle { cursor: grab; color: var(--text-secondary, #94a3b8); font-size: 1.1rem; user-select: none; flex-shrink: 0; }
+/* =============================================
+   Form Builder Admin — Redesigned GUI
+   ============================================= */
+
+/* Tabs */
+.fb-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: var(--space-500); }
+.fb-tab-btn {
+    padding: 10px 20px; border: none; background: none; cursor: pointer;
+    font-size: var(--font-sm); font-weight: 600; color: var(--text-secondary);
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+    transition: color 0.15s, border-color 0.15s; font-family: var(--font);
+}
+.fb-tab-btn:hover { color: var(--text); }
+.fb-tab-btn.active { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+.fb-tab-panel { display: none; }
+.fb-tab-panel.active { display: block; }
+
+/* Builder Layout — two-column */
+.fb-builder-layout {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: var(--space-500);
+    align-items: start;
+}
+@media (max-width: 1024px) {
+    .fb-builder-layout { grid-template-columns: 1fr; }
+}
+
+/* Field List */
+.fb-field-list {
+    min-height: 80px;
+    padding: var(--space-200) 0;
+}
+.fb-field-card {
+    display: flex; align-items: center; gap: var(--space-300);
+    padding: var(--space-300) var(--space-400);
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-200);
+    margin-bottom: var(--space-200);
+    transition: box-shadow 0.15s, border-color 0.15s;
+    cursor: default;
+}
+.fb-field-card:hover {
+    box-shadow: var(--shadow-card-hover);
+    border-color: var(--border-hover);
+}
+.fb-field-card.active {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 1px var(--color-primary), var(--shadow-card);
+}
+.fb-field-card.dragging {
+    opacity: 0.4;
+    border-style: dashed;
+    border-color: var(--color-primary);
+}
+.fb-field-card.drag-over {
+    border-top: 2px solid var(--color-primary);
+}
+
+/* Drag Handle */
+.fb-drag-handle {
+    cursor: grab; color: var(--text-disabled); flex-shrink: 0;
+    display: flex; align-items: center; padding: 2px;
+    border-radius: var(--radius-100);
+    transition: color 0.15s;
+}
+.fb-drag-handle:hover { color: var(--text-secondary); }
 .fb-drag-handle:active { cursor: grabbing; }
+.fb-drag-handle svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; fill: none; }
+
+/* Type Icon */
+.fb-type-icon {
+    width: 36px; height: 36px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: var(--radius-200);
+    background: var(--bg-subdued);
+    color: var(--text-secondary);
+}
+.fb-type-icon svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 1.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Field Info */
 .fb-field-info { flex: 1; min-width: 0; }
-.fb-field-label { font-weight: 600; font-size: 0.95rem; color: var(--text-primary, #1e293b); }
-.fb-field-meta { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.25rem; flex-wrap: wrap; }
-.fb-field-meta code { font-size: 0.8rem; background: var(--bg-muted, #f1f5f9); padding: 0.1rem 0.4rem; border-radius: 3px; color: var(--text-secondary, #64748b); }
-.fb-type-badge, .fb-required-badge, .fb-width-badge { font-size: 0.75rem; padding: 0.1rem 0.5rem; border-radius: 10px; font-weight: 500; }
-.fb-type-badge { background: var(--bg-muted, #e2e8f0); color: var(--text-secondary, #475569); }
-.fb-required-badge { background: #fef2f2; color: #dc2626; }
-.fb-width-badge { background: #f0fdf4; color: #16a34a; }
-.fb-field-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
-.fb-add-field-section { margin-top: var(--space-300, 1rem); padding-top: var(--space-300, 1rem); border-top: 1px dashed var(--border-color, #e2e8f0); }
-.fb-field-form { margin-top: var(--space-400, 1.5rem); padding: 1.5rem; border: 1px solid var(--border-color, #e2e8f0); border-radius: 8px; background: var(--bg-muted, #f8fafc); }
-.fb-field-form h4 { margin-bottom: var(--space-300, 1rem); font-size: 1rem; }
-.form-inline-checks { margin-bottom: var(--space-300, 1rem); }
-.form-inline-checks label { display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer; font-size: 0.9rem; }
-.fb-step-tabs { display: flex; gap: 0.5rem; margin-bottom: var(--space-300, 1rem); flex-wrap: wrap; }
-.fb-step-tab { padding: 0.4rem 1rem; border: 1px solid var(--border-color, #e2e8f0); border-radius: 20px; background: var(--bg-surface, #fff); cursor: pointer; font-size: 0.85rem; transition: all 0.2s; }
-.fb-step-tab.active { background: var(--primary, #3b82f6); color: #fff; border-color: var(--primary, #3b82f6); }
-.fb-step-tab:hover:not(.active) { border-color: var(--primary, #3b82f6); }
-.fb-empty-fields { padding: 2rem; text-align: center; color: var(--text-secondary, #94a3b8); }
-.toggle-label { display: flex; align-items: center; gap: 0.75rem; cursor: pointer; font-weight: 500; }
-.toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
-.toggle-switch input { opacity: 0; width: 0; height: 0; }
-.toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: var(--border-color, #cbd5e1); border-radius: 24px; transition: background 0.2s; }
-.toggle-slider::before { content: ''; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: transform 0.2s; }
-.toggle-switch input:checked + .toggle-slider { background: var(--primary, #3b82f6); }
-.toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
+.fb-field-label { font-weight: 600; font-size: var(--font-sm); color: var(--text); line-height: 1.3; }
+.fb-field-meta {
+    display: flex; gap: var(--space-200); align-items: center;
+    margin-top: 2px; flex-wrap: wrap;
+}
+.fb-field-meta code {
+    font-size: 11px; font-family: var(--font-mono);
+    background: var(--bg-subdued); padding: 1px 6px;
+    border-radius: var(--radius-100); color: var(--text-secondary);
+}
+.fb-badge {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-size: 11px; padding: 1px 8px; border-radius: var(--radius-full);
+    font-weight: 500; line-height: 1.5;
+}
+.fb-badge-type { background: var(--color-info-bg); color: var(--color-info); }
+.fb-badge-required { background: var(--color-critical-bg); color: var(--color-critical); }
+.fb-badge-half { background: var(--color-success-bg); color: var(--color-success); }
+
+/* Field Actions */
+.fb-field-actions { display: flex; gap: 2px; flex-shrink: 0; }
+.fb-action-btn {
+    width: 32px; height: 32px; border: none; background: none;
+    cursor: pointer; border-radius: var(--radius-100);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-secondary); transition: background 0.15s, color 0.15s;
+}
+.fb-action-btn:hover { background: var(--bg-subdued); color: var(--text); }
+.fb-action-btn.fb-delete-btn:hover { background: var(--color-critical-bg); color: var(--color-critical); }
+.fb-action-btn svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 1.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Add Field Area */
+.fb-add-bar {
+    display: flex; align-items: center; justify-content: center;
+    padding: var(--space-400); margin-top: var(--space-200);
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-200);
+    cursor: pointer; transition: border-color 0.15s, background 0.15s;
+}
+.fb-add-bar:hover {
+    border-color: var(--color-primary);
+    background: rgba(0, 128, 96, 0.02);
+}
+.fb-add-bar-content {
+    display: flex; align-items: center; gap: var(--space-200);
+    color: var(--text-secondary); font-size: var(--font-sm); font-weight: 500;
+}
+.fb-add-bar:hover .fb-add-bar-content { color: var(--color-primary); }
+.fb-add-bar-content svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 2; fill: none; }
+
+/* Field Type Picker (Grid) */
+.fb-type-picker {
+    display: none;
+    position: relative;
+    margin-top: var(--space-300);
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-300);
+    box-shadow: var(--shadow-card);
+    padding: var(--space-400);
+}
+.fb-type-picker.visible { display: block; }
+.fb-type-picker-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: var(--space-300);
+}
+.fb-type-picker-header h4 { font-size: var(--font-sm); font-weight: 600; color: var(--text); margin: 0; }
+.fb-type-picker-close {
+    width: 28px; height: 28px; border: none; background: none;
+    cursor: pointer; border-radius: var(--radius-100);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-secondary); transition: background 0.15s;
+}
+.fb-type-picker-close:hover { background: var(--bg-subdued); }
+.fb-type-picker-close svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; fill: none; }
+
+.fb-type-group-label {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.04em; color: var(--text-secondary);
+    margin-bottom: var(--space-200); margin-top: var(--space-300);
+}
+.fb-type-group-label:first-child { margin-top: 0; }
+.fb-type-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-200);
+}
+.fb-type-option {
+    display: flex; flex-direction: column; align-items: center;
+    gap: var(--space-100); padding: var(--space-300) var(--space-200);
+    border: 1px solid var(--border); border-radius: var(--radius-200);
+    cursor: pointer; transition: all 0.15s; background: var(--bg-surface);
+    text-align: center;
+}
+.fb-type-option:hover {
+    border-color: var(--color-primary);
+    background: rgba(0, 128, 96, 0.04);
+}
+.fb-type-option-icon {
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: var(--radius-200); background: var(--bg-subdued);
+    color: var(--text-secondary); transition: all 0.15s;
+}
+.fb-type-option:hover .fb-type-option-icon { background: rgba(0, 128, 96, 0.1); color: var(--color-primary); }
+.fb-type-option-icon svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 1.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.fb-type-option-label { font-size: 11px; font-weight: 500; color: var(--text); line-height: 1.2; }
+
+/* Right Panel — Field Editor */
+.fb-editor-panel {
+    position: sticky; top: 68px;
+}
+.fb-editor-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-300);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+}
+.fb-editor-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: var(--space-300) var(--space-400);
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-subdued);
+}
+.fb-editor-header h4 { font-size: var(--font-sm); font-weight: 600; color: var(--text); margin: 0; }
+.fb-editor-body { padding: var(--space-400); }
+.fb-editor-body .form-group { margin-bottom: var(--space-300); }
+.fb-editor-body .form-group label { font-size: var(--font-xs); }
+.fb-editor-body .form-control { font-size: var(--font-sm); padding: 6px 10px; }
+.fb-editor-footer {
+    display: flex; gap: var(--space-200); justify-content: flex-end;
+    padding: var(--space-300) var(--space-400);
+    border-top: 1px solid var(--border);
+    background: var(--bg-subdued);
+}
+.fb-editor-row {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: var(--space-300);
+}
+
+/* Empty State */
+.fb-empty {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: var(--space-800) var(--space-400);
+    text-align: center;
+}
+.fb-empty-icon {
+    width: 64px; height: 64px; margin-bottom: var(--space-400);
+    display: flex; align-items: center; justify-content: center;
+    border-radius: var(--radius-full); background: var(--bg-subdued);
+    color: var(--text-disabled);
+}
+.fb-empty-icon svg { width: 28px; height: 28px; stroke: currentColor; stroke-width: 1.5; fill: none; }
+.fb-empty h3 { font-size: var(--font-md); font-weight: 600; color: var(--text); margin-bottom: var(--space-100); }
+.fb-empty p { font-size: var(--font-sm); color: var(--text-secondary); max-width: 280px; }
+
+/* Editor placeholder when no field selected */
+.fb-editor-placeholder {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: var(--space-800) var(--space-400);
+    text-align: center; color: var(--text-secondary);
+}
+.fb-editor-placeholder svg { width: 40px; height: 40px; stroke: currentColor; stroke-width: 1; fill: none; margin-bottom: var(--space-300); color: var(--text-disabled); }
+.fb-editor-placeholder p { font-size: var(--font-sm); margin: 0; }
+
+/* Toggle */
+.fb-toggle { display: flex; align-items: center; gap: var(--space-200); cursor: pointer; font-weight: 500; font-size: var(--font-sm); }
+.fb-toggle-track {
+    position: relative; width: 36px; height: 20px;
+    background: var(--border); border-radius: var(--radius-full);
+    transition: background 0.2s; flex-shrink: 0;
+}
+.fb-toggle-track::before {
+    content: ''; position: absolute; width: 16px; height: 16px;
+    top: 2px; left: 2px; background: #fff; border-radius: 50%;
+    transition: transform 0.2s;
+}
+.fb-toggle input { display: none; }
+.fb-toggle input:checked ~ .fb-toggle-track { background: var(--color-primary); }
+.fb-toggle input:checked ~ .fb-toggle-track::before { transform: translateX(16px); }
+
+/* Step Tabs */
+.fb-step-bar {
+    display: flex; align-items: center; gap: var(--space-200);
+    padding: var(--space-200) 0; margin-bottom: var(--space-200);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+}
+.fb-step-pill {
+    padding: 4px 14px; border-radius: var(--radius-full);
+    border: 1px solid var(--border); background: var(--bg-surface);
+    cursor: pointer; font-size: var(--font-xs); font-weight: 500;
+    transition: all 0.15s; font-family: var(--font);
+    color: var(--text-secondary);
+}
+.fb-step-pill.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+.fb-step-pill:hover:not(.active) { border-color: var(--color-primary); color: var(--color-primary); }
+
+/* Settings form rows */
+.settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400); }
+@media (max-width: 640px) { .settings-grid { grid-template-columns: 1fr; } }
+
+/* Collapsible section */
+.fb-collapse-trigger {
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; user-select: none;
+}
+.fb-collapse-trigger .fb-chevron {
+    transition: transform 0.2s; color: var(--text-secondary);
+}
+.fb-collapse-trigger .fb-chevron svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; fill: none; }
+.fb-collapse-trigger.open .fb-chevron { transform: rotate(180deg); }
+
+/* Confirm delete inline */
 .confirm-delete { display: inline; }
-.form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-300, 1rem); }
+
+/* Field count badge in tab */
+.fb-count-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 20px; height: 20px; padding: 0 6px;
+    border-radius: var(--radius-full); background: var(--bg-subdued);
+    font-size: 11px; font-weight: 600; color: var(--text-secondary);
+    margin-left: var(--space-100);
+}
 </style>
 {% endblock %}
 
@@ -56,27 +323,310 @@
 <div class="page-header">
     <h1>{{ form.name }}</h1>
     <div class="page-actions">
-        <a href="/cms/forms/{{ form.slug }}/submissions" class="btn btn-outline">Submissions ({{ submissions_count ?? 0 }})</a>
+        <a href="/cms/forms/{{ form.slug }}/submissions" class="btn btn-outline">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Submissions ({{ submissions_count ?? 0 }})
+        </a>
     </div>
 </div>
 
-<div class="tab-nav">
-    <button class="tab-btn active" data-tab="tab-settings">Settings</button>
-    <button class="tab-btn" data-tab="tab-fields">Fields ({{ fields|length }})</button>
+<div class="fb-tabs">
+    <button class="fb-tab-btn active" data-tab="tab-fields">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;vertical-align:-2px"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Fields <span class="fb-count-badge">{{ fields|length }}</span>
+    </button>
+    <button class="fb-tab-btn" data-tab="tab-settings">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;vertical-align:-2px"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+    </button>
+</div>
+
+{# ===== FIELDS TAB ===== #}
+<div id="tab-fields" class="fb-tab-panel active">
+    <div class="fb-builder-layout">
+        {# Left Column — Field List #}
+        <div class="fb-builder-main">
+            <div class="card">
+                <div class="card-header" style="display: flex; align-items: center; justify-content: space-between;">
+                    <h3>Form Fields</h3>
+                    {% if form.is_multi_step %}
+                    <button type="button" class="btn btn-sm btn-outline" id="add-step-btn">+ Add Step</button>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {# Step Pills (multi-step) #}
+                    {% if form.is_multi_step %}
+                    <div class="fb-step-bar" id="step-tabs">
+                        {% set steps = form.steps ?? [{label: 'Step 1'}] %}
+                        {% for step in steps %}
+                        <button type="button" class="fb-step-pill {{ loop.first ? 'active' : '' }}"
+                                data-step="{{ loop.index0 }}">
+                            {{ step.label ?? 'Step ' ~ loop.index }}
+                        </button>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    {# Field List #}
+                    <div class="fb-field-list" id="field-list" data-form-slug="{{ form.slug }}">
+                        {% if fields|length > 0 %}
+                            {% for field in fields %}
+                            <div class="fb-field-card" draggable="true"
+                                 data-field-id="{{ field.id }}"
+                                 data-field-slug="{{ field.slug }}"
+                                 data-field-label="{{ field.label }}"
+                                 data-field-type="{{ field.type }}"
+                                 data-field-placeholder="{{ field.placeholder ?? '' }}"
+                                 data-field-default="{{ field.default_value ?? '' }}"
+                                 data-field-validation="{{ field.validation ?? '' }}"
+                                 data-field-required="{{ field.isRequired() ? '1' : '0' }}"
+                                 data-field-width="{{ field.width ?? 'col-12' }}"
+                                 data-field-options="{{ field.options ? field.options|json_encode : '' }}"
+                                 data-step="{{ field.step ?? 0 }}">
+                                <div class="fb-drag-handle" title="Drag to reorder">
+                                    <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="8" y2="6.01"/><line x1="8" y1="12" x2="8" y2="12.01"/><line x1="8" y1="18" x2="8" y2="18.01"/><line x1="16" y1="6" x2="16" y2="6.01"/><line x1="16" y1="12" x2="16" y2="12.01"/><line x1="16" y1="18" x2="16" y2="18.01"/></svg>
+                                </div>
+                                <div class="fb-type-icon" data-type="{{ field.type }}">
+                                    {# Icon injected by JS #}
+                                </div>
+                                <div class="fb-field-info">
+                                    <div class="fb-field-label">{{ field.label }}</div>
+                                    <div class="fb-field-meta">
+                                        <code>{{ field.slug }}</code>
+                                        <span class="fb-badge fb-badge-type">{{ field.type }}</span>
+                                        {% if field.isRequired() %}
+                                            <span class="fb-badge fb-badge-required">required</span>
+                                        {% endif %}
+                                        {% if field.width and field.width != 'col-12' %}
+                                            <span class="fb-badge fb-badge-half">half</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="fb-field-actions">
+                                    <button type="button" class="fb-action-btn fb-edit-field"
+                                            data-field-id="{{ field.id }}" title="Edit field">
+                                        <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                    </button>
+                                    <button type="button" class="fb-action-btn fb-delete-btn fb-delete-field"
+                                            data-field-id="{{ field.id }}"
+                                            data-field-label="{{ field.label }}" title="Delete field">
+                                        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="fb-empty" id="empty-fields">
+                                <div class="fb-empty-icon">
+                                    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                                </div>
+                                <h3>No fields yet</h3>
+                                <p>Click the button below to add your first form field.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    {# Add Field Bar #}
+                    <div class="fb-add-bar" id="add-field-trigger">
+                        <div class="fb-add-bar-content">
+                            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Add Field
+                        </div>
+                    </div>
+
+                    {# Field Type Picker #}
+                    <div class="fb-type-picker" id="type-picker">
+                        <div class="fb-type-picker-header">
+                            <h4>Choose Field Type</h4>
+                            <button type="button" class="fb-type-picker-close" id="type-picker-close">
+                                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            </button>
+                        </div>
+
+                        <div class="fb-type-group-label">Input Fields</div>
+                        <div class="fb-type-grid">
+                            <div class="fb-type-option" data-type="text">
+                                <div class="fb-type-option-icon"><svg viewBox="0 0 24 24"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg></div>
+                                <span class="fb-type-option-label">Text</span>
+                            </div>
+                            <div class="fb-type-option" data-type="textarea">
+                                <div class="fb-type-option-icon"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
+                                <span class="fb-type-option-label">Textarea</span>
+                            </div>
+                            <div class="fb-type-option" data-type="email">
+                                <div class="fb-type-option-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+                                <span class="fb-type-option-label">Email</span>
+                            </div>
+                            <div class="fb-type-option" data-type="number">
+                                <div class="fb-type-option-icon"><svg viewBox="0 0 24 24"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg></div>
+                                <span class="fb-type-option-label">Number</span>
+                            </div>
+                            <div class="fb-type-option" data-type="tel">
+                                <div class="fb-type-option-icon"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
+                                <span class="fb-type-option-label">Phone</span>
+                            </div>
+                            <div class="fb-type-option" data-type="url">
+                                <div class="fb-type-option-icon"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div>
+                                <span class="fb-type-option-label">URL</span>
+                            </div>
+                            <div class="fb-type-option" data-type="password">
+                                <div class="fb-type-option-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+                                <span class="fb-type-option-label">Password</span>
+                            </div>
+                            <div class="fb-type-option" data-type="date">
+                                <div class="fb-type-option-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+                                <span class="fb-type-option-label">Date</span>
+                            </div>
+                            <div class="fb-type-option" data-type="file">
+                                <div class="fb-type-option-icon"><svg viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></div>
+                                <span class="fb-type-option-label">File Upload</span>
+                            </div>
+                        </div>
+
+                        <div class="fb-type-group-label">Choice Fields</div>
+                        <div class="fb-type-grid">
+                            <div class="fb-type-option" data-type="select">
+                                <div class="fb-type-option-icon"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+                                <span class="fb-type-option-label">Dropdown</span>
+                            </div>
+                            <div class="fb-type-option" data-type="radio">
+                                <div class="fb-type-option-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg></div>
+                                <span class="fb-type-option-label">Radio</span>
+                            </div>
+                            <div class="fb-type-option" data-type="checkbox">
+                                <div class="fb-type-option-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/></svg></div>
+                                <span class="fb-type-option-label">Checkbox</span>
+                            </div>
+                        </div>
+
+                        <div class="fb-type-group-label">Layout Elements</div>
+                        <div class="fb-type-grid">
+                            <div class="fb-type-option" data-type="heading">
+                                <div class="fb-type-option-icon"><svg viewBox="0 0 24 24"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg></div>
+                                <span class="fb-type-option-label">Heading</span>
+                            </div>
+                            <div class="fb-type-option" data-type="paragraph">
+                                <div class="fb-type-option-icon"><svg viewBox="0 0 24 24"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg></div>
+                                <span class="fb-type-option-label">Paragraph</span>
+                            </div>
+                            <div class="fb-type-option" data-type="divider">
+                                <div class="fb-type-option-icon"><svg viewBox="0 0 24 24"><line x1="2" y1="12" x2="22" y2="12"/></svg></div>
+                                <span class="fb-type-option-label">Divider</span>
+                            </div>
+                            <div class="fb-type-option" data-type="hidden">
+                                <div class="fb-type-option-icon"><svg viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></div>
+                                <span class="fb-type-option-label">Hidden</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Right Column — Field Editor Panel #}
+        <div class="fb-editor-panel" id="editor-panel">
+            <div class="fb-editor-card">
+                <div id="editor-placeholder">
+                    <div class="fb-editor-placeholder">
+                        <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        <p>Select a field to edit its properties, or add a new field to get started.</p>
+                    </div>
+                </div>
+                <div id="editor-form" style="display:none">
+                    <div class="fb-editor-header">
+                        <h4 id="editor-title">Edit Field</h4>
+                        <button type="button" class="fb-type-picker-close" id="editor-close" title="Close editor">
+                            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                    </div>
+                    <div class="fb-editor-body">
+                        <input type="hidden" id="ff-id" value="">
+                        <input type="hidden" id="ff-type" value="text">
+
+                        <div class="form-group">
+                            <label for="ff-label">Label *</label>
+                            <input type="text" id="ff-label" class="form-control" placeholder="e.g. Full Name">
+                        </div>
+
+                        <div class="fb-editor-row">
+                            <div class="form-group">
+                                <label for="ff-slug">Slug</label>
+                                <input type="text" id="ff-slug" class="form-control" placeholder="auto-generated">
+                            </div>
+                            <div class="form-group">
+                                <label for="ff-width">Width</label>
+                                <select id="ff-width" class="form-control">
+                                    <option value="col-12">Full Width</option>
+                                    <option value="col-6">Half Width</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="fb-editor-row">
+                            <div class="form-group">
+                                <label for="ff-placeholder">Placeholder</label>
+                                <input type="text" id="ff-placeholder" class="form-control" placeholder="Optional">
+                            </div>
+                            <div class="form-group">
+                                <label for="ff-default">Default Value</label>
+                                <input type="text" id="ff-default" class="form-control" placeholder="Optional">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="ff-validation">Validation Rules</label>
+                            <input type="text" id="ff-validation" class="form-control"
+                                   placeholder="e.g. min:3|max:255">
+                            <small style="font-size:11px;color:var(--text-secondary);margin-top:2px;display:block;">Pipe-separated. Leave empty for defaults.</small>
+                        </div>
+
+                        <div class="form-group" id="ff-options-group" style="display: none;">
+                            <label for="ff-options">Options</label>
+                            <textarea id="ff-options" class="form-control" rows="3"
+                                      placeholder='["Option 1", "Option 2", "Option 3"]'></textarea>
+                            <small style="font-size:11px;color:var(--text-secondary);margin-top:2px;display:block;">JSON array for select, radio, or checkbox.</small>
+                        </div>
+
+                        {% if form.is_multi_step %}
+                        <div class="form-group">
+                            <label for="ff-step">Step</label>
+                            <select id="ff-step" class="form-control">
+                                {% set steps = form.steps ?? [{label: 'Step 1'}] %}
+                                {% for step in steps %}
+                                <option value="{{ loop.index0 }}">{{ step.label ?? 'Step ' ~ loop.index }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% endif %}
+
+                        <div class="form-group" style="margin-bottom:0">
+                            <label class="fb-toggle">
+                                <input type="checkbox" id="ff-required" value="1">
+                                <span class="fb-toggle-track"></span>
+                                Required field
+                            </label>
+                        </div>
+                    </div>
+                    <div class="fb-editor-footer">
+                        <button type="button" class="btn btn-outline btn-sm" id="editor-cancel">Cancel</button>
+                        <button type="button" class="btn btn-primary btn-sm" id="editor-save">Save Field</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 {# ===== SETTINGS TAB ===== #}
-<div id="tab-settings" class="tab-panel active">
+<div id="tab-settings" class="fb-tab-panel">
     <form method="POST" action="/cms/forms/{{ form.slug }}">
         {{ csrf_field() | raw }}
 
         {# Basic Info #}
         <div class="card" style="margin-bottom: var(--space-500);">
-            <div class="card-header">
-                <h3>Basic Information</h3>
-            </div>
+            <div class="card-header"><h3>Basic Information</h3></div>
             <div class="card-body">
-                <div class="form-row">
+                <div class="settings-grid">
                     <div class="form-group">
                         <label for="name">Form Name *</label>
                         <input type="text" id="name" name="name" class="form-control"
@@ -85,17 +635,15 @@
                     <div class="form-group">
                         <label>Slug</label>
                         <input type="text" class="form-control" value="{{ form.slug }}" disabled>
-                        <small class="text-muted">Slug cannot be changed after creation.</small>
+                        <small style="font-size:11px;color:var(--text-secondary);">Cannot be changed after creation.</small>
                     </div>
                 </div>
-
                 <div class="form-group">
                     <label for="description">Description</label>
                     <textarea id="description" name="description" class="form-control"
-                              rows="3">{{ form.description ?? '' }}</textarea>
+                              rows="2">{{ form.description ?? '' }}</textarea>
                 </div>
-
-                <div class="form-row">
+                <div class="settings-grid">
                     <div class="form-group">
                         <label for="status">Status</label>
                         <select id="status" name="status" class="form-control">
@@ -104,27 +652,23 @@
                             <option value="archived" {{ form.status == 'archived' ? 'selected' : '' }}>Archived</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label class="toggle-label">
-                            Multi-step Form
-                            <span class="toggle-switch">
-                                <input type="checkbox" name="is_multi_step" value="1"
-                                       {{ form.is_multi_step ? 'checked' : '' }}>
-                                <span class="toggle-slider"></span>
-                            </span>
+                    <div class="form-group" style="display:flex;align-items:flex-end;padding-bottom:var(--space-400);">
+                        <label class="fb-toggle">
+                            <input type="checkbox" name="is_multi_step" value="1"
+                                   {{ form.is_multi_step ? 'checked' : '' }}>
+                            <span class="fb-toggle-track"></span>
+                            Multi-step form
                         </label>
                     </div>
                 </div>
             </div>
         </div>
 
-        {# Settings #}
+        {# Behavior #}
         <div class="card" style="margin-bottom: var(--space-500);">
-            <div class="card-header">
-                <h3>Settings</h3>
-            </div>
+            <div class="card-header"><h3>Behavior</h3></div>
             <div class="card-body">
-                <div class="form-row">
+                <div class="settings-grid">
                     <div class="form-group">
                         <label for="submit_button_text">Submit Button Text</label>
                         <input type="text" id="submit_button_text" name="settings[submit_button_text]" class="form-control"
@@ -137,54 +681,44 @@
                                placeholder="https://example.com/thank-you">
                     </div>
                 </div>
-
                 <div class="form-group">
                     <label for="success_message">Success Message</label>
                     <textarea id="success_message" name="settings[success_message]" class="form-control"
                               rows="2">{{ form.settings.success_message ?? '' }}</textarea>
                 </div>
+            </div>
+        </div>
 
-                <div class="form-row">
+        {# Notifications & Security #}
+        <div class="card" style="margin-bottom: var(--space-500);">
+            <div class="card-header"><h3>Notifications & Security</h3></div>
+            <div class="card-body">
+                <div class="settings-grid">
                     <div class="form-group">
-                        <label class="toggle-label">
-                            Email Notifications
-                            <span class="toggle-switch">
-                                <input type="checkbox" name="settings[notify_email]" value="1" id="notify_email_toggle"
-                                       {{ (form.settings.notify_email ?? false) ? 'checked' : '' }}>
-                                <span class="toggle-slider"></span>
-                            </span>
+                        <label class="fb-toggle">
+                            <input type="checkbox" name="settings[notify_email]" value="1" id="notify_email_toggle"
+                                   {{ (form.settings.notify_email ?? false) ? 'checked' : '' }}>
+                            <span class="fb-toggle-track"></span>
+                            Email notifications
                         </label>
-                    </div>
-                    <div class="form-group" id="email_to_group" style="{{ (form.settings.notify_email ?? false) ? '' : 'display:none;' }}">
-                        <label for="notify_email_to">Email To</label>
-                        <input type="email" id="notify_email_to" name="settings[notify_email_to]" class="form-control"
-                               value="{{ form.settings.notify_email_to ?? '' }}">
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="storage_mode">Storage Mode</label>
-                        <select id="storage_mode" name="settings[storage_mode]" class="form-control">
-                            <option value="submissions" {{ (form.settings.storage_mode ?? 'submissions') == 'submissions' ? 'selected' : '' }}>Submissions</option>
-                            <option value="collection" {{ (form.settings.storage_mode ?? '') == 'collection' ? 'selected' : '' }}>Collection</option>
-                        </select>
+                        <div id="email_to_group" style="margin-top: var(--space-300); {{ (form.settings.notify_email ?? false) ? '' : 'display:none;' }}">
+                            <label for="notify_email_to" style="font-size:var(--font-xs);font-weight:500;">Send to</label>
+                            <input type="email" id="notify_email_to" name="settings[notify_email_to]" class="form-control"
+                                   value="{{ form.settings.notify_email_to ?? '' }}" placeholder="admin@example.com">
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label for="rate_limit">Rate Limit (per hour)</label>
+                        <label for="rate_limit" style="margin-bottom:var(--space-200)">Rate Limit (per hour per IP)</label>
                         <input type="number" id="rate_limit" name="settings[rate_limit]" class="form-control"
                                value="{{ form.settings.rate_limit ?? 60 }}" min="0" max="1000">
                     </div>
                 </div>
-
-                <div class="form-group">
-                    <label class="toggle-label">
-                        Honeypot Protection
-                        <span class="toggle-switch">
-                            <input type="checkbox" name="settings[honeypot]" value="1"
-                                   {{ (form.settings.honeypot ?? true) ? 'checked' : '' }}>
-                            <span class="toggle-slider"></span>
-                        </span>
+                <div class="form-group" style="margin-top:var(--space-300);">
+                    <label class="fb-toggle">
+                        <input type="checkbox" name="settings[honeypot]" value="1"
+                               {{ (form.settings.honeypot ?? true) ? 'checked' : '' }}>
+                        <span class="fb-toggle-track"></span>
+                        Honeypot bot protection
                     </label>
                 </div>
             </div>
@@ -192,28 +726,25 @@
 
         {# Payment #}
         <div class="card" style="margin-bottom: var(--space-500);">
-            <div class="card-header" style="cursor: pointer;" id="payment-toggle">
-                <h3 style="display: flex; align-items: center; justify-content: space-between;">
-                    Payment Settings
-                    <span id="payment-chevron" style="font-size: 0.75rem; color: var(--text-secondary);">&#9660;</span>
-                </h3>
+            <div class="card-header fb-collapse-trigger" id="payment-toggle">
+                <h3>Payment Settings</h3>
+                <span class="fb-chevron">
+                    <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                </span>
             </div>
             <div class="card-body" id="payment-section" style="{{ (form.settings.payment_enabled ?? false) ? '' : 'display:none;' }}">
                 <div class="form-group">
-                    <label class="toggle-label">
-                        Enable Payment
-                        <span class="toggle-switch">
-                            <input type="checkbox" name="settings[payment_enabled]" value="1" id="payment_enabled_toggle"
-                                   {{ (form.settings.payment_enabled ?? false) ? 'checked' : '' }}>
-                            <span class="toggle-slider"></span>
-                        </span>
+                    <label class="fb-toggle">
+                        <input type="checkbox" name="settings[payment_enabled]" value="1" id="payment_enabled_toggle"
+                               {{ (form.settings.payment_enabled ?? false) ? 'checked' : '' }}>
+                        <span class="fb-toggle-track"></span>
+                        Enable payment collection
                     </label>
                 </div>
-
                 <div id="payment-fields" style="{{ (form.settings.payment_enabled ?? false) ? '' : 'display:none;' }}">
-                    <div class="form-row">
+                    <div class="settings-grid" style="margin-top:var(--space-300);">
                         <div class="form-group">
-                            <label for="payment_gateway">Payment Gateway</label>
+                            <label for="payment_gateway">Gateway</label>
                             <select id="payment_gateway" name="settings[payment_gateway]" class="form-control">
                                 <option value="stripe" {{ (form.settings.payment_gateway ?? '') == 'stripe' ? 'selected' : '' }}>Stripe</option>
                                 <option value="paypal" {{ (form.settings.payment_gateway ?? '') == 'paypal' ? 'selected' : '' }}>PayPal</option>
@@ -225,20 +756,17 @@
                                    value="{{ form.settings.payment_currency ?? 'USD' }}" maxlength="3">
                         </div>
                     </div>
-
-                    <div class="form-row">
+                    <div class="settings-grid">
                         <div class="form-group">
                             <label for="payment_amount_field">Amount Field Slug</label>
                             <input type="text" id="payment_amount_field" name="settings[payment_amount_field]" class="form-control"
-                                   value="{{ form.settings.payment_amount_field ?? '' }}"
-                                   placeholder="e.g. amount">
-                            <small class="text-muted">Leave empty to use fixed amount.</small>
+                                   value="{{ form.settings.payment_amount_field ?? '' }}" placeholder="e.g. amount">
+                            <small style="font-size:11px;color:var(--text-secondary);">Leave empty to use fixed amount.</small>
                         </div>
                         <div class="form-group">
                             <label for="payment_fixed_amount">Fixed Amount</label>
                             <input type="number" id="payment_fixed_amount" name="settings[payment_fixed_amount]" class="form-control"
-                                   value="{{ form.settings.payment_fixed_amount ?? '' }}"
-                                   step="0.01" min="0">
+                                   value="{{ form.settings.payment_fixed_amount ?? '' }}" step="0.01" min="0">
                         </div>
                     </div>
                 </div>
@@ -251,179 +779,27 @@
     </form>
 </div>
 
-{# ===== FIELDS TAB ===== #}
-<div id="tab-fields" class="tab-panel">
-    <div class="card">
-        <div class="card-header" style="display: flex; align-items: center; justify-content: space-between;">
-            <h3>Fields</h3>
-            {% if form.is_multi_step %}
-            <button type="button" class="btn btn-sm btn-outline" id="add-step-btn">+ Add Step</button>
-            {% endif %}
-        </div>
-        <div class="card-body">
-            {# Step Tabs (multi-step only) #}
-            {% if form.is_multi_step %}
-            <div class="fb-step-tabs" id="step-tabs">
-                {% set steps = form.steps ?? [{label: 'Step 1'}] %}
-                {% for step in steps %}
-                <button type="button" class="fb-step-tab {{ loop.first ? 'active' : '' }}"
-                        data-step="{{ loop.index0 }}">
-                    {{ step.label ?? 'Step ' ~ loop.index }}
-                </button>
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            {# Field List (sortable) #}
-            <div class="fb-field-list" id="field-list" data-form-slug="{{ form.slug }}">
-                {% if fields|length > 0 %}
-                    {% for field in fields %}
-                    <div class="fb-field-card" draggable="true"
-                         data-field-id="{{ field.id }}"
-                         data-field-slug="{{ field.slug }}"
-                         data-field-label="{{ field.label }}"
-                         data-field-type="{{ field.type }}"
-                         data-field-placeholder="{{ field.placeholder ?? '' }}"
-                         data-field-default="{{ field.default_value ?? '' }}"
-                         data-field-validation="{{ field.validation ?? '' }}"
-                         data-field-required="{{ field.isRequired() ? '1' : '0' }}"
-                         data-field-width="{{ field.width ?? 'col-12' }}"
-                         data-field-options="{{ field.options ? field.options|json_encode : '' }}"
-                         data-step="{{ field.step ?? 0 }}">
-                        <div class="fb-drag-handle" title="Drag to reorder">&#x2630;</div>
-                        <div class="fb-field-info">
-                            <div class="fb-field-label">{{ field.label }}</div>
-                            <div class="fb-field-meta">
-                                <code>{{ field.slug }}</code>
-                                <span class="fb-type-badge">{{ field.type }}</span>
-                                {% if field.isRequired() %}
-                                    <span class="fb-required-badge">required</span>
-                                {% endif %}
-                                {% if field.width and field.width != 'col-12' %}
-                                    <span class="fb-width-badge">{{ field.width }}</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="fb-field-actions">
-                            <button type="button" class="btn btn-sm btn-outline fb-edit-field"
-                                    data-field-id="{{ field.id }}">Edit</button>
-                            <button type="button" class="btn btn-sm btn-danger fb-delete-field"
-                                    data-field-id="{{ field.id }}"
-                                    data-field-label="{{ field.label }}">Delete</button>
-                        </div>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <div class="empty-state fb-empty-fields" id="empty-fields">
-                        <p>No fields yet. Add your first field below.</p>
-                    </div>
-                {% endif %}
-            </div>
-
-            {# Add/Edit Field Inline Form #}
-            <div class="fb-add-field-section">
-                <button type="button" class="btn btn-primary" id="add-field-btn">+ Add Field</button>
-            </div>
-
-            <div class="fb-field-form" id="field-form" style="display: none;">
-                <h4 id="field-form-title">Add New Field</h4>
-                <input type="hidden" id="ff-id" value="">
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="ff-label">Label *</label>
-                        <input type="text" id="ff-label" class="form-control" placeholder="e.g. Full Name" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="ff-slug">Slug</label>
-                        <input type="text" id="ff-slug" class="form-control" placeholder="Auto from label">
-                    </div>
-                    <div class="form-group">
-                        <label for="ff-type">Type *</label>
-                        <select id="ff-type" class="form-control">
-                            <option value="text">Text</option>
-                            <option value="textarea">Textarea</option>
-                            <option value="email">Email</option>
-                            <option value="number">Number</option>
-                            <option value="tel">Phone</option>
-                            <option value="url">URL</option>
-                            <option value="password">Password</option>
-                            <option value="date">Date</option>
-                            <option value="time">Time</option>
-                            <option value="datetime">Date & Time</option>
-                            <option value="select">Select (Dropdown)</option>
-                            <option value="radio">Radio Buttons</option>
-                            <option value="checkbox">Checkboxes</option>
-                            <option value="file">File Upload</option>
-                            <option value="hidden">Hidden</option>
-                            <option value="heading">Heading (Display)</option>
-                            <option value="paragraph">Paragraph (Display)</option>
-                            <option value="divider">Divider (Display)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="ff-placeholder">Placeholder</label>
-                        <input type="text" id="ff-placeholder" class="form-control" placeholder="Optional">
-                    </div>
-                    <div class="form-group">
-                        <label for="ff-default">Default Value</label>
-                        <input type="text" id="ff-default" class="form-control" placeholder="Optional">
-                    </div>
-                    <div class="form-group">
-                        <label for="ff-width">Width</label>
-                        <select id="ff-width" class="form-control">
-                            <option value="col-12">Full Width</option>
-                            <option value="col-6">Half Width</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="ff-validation">Validation Rules</label>
-                    <input type="text" id="ff-validation" class="form-control"
-                           placeholder="e.g. min:3|max:255|regex:/^[a-z]+$/">
-                    <small class="text-muted">Pipe-separated rules. Leave empty for defaults.</small>
-                </div>
-
-                <div class="form-group" id="ff-options-group" style="display: none;">
-                    <label for="ff-options">Options (JSON)</label>
-                    <textarea id="ff-options" class="form-control" rows="3"
-                              placeholder='["Option 1", "Option 2", "Option 3"]'></textarea>
-                    <small class="text-muted">JSON array of option values for select, radio, or checkbox fields.</small>
-                </div>
-
-                {% if form.is_multi_step %}
-                <div class="form-group">
-                    <label for="ff-step">Step</label>
-                    <select id="ff-step" class="form-control">
-                        {% set steps = form.steps ?? [{label: 'Step 1'}] %}
-                        {% for step in steps %}
-                        <option value="{{ loop.index0 }}">{{ step.label ?? 'Step ' ~ loop.index }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                {% endif %}
-
-                <div class="form-inline-checks">
-                    <label><input type="checkbox" id="ff-required" value="1"> Required</label>
-                </div>
-
-                <div class="form-actions">
-                    <button type="button" class="btn btn-primary" id="field-form-save">Save Field</button>
-                    <button type="button" class="btn btn-outline" id="field-form-cancel">Cancel</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 {% block scripts %}
 <script nonce="{{ csp_nonce() }}">
-document.addEventListener('DOMContentLoaded', function() {
-    // Toggle email-to field
+(function() {
+    'use strict';
+
+    /* =============================================
+       Tab Navigation
+       ============================================= */
+    document.querySelectorAll('.fb-tab-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.fb-tab-btn').forEach(function(b) { b.classList.remove('active'); });
+            document.querySelectorAll('.fb-tab-panel').forEach(function(p) { p.classList.remove('active'); });
+            btn.classList.add('active');
+            var panel = document.getElementById(btn.dataset.tab);
+            if (panel) panel.classList.add('active');
+        });
+    });
+
+    /* =============================================
+       Settings Toggles
+       ============================================= */
     var notifyToggle = document.getElementById('notify_email_toggle');
     var emailGroup = document.getElementById('email_to_group');
     if (notifyToggle && emailGroup) {
@@ -432,19 +808,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Toggle payment collapse
     var paymentToggle = document.getElementById('payment-toggle');
     var paymentSection = document.getElementById('payment-section');
-    var paymentChevron = document.getElementById('payment-chevron');
     if (paymentToggle && paymentSection) {
         paymentToggle.addEventListener('click', function() {
             var hidden = paymentSection.style.display === 'none';
             paymentSection.style.display = hidden ? '' : 'none';
-            if (paymentChevron) paymentChevron.innerHTML = hidden ? '&#9650;' : '&#9660;';
+            paymentToggle.classList.toggle('open', hidden);
         });
     }
 
-    // Toggle payment fields
     var paymentEnabled = document.getElementById('payment_enabled_toggle');
     var paymentFields = document.getElementById('payment-fields');
     if (paymentEnabled && paymentFields) {
@@ -452,35 +825,41 @@ document.addEventListener('DOMContentLoaded', function() {
             paymentFields.style.display = this.checked ? '' : 'none';
         });
     }
-});
+})();
 </script>
+
 <script nonce="{{ csp_nonce() }}">
 /**
- * Form Builder Admin - Field Management
+ * Form Builder — Field Management (Redesigned)
  */
-(function () {
+(function() {
     'use strict';
 
-    var formSlug = (function () {
+    var formSlug = (function() {
         var el = document.getElementById('field-list');
         return el ? el.dataset.formSlug : null;
     })();
     if (!formSlug) return;
 
-    var csrfToken = (function () {
+    var csrfToken = (function() {
         var meta = document.querySelector('meta[name="csrf-token"]');
         return meta ? meta.getAttribute('content') : '';
     })();
 
     var API_BASE = '/cms/forms/' + formSlug + '/fields';
 
+    /* Element refs */
     var fieldList = document.getElementById('field-list');
-    var fieldForm = document.getElementById('field-form');
-    var fieldFormTitle = document.getElementById('field-form-title');
-    var addFieldBtn = document.getElementById('add-field-btn');
-    var saveFieldBtn = document.getElementById('field-form-save');
-    var cancelFieldBtn = document.getElementById('field-form-cancel');
     var emptyState = document.getElementById('empty-fields');
+    var typePicker = document.getElementById('type-picker');
+    var typePickerClose = document.getElementById('type-picker-close');
+    var addFieldTrigger = document.getElementById('add-field-trigger');
+    var editorPlaceholder = document.getElementById('editor-placeholder');
+    var editorForm = document.getElementById('editor-form');
+    var editorTitle = document.getElementById('editor-title');
+    var editorSave = document.getElementById('editor-save');
+    var editorCancel = document.getElementById('editor-cancel');
+    var editorClose = document.getElementById('editor-close');
 
     var ffId = document.getElementById('ff-id');
     var ffLabel = document.getElementById('ff-label');
@@ -495,8 +874,47 @@ document.addEventListener('DOMContentLoaded', function() {
     var ffOptionsGroup = document.getElementById('ff-options-group');
     var ffStep = document.getElementById('ff-step');
 
+    /* =============================================
+       Field Type Icons (SVG map)
+       ============================================= */
+    var typeIcons = {
+        text: '<svg viewBox="0 0 24 24"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>',
+        textarea: '<svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>',
+        email: '<svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>',
+        number: '<svg viewBox="0 0 24 24"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>',
+        tel: '<svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>',
+        url: '<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
+        password: '<svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+        date: '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+        time: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+        datetime: '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+        select: '<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>',
+        radio: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>',
+        checkbox: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/></svg>',
+        file: '<svg viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>',
+        hidden: '<svg viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>',
+        heading: '<svg viewBox="0 0 24 24"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>',
+        paragraph: '<svg viewBox="0 0 24 24"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>',
+        divider: '<svg viewBox="0 0 24 24"><line x1="2" y1="12" x2="22" y2="12"/></svg>'
+    };
+
+    // Inject type icons into existing field cards
+    document.querySelectorAll('.fb-type-icon[data-type]').forEach(function(el) {
+        var icon = typeIcons[el.dataset.type] || typeIcons.text;
+        el.innerHTML = icon;
+    });
+
+    /* =============================================
+       Helpers
+       ============================================= */
     function slugify(text) {
         return text.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+    }
+
+    function escapeHtml(str) {
+        var div = document.createElement('div');
+        div.textContent = str || '';
+        return div.innerHTML;
     }
 
     function apiRequest(method, url, body) {
@@ -509,9 +927,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         };
         if (body) opts.body = JSON.stringify(body);
-        return fetch(url, opts).then(function (res) {
+        return fetch(url, opts).then(function(res) {
             if (!res.ok) {
-                return res.json().then(function (err) {
+                return res.json().then(function(err) {
                     throw new Error(err.message || 'Request failed');
                 });
             }
@@ -519,44 +937,86 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    if (ffLabel && ffSlug) {
-        ffLabel.addEventListener('input', function () {
-            if (!ffSlug.dataset.manual) {
-                ffSlug.value = slugify(this.value);
+    function toggleEmptyState() {
+        if (!emptyState) return;
+        emptyState.style.display = fieldList.querySelectorAll('.fb-field-card').length === 0 ? '' : 'none';
+    }
+
+    /* =============================================
+       Type Picker
+       ============================================= */
+    addFieldTrigger.addEventListener('click', function() {
+        typePicker.classList.toggle('visible');
+    });
+
+    typePickerClose.addEventListener('click', function() {
+        typePicker.classList.remove('visible');
+    });
+
+    typePicker.querySelectorAll('.fb-type-option').forEach(function(opt) {
+        opt.addEventListener('click', function() {
+            var type = this.dataset.type;
+            typePicker.classList.remove('visible');
+            openEditor(null, type);
+        });
+    });
+
+    /* =============================================
+       Editor Panel
+       ============================================= */
+    function openEditor(fieldId, type) {
+        resetEditor();
+        ffType.value = type || 'text';
+
+        if (fieldId) {
+            var card = fieldList.querySelector('[data-field-id="' + fieldId + '"]');
+            if (!card) return;
+            ffId.value = fieldId;
+            ffLabel.value = card.dataset.fieldLabel || '';
+            ffSlug.value = card.dataset.fieldSlug || '';
+            ffSlug.dataset.manual = '1';
+            ffType.value = card.dataset.fieldType || 'text';
+            if (ffPlaceholder) ffPlaceholder.value = card.dataset.fieldPlaceholder || '';
+            if (ffDefault) ffDefault.value = card.dataset.fieldDefault || '';
+            if (ffValidation) ffValidation.value = card.dataset.fieldValidation || '';
+            if (ffRequired) ffRequired.checked = card.dataset.fieldRequired === '1';
+            if (ffWidth) ffWidth.value = card.dataset.fieldWidth || 'col-12';
+            if (ffStep) ffStep.value = card.dataset.step || '0';
+            if (ffOptions && card.dataset.fieldOptions) {
+                try { ffOptions.value = JSON.stringify(JSON.parse(card.dataset.fieldOptions), null, 2); }
+                catch(e) { ffOptions.value = card.dataset.fieldOptions; }
             }
-        });
-        ffSlug.addEventListener('input', function () {
-            this.dataset.manual = '1';
-        });
-    }
+            editorTitle.textContent = 'Edit Field';
 
-    if (ffType && ffOptionsGroup) {
-        ffType.addEventListener('change', function () {
-            var needsOptions = ['select', 'radio', 'checkbox'].indexOf(this.value) !== -1;
-            ffOptionsGroup.style.display = needsOptions ? '' : 'none';
-        });
-    }
+            // Highlight active card
+            fieldList.querySelectorAll('.fb-field-card').forEach(function(c) { c.classList.remove('active'); });
+            card.classList.add('active');
+        } else {
+            editorTitle.textContent = 'New ' + type.charAt(0).toUpperCase() + type.slice(1) + ' Field';
+        }
 
-    function showFieldForm(editing) {
-        fieldForm.style.display = '';
-        if (addFieldBtn) addFieldBtn.style.display = 'none';
-        fieldFormTitle.textContent = editing ? 'Edit Field' : 'Add New Field';
-        if (!editing) resetFieldForm();
+        // Show/hide options
+        var needsOptions = ['select', 'radio', 'checkbox'].indexOf(ffType.value) !== -1;
+        if (ffOptionsGroup) ffOptionsGroup.style.display = needsOptions ? '' : 'none';
+
+        editorPlaceholder.style.display = 'none';
+        editorForm.style.display = '';
         ffLabel.focus();
     }
 
-    function hideFieldForm() {
-        fieldForm.style.display = 'none';
-        if (addFieldBtn) addFieldBtn.style.display = '';
-        resetFieldForm();
+    function closeEditor() {
+        editorForm.style.display = 'none';
+        editorPlaceholder.style.display = '';
+        fieldList.querySelectorAll('.fb-field-card').forEach(function(c) { c.classList.remove('active'); });
+        resetEditor();
     }
 
-    function resetFieldForm() {
+    function resetEditor() {
         ffId.value = '';
+        ffType.value = 'text';
         ffLabel.value = '';
         ffSlug.value = '';
         ffSlug.dataset.manual = '';
-        ffType.value = 'text';
         if (ffPlaceholder) ffPlaceholder.value = '';
         if (ffDefault) ffDefault.value = '';
         if (ffValidation) ffValidation.value = '';
@@ -567,56 +1027,65 @@ document.addEventListener('DOMContentLoaded', function() {
         if (ffStep) ffStep.value = '0';
     }
 
-    if (addFieldBtn) {
-        addFieldBtn.addEventListener('click', function () {
-            showFieldForm(false);
-        });
-    }
+    editorCancel.addEventListener('click', closeEditor);
+    editorClose.addEventListener('click', closeEditor);
 
-    if (cancelFieldBtn) {
-        cancelFieldBtn.addEventListener('click', hideFieldForm);
-    }
+    // Auto-generate slug from label
+    ffLabel.addEventListener('input', function() {
+        if (!ffSlug.dataset.manual) {
+            ffSlug.value = slugify(this.value);
+        }
+    });
+    ffSlug.addEventListener('input', function() {
+        this.dataset.manual = '1';
+    });
 
-    if (saveFieldBtn) {
-        saveFieldBtn.addEventListener('click', function () {
-            var label = ffLabel.value.trim();
-            if (!label) { ffLabel.focus(); return; }
+    /* =============================================
+       Save Field
+       ============================================= */
+    editorSave.addEventListener('click', function() {
+        var label = ffLabel.value.trim();
+        if (!label) { ffLabel.focus(); return; }
 
-            var slug = ffSlug.value.trim() || slugify(label);
-            var data = {
-                label: label, slug: slug, type: ffType.value,
-                placeholder: ffPlaceholder ? ffPlaceholder.value.trim() : '',
-                default_value: ffDefault ? ffDefault.value.trim() : '',
-                validation: ffValidation ? ffValidation.value.trim() : '',
-                is_required: ffRequired ? ffRequired.checked : false,
-                width: ffWidth ? ffWidth.value : 'col-12',
-                step_id: ffStep ? parseInt(ffStep.value, 10) : 0
-            };
+        var slug = ffSlug.value.trim() || slugify(label);
+        var data = {
+            label: label, slug: slug, type: ffType.value,
+            placeholder: ffPlaceholder ? ffPlaceholder.value.trim() : '',
+            default_value: ffDefault ? ffDefault.value.trim() : '',
+            validation: ffValidation ? ffValidation.value.trim() : '',
+            is_required: ffRequired ? ffRequired.checked : false,
+            width: ffWidth ? ffWidth.value : 'col-12',
+            step_id: ffStep ? parseInt(ffStep.value, 10) : 0
+        };
 
-            if (ffOptions && ['select', 'radio', 'checkbox'].indexOf(ffType.value) !== -1) {
-                try { data.options = JSON.parse(ffOptions.value || '[]'); }
-                catch (e) { alert('Invalid JSON in Options field.'); ffOptions.focus(); return; }
-            }
+        if (ffOptions && ['select', 'radio', 'checkbox'].indexOf(ffType.value) !== -1) {
+            try { data.options = JSON.parse(ffOptions.value || '[]'); }
+            catch(e) { alert('Invalid JSON in Options field.'); ffOptions.focus(); return; }
+        }
 
-            var editingId = ffId.value;
-            var method = 'POST';
-            var url = editingId ? API_BASE + '/' + editingId : API_BASE;
+        var editingId = ffId.value;
+        var method = 'POST';
+        var url = editingId ? API_BASE + '/' + editingId : API_BASE;
 
-            saveFieldBtn.disabled = true;
-            saveFieldBtn.textContent = 'Saving...';
+        editorSave.disabled = true;
+        editorSave.textContent = 'Saving...';
 
-            apiRequest(method, url, data)
-                .then(function (result) {
-                    if (editingId) { updateFieldCard(result.field || result); }
-                    else { appendFieldCard(result.field || result); }
-                    hideFieldForm();
-                    toggleEmptyState();
-                })
-                .catch(function (err) { alert('Error: ' + err.message); })
-                .finally(function () { saveFieldBtn.disabled = false; saveFieldBtn.textContent = 'Save Field'; });
-        });
-    }
+        apiRequest(method, url, data)
+            .then(function(result) {
+                var field = result.field || result;
+                if (editingId) { updateFieldCard(field); }
+                else { appendFieldCard(field); }
+                closeEditor();
+                toggleEmptyState();
+                updateFieldCount();
+            })
+            .catch(function(err) { alert('Error: ' + err.message); })
+            .finally(function() { editorSave.disabled = false; editorSave.textContent = 'Save Field'; });
+    });
 
+    /* =============================================
+       Field Card Management
+       ============================================= */
     function createFieldCardEl(field) {
         var card = document.createElement('div');
         card.className = 'fb-field-card';
@@ -633,20 +1102,22 @@ document.addEventListener('DOMContentLoaded', function() {
         card.dataset.fieldOptions = field.options ? JSON.stringify(field.options) : '';
         card.dataset.step = field.step_id || field.step || 0;
 
+        var icon = typeIcons[field.type] || typeIcons.text;
         var meta = '<code>' + escapeHtml(field.slug) + '</code>' +
-            '<span class="fb-type-badge">' + escapeHtml(field.type) + '</span>';
-        if (field.is_required) meta += '<span class="fb-required-badge">required</span>';
-        if (field.width && field.width !== 'col-12') meta += '<span class="fb-width-badge">' + escapeHtml(field.width) + '</span>';
+            '<span class="fb-badge fb-badge-type">' + escapeHtml(field.type) + '</span>';
+        if (field.is_required) meta += '<span class="fb-badge fb-badge-required">required</span>';
+        if (field.width && field.width !== 'col-12') meta += '<span class="fb-badge fb-badge-half">half</span>';
 
         card.innerHTML =
-            '<div class="fb-drag-handle" title="Drag to reorder">&#x2630;</div>' +
+            '<div class="fb-drag-handle" title="Drag to reorder"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="8" y2="6.01"/><line x1="8" y1="12" x2="8" y2="12.01"/><line x1="8" y1="18" x2="8" y2="18.01"/><line x1="16" y1="6" x2="16" y2="6.01"/><line x1="16" y1="12" x2="16" y2="12.01"/><line x1="16" y1="18" x2="16" y2="18.01"/></svg></div>' +
+            '<div class="fb-type-icon">' + icon + '</div>' +
             '<div class="fb-field-info">' +
             '  <div class="fb-field-label">' + escapeHtml(field.label) + '</div>' +
             '  <div class="fb-field-meta">' + meta + '</div>' +
             '</div>' +
             '<div class="fb-field-actions">' +
-            '  <button type="button" class="btn btn-sm btn-outline fb-edit-field" data-field-id="' + field.id + '">Edit</button>' +
-            '  <button type="button" class="btn btn-sm btn-danger fb-delete-field" data-field-id="' + field.id + '" data-field-label="' + escapeHtml(field.label) + '">Delete</button>' +
+            '  <button type="button" class="fb-action-btn fb-edit-field" data-field-id="' + field.id + '" title="Edit"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>' +
+            '  <button type="button" class="fb-action-btn fb-delete-btn fb-delete-field" data-field-id="' + field.id + '" data-field-label="' + escapeHtml(field.label) + '" title="Delete"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>' +
             '</div>';
 
         bindCardEvents(card);
@@ -661,67 +1132,73 @@ document.addEventListener('DOMContentLoaded', function() {
         if (existing) existing.replaceWith(createFieldCardEl(field));
     }
 
-    function escapeHtml(str) { var div = document.createElement('div'); div.textContent = str || ''; return div.innerHTML; }
-
-    function toggleEmptyState() {
-        if (!emptyState) return;
-        emptyState.style.display = fieldList.querySelectorAll('.fb-field-card').length === 0 ? '' : 'none';
+    function updateFieldCount() {
+        var count = fieldList.querySelectorAll('.fb-field-card').length;
+        var badge = document.querySelector('.fb-count-badge');
+        if (badge) badge.textContent = count;
     }
 
+    /* =============================================
+       Edit / Delete handlers
+       ============================================= */
     function handleEditField(fieldId) {
-        var card = fieldList.querySelector('[data-field-id="' + fieldId + '"]');
-        if (!card) return;
-
-        ffId.value = fieldId;
-        ffLabel.value = card.dataset.fieldLabel || '';
-        ffSlug.value = card.dataset.fieldSlug || '';
-        ffSlug.dataset.manual = '1';
-        ffType.value = card.dataset.fieldType || 'text';
-        if (ffPlaceholder) ffPlaceholder.value = card.dataset.fieldPlaceholder || '';
-        if (ffDefault) ffDefault.value = card.dataset.fieldDefault || '';
-        if (ffValidation) ffValidation.value = card.dataset.fieldValidation || '';
-        if (ffRequired) ffRequired.checked = card.dataset.fieldRequired === '1';
-        if (ffWidth) ffWidth.value = card.dataset.fieldWidth || 'col-12';
-        if (ffStep) ffStep.value = card.dataset.step || 0;
-        if (ffOptions && card.dataset.fieldOptions) {
-            try { ffOptions.value = JSON.stringify(JSON.parse(card.dataset.fieldOptions), null, 2); }
-            catch (e) { ffOptions.value = card.dataset.fieldOptions; }
-        }
-        if (ffOptionsGroup) {
-            ffOptionsGroup.style.display = ['select', 'radio', 'checkbox'].indexOf(card.dataset.fieldType) !== -1 ? '' : 'none';
-        }
-        showFieldForm(true);
+        openEditor(fieldId, null);
     }
 
     function handleDeleteField(fieldId, fieldLabel) {
         if (!confirm('Delete field "' + fieldLabel + '"? This cannot be undone.')) return;
         apiRequest('POST', API_BASE + '/' + fieldId + '/delete')
-            .then(function () {
+            .then(function() {
                 var card = fieldList.querySelector('[data-field-id="' + fieldId + '"]');
                 if (card) card.remove();
                 toggleEmptyState();
+                updateFieldCount();
+                // If this field was being edited, close the editor
+                if (ffId.value === String(fieldId)) closeEditor();
             })
-            .catch(function (err) { alert('Error: ' + err.message); });
+            .catch(function(err) { alert('Error: ' + err.message); });
     }
 
     function bindCardEvents(card) {
         var editBtn = card.querySelector('.fb-edit-field');
         var deleteBtn = card.querySelector('.fb-delete-field');
-        if (editBtn) editBtn.addEventListener('click', function () { handleEditField(this.dataset.fieldId); });
-        if (deleteBtn) deleteBtn.addEventListener('click', function () { handleDeleteField(this.dataset.fieldId, this.dataset.fieldLabel); });
+        if (editBtn) editBtn.addEventListener('click', function(e) { e.stopPropagation(); handleEditField(this.dataset.fieldId); });
+        if (deleteBtn) deleteBtn.addEventListener('click', function(e) { e.stopPropagation(); handleDeleteField(this.dataset.fieldId, this.dataset.fieldLabel); });
+        // Click card to edit
+        card.addEventListener('click', function(e) {
+            if (e.target.closest('.fb-field-actions') || e.target.closest('.fb-drag-handle')) return;
+            handleEditField(card.dataset.fieldId);
+        });
     }
 
-    fieldList.querySelectorAll('.fb-field-card').forEach(function (card) { bindCardEvents(card); });
+    fieldList.querySelectorAll('.fb-field-card').forEach(function(card) { bindCardEvents(card); });
 
+    /* =============================================
+       Drag & Drop
+       ============================================= */
     var dragSrcEl = null;
 
     function bindDragEvents(card) {
-        card.addEventListener('dragstart', function (e) { dragSrcEl = this; this.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', this.dataset.fieldId); });
-        card.addEventListener('dragend', function () { this.classList.remove('dragging'); fieldList.querySelectorAll('.fb-field-card').forEach(function (c) { c.classList.remove('drag-over'); }); });
-        card.addEventListener('dragover', function (e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; if (this !== dragSrcEl) this.classList.add('drag-over'); });
-        card.addEventListener('dragleave', function () { this.classList.remove('drag-over'); });
-        card.addEventListener('drop', function (e) {
-            e.preventDefault(); e.stopPropagation(); this.classList.remove('drag-over');
+        card.addEventListener('dragstart', function(e) {
+            dragSrcEl = this;
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', this.dataset.fieldId);
+        });
+        card.addEventListener('dragend', function() {
+            this.classList.remove('dragging');
+            fieldList.querySelectorAll('.fb-field-card').forEach(function(c) { c.classList.remove('drag-over'); });
+        });
+        card.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            if (this !== dragSrcEl) this.classList.add('drag-over');
+        });
+        card.addEventListener('dragleave', function() { this.classList.remove('drag-over'); });
+        card.addEventListener('drop', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.classList.remove('drag-over');
             if (dragSrcEl && dragSrcEl !== this) {
                 var rect = this.getBoundingClientRect();
                 if (e.clientY < rect.top + rect.height / 2) fieldList.insertBefore(dragSrcEl, this);
@@ -731,49 +1208,58 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    fieldList.querySelectorAll('.fb-field-card').forEach(function (card) { bindDragEvents(card); });
+    fieldList.querySelectorAll('.fb-field-card').forEach(function(card) { bindDragEvents(card); });
 
     function saveFieldOrder() {
         var ids = [];
-        fieldList.querySelectorAll('.fb-field-card').forEach(function (card) { ids.push(card.dataset.fieldId); });
-        apiRequest('POST', API_BASE + '/reorder', { order: ids }).catch(function (err) { console.error('Failed to save field order:', err.message); });
+        fieldList.querySelectorAll('.fb-field-card').forEach(function(card) { ids.push(card.dataset.fieldId); });
+        apiRequest('POST', API_BASE + '/reorder', { order: ids })
+            .catch(function(err) { console.error('Failed to save order:', err.message); });
     }
 
+    /* =============================================
+       Step Tabs (multi-step)
+       ============================================= */
     var stepTabs = document.getElementById('step-tabs');
     var addStepBtn = document.getElementById('add-step-btn');
 
     if (stepTabs) {
-        stepTabs.addEventListener('click', function (e) {
-            var tab = e.target.closest('.fb-step-tab');
+        stepTabs.addEventListener('click', function(e) {
+            var tab = e.target.closest('.fb-step-pill');
             if (!tab) return;
-            stepTabs.querySelectorAll('.fb-step-tab').forEach(function (t) { t.classList.remove('active'); });
+            stepTabs.querySelectorAll('.fb-step-pill').forEach(function(t) { t.classList.remove('active'); });
             tab.classList.add('active');
             filterFieldsByStep(tab.dataset.step);
         });
     }
 
     function filterFieldsByStep(stepIndex) {
-        fieldList.querySelectorAll('.fb-field-card').forEach(function (card) {
+        fieldList.querySelectorAll('.fb-field-card').forEach(function(card) {
             card.style.display = ((card.dataset.step || '0') === String(stepIndex)) ? '' : 'none';
         });
     }
 
     if (addStepBtn) {
-        addStepBtn.addEventListener('click', function () {
+        addStepBtn.addEventListener('click', function() {
             var label = prompt('Step label:', 'Step ' + (stepTabs.children.length + 1));
             if (!label) return;
             apiRequest('POST', '/cms/forms/' + formSlug + '/steps', { title: label })
-                .then(function (result) {
+                .then(function(result) {
                     var step = result.step || result;
                     var tab = document.createElement('button');
                     tab.type = 'button';
-                    tab.className = 'fb-step-tab';
+                    tab.className = 'fb-step-pill';
                     tab.dataset.step = step.id !== undefined ? step.id : stepTabs.children.length;
                     tab.textContent = label;
                     stepTabs.appendChild(tab);
-                    if (ffStep) { var opt = document.createElement('option'); opt.value = tab.dataset.step; opt.textContent = label; ffStep.appendChild(opt); }
+                    if (ffStep) {
+                        var opt = document.createElement('option');
+                        opt.value = tab.dataset.step;
+                        opt.textContent = label;
+                        ffStep.appendChild(opt);
+                    }
                 })
-                .catch(function (err) { alert('Error: ' + err.message); });
+                .catch(function(err) { alert('Error: ' + err.message); });
         });
     }
 })();

@@ -120,14 +120,6 @@
 
             <div class="form-row">
                 <div class="form-group">
-                    <label for="storage_mode">Storage Mode</label>
-                    <select id="storage_mode" name="settings[storage_mode]" class="form-control">
-                        <option value="submissions" {{ (flash('_old_input').settings.storage_mode ?? '') == 'submissions' ? 'selected' : '' }}>Submissions (Form Builder table)</option>
-                        <option value="collection" {{ (flash('_old_input').settings.storage_mode ?? '') == 'collection' ? 'selected' : '' }}>Collection (CMS collection)</option>
-                    </select>
-                    <small class="text-muted">Where form data is stored after submission.</small>
-                </div>
-                <div class="form-group">
                     <label for="rate_limit">Rate Limit (per hour)</label>
                     <input type="number" id="rate_limit" name="settings[rate_limit]" class="form-control"
                            value="{{ flash('_old_input').settings.rate_limit ?? '60' }}"

@@ -10,6 +10,7 @@ use ZephyrPHP\Cms\Models\Form;
 use ZephyrPHP\Cms\Models\FormField;
 use ZephyrPHP\Cms\Models\FormStep;
 use ZephyrPHP\Cms\Models\FormSubmission;
+use ZephyrPHP\Cms\Services\FormCollectionService;
 use ZephyrPHP\Cms\Services\FormTemplateRegistry;
 use ZephyrPHP\Cms\Services\PermissionService;
 
@@ -46,6 +47,18 @@ class FormController extends Controller
         }
     }
 
+    /**
+     * Sync the CMS collection for a form (call after field changes).
+     */
+    private function syncCollection(Form $form): void
+    {
+        try {
+            (new FormCollectionService())->sync($form);
+        } catch (\Exception $e) {
+            // Log but don't fail the AJAX response
+        }
+    }
+
     // ========================================================================
     // CRUD
     // ========================================================================
@@ -56,8 +69,22 @@ class FormController extends Controller
 
         $forms = Form::findAll();
 
+        // Build submission counts per form from collection tables
+        $submissionCounts = [];
+        $schema = new \ZephyrPHP\Cms\Services\SchemaManager();
+        foreach ($forms as $form) {
+            try {
+                $tableName = FormCollectionService::getTableName($form);
+                $result = $schema->listEntries($tableName, ['per_page' => 1]);
+                $submissionCounts[$form->getId()] = $result['total'] ?? 0;
+            } catch (\Exception $e) {
+                $submissionCounts[$form->getId()] = 0;
+            }
+        }
+
         return $this->render('cms::forms/index', [
             'forms' => $forms,
+            'submission_counts' => $submissionCounts,
             'user' => Auth::user(),
         ]);
     }
@@ -363,6 +390,9 @@ class FormController extends Controller
 
         $field->save();
 
+        // Sync collection schema
+        $this->syncCollection($form);
+
         return $this->json([
             'success' => true,
             'message' => 'Field added successfully.',
@@ -432,6 +462,9 @@ class FormController extends Controller
 
         $field->save();
 
+        // Sync collection schema
+        $this->syncCollection($form);
+
         return $this->json([
             'success' => true,
             'message' => 'Field updated successfully.',
@@ -467,6 +500,9 @@ class FormController extends Controller
         }
 
         $field->delete();
+
+        // Sync collection schema
+        $this->syncCollection($form);
 
         return $this->json([
             'success' => true,
@@ -632,14 +668,27 @@ class FormController extends Controller
             return '';
         }
 
-        $submissions = FormSubmission::findBy(
-            ['form' => $form],
-            ['createdAt' => 'DESC']
-        );
+        $schema = new \ZephyrPHP\Cms\Services\SchemaManager();
+        $tableName = FormCollectionService::getTableName($form);
+        $submissions = [];
+
+        try {
+            $result = $schema->listEntries($tableName, [
+                'sort_by' => 'created_at',
+                'sort_dir' => 'DESC',
+                'per_page' => 50,
+            ]);
+            $submissions = $result['data'] ?? [];
+        } catch (\Exception $e) {
+            // Table may not exist yet
+        }
+
+        $displayFields = $form->getSubmittableFields();
 
         return $this->render('cms::forms/submissions', [
             'form' => $form,
             'submissions' => $submissions,
+            'display_fields' => $displayFields,
             'user' => Auth::user(),
         ]);
     }
@@ -655,8 +704,11 @@ class FormController extends Controller
             return '';
         }
 
-        $submission = FormSubmission::find($id);
-        if (!$submission || $submission->getForm()->getId() !== $form->getId()) {
+        $schema = new \ZephyrPHP\Cms\Services\SchemaManager();
+        $tableName = FormCollectionService::getTableName($form);
+        $submission = $schema->findEntry($tableName, $id);
+
+        if (!$submission) {
             $this->flash('errors', ['submission' => 'Submission not found.']);
             $this->redirect("/cms/forms/{$slug}/submissions");
             return '';
@@ -665,7 +717,7 @@ class FormController extends Controller
         return $this->render('cms::forms/submission-detail', [
             'form' => $form,
             'submission' => $submission,
-            'fields' => $form->getFields()->toArray(),
+            'fields' => $form->getSubmittableFields(),
             'user' => Auth::user(),
         ]);
     }
@@ -681,14 +733,9 @@ class FormController extends Controller
             return;
         }
 
-        $submission = FormSubmission::find($id);
-        if (!$submission || $submission->getForm()->getId() !== $form->getId()) {
-            $this->flash('errors', ['submission' => 'Submission not found.']);
-            $this->redirect("/cms/forms/{$slug}/submissions");
-            return;
-        }
-
-        $submission->delete();
+        $schema = new \ZephyrPHP\Cms\Services\SchemaManager();
+        $tableName = FormCollectionService::getTableName($form);
+        $schema->deleteEntry($tableName, $id);
 
         $this->flash('success', 'Submission deleted.');
         $this->redirect("/cms/forms/{$slug}/submissions");
@@ -760,7 +807,7 @@ class FormController extends Controller
         $this->requirePermission('forms.create');
 
         $registry = new FormTemplateRegistry();
-        $templates = $registry->all();
+        $templates = $registry->getAll();
 
         return $this->render('cms::forms/templates', [
             'templates' => $templates,

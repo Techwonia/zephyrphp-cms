@@ -73,10 +73,9 @@ class FormRenderer
         // Submit button
         $submitText = $settings['submit_button_text'] ?? 'Submit';
         if ($form->isMultiStep()) {
-            $html .= '<div class="fb-nav">';
-            $html .= '<button type="button" class="fb-btn fb-btn-prev" style="display:none">Back</button>';
-            $html .= '<button type="button" class="fb-btn fb-btn-next">Next</button>';
-            $html .= '<button type="submit" class="fb-btn fb-btn-submit" style="display:none">' . htmlspecialchars($submitText) . '</button>';
+            // Hidden submit button — JS will move it into the last step's nav
+            $html .= '<div class="fb-actions" style="display:none">';
+            $html .= '<button type="submit" class="fb-btn fb-btn-submit">' . htmlspecialchars($submitText) . '</button>';
             $html .= '</div>';
         } else {
             $html .= '<div class="fb-actions">';
@@ -90,6 +89,11 @@ class FormRenderer
         $success = $this->getFlashSuccess();
         if ($success) {
             $html = '<div class="fb-success-message">' . htmlspecialchars($success) . '</div>' . $html;
+        }
+
+        // Include multi-step JS if needed
+        if ($form->isMultiStep()) {
+            $html .= $this->getFormScript('form-multi-step.js');
         }
 
         return $html;
@@ -275,20 +279,20 @@ class FormRenderer
         // Step indicator
         $html = '<div class="fb-step-indicator">';
         foreach ($steps as $i => $step) {
-            $active = $i === 0 ? ' fb-step-dot--active' : '';
-            $html .= '<div class="fb-step-dot' . $active . '" data-step="' . ($i + 1) . '">';
-            $html .= '<span class="fb-step-number">' . ($i + 1) . '</span>';
-            if ($step->getTitle()) {
-                $html .= '<span class="fb-step-title">' . htmlspecialchars($step->getTitle()) . '</span>';
+            if ($i > 0) {
+                $html .= '<div class="fb-step-connector"></div>';
             }
+            $active = $i === 0 ? ' active' : '';
+            $html .= '<div class="fb-step-dot' . $active . '" data-step="' . ($i + 1) . '">';
+            $html .= ($i + 1);
             $html .= '</div>';
         }
         $html .= '</div>';
 
         // Step containers
         foreach ($steps as $i => $step) {
-            $display = $i === 0 ? '' : ' style="display:none"';
-            $html .= '<div class="fb-step" data-step="' . ($i + 1) . '"' . $display . '>';
+            $activeClass = $i === 0 ? ' active' : '';
+            $html .= '<div class="fb-step' . $activeClass . '" data-step="' . ($i + 1) . '">';
             if ($step->getTitle()) {
                 $html .= '<h3 class="fb-step-heading">' . htmlspecialchars($step->getTitle()) . '</h3>';
             }
@@ -382,6 +386,23 @@ class FormRenderer
         }
 
         return '<style>' . file_get_contents($cssFile) . '</style>';
+    }
+
+    private static array $scriptsIncluded = [];
+
+    private function getFormScript(string $filename): string
+    {
+        if (isset(self::$scriptsIncluded[$filename])) {
+            return '';
+        }
+        self::$scriptsIncluded[$filename] = true;
+
+        $jsFile = dirname(__DIR__, 2) . '/assets/js/' . $filename;
+        if (!file_exists($jsFile)) {
+            return '';
+        }
+
+        return '<script>' . file_get_contents($jsFile) . '</script>';
     }
 
     private function getFlashSuccess(): ?string

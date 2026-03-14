@@ -45,9 +45,9 @@
                                 <span class="badge badge-draft">Draft</span>
                             {% endif %}
                         </td>
-                        <td>{{ form.fields_count ?? 0 }}</td>
-                        <td>{{ form.submissions_count ?? 0 }}</td>
-                        <td>{{ form.created_at ? form.created_at|date('M d, Y') : '&mdash;' }}</td>
+                        <td>{{ form.fields|length }}</td>
+                        <td>{{ submission_counts[form.id] ?? 0 }}</td>
+                        <td>{{ form.createdAt ? form.createdAt|date('M d, Y') : '&mdash;' }}</td>
                         <td class="actions-cell">
                             <a href="/cms/forms/{{ form.slug }}" class="btn btn-sm btn-outline">Edit</a>
                             <a href="/cms/forms/{{ form.slug }}/submissions" class="btn btn-sm btn-outline">Submissions</a>

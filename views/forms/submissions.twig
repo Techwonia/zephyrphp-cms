@@ -4,14 +4,14 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms/forms">Forms</a> / <a href="/cms/forms/{{ form.id }}/edit">{{ form.name }}</a> / Submissions
+    <a href="/cms/forms">Forms</a> / <a href="/cms/forms/{{ form.slug }}">{{ form.name }}</a> / Submissions
 </div>
 
 <div class="page-header">
     <h1>Submissions &mdash; {{ form.name }}</h1>
     <div class="page-actions">
-        <a href="/cms/forms/{{ form.id }}/submissions/export" class="btn btn-outline">Export CSV</a>
-        <a href="/cms/forms/{{ form.id }}/edit" class="btn btn-outline">Back to Form</a>
+        <a href="/cms/forms/{{ form.slug }}/submissions/export" class="btn btn-outline">Export CSV</a>
+        <a href="/cms/forms/{{ form.slug }}" class="btn btn-outline">Back to Form</a>
     </div>
 </div>
 
@@ -36,25 +36,24 @@
                     <tr>
                         <td><code>#{{ submission.id }}</code></td>
                         <td>
-                            {% if submission.status == 'completed' %}
+                            {% set status = submission._status ?? 'completed' %}
+                            {% if status == 'completed' %}
                                 <span class="badge badge-success">Completed</span>
-                            {% elseif submission.status == 'spam' %}
-                                <span class="badge badge-danger">Spam</span>
-                            {% elseif submission.status == 'pending' %}
+                            {% elseif status == 'pending_payment' %}
                                 <span class="badge badge-warning">Pending</span>
                             {% else %}
-                                <span class="badge badge-default">{{ submission.status }}</span>
+                                <span class="badge badge-default">{{ status }}</span>
                             {% endif %}
                         </td>
                         {% for field in display_fields %}
                         <td>
-                            <span class="truncate">{{ submission.data[field.slug] ?? '&mdash;' }}</span>
+                            <span class="truncate">{{ submission[field.slug] ?? '&mdash;' }}</span>
                         </td>
                         {% endfor %}
                         <td>{{ submission.created_at ? submission.created_at|date('M d, Y H:i') : '&mdash;' }}</td>
                         <td class="actions-cell">
-                            <a href="/cms/forms/{{ form.id }}/submissions/{{ submission.id }}" class="btn btn-sm btn-outline">View</a>
-                            <form method="POST" action="/cms/forms/{{ form.id }}/submissions/{{ submission.id }}/delete"
+                            <a href="/cms/forms/{{ form.slug }}/submissions/{{ submission.id }}" class="btn btn-sm btn-outline">View</a>
+                            <form method="POST" action="/cms/forms/{{ form.slug }}/submissions/{{ submission.id }}/delete"
                                   style="display:inline" class="confirm-delete"
                                   data-message="Delete submission #{{ submission.id }}? This cannot be undone.">
                                 {{ csrf_field() | raw }}
@@ -68,34 +67,11 @@
         </div>
     </div>
 </div>
-
-{% if pagination is defined and pagination.total_pages > 1 %}
-<div class="pagination">
-    {% if pagination.current_page > 1 %}
-        <a href="?page={{ pagination.current_page - 1 }}">&laquo; Prev</a>
-    {% endif %}
-
-    {% for page in 1..pagination.total_pages %}
-        {% if page == pagination.current_page %}
-            <span class="active">{{ page }}</span>
-        {% elseif page <= 2 or page >= pagination.total_pages - 1 or (page >= pagination.current_page - 2 and page <= pagination.current_page + 2) %}
-            <a href="?page={{ page }}">{{ page }}</a>
-        {% elseif page == 3 or page == pagination.total_pages - 2 %}
-            <span>&hellip;</span>
-        {% endif %}
-    {% endfor %}
-
-    {% if pagination.current_page < pagination.total_pages %}
-        <a href="?page={{ pagination.current_page + 1 }}">Next &raquo;</a>
-    {% endif %}
-</div>
-{% endif %}
-
 {% else %}
 <div class="empty-state">
     <h3>No submissions yet</h3>
     <p>Submissions will appear here once visitors start filling out your form.</p>
-    <a href="/cms/forms/{{ form.id }}/edit" class="btn btn-outline">Back to Form</a>
+    <a href="/cms/forms/{{ form.slug }}" class="btn btn-outline">Back to Form</a>
 </div>
 {% endif %}
 {% endblock %}
