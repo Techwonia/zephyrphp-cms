@@ -57,6 +57,7 @@ class FormRenderer
         $html .= ' class="' . htmlspecialchars($cssClass) . '"';
         $html .= ' id="' . htmlspecialchars($formId) . '"';
         $html .= ' data-form-slug="' . htmlspecialchars($form->getSlug()) . '"';
+        $html .= ' data-ajax="1"'; // AJAX submission — no page reload
         $html .= ' novalidate'; // We handle validation via JS
         if ($hasFile) {
             $html .= ' enctype="multipart/form-data"';
