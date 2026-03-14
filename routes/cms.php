@@ -204,21 +204,21 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     Route::post('/forms/{slug}/delete', [FormController::class, 'destroy']);
     Route::post('/forms/{slug}/duplicate', [FormController::class, 'duplicate']);
 
-    // Form Fields (AJAX)
-    Route::post('/forms/{slug}/fields', [FormController::class, 'addField']);
-    Route::post('/forms/{slug}/fields/{id}', [FormController::class, 'updateField']);
-    Route::post('/forms/{slug}/fields/{id}/delete', [FormController::class, 'deleteField']);
+    // Form Fields (AJAX) — specific routes before parameterized routes
     Route::post('/forms/{slug}/fields/reorder', [FormController::class, 'reorderFields']);
+    Route::post('/forms/{slug}/fields/{id}/delete', [FormController::class, 'deleteField']);
+    Route::post('/forms/{slug}/fields/{id}', [FormController::class, 'updateField']);
+    Route::post('/forms/{slug}/fields', [FormController::class, 'addField']);
 
     // Form Steps (AJAX)
     Route::post('/forms/{slug}/steps', [FormController::class, 'addStep']);
     Route::post('/forms/{slug}/steps/{id}', [FormController::class, 'updateStep']);
     Route::post('/forms/{slug}/steps/{id}/delete', [FormController::class, 'deleteStep']);
 
-    // Form Submissions
-    Route::get('/forms/{slug}/submissions', [FormController::class, 'submissions']);
+    // Form Submissions — specific routes before parameterized routes
     Route::get('/forms/{slug}/submissions/export', [FormController::class, 'exportSubmissions']);
     Route::get('/forms/{slug}/submissions/{id}', [FormController::class, 'viewSubmission']);
+    Route::get('/forms/{slug}/submissions', [FormController::class, 'submissions']);
     Route::post('/forms/{slug}/submissions/{id}/delete', [FormController::class, 'deleteSubmission']);
 
     // AI Builder
