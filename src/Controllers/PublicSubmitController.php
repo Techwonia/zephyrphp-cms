@@ -246,11 +246,6 @@ class PublicSubmitController extends Controller
         $this->back();
     }
 
-    private function wantsJson(): bool
-    {
-        $accept = $_SERVER['HTTP_ACCEPT'] ?? '';
-        return str_contains($accept, 'application/json');
-    }
 
     private function checkRateLimit(string $slug, string $ip, int $limit): ?string
     {
