@@ -102,15 +102,6 @@ class CmsServiceProvider
         // Add dynamic collection sub-items to sidebar
         $this->registerCollectionSidebarItems($sidebar);
 
-        // Add Forms sidebar item
-        $sidebar->addItem('content', [
-            'id' => 'forms',
-            'label' => 'Forms',
-            'url' => '/cms/forms',
-            'icon' => 'clipboard-list',
-            'match' => 'prefix:/cms/forms',
-        ]);
-
         // Add Apps sidebar item
         $sidebar->addItem('content', [
             'id' => 'apps',
@@ -183,39 +174,6 @@ class CmsServiceProvider
 
     private function registerTwigHelpers(\ZephyrPHP\View\View $view, ThemeManager $themeManager): void
     {
-        // render_form('slug') — Render a form by its slug (auto-generated HTML)
-        $view->addFunction('render_form', function (string $slug, array $attrs = []) {
-            return \ZephyrPHP\Cms\Services\FormRenderer::renderBySlug($slug, $attrs);
-        }, ['is_safe' => ['html']]);
-
-        // get_form('slug') — Get form data for custom-designed forms in theme sections
-        $view->addFunction('get_form', function (string $slug) {
-            $form = \ZephyrPHP\Cms\Models\Form::findOneBy(['slug' => $slug]);
-            if (!$form || !$form->isActive()) return null;
-
-            $fields = [];
-            foreach ($form->getFields() as $field) {
-                $fields[] = [
-                    'slug'        => $field->getSlug(),
-                    'label'       => $field->getLabel(),
-                    'type'        => $field->getType(),
-                    'placeholder' => $field->getPlaceholder(),
-                    'required'    => $field->isRequired(),
-                    'validation'  => $field->getValidation(),
-                    'options'     => $field->getOptions(),
-                    'default'     => $field->getDefaultValue(),
-                ];
-            }
-
-            return [
-                'name'     => $form->getName(),
-                'slug'     => $form->getSlug(),
-                'fields'   => $fields,
-                'settings' => $form->getSettings(),
-                'action'   => '/forms/' . $form->getSlug() . '/submit',
-            ];
-        });
-
         // Register sidebar and dashboard as Twig globals (lazy-loaded)
         $view->addFunction('cms_sidebar', function () {
             return SidebarManager::getInstance()->getSections();
@@ -769,78 +727,6 @@ class CmsServiceProvider
                     INDEX `idx_license_item` (`item_id`),
                     INDEX `idx_license_buyer` (`buyer_id`),
                     CONSTRAINT `fk_license_item` FOREIGN KEY (`item_id`) REFERENCES `cms_marketplace_items`(`id`) ON DELETE CASCADE
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-            }
-
-            // Form Builder: Forms
-            if (!$sm->tablesExist(['fb_forms'])) {
-                $conn->executeStatement("CREATE TABLE `fb_forms` (
-                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                    `name` VARCHAR(255) NOT NULL,
-                    `slug` VARCHAR(255) NOT NULL,
-                    `description` TEXT NULL DEFAULT NULL,
-                    `status` VARCHAR(20) NOT NULL DEFAULT 'draft',
-                    `is_multi_step` TINYINT(1) NOT NULL DEFAULT 0,
-                    `template_slug` VARCHAR(100) NULL DEFAULT NULL,
-                    `settings` JSON NULL DEFAULT NULL,
-                    `created_by` INT NULL DEFAULT NULL,
-                    `createdAt` DATETIME NULL DEFAULT NULL,
-                    `updatedAt` DATETIME NULL DEFAULT NULL,
-                    UNIQUE KEY `uniq_fb_form_slug` (`slug`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-            }
-
-            // Form Builder: Steps
-            if (!$sm->tablesExist(['fb_form_steps'])) {
-                $conn->executeStatement("CREATE TABLE `fb_form_steps` (
-                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                    `form_id` INT UNSIGNED NOT NULL,
-                    `step_number` INT UNSIGNED NOT NULL DEFAULT 1,
-                    `title` VARCHAR(255) NULL DEFAULT NULL,
-                    `description` TEXT NULL DEFAULT NULL,
-                    `createdAt` DATETIME NULL DEFAULT NULL,
-                    `updatedAt` DATETIME NULL DEFAULT NULL,
-                    UNIQUE KEY `uniq_form_step` (`form_id`, `step_number`),
-                    CONSTRAINT `fk_fbstep_form` FOREIGN KEY (`form_id`) REFERENCES `fb_forms`(`id`) ON DELETE CASCADE
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-            }
-
-            // Form Builder: Fields
-            if (!$sm->tablesExist(['fb_form_fields'])) {
-                $conn->executeStatement("CREATE TABLE `fb_form_fields` (
-                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                    `form_id` INT UNSIGNED NOT NULL,
-                    `step_id` INT UNSIGNED NULL DEFAULT NULL,
-                    `slug` VARCHAR(255) NOT NULL,
-                    `label` VARCHAR(255) NOT NULL,
-                    `type` VARCHAR(50) NOT NULL DEFAULT 'text',
-                    `placeholder` VARCHAR(255) NULL DEFAULT NULL,
-                    `default_value` VARCHAR(500) NULL DEFAULT NULL,
-                    `validation` VARCHAR(500) NULL DEFAULT NULL,
-                    `options` JSON NULL DEFAULT NULL,
-                    `sort_order` INT NOT NULL DEFAULT 0,
-                    `is_required` TINYINT(1) NOT NULL DEFAULT 0,
-                    `createdAt` DATETIME NULL DEFAULT NULL,
-                    `updatedAt` DATETIME NULL DEFAULT NULL,
-                    CONSTRAINT `fk_fbfield_form` FOREIGN KEY (`form_id`) REFERENCES `fb_forms`(`id`) ON DELETE CASCADE,
-                    CONSTRAINT `fk_fbfield_step` FOREIGN KEY (`step_id`) REFERENCES `fb_form_steps`(`id`) ON DELETE SET NULL
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-            }
-
-            // Form Builder: Submissions
-            if (!$sm->tablesExist(['fb_submissions'])) {
-                $conn->executeStatement("CREATE TABLE `fb_submissions` (
-                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                    `form_id` INT UNSIGNED NOT NULL,
-                    `data` JSON NOT NULL,
-                    `meta` JSON NULL DEFAULT NULL,
-                    `status` VARCHAR(20) NOT NULL DEFAULT 'completed',
-                    `payment_id` VARCHAR(255) NULL DEFAULT NULL,
-                    `payment_amount` INT UNSIGNED NULL DEFAULT NULL,
-                    `createdAt` DATETIME NULL DEFAULT NULL,
-                    `updatedAt` DATETIME NULL DEFAULT NULL,
-                    CONSTRAINT `fk_fbsub_form` FOREIGN KEY (`form_id`) REFERENCES `fb_forms`(`id`) ON DELETE CASCADE,
-                    INDEX `idx_fbsub_form_created` (`form_id`, `createdAt`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
             }
 

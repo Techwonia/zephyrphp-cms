@@ -8,7 +8,6 @@ use ZephyrPHP\Core\Controllers\Controller;
 use ZephyrPHP\Auth\Auth;
 use ZephyrPHP\Cms\Models\Theme;
 use ZephyrPHP\Cms\Models\Collection;
-use ZephyrPHP\Cms\Models\Form;
 use ZephyrPHP\Cms\Services\ThemeManager;
 use ZephyrPHP\Cms\Services\SectionManager;
 use ZephyrPHP\Cms\Services\PermissionService;
@@ -87,20 +86,6 @@ class ThemeCustomizerController extends Controller
             // ignore
         }
 
-        // Load available forms for the "form_select" setting type
-        $forms = [];
-        try {
-            $allForms = Form::findBy(['status' => 'active']);
-            foreach ($allForms as $f) {
-                $forms[] = [
-                    'slug' => $f->getSlug(),
-                    'name' => $f->getName(),
-                ];
-            }
-        } catch (\Exception $e) {
-            // DB may not be ready
-        }
-
         // Current page (from query param or first page)
         $currentPage = $this->input('page', '');
         if (empty($currentPage) && !empty($pages)) {
@@ -114,7 +99,6 @@ class ThemeCustomizerController extends Controller
             'settingsSchema' => $settingsSchema,
             'settingsData' => $settingsData,
             'collections' => $collections,
-            'forms' => $forms,
             'layouts' => $layouts,
             'currentPage' => $currentPage,
             'user' => Auth::user(),
@@ -343,27 +327,4 @@ class ThemeCustomizerController extends Controller
         echo json_encode(['fields' => []]);
     }
 
-    /**
-     * AJAX: List available forms (for form_select setting type in customizer).
-     */
-    public function listForms(): void
-    {
-        if (!$this->requireAdmin()) return;
-
-        header('Content-Type: application/json');
-
-        $forms = [];
-
-        try {
-            $allForms = Form::findBy(['status' => 'active']);
-            foreach ($allForms as $f) {
-                $forms[] = [
-                    'slug' => $f->getSlug(),
-                    'name' => $f->getName(),
-                ];
-            }
-        } catch (\Exception $e) {}
-
-        echo json_encode(['forms' => $forms]);
-    }
 }
