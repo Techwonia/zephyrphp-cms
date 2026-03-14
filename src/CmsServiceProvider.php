@@ -186,7 +186,7 @@ class CmsServiceProvider
         // render_form('slug') — Render a form by its slug
         $view->addFunction('render_form', function (string $slug, array $attrs = []) {
             return \ZephyrPHP\Cms\Services\FormRenderer::renderBySlug($slug, $attrs);
-        });
+        }, ['is_safe' => ['html']]);
 
         // Register sidebar and dashboard as Twig globals (lazy-loaded)
         $view->addFunction('cms_sidebar', function () {
