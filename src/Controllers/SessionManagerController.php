@@ -226,7 +226,7 @@ class SessionManagerController extends Controller
         } else {
             $conn->insert('cms_sessions', [
                 'session_id' => $sessionId,
-                'user_id' => $user['id'] ?? $user->id ?? null,
+                'user_id' => is_array($user) ? ($user['id'] ?? null) : ($user->id ?? null),
                 'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '',
                 'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? '',
                 'last_activity' => $now,
