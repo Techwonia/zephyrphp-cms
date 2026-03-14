@@ -237,34 +237,71 @@
             var step = steps[stepIndex];
             if (!step) return true;
 
+            // Use shared validation utils if available
+            var utils = window.fbFormUtils;
             var inputs = step.querySelectorAll('input, textarea, select');
             var isValid = true;
+            var validated = {};
 
-            // Clear previous errors
-            step.querySelectorAll('.fb-error').forEach(function (el) {
-                el.remove();
-            });
-            step.querySelectorAll('.is-invalid').forEach(function (el) {
-                el.classList.remove('is-invalid');
-            });
+            // Clear previous errors in this step
+            if (utils) {
+                step.querySelectorAll('.is-invalid').forEach(function(el) {
+                    utils.clearFieldError(el);
+                });
+            } else {
+                step.querySelectorAll('.fb-error').forEach(function(el) { el.style.display = 'none'; el.textContent = ''; });
+                step.querySelectorAll('.is-invalid').forEach(function(el) { el.classList.remove('is-invalid'); });
+                step.querySelectorAll('.fb-field--error').forEach(function(el) { el.classList.remove('fb-field--error'); });
+            }
 
-            inputs.forEach(function (input) {
-                if (input.type === 'hidden' || input.disabled) return;
+            inputs.forEach(function(input) {
+                if (input.type === 'hidden' || input.type === 'submit' || input.disabled) return;
+                if (input.name === '_hp_field' || input.name === 'csrf_token') return;
 
-                if (!input.checkValidity()) {
-                    isValid = false;
-                    input.classList.add('is-invalid');
+                var name = input.name.replace('[]', '');
+                if (validated[name]) return;
 
-                    var errorEl = document.createElement('span');
-                    errorEl.className = 'fb-error';
-                    errorEl.textContent = input.validationMessage;
-                    input.parentNode.appendChild(errorEl);
+                if (utils) {
+                    // Use shared client-side validation
+                    if (input.type === 'radio') {
+                        var anyChecked = false;
+                        form.querySelectorAll('input[name="' + input.name + '"]').forEach(function(r) { if (r.checked) anyChecked = true; });
+                        var groupEl = input.closest('.fb-radio-group');
+                        var rulesStr = groupEl ? (groupEl.dataset.rules || '') : '';
+                        if (rulesStr.indexOf('required') !== -1 && !anyChecked) {
+                            utils.showFieldError(input, 'Please select an option.');
+                            isValid = false;
+                        }
+                    } else {
+                        var error = utils.validateInput(input);
+                        if (error) {
+                            utils.showFieldError(input, error);
+                            isValid = false;
+                        }
+                    }
+                } else {
+                    // Fallback: HTML5 validation
+                    if (!input.checkValidity()) {
+                        isValid = false;
+                        input.classList.add('is-invalid');
+                        var field = input.closest('.fb-field');
+                        if (field) field.classList.add('fb-field--error');
+                        var errorEl = document.getElementById('fb-error-' + name);
+                        if (errorEl) {
+                            errorEl.textContent = input.validationMessage;
+                            errorEl.style.display = '';
+                        }
+                    }
                 }
+                validated[name] = true;
             });
 
             if (!isValid) {
-                var firstInvalid = step.querySelector('.is-invalid');
-                if (firstInvalid) firstInvalid.focus();
+                var firstInvalid = step.querySelector('.is-invalid, .fb-field--error');
+                if (firstInvalid) {
+                    var focusEl = firstInvalid.querySelector('input, textarea, select') || firstInvalid;
+                    if (focusEl.focus) focusEl.focus();
+                }
             }
 
             return isValid;

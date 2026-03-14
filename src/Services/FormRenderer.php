@@ -34,13 +34,30 @@ class FormRenderer
         $formId = $attrs['id'] ?? 'fb-' . $form->getSlug();
         $hasFile = $this->hasFileField($fields);
 
+        // Flash errors and old input
+        $errors = $this->getFlashErrors();
+        $oldInput = $this->getOldInput();
+        $success = $this->getFlashSuccess();
+
         // Include form styles (once per page)
         $html = $this->getFormStyles();
 
+        // Success message — hide form, show only success
+        if ($success) {
+            $html .= '<div class="fb-success-message">';
+            $html .= '<div class="fb-success-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>';
+            $html .= '<h3>Submitted Successfully</h3>';
+            $html .= '<p>' . htmlspecialchars($success) . '</p>';
+            $html .= '</div>';
+            return $html;
+        }
+
+        // Form tag
         $html .= '<form method="POST" action="/forms/' . htmlspecialchars($form->getSlug()) . '/submit"';
         $html .= ' class="' . htmlspecialchars($cssClass) . '"';
         $html .= ' id="' . htmlspecialchars($formId) . '"';
         $html .= ' data-form-slug="' . htmlspecialchars($form->getSlug()) . '"';
+        $html .= ' novalidate'; // We handle validation via JS
         if ($hasFile) {
             $html .= ' enctype="multipart/form-data"';
         }
@@ -56,40 +73,34 @@ class FormRenderer
             $html .= '</div>';
         }
 
-        // Flash errors and old input
-        $errors = $this->getFlashErrors();
-        $oldInput = $this->getOldInput();
+        // Global form-level error
+        if (isset($errors['_form'])) {
+            $msg = is_array($errors['_form']) ? ($errors['_form'][0] ?? $errors['_form']) : $errors['_form'];
+            $html .= '<div class="fb-alert fb-alert-error" role="alert">' . htmlspecialchars((string)$msg) . '</div>';
+        }
+
+        // Build validation rules for client-side
+        $validator = new FormValidator();
+        $submittableFields = $form->getSubmittableFields();
+        $validationRules = $validator->buildRules($submittableFields);
 
         if ($form->isMultiStep()) {
-            $html .= $this->renderMultiStep($form, $fields, $errors, $oldInput);
+            $html .= $this->renderMultiStep($form, $fields, $errors, $oldInput, $validationRules);
         } else {
             $html .= '<div class="fb-fields">';
             foreach ($fields as $field) {
-                $html .= $this->renderField($field, $errors, $oldInput);
+                $html .= $this->renderField($field, $errors, $oldInput, $validationRules);
             }
             $html .= '</div>';
         }
 
         // Submit button
-        $submitText = $settings['submit_button_text'] ?? 'Submit';
-        if ($form->isMultiStep()) {
-            // Hidden submit button — JS will move it into the last step's nav
-            $html .= '<div class="fb-actions" style="display:none">';
-            $html .= '<button type="submit" class="fb-btn fb-btn-submit">' . htmlspecialchars($submitText) . '</button>';
-            $html .= '</div>';
-        } else {
-            $html .= '<div class="fb-actions">';
-            $html .= '<button type="submit" class="fb-btn fb-btn-submit">' . htmlspecialchars($submitText) . '</button>';
-            $html .= '</div>';
-        }
+        $html .= $this->renderSubmitButton($form, $settings);
 
         $html .= '</form>';
 
-        // Success message flash
-        $success = $this->getFlashSuccess();
-        if ($success) {
-            $html = '<div class="fb-success-message">' . htmlspecialchars($success) . '</div>' . $html;
-        }
+        // Include form JS (always)
+        $html .= $this->getFormScript('form-submit.js');
 
         // Include multi-step JS if needed
         if ($form->isMultiStep()) {
@@ -100,9 +111,58 @@ class FormRenderer
     }
 
     /**
+     * Render the submit button with custom styling from settings.
+     */
+    private function renderSubmitButton(Form $form, array $settings): string
+    {
+        $submitText = $settings['submit_button_text'] ?? 'Submit';
+        $btnClass = 'fb-btn fb-btn-submit';
+        $btnStyle = '';
+
+        // Size
+        $size = $settings['submit_button_size'] ?? 'md';
+        $btnClass .= ' fb-btn-' . htmlspecialchars($size);
+
+        // Custom color
+        if (!empty($settings['submit_button_color'])) {
+            $color = htmlspecialchars($settings['submit_button_color']);
+            $btnStyle .= "background:{$color};border-color:{$color};";
+        }
+
+        // Custom text color
+        if (!empty($settings['submit_button_text_color'])) {
+            $btnStyle .= 'color:' . htmlspecialchars($settings['submit_button_text_color']) . ';';
+        }
+
+        // Full width
+        if (!empty($settings['submit_button_full_width'])) {
+            $btnStyle .= 'width:100%;';
+        }
+
+        // Custom CSS class
+        if (!empty($settings['submit_button_css_class'])) {
+            $btnClass .= ' ' . htmlspecialchars($settings['submit_button_css_class']);
+        }
+
+        $styleAttr = $btnStyle ? ' style="' . $btnStyle . '"' : '';
+
+        $isMultiStep = $form->isMultiStep();
+        $wrapStyle = $isMultiStep ? ' style="display:none"' : '';
+
+        $html = '<div class="fb-actions"' . $wrapStyle . '>';
+        $html .= '<button type="submit" class="' . $btnClass . '"' . $styleAttr . '>';
+        $html .= '<span class="fb-btn-text">' . htmlspecialchars($submitText) . '</span>';
+        $html .= '<span class="fb-btn-spinner"></span>';
+        $html .= '</button>';
+        $html .= '</div>';
+
+        return $html;
+    }
+
+    /**
      * Render a single form field.
      */
-    private function renderField(FormField $field, array $errors, array $oldInput): string
+    private function renderField(FormField $field, array $errors, array $oldInput, array $validationRules = []): string
     {
         $slug = $field->getSlug();
         $type = $field->getType();
@@ -110,11 +170,21 @@ class FormRenderer
         $width = $field->getWidth();
         $hasError = isset($errors[$slug]);
         $value = $oldInput[$slug] ?? $field->getDefaultValue() ?? '';
+        $rules = $validationRules[$slug] ?? '';
 
         $wrapClass = 'fb-field fb-field--' . $type . ' ' . $width;
         if ($hasError) {
             $wrapClass .= ' fb-field--error';
         }
+
+        $errorId = 'fb-error-' . htmlspecialchars($slug);
+        $inputId = 'fb-' . htmlspecialchars($slug);
+        $inputClass = 'fb-input' . ($hasError ? ' is-invalid' : '');
+        $ariaAttrs = ' aria-describedby="' . $errorId . '"';
+        if ($hasError) {
+            $ariaAttrs .= ' aria-invalid="true"';
+        }
+        $rulesAttr = $rules ? ' data-rules="' . htmlspecialchars($rules) . '"' : '';
 
         $html = '<div class="' . htmlspecialchars($wrapClass) . '">';
 
@@ -133,8 +203,9 @@ class FormRenderer
 
             case 'textarea':
                 $html .= $this->renderLabel($field);
-                $html .= '<textarea name="' . htmlspecialchars($slug) . '" id="fb-' . htmlspecialchars($slug) . '"';
-                $html .= ' class="fb-input fb-textarea"';
+                $html .= '<textarea name="' . htmlspecialchars($slug) . '" id="' . $inputId . '"';
+                $html .= ' class="' . $inputClass . ' fb-textarea"';
+                $html .= $ariaAttrs . $rulesAttr;
                 if ($field->getPlaceholder()) {
                     $html .= ' placeholder="' . htmlspecialchars($field->getPlaceholder()) . '"';
                 }
@@ -147,8 +218,9 @@ class FormRenderer
 
             case 'select':
                 $html .= $this->renderLabel($field);
-                $html .= '<select name="' . htmlspecialchars($slug) . '" id="fb-' . htmlspecialchars($slug) . '"';
-                $html .= ' class="fb-input fb-select"';
+                $html .= '<select name="' . htmlspecialchars($slug) . '" id="' . $inputId . '"';
+                $html .= ' class="' . $inputClass . ' fb-select"';
+                $html .= $ariaAttrs . $rulesAttr;
                 if ($field->isRequired()) {
                     $html .= ' required';
                 }
@@ -166,7 +238,7 @@ class FormRenderer
 
             case 'radio':
                 $html .= $this->renderLabel($field);
-                $html .= '<div class="fb-radio-group">';
+                $html .= '<div class="fb-radio-group"' . $rulesAttr . ' data-field="' . htmlspecialchars($slug) . '">';
                 foreach ($field->getChoices() as $choice) {
                     $checked = ($value === ($choice['value'] ?? '')) ? ' checked' : '';
                     $choiceId = 'fb-' . $slug . '-' . ($choice['value'] ?? '');
@@ -186,9 +258,8 @@ class FormRenderer
             case 'checkbox':
                 $choices = $field->getChoices();
                 if (!empty($choices)) {
-                    // Multiple checkboxes
                     $html .= $this->renderLabel($field);
-                    $html .= '<div class="fb-checkbox-group">';
+                    $html .= '<div class="fb-checkbox-group"' . $rulesAttr . ' data-field="' . htmlspecialchars($slug) . '">';
                     $selectedValues = is_array($value) ? $value : ($value ? [$value] : []);
                     foreach ($choices as $choice) {
                         $checked = in_array($choice['value'] ?? '', $selectedValues) ? ' checked' : '';
@@ -201,11 +272,10 @@ class FormRenderer
                     }
                     $html .= '</div>';
                 } else {
-                    // Single checkbox (boolean toggle)
                     $checked = $value ? ' checked' : '';
-                    $html .= '<label class="fb-checkbox-label" for="fb-' . htmlspecialchars($slug) . '">';
-                    $html .= '<input type="checkbox" name="' . htmlspecialchars($slug) . '" id="fb-' . htmlspecialchars($slug) . '"';
-                    $html .= ' value="1"' . $checked . '>';
+                    $html .= '<label class="fb-checkbox-label" for="' . $inputId . '">';
+                    $html .= '<input type="checkbox" name="' . htmlspecialchars($slug) . '" id="' . $inputId . '"';
+                    $html .= ' value="1"' . $checked . $rulesAttr . '>';
                     $html .= ' ' . htmlspecialchars($label);
                     $html .= '</label>';
                 }
@@ -214,8 +284,9 @@ class FormRenderer
 
             case 'file':
                 $html .= $this->renderLabel($field);
-                $html .= '<input type="file" name="' . htmlspecialchars($slug) . '" id="fb-' . htmlspecialchars($slug) . '"';
-                $html .= ' class="fb-input fb-file"';
+                $html .= '<input type="file" name="' . htmlspecialchars($slug) . '" id="' . $inputId . '"';
+                $html .= ' class="' . $inputClass . ' fb-file"';
+                $html .= $ariaAttrs . $rulesAttr;
                 $accept = $field->getOptions()['accept'] ?? '';
                 if ($accept) {
                     $html .= ' accept="' . htmlspecialchars($accept) . '"';
@@ -232,16 +303,18 @@ class FormRenderer
                 break;
 
             default:
-                // text, email, number, date, phone, url, password, range, color
+                // text, email, number, date, phone, url, password, range, color, time, datetime
                 $inputType = match ($type) {
                     'phone' => 'tel',
+                    'datetime' => 'datetime-local',
                     default => $type,
                 };
                 $html .= $this->renderLabel($field);
                 $html .= '<input type="' . htmlspecialchars($inputType) . '" name="' . htmlspecialchars($slug) . '"';
-                $html .= ' id="fb-' . htmlspecialchars($slug) . '"';
-                $html .= ' class="fb-input"';
+                $html .= ' id="' . $inputId . '"';
+                $html .= ' class="' . $inputClass . '"';
                 $html .= ' value="' . htmlspecialchars($value) . '"';
+                $html .= $ariaAttrs . $rulesAttr;
                 if ($field->getPlaceholder()) {
                     $html .= ' placeholder="' . htmlspecialchars($field->getPlaceholder()) . '"';
                 }
@@ -271,7 +344,7 @@ class FormRenderer
     /**
      * Render multi-step form with step containers.
      */
-    private function renderMultiStep(Form $form, array $fields, array $errors, array $oldInput): string
+    private function renderMultiStep(Form $form, array $fields, array $errors, array $oldInput, array $validationRules = []): string
     {
         $steps = $form->getSteps()->toArray();
         $fieldsByStep = $form->getFieldsByStep();
@@ -302,18 +375,18 @@ class FormRenderer
             $html .= '<div class="fb-fields">';
             $stepFields = $fieldsByStep[$step->getId()] ?? [];
             foreach ($stepFields as $field) {
-                $html .= $this->renderField($field, $errors, $oldInput);
+                $html .= $this->renderField($field, $errors, $oldInput, $validationRules);
             }
             $html .= '</div>';
             $html .= '</div>';
         }
 
-        // Fields without a step (fallback — shown in step 1 area)
+        // Fields without a step
         $orphanFields = $fieldsByStep[0] ?? [];
         if (!empty($orphanFields) && empty($steps)) {
             $html .= '<div class="fb-fields">';
             foreach ($orphanFields as $field) {
-                $html .= $this->renderField($field, $errors, $oldInput);
+                $html .= $this->renderField($field, $errors, $oldInput, $validationRules);
             }
             $html .= '</div>';
         }
@@ -332,13 +405,17 @@ class FormRenderer
         return $html;
     }
 
+    /**
+     * Render error container — always present for aria-describedby, hidden when no error.
+     */
     private function renderError(array $errors, string $slug): string
     {
+        $id = 'fb-error-' . htmlspecialchars($slug);
         if (isset($errors[$slug])) {
             $msg = is_array($errors[$slug]) ? ($errors[$slug][0] ?? '') : $errors[$slug];
-            return '<div class="fb-error">' . htmlspecialchars($msg) . '</div>';
+            return '<div class="fb-error" id="' . $id . '" role="alert">' . htmlspecialchars($msg) . '</div>';
         }
-        return '';
+        return '<div class="fb-error" id="' . $id . '" style="display:none"></div>';
     }
 
     private function hasFileField(array $fields): bool

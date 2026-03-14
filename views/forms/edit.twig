@@ -689,6 +689,76 @@
             </div>
         </div>
 
+        {# Submit Button Appearance #}
+        <div class="card" style="margin-bottom: var(--space-500);">
+            <div class="card-header"><h3>Submit Button</h3></div>
+            <div class="card-body">
+                <div class="settings-grid">
+                    <div class="form-group">
+                        <label for="submit_button_color">Button Color</label>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <input type="color" id="submit_button_color"
+                                   name="settings[submit_button_color]"
+                                   value="{{ form.settings.submit_button_color ?? '#3b82f6' }}"
+                                   style="width:40px;height:36px;padding:2px;border:1px solid var(--border);border-radius:var(--radius-100);cursor:pointer;">
+                            <input type="text" class="form-control" id="submit_button_color_hex"
+                                   value="{{ form.settings.submit_button_color ?? '#3b82f6' }}"
+                                   style="flex:1" readonly>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="submit_button_text_color">Text Color</label>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <input type="color" id="submit_button_text_color"
+                                   name="settings[submit_button_text_color]"
+                                   value="{{ form.settings.submit_button_text_color ?? '#ffffff' }}"
+                                   style="width:40px;height:36px;padding:2px;border:1px solid var(--border);border-radius:var(--radius-100);cursor:pointer;">
+                            <input type="text" class="form-control" id="submit_button_text_color_hex"
+                                   value="{{ form.settings.submit_button_text_color ?? '#ffffff' }}"
+                                   style="flex:1" readonly>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-grid">
+                    <div class="form-group">
+                        <label for="submit_button_size">Button Size</label>
+                        <select id="submit_button_size" name="settings[submit_button_size]" class="form-control">
+                            <option value="sm" {{ (form.settings.submit_button_size ?? 'md') == 'sm' ? 'selected' : '' }}>Small</option>
+                            <option value="md" {{ (form.settings.submit_button_size ?? 'md') == 'md' ? 'selected' : '' }}>Medium (default)</option>
+                            <option value="lg" {{ (form.settings.submit_button_size ?? 'md') == 'lg' ? 'selected' : '' }}>Large</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="display:flex;align-items:flex-end;padding-bottom:var(--space-400);">
+                        <label class="fb-toggle">
+                            <input type="checkbox" name="settings[submit_button_full_width]" value="1"
+                                   {{ (form.settings.submit_button_full_width ?? false) ? 'checked' : '' }}>
+                            <span class="fb-toggle-track"></span>
+                            Full-width button
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="submit_button_css_class">Custom CSS Class</label>
+                    <input type="text" id="submit_button_css_class"
+                           name="settings[submit_button_css_class]" class="form-control"
+                           value="{{ form.settings.submit_button_css_class ?? '' }}"
+                           placeholder="e.g. my-custom-btn">
+                    <small style="font-size:11px;color:var(--text-secondary);">Add custom CSS classes to the submit button.</small>
+                </div>
+
+                {# Live Preview #}
+                <div class="form-group" style="margin-top:var(--space-400);">
+                    <label style="margin-bottom:var(--space-200);">Preview</label>
+                    <div style="padding:20px;background:var(--bg-subdued);border-radius:var(--radius-200);border:1px solid var(--border);text-align:center;">
+                        <button type="button" id="btn-preview"
+                                style="padding:12px 32px;font-size:0.9375rem;font-weight:600;color:{{ form.settings.submit_button_text_color ?? '#ffffff' }};background:{{ form.settings.submit_button_color ?? '#3b82f6' }};border:none;border-radius:8px;cursor:default;font-family:var(--font);{{ (form.settings.submit_button_full_width ?? false) ? 'width:100%;' : '' }}">
+                            {{ form.settings.submit_button_text ?? 'Submit' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         {# Notifications & Security #}
         <div class="card" style="margin-bottom: var(--space-500);">
             <div class="card-header"><h3>Notifications & Security</h3></div>
@@ -825,6 +895,53 @@
             paymentFields.style.display = this.checked ? '' : 'none';
         });
     }
+
+    /* =============================================
+       Submit Button Appearance — Color Sync & Preview
+       ============================================= */
+    function syncColorPicker(pickerId, hexId) {
+        var picker = document.getElementById(pickerId);
+        var hex = document.getElementById(hexId);
+        if (picker && hex) {
+            picker.addEventListener('input', function() {
+                hex.value = this.value;
+                updateBtnPreview();
+            });
+        }
+    }
+    syncColorPicker('submit_button_color', 'submit_button_color_hex');
+    syncColorPicker('submit_button_text_color', 'submit_button_text_color_hex');
+
+    function updateBtnPreview() {
+        var preview = document.getElementById('btn-preview');
+        if (!preview) return;
+        var bgColor = document.getElementById('submit_button_color');
+        var txtColor = document.getElementById('submit_button_text_color');
+        var btnText = document.getElementById('submit_button_text');
+        var btnSize = document.getElementById('submit_button_size');
+        var btnFull = document.querySelector('input[name="settings[submit_button_full_width]"]');
+
+        if (bgColor) preview.style.background = bgColor.value;
+        if (txtColor) preview.style.color = txtColor.value;
+        if (btnText) preview.textContent = btnText.value || 'Submit';
+        if (btnFull) preview.style.width = btnFull.checked ? '100%' : '';
+
+        var sizes = { sm: '8px 20px', md: '12px 32px', lg: '16px 40px' };
+        var fontSizes = { sm: '0.8125rem', md: '0.9375rem', lg: '1.0625rem' };
+        if (btnSize) {
+            preview.style.padding = sizes[btnSize.value] || sizes.md;
+            preview.style.fontSize = fontSizes[btnSize.value] || fontSizes.md;
+        }
+    }
+
+    // Bind preview updates to all relevant inputs
+    ['submit_button_text', 'submit_button_size'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('input', updateBtnPreview);
+        if (el) el.addEventListener('change', updateBtnPreview);
+    });
+    var fullWidthCheck = document.querySelector('input[name="settings[submit_button_full_width]"]');
+    if (fullWidthCheck) fullWidthCheck.addEventListener('change', updateBtnPreview);
 })();
 </script>
 
