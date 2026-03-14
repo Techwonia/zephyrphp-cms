@@ -1,0 +1,225 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Authentication Settings{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / Settings / Authentication
+</div>
+
+<div class="page-header">
+    <h1>Authentication Settings</h1>
+</div>
+
+{# Feature Toggles #}
+<form method="POST" action="/cms/settings/auth">
+    {{ csrf_field() | raw }}
+
+    <div class="card" style="margin-bottom: var(--space-500);">
+        <div class="card-header"><h3 style="margin:0; font-size:1rem;">Feature Toggles</h3></div>
+        <div class="card-body">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
+                {% set featureLabels = {
+                    'AUTH_REGISTRATION': 'User Registration',
+                    'AUTH_PASSWORD_RESET': 'Password Reset',
+                    'AUTH_EMAIL_VERIFICATION': 'Email Verification',
+                    'AUTH_REMEMBER_ME': 'Remember Me',
+                    'AUTH_TWO_FACTOR': 'Two-Factor Auth (2FA)',
+                    'AUTH_SOCIAL_LOGIN': 'Social Login (OAuth)',
+                    'AUTH_MAGIC_LINK': 'Magic Link (Passwordless)',
+                    'AUTH_API_KEYS': 'API Key Auth',
+                } %}
+                {% for key, label in featureLabels %}
+                <div style="display: flex; align-items: center; gap: var(--space-200);">
+                    <input type="hidden" name="{{ key }}" value="false">
+                    <input type="checkbox" id="{{ key }}" name="{{ key }}" value="true" {{ features[key] == 'true' or features[key] == '1' ? 'checked' : '' }}>
+                    <label for="{{ key }}" style="margin: 0; cursor: pointer;">{{ label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    {# Password Policy #}
+    <div class="card" style="margin-bottom: var(--space-500);">
+        <div class="card-header"><h3 style="margin:0; font-size:1rem;">Password Policy</h3></div>
+        <div class="card-body">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
+                <div class="form-group">
+                    <label for="AUTH_PASSWORD_MIN_LENGTH">Minimum Length</label>
+                    <input type="number" id="AUTH_PASSWORD_MIN_LENGTH" name="AUTH_PASSWORD_MIN_LENGTH" class="form-control" value="{{ passwordPolicy.AUTH_PASSWORD_MIN_LENGTH }}" min="4" max="128">
+                </div>
+                <div></div>
+                {% set policyLabels = {
+                    'AUTH_PASSWORD_REQUIRE_UPPERCASE': 'Require Uppercase Letter',
+                    'AUTH_PASSWORD_REQUIRE_LOWERCASE': 'Require Lowercase Letter',
+                    'AUTH_PASSWORD_REQUIRE_NUMBERS': 'Require Number',
+                    'AUTH_PASSWORD_REQUIRE_SYMBOLS': 'Require Symbol',
+                    'AUTH_PASSWORD_CHECK_PWNED': 'Check HaveIBeenPwned Database',
+                } %}
+                {% for key, label in policyLabels %}
+                <div style="display: flex; align-items: center; gap: var(--space-200);">
+                    <input type="hidden" name="{{ key }}" value="false">
+                    <input type="checkbox" id="{{ key }}" name="{{ key }}" value="true" {{ passwordPolicy[key] == 'true' or passwordPolicy[key] == '1' ? 'checked' : '' }}>
+                    <label for="{{ key }}" style="margin: 0; cursor: pointer;">{{ label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    {# Rate Limiting #}
+    <div class="card" style="margin-bottom: var(--space-500);">
+        <div class="card-header"><h3 style="margin:0; font-size:1rem;">Rate Limiting</h3></div>
+        <div class="card-body">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-400);">
+                <div>
+                    <h4 style="font-size: 0.9rem; margin-bottom: var(--space-200);">Login</h4>
+                    <div class="form-group">
+                        <label>Max Attempts</label>
+                        <input type="number" name="AUTH_LOGIN_MAX_ATTEMPTS" class="form-control" value="{{ rateLimiting.AUTH_LOGIN_MAX_ATTEMPTS }}" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Decay (minutes)</label>
+                        <input type="number" name="AUTH_LOGIN_DECAY_MINUTES" class="form-control" value="{{ rateLimiting.AUTH_LOGIN_DECAY_MINUTES }}" min="1">
+                    </div>
+                </div>
+                <div>
+                    <h4 style="font-size: 0.9rem; margin-bottom: var(--space-200);">Password Reset</h4>
+                    <div class="form-group">
+                        <label>Max Attempts</label>
+                        <input type="number" name="AUTH_RESET_MAX_ATTEMPTS" class="form-control" value="{{ rateLimiting.AUTH_RESET_MAX_ATTEMPTS }}" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Decay (minutes)</label>
+                        <input type="number" name="AUTH_RESET_DECAY_MINUTES" class="form-control" value="{{ rateLimiting.AUTH_RESET_DECAY_MINUTES }}" min="1">
+                    </div>
+                </div>
+                <div>
+                    <h4 style="font-size: 0.9rem; margin-bottom: var(--space-200);">Registration</h4>
+                    <div class="form-group">
+                        <label>Max Attempts</label>
+                        <input type="number" name="AUTH_REGISTER_MAX_ATTEMPTS" class="form-control" value="{{ rateLimiting.AUTH_REGISTER_MAX_ATTEMPTS }}" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Decay (minutes)</label>
+                        <input type="number" name="AUTH_REGISTER_DECAY_MINUTES" class="form-control" value="{{ rateLimiting.AUTH_REGISTER_DECAY_MINUTES }}" min="1">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# JWT Settings #}
+    <div class="card" style="margin-bottom: var(--space-500);">
+        <div class="card-header"><h3 style="margin:0; font-size:1rem;">JWT Configuration</h3></div>
+        <div class="card-body">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
+                <div class="form-group">
+                    <label for="JWT_SECRET">JWT Secret</label>
+                    <input type="password" id="JWT_SECRET" name="JWT_SECRET" class="form-control" value="{{ jwt.JWT_SECRET }}" placeholder="Leave blank to keep current">
+                </div>
+                <div class="form-group">
+                    <label for="JWT_ALGORITHM">Algorithm</label>
+                    <select id="JWT_ALGORITHM" name="JWT_ALGORITHM" class="form-control">
+                        {% for algo in ['HS256', 'HS384', 'HS512'] %}
+                        <option value="{{ algo }}" {{ jwt.JWT_ALGORITHM == algo ? 'selected' : '' }}>{{ algo }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="JWT_LIFETIME">Access Token Lifetime (seconds)</label>
+                    <input type="number" id="JWT_LIFETIME" name="JWT_LIFETIME" class="form-control" value="{{ jwt.JWT_LIFETIME }}" min="60">
+                    <small style="color: var(--text-secondary);">Default: 3600 (1 hour)</small>
+                </div>
+                <div class="form-group">
+                    <label for="JWT_REFRESH">Refresh Token Lifetime (seconds)</label>
+                    <input type="number" id="JWT_REFRESH" name="JWT_REFRESH" class="form-control" value="{{ jwt.JWT_REFRESH }}" min="60">
+                    <small style="color: var(--text-secondary);">Default: 2592000 (30 days)</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Session Settings #}
+    <div class="card" style="margin-bottom: var(--space-500);">
+        <div class="card-header"><h3 style="margin:0; font-size:1rem;">Session Settings</h3></div>
+        <div class="card-body">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
+                <div class="form-group">
+                    <label for="SESSION_DRIVER">Session Driver</label>
+                    <select id="SESSION_DRIVER" name="SESSION_DRIVER" class="form-control">
+                        <option value="file" {{ session.SESSION_DRIVER == 'file' ? 'selected' : '' }}>File</option>
+                        <option value="database" {{ session.SESSION_DRIVER == 'database' ? 'selected' : '' }}>Database</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="SESSION_LIFETIME">Session Lifetime (minutes)</label>
+                    <input type="number" id="SESSION_LIFETIME" name="SESSION_LIFETIME" class="form-control" value="{{ session.SESSION_LIFETIME }}" min="1">
+                </div>
+                <div class="form-group">
+                    <label for="SESSION_DOMAIN">Cookie Domain</label>
+                    <input type="text" id="SESSION_DOMAIN" name="SESSION_DOMAIN" class="form-control" value="{{ session.SESSION_DOMAIN }}" placeholder="Leave blank for current domain">
+                </div>
+                <div style="display: flex; align-items: center; gap: var(--space-200); padding-top: var(--space-400);">
+                    <input type="hidden" name="SESSION_SECURE_COOKIE" value="false">
+                    <input type="checkbox" id="SESSION_SECURE_COOKIE" name="SESSION_SECURE_COOKIE" value="true" {{ session.SESSION_SECURE_COOKIE == 'true' or session.SESSION_SECURE_COOKIE == '1' ? 'checked' : '' }}>
+                    <label for="SESSION_SECURE_COOKIE" style="margin: 0; cursor: pointer;">HTTPS-Only Cookies</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-bottom: var(--space-500);">
+        <button type="submit" class="btn btn-primary">Save Authentication Settings</button>
+    </div>
+</form>
+
+{# OAuth Providers #}
+<div class="card">
+    <div class="card-header"><h3 style="margin:0; font-size:1rem;">OAuth Providers (Social Login)</h3></div>
+    <div class="card-body" style="padding: 0;">
+        {% for provider in providers %}
+        <details style="border-bottom: 1px solid var(--border-color);">
+            <summary style="padding: var(--space-300) var(--space-400); cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: 600; text-transform: capitalize;">{{ provider }}</span>
+                {% if oauth[provider].enabled == 'true' or oauth[provider].enabled == '1' %}
+                    <span class="badge" style="background: var(--success); color: white;">Enabled</span>
+                {% else %}
+                    <span class="badge">Disabled</span>
+                {% endif %}
+            </summary>
+            <div style="padding: 0 var(--space-400) var(--space-400);">
+                <form method="POST" action="/cms/settings/auth/oauth">
+                    {{ csrf_field() | raw }}
+                    <input type="hidden" name="provider" value="{{ provider }}">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-300);">
+                        <div style="display: flex; align-items: center; gap: var(--space-200); grid-column: 1 / -1;">
+                            <input type="hidden" name="enabled" value="false">
+                            <input type="checkbox" id="oauth_{{ provider }}_enabled" name="enabled" value="true" {{ oauth[provider].enabled == 'true' or oauth[provider].enabled == '1' ? 'checked' : '' }}>
+                            <label for="oauth_{{ provider }}_enabled" style="margin: 0; cursor: pointer;">Enable {{ provider|title }}</label>
+                        </div>
+                        <div class="form-group">
+                            <label>Client ID</label>
+                            <input type="text" name="client_id" class="form-control" value="{{ oauth[provider].client_id }}">
+                        </div>
+                        <div class="form-group">
+                            <label>Client Secret</label>
+                            <input type="password" name="client_secret" class="form-control" value="{{ oauth[provider].client_secret }}" placeholder="Leave blank to keep current">
+                        </div>
+                        <div class="form-group">
+                            <label>Redirect URL</label>
+                            <input type="text" name="redirect" class="form-control" value="{{ oauth[provider].redirect }}">
+                        </div>
+                        <div style="display: flex; align-items: flex-end;">
+                            <button type="submit" class="btn btn-outline btn-sm">Save {{ provider|title }}</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </details>
+        {% endfor %}
+    </div>
+</div>
+
+{% endblock %}

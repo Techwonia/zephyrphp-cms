@@ -1,0 +1,116 @@
+{# SEO Meta Fields Panel — included in entry create/edit forms when collection.isSeoEnabled() #}
+<div class="card" style="margin-top: 16px;">
+    <div class="card-header" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="this.parentElement.querySelector('.seo-panel-body').classList.toggle('hidden')">
+        <strong>SEO Settings</strong>
+        <span class="seo-score-badge" id="seo-score-badge" style="display: none; padding: 2px 10px; border-radius: 12px; font-size: 0.85em;"></span>
+    </div>
+    <div class="card-body seo-panel-body">
+        <div class="form-group">
+            <label for="meta_title">Meta Title</label>
+            <input type="text" id="meta_title" name="meta_title" class="form-control"
+                   value="{{ entry.meta_title ?? '' }}" maxlength="255"
+                   oninput="updateSeoCounter(this, 'meta-title-counter', 60)">
+            <div class="text-muted" style="display: flex; justify-content: space-between; font-size: 0.85em; margin-top: 4px;">
+                <span>Recommended: 30–60 characters</span>
+                <span id="meta-title-counter">{{ (entry.meta_title ?? '')|length }} / 60</span>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="meta_description">Meta Description</label>
+            <textarea id="meta_description" name="meta_description" class="form-control"
+                      rows="3" maxlength="500"
+                      oninput="updateSeoCounter(this, 'meta-desc-counter', 160)">{{ entry.meta_description ?? '' }}</textarea>
+            <div class="text-muted" style="display: flex; justify-content: space-between; font-size: 0.85em; margin-top: 4px;">
+                <span>Recommended: 120–160 characters</span>
+                <span id="meta-desc-counter">{{ (entry.meta_description ?? '')|length }} / 160</span>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="og_image">Open Graph Image URL</label>
+            <input type="text" id="og_image" name="og_image" class="form-control"
+                   value="{{ entry.og_image ?? '' }}" placeholder="https://example.com/image.jpg">
+            <p class="text-muted" style="font-size: 0.85em;">Preview image for social media shares. Recommended: 1200x630px.</p>
+        </div>
+
+        <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+            <div class="form-group" style="flex: 1; min-width: 200px;">
+                <label for="canonical_url">Canonical URL</label>
+                <input type="url" id="canonical_url" name="canonical_url" class="form-control"
+                       value="{{ entry.canonical_url ?? '' }}" placeholder="https://...">
+            </div>
+            <div class="form-group" style="flex: 0 0 200px;">
+                <label for="robots">Robots Directive</label>
+                <select id="robots" name="robots" class="form-control">
+                    <option value="index,follow" {% if (entry.robots ?? 'index,follow') == 'index,follow' %}selected{% endif %}>Index, Follow</option>
+                    <option value="index,nofollow" {% if (entry.robots ?? '') == 'index,nofollow' %}selected{% endif %}>Index, No Follow</option>
+                    <option value="noindex,follow" {% if (entry.robots ?? '') == 'noindex,follow' %}selected{% endif %}>No Index, Follow</option>
+                    <option value="noindex,nofollow" {% if (entry.robots ?? '') == 'noindex,nofollow' %}selected{% endif %}>No Index, No Follow</option>
+                </select>
+            </div>
+        </div>
+
+        {% if entry.id is defined and entry.id %}
+        <div id="seo-analysis" style="margin-top: 12px; display: none;">
+            <h4 style="margin-bottom: 8px;">SEO Analysis</h4>
+            <ul id="seo-issues" style="list-style: none; padding: 0; margin: 0;"></ul>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script nonce="{{ csp_nonce() }}">
+function updateSeoCounter(el, counterId, recommended) {
+    var counter = document.getElementById(counterId);
+    if (!counter) return;
+    var len = el.value.length;
+    counter.textContent = len + ' / ' + recommended;
+    if (len > 0 && len <= recommended) {
+        counter.style.color = '#28a745';
+    } else if (len > recommended) {
+        counter.style.color = '#dc3545';
+    } else {
+        counter.style.color = '';
+    }
+}
+
+{% if entry.id is defined and entry.id %}
+// Fetch SEO score on load
+(function() {
+    var slug = '{{ collection_slug }}';
+    var entryId = '{{ entry.id }}';
+    fetch('/cms/collections/' + slug + '/entries/' + entryId + '/seo-score')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var badge = document.getElementById('seo-score-badge');
+            if (badge && data.score !== undefined) {
+                badge.style.display = '';
+                badge.textContent = data.score + '/100';
+                if (data.score >= 80) {
+                    badge.style.background = '#d4edda';
+                    badge.style.color = '#155724';
+                } else if (data.score >= 50) {
+                    badge.style.background = '#fff3cd';
+                    badge.style.color = '#856404';
+                } else {
+                    badge.style.background = '#f8d7da';
+                    badge.style.color = '#721c24';
+                }
+            }
+            var analysis = document.getElementById('seo-analysis');
+            var issuesList = document.getElementById('seo-issues');
+            if (analysis && issuesList && data.issues && data.issues.length > 0) {
+                analysis.style.display = '';
+                data.issues.forEach(function(issue) {
+                    var li = document.createElement('li');
+                    li.style.cssText = 'padding: 4px 0; color: #666; font-size: 0.9em;';
+                    li.textContent = '— ' + issue;
+                    issuesList.appendChild(li);
+                });
+            }
+        })
+        .catch(function() {});
+})();
+{% endif %}
+</script>

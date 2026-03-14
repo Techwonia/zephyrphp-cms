@@ -1,0 +1,114 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Cache Settings{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / Settings / Cache
+</div>
+
+<div class="page-header">
+    <h1>Cache Settings</h1>
+</div>
+
+{# Current Stats #}
+<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-400); margin-bottom: var(--space-500);">
+    <div class="card">
+        <div class="card-body" style="text-align: center;">
+            <div style="font-size: 1.2rem; font-weight: 700; text-transform: uppercase; color: var(--primary);">{{ stats.driver }}</div>
+            <div style="color: var(--text-secondary); font-size: 0.85rem;">Active Driver</div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body" style="text-align: center;">
+            <div style="font-size: 1.2rem; font-weight: 700;">{{ stats.file_count }}</div>
+            <div style="color: var(--text-secondary); font-size: 0.85rem;">Cache Files</div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body" style="text-align: center;">
+            <div style="font-size: 1.2rem; font-weight: 700;">{{ stats.total_size }}</div>
+            <div style="color: var(--text-secondary); font-size: 0.85rem;">Total Size</div>
+        </div>
+    </div>
+</div>
+
+{% if redisStatus is not null %}
+<div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card-body" style="display: flex; align-items: center; gap: var(--space-300);">
+        {% if redisStatus.connected %}
+            <span class="badge" style="background: var(--success); color: white;">Connected</span>
+            <span>Redis: {{ redisStatus.info }}</span>
+        {% else %}
+            <span class="badge" style="background: var(--danger); color: white;">Disconnected</span>
+            <span>{{ redisStatus.error }}</span>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<form method="POST" action="/cms/settings/cache">
+    {{ csrf_field() | raw }}
+
+    {# Driver Selection #}
+    <div class="card" style="margin-bottom: var(--space-500);">
+        <div class="card-header"><h3 style="margin:0; font-size:1rem;">Cache Driver</h3></div>
+        <div class="card-body">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
+                <div class="form-group">
+                    <label for="CACHE_DRIVER">Driver</label>
+                    <select id="CACHE_DRIVER" name="CACHE_DRIVER" class="form-control">
+                        {% for key, driver in drivers %}
+                        <option value="{{ key }}" {{ settings.CACHE_DRIVER == key ? 'selected' : '' }} {{ not driver.available ? 'disabled' : '' }}>
+                            {{ driver.label }}{{ not driver.available ? ' (not available)' : '' }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="CACHE_PREFIX">Key Prefix</label>
+                    <input type="text" id="CACHE_PREFIX" name="CACHE_PREFIX" class="form-control" value="{{ settings.CACHE_PREFIX }}" placeholder="zephyr_">
+                    <small style="color: var(--text-secondary);">Prevents key collisions with other apps</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Redis Settings #}
+    <div class="card" style="margin-bottom: var(--space-500);">
+        <div class="card-header"><h3 style="margin:0; font-size:1rem;">Redis Configuration</h3></div>
+        <div class="card-body">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
+                <div class="form-group">
+                    <label for="REDIS_HOST">Host</label>
+                    <input type="text" id="REDIS_HOST" name="REDIS_HOST" class="form-control" value="{{ settings.REDIS_HOST }}" placeholder="127.0.0.1">
+                </div>
+                <div class="form-group">
+                    <label for="REDIS_PORT">Port</label>
+                    <input type="number" id="REDIS_PORT" name="REDIS_PORT" class="form-control" value="{{ settings.REDIS_PORT }}" min="1" max="65535">
+                </div>
+                <div class="form-group">
+                    <label for="REDIS_PASSWORD">Password</label>
+                    <input type="password" id="REDIS_PASSWORD" name="REDIS_PASSWORD" class="form-control" value="{{ settings.REDIS_PASSWORD }}" placeholder="Leave blank to keep current">
+                </div>
+                <div class="form-group">
+                    <label for="REDIS_CACHE_DB">Database Number</label>
+                    <input type="number" id="REDIS_CACHE_DB" name="REDIS_CACHE_DB" class="form-control" value="{{ settings.REDIS_CACHE_DB }}" min="0" max="15">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="display: flex; gap: var(--space-300);">
+        <button type="submit" class="btn btn-primary">Save Cache Settings</button>
+    </div>
+</form>
+
+<div style="margin-top: var(--space-400);">
+    <form method="POST" action="/cms/settings/cache/test-redis" style="display: inline;">
+        {{ csrf_field() | raw }}
+        <button type="submit" class="btn btn-outline btn-sm">Test Redis Connection</button>
+    </form>
+</div>
+
+{% endblock %}

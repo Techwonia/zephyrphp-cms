@@ -12,6 +12,22 @@
 <div class="page-header">
     <h1>Edit Entry #{{ entry.id }}</h1>
     <div class="page-actions">
+        {% if collection.isTranslatable() %}
+        {% set activeLangs = available_locales() %}
+        {% if activeLangs|length > 1 %}
+        <div style="display: inline-flex; align-items: center; gap: var(--space-100); margin-right: var(--space-200);">
+            <span style="font-size: var(--font-sm); color: var(--text-secondary);">Translate:</span>
+            {% for lang in activeLangs %}
+                {% if not lang.isDefault() %}
+                <a href="/cms/collections/{{ collection.getSlug() }}/entries/{{ entry.id }}/translate/{{ lang.getCode() }}"
+                   class="btn btn-outline btn-sm" style="padding: 2px 8px; font-size: var(--font-xs);">
+                    {{ lang.getCode()|upper }}
+                </a>
+                {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endif %}
         <a href="/cms/collections/{{ collection.getSlug() }}/entries/{{ entry.id }}/history" class="btn btn-outline">History</a>
         <form method="POST" action="/cms/collections/{{ collection.getSlug() }}/entries/{{ entry.id }}/delete"
               style="display:inline" class="confirm-delete" data-message="Delete this entry?">
@@ -223,18 +239,103 @@
             </div>
             {% endif %}
 
+            {% if collection.isSeoEnabled() %}
+                {% include "@cms/partials/seo-panel.twig" with {entry: entry, collection_slug: collection.getSlug()} %}
+            {% endif %}
+
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Save Changes</button>
                 <a href="/cms/collections/{{ collection.getSlug() }}/entries" class="btn btn-outline">Cancel</a>
             </div>
+        </form>
 
-            {% if entry.created_at is defined or entry.updated_at is defined %}
-            <div class="text-muted" style="margin-top: var(--space-400);">
-                {% if entry.created_at is defined and entry.created_at %}Created: {{ entry.created_at }}{% endif %}
-                {% if entry.updated_at is defined and entry.updated_at %} &middot; Updated: {{ entry.updated_at }}{% endif %}
+        {# Workflow Panel #}
+        {% if collection.isWorkflowEnabled() %}
+        {% set currentStage = entry.status ?? 'draft' %}
+        {% set stages = workflow_stages(collection) %}
+        <div style="margin-top: var(--space-600); border-top: 2px solid var(--border); padding-top: var(--space-500);">
+            <h3 style="margin: 0 0 var(--space-300);">Workflow</h3>
+
+            {# Stage indicator #}
+            <div style="display: flex; gap: var(--space-100); margin-bottom: var(--space-400);">
+                {% for stage in stages %}
+                <div style="flex: 1; text-align: center; padding: var(--space-200) var(--space-100); border-radius: var(--radius-100);
+                    {% if stage == currentStage %}
+                        background: var(--color-primary); color: var(--color-primary-text); font-weight: 600;
+                    {% elseif loop.index < stages|length %}
+                        {% set stageIdx = 0 %}{% set currentIdx = 0 %}
+                        background: var(--bg-subdued); color: var(--text-secondary);
+                    {% else %}
+                        background: var(--bg-subdued); color: var(--text-disabled);
+                    {% endif %}
+                    font-size: var(--font-sm); text-transform: capitalize;">
+                    {{ stage }}
+                </div>
+                {% endfor %}
+            </div>
+
+            {# Advance/Reject buttons #}
+            <div style="display: flex; gap: var(--space-300); align-items: flex-start;">
+                <div style="flex: 1;">
+                    <label class="form-label" style="font-size: var(--font-sm);">Comment (optional)</label>
+                    <input type="text" id="workflow-comment" class="form-control" placeholder="Add a comment...">
+                </div>
+                <div style="display: flex; gap: var(--space-200); padding-top: 22px;">
+                    {% set canReject = workflow_current(entry) != stages|first %}
+                    {% if canReject %}
+                    <form method="POST" action="/cms/collections/{{ collection.getSlug() }}/entries/{{ entry.id }}/workflow/reject" id="workflow-reject-form">
+                        <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="workflow_comment" id="reject-comment" value="">
+                        <button type="submit" class="btn btn-outline" style="border-color: var(--color-critical); color: var(--color-critical);">Reject</button>
+                    </form>
+                    {% endif %}
+
+                    {% set canAdvance = workflow_current(entry) != stages|last %}
+                    {% if canAdvance %}
+                    <form method="POST" action="/cms/collections/{{ collection.getSlug() }}/entries/{{ entry.id }}/workflow/advance" id="workflow-advance-form">
+                        <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="workflow_comment" id="advance-comment" value="">
+                        {% set nextStage = null %}
+                        {% for stage in stages %}
+                            {% if stage == currentStage and not loop.last %}
+                                {% set nextStage = stages[loop.index] %}
+                            {% endif %}
+                        {% endfor %}
+                        <button type="submit" class="btn btn-primary">Advance{% if nextStage is defined and nextStage %} to {{ nextStage|capitalize }}{% endif %}</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# Transition History #}
+            {% set history = workflow_history(collection.getTableName(), entry.id) %}
+            {% if history|length > 0 %}
+            <div style="margin-top: var(--space-400);">
+                <h4 style="margin: 0 0 var(--space-200); font-size: var(--font-sm); color: var(--text-secondary);">Transition History</h4>
+                {% for t in history %}
+                <div style="display: flex; gap: var(--space-300); padding: var(--space-200) 0; border-bottom: 1px solid var(--bg-subdued); font-size: var(--font-sm);">
+                    <span style="color: {% if t.getAction() == 'advance' %}var(--color-success){% else %}var(--color-critical){% endif %}; font-weight: 500; min-width: 60px;">
+                        {{ t.getAction()|capitalize }}
+                    </span>
+                    <span>{{ t.getFromStage()|capitalize }} &rarr; {{ t.getToStage()|capitalize }}</span>
+                    <span style="color: var(--text-secondary);">by {{ t.getUserName() ?? 'System' }}</span>
+                    {% if t.getComment() %}
+                    <span style="color: var(--text-secondary); font-style: italic;">"{{ t.getComment() }}"</span>
+                    {% endif %}
+                    <span style="color: var(--text-disabled); margin-left: auto;">{{ t.getCreatedAt()|date('M j, g:i A') }}</span>
+                </div>
+                {% endfor %}
             </div>
             {% endif %}
-        </form>
+        </div>
+        {% endif %}
+
+        {% if entry.created_at is defined or entry.updated_at is defined %}
+        <div class="text-muted" style="margin-top: var(--space-400);">
+            {% if entry.created_at is defined and entry.created_at %}Created: {{ entry.created_at }}{% endif %}
+            {% if entry.updated_at is defined and entry.updated_at %} &middot; Updated: {{ entry.updated_at }}{% endif %}
+        </div>
+        {% endif %}
     </div>
 </div>
 
@@ -253,6 +354,19 @@
             document.getElementById('media-preview-' + btn.dataset.field).style.display = 'none';
         });
     });
+    // Workflow comment → hidden fields
+    var wfComment = document.getElementById('workflow-comment');
+    if (wfComment) {
+        var advForm = document.getElementById('workflow-advance-form');
+        var rejForm = document.getElementById('workflow-reject-form');
+        if (advForm) advForm.addEventListener('submit', function() {
+            document.getElementById('advance-comment').value = wfComment.value;
+        });
+        if (rejForm) rejForm.addEventListener('submit', function() {
+            document.getElementById('reject-comment').value = wfComment.value;
+        });
+    }
+
     function openMediaBrowser(fieldSlug, filter) {
         var modal = document.createElement('div');
         modal.className = 'media-modal-overlay';

@@ -1,0 +1,60 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Browse: {{ table }}{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / <a href="/cms/system/database">Database Tools</a> / {{ table }}
+</div>
+
+<div class="page-header">
+    <h1>{{ table }} <span style="color: var(--text-secondary); font-weight: 400; font-size: 1rem;">({{ total }} rows)</span></h1>
+</div>
+
+{% if rows|length > 0 %}
+<div class="card">
+    <div class="card-body" style="padding: 0; overflow-x: auto;">
+        <table class="data-table" style="min-width: 100%;">
+            <thead>
+                <tr>
+                    {% for col in columns %}
+                    <th style="white-space: nowrap;">{{ col }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr>
+                    {% for col in columns %}
+                    <td style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.85rem;">
+                        {{ row[col] is not null ? row[col] : '<em style="color:var(--text-secondary)">NULL</em>' | raw }}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{# Pagination #}
+{% if lastPage > 1 %}
+<div style="display: flex; justify-content: center; gap: var(--space-200); margin-top: var(--space-400);">
+    {% if page > 1 %}
+        <a href="/cms/system/database/browse/{{ table }}?page={{ page - 1 }}" class="btn btn-outline btn-sm">&laquo; Previous</a>
+    {% endif %}
+    <span style="padding: 6px 12px; color: var(--text-secondary);">Page {{ page }} of {{ lastPage }}</span>
+    {% if page < lastPage %}
+        <a href="/cms/system/database/browse/{{ table }}?page={{ page + 1 }}" class="btn btn-outline btn-sm">Next &raquo;</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="empty-state">
+    <h3>Table is empty</h3>
+    <p>No rows in {{ table }}.</p>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -9,7 +9,7 @@ use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Types\Types;
 use ZephyrPHP\Cms\Models\Collection;
 use ZephyrPHP\Cms\Models\Field;
-use ZephyrPHP\Cms\Models\PageTypeField;
+use ZephyrPHP\Cms\Services\SeoService;
 use ZephyrPHP\Database\Connection as ZephyrConnection;
 
 class SchemaManager
@@ -43,7 +43,7 @@ class SchemaManager
     // FIELD TYPE MAPPING
     // ========================================================================
 
-    public function getColumnType(Field|PageTypeField $field): string
+    public function getColumnType(Field $field): string
     {
         return match ($field->getType()) {
             'text', 'email', 'slug', 'select' => Types::STRING,
@@ -61,7 +61,7 @@ class SchemaManager
         };
     }
 
-    public function getColumnOptions(Field|PageTypeField $field): array
+    public function getColumnOptions(Field $field): array
     {
         $options = ['notnull' => $field->isRequired()];
 
@@ -134,12 +134,85 @@ class SchemaManager
         foreach ($queries as $query) {
             $this->connection->executeStatement($query);
         }
+
+        // Create FULLTEXT index on searchable text fields
+        $this->ensureFulltextIndex($collection->getTableName(), $fields);
+    }
+
+    /**
+     * Create or update FULLTEXT index on searchable text columns.
+     * Groups all text/textarea/richtext/email/url fields that are searchable.
+     */
+    public function ensureFulltextIndex(string $tableName, array $fields): void
+    {
+        try {
+            $textTypes = ['text', 'textarea', 'richtext', 'email', 'url'];
+            $searchableColumns = [];
+
+            foreach ($fields as $field) {
+                if ($field instanceof Field && in_array($field->getType(), $textTypes) && $field->isSearchable()) {
+                    $searchableColumns[] = $field->getSlug();
+                }
+            }
+
+            if (empty($searchableColumns)) {
+                return;
+            }
+
+            $indexName = 'ft_' . $tableName;
+
+            // Drop existing FULLTEXT index if it exists
+            try {
+                $indexes = $this->connection->createSchemaManager()->listTableIndexes($tableName);
+                if (isset($indexes[$indexName])) {
+                    $this->connection->executeStatement("ALTER TABLE `{$tableName}` DROP INDEX `{$indexName}`");
+                }
+            } catch (\Exception $e) {
+                // Index may not exist
+            }
+
+            // Create new FULLTEXT index
+            $cols = implode('`, `', $searchableColumns);
+            $this->connection->executeStatement("ALTER TABLE `{$tableName}` ADD FULLTEXT INDEX `{$indexName}` (`{$cols}`)");
+        } catch (\Exception $e) {
+            // FULLTEXT may not be supported (e.g., non-InnoDB MySQL < 5.6)
+        }
+    }
+
+    /**
+     * Add SEO columns to a collection table
+     */
+    public function addSeoColumns(string $tableName): void
+    {
+        $sm = $this->connection->createSchemaManager();
+        $columns = $sm->listTableColumns($tableName);
+
+        foreach (SeoService::SEO_COLUMNS as $colName => $colDef) {
+            if (!isset($columns[$colName])) {
+                $this->connection->executeStatement("ALTER TABLE `{$tableName}` ADD COLUMN `{$colName}` {$colDef}");
+            }
+        }
+    }
+
+    /**
+     * Remove SEO columns from a collection table
+     */
+    public function removeSeoColumns(string $tableName): void
+    {
+        $sm = $this->connection->createSchemaManager();
+        $columns = $sm->listTableColumns($tableName);
+
+        foreach (array_keys(SeoService::SEO_COLUMNS) as $colName) {
+            if (isset($columns[$colName])) {
+                $this->connection->executeStatement("ALTER TABLE `{$tableName}` DROP COLUMN `{$colName}`");
+            }
+        }
     }
 
     /**
      * Add a column to a collection table
      */
-    public function addColumn(string $tableName, Field|PageTypeField $field): void
+    public function addColumn(string $tableName, Field $field): void
     {
         // Build ALTER TABLE manually for reliability
         $columnDef = $this->buildColumnDefinition($field);
@@ -156,7 +229,7 @@ class SchemaManager
     /**
      * Modify a column in a collection table
      */
-    public function modifyColumn(string $tableName, Field|PageTypeField $field, ?string $oldSlug = null): void
+    public function modifyColumn(string $tableName, Field $field, ?string $oldSlug = null): void
     {
         $columnDef = $this->buildColumnDefinition($field);
 
@@ -267,7 +340,7 @@ class SchemaManager
     /**
      * Build MySQL column definition string
      */
-    private function buildColumnDefinition(Field|PageTypeField $field): string
+    private function buildColumnDefinition(Field $field): string
     {
         $mysqlType = match ($field->getType()) {
             'text', 'email', 'slug', 'select' => 'VARCHAR(255)',
@@ -561,20 +634,53 @@ class SchemaManager
         $qb = $this->connection->createQueryBuilder();
         $qb->select('*')->from($tableName);
 
-        // Search — only use columns that actually exist in the table
+        // Search — try FULLTEXT (MATCH AGAINST) first, fallback to LIKE
         if (!empty($options['search']) && !empty($options['searchFields'])) {
-            $orConditions = [];
-            $paramIndex = 0;
-            foreach ($options['searchFields'] as $field) {
-                if (!in_array($field, $validColumns, true)) {
-                    continue; // Skip invalid column names
+            $searchTerm = $options['search'];
+            $validSearchFields = array_filter($options['searchFields'], fn($f) => in_array($f, $validColumns, true));
+
+            $usedFulltext = false;
+            if (!empty($validSearchFields)) {
+                // Check if a FULLTEXT index exists for these columns
+                $ftIndexName = 'ft_' . $tableName;
+                try {
+                    $ftColumns = implode('`, `', $validSearchFields);
+                    // Try MATCH AGAINST — it will fail if no FULLTEXT index, caught below
+                    $matchExpr = "MATCH(`{$ftColumns}`) AGAINST(:ft_search IN BOOLEAN MODE)";
+                    // Verify the index exists by checking table indexes
+                    $indexes = $this->connection->createSchemaManager()->listTableIndexes($tableName);
+                    foreach ($indexes as $index) {
+                        if (str_starts_with($index->getName(), 'ft_')) {
+                            $indexCols = $index->getColumns();
+                            // Use FULLTEXT if index covers at least some search fields
+                            $covered = array_intersect($validSearchFields, $indexCols);
+                            if (!empty($covered)) {
+                                $ftCols = implode('`, `', $covered);
+                                $qb->andWhere("MATCH(`{$ftCols}`) AGAINST(:ft_search IN BOOLEAN MODE)");
+                                // Append wildcard for partial matching in boolean mode
+                                $qb->setParameter('ft_search', '*' . $searchTerm . '*');
+                                $usedFulltext = true;
+                                break;
+                            }
+                        }
+                    }
+                } catch (\Exception $e) {
+                    // FULLTEXT not available, fall through to LIKE
                 }
-                $orConditions[] = "`{$field}` LIKE :search{$paramIndex}";
-                $qb->setParameter("search{$paramIndex}", '%' . $options['search'] . '%');
-                $paramIndex++;
             }
-            if (!empty($orConditions)) {
-                $qb->andWhere('(' . implode(' OR ', $orConditions) . ')');
+
+            // Fallback to LIKE search
+            if (!$usedFulltext && !empty($validSearchFields)) {
+                $orConditions = [];
+                $paramIndex = 0;
+                foreach ($validSearchFields as $field) {
+                    $orConditions[] = "`{$field}` LIKE :search{$paramIndex}";
+                    $qb->setParameter("search{$paramIndex}", '%' . $searchTerm . '%');
+                    $paramIndex++;
+                }
+                if (!empty($orConditions)) {
+                    $qb->andWhere('(' . implode(' OR ', $orConditions) . ')');
+                }
             }
         }
 

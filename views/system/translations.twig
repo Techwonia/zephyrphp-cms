@@ -1,0 +1,160 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Translation Manager{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / System / Translations
+</div>
+
+<div class="page-header">
+    <h1>Translation Manager</h1>
+</div>
+
+{# Locale & Group Selector #}
+<div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card-body">
+        <form method="GET" action="/cms/system/translations" style="display: flex; gap: var(--space-300); align-items: flex-end; flex-wrap: wrap;">
+            <div>
+                <label class="form-label">Locale</label>
+                <select name="locale" class="form-control" style="min-width: 120px;" onchange="this.form.submit()">
+                    {% for locale in locales %}
+                    <option value="{{ locale }}" {{ selectedLocale == locale ? 'selected' : '' }}>{{ locale }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Group</label>
+                <select name="group" class="form-control" style="min-width: 150px;" onchange="this.form.submit()">
+                    <option value="">-- Select Group --</option>
+                    {% for group in groups %}
+                    <option value="{{ group }}" {{ selectedGroup == group ? 'selected' : '' }}>{{ group }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Compare With</label>
+                <select name="compare" class="form-control" style="min-width: 120px;" onchange="this.form.submit()">
+                    <option value="">-- None --</option>
+                    {% for locale in locales %}
+                        {% if locale != selectedLocale %}
+                        <option value="{{ locale }}" {{ compareLocale == locale ? 'selected' : '' }}>{{ locale }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Search</label>
+                <div style="display: flex; gap: var(--space-200);">
+                    <input type="text" name="search" class="form-control" value="{{ search }}" placeholder="Search keys or values...">
+                    <button type="submit" class="btn btn-outline btn-sm">Filter</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# Create New Group #}
+<div style="display: flex; gap: var(--space-400); margin-bottom: var(--space-500);">
+    <form method="POST" action="/cms/system/translations/create-group" style="display: flex; gap: var(--space-200); align-items: flex-end;">
+        {{ csrf_field() | raw }}
+        <input type="hidden" name="locale" value="{{ selectedLocale }}">
+        <div>
+            <label class="form-label">New Group</label>
+            <input type="text" name="new_group" class="form-control" placeholder="e.g. messages" pattern="[a-z0-9_-]+" required>
+        </div>
+        <button type="submit" class="btn btn-outline btn-sm">Create Group</button>
+    </form>
+</div>
+
+{# Translation Editor #}
+{% if selectedGroup %}
+<form method="POST" action="/cms/system/translations/update">
+    {{ csrf_field() | raw }}
+    <input type="hidden" name="locale" value="{{ selectedLocale }}">
+    <input type="hidden" name="group" value="{{ selectedGroup }}">
+
+    <div class="card" style="margin-bottom: var(--space-400);">
+        <div class="card-header">
+            <h3 style="margin:0; font-size:1rem;">{{ selectedGroup }} ({{ selectedLocale }}) — {{ translations|length }} keys</h3>
+        </div>
+        <div class="card-body" style="padding: 0;">
+            {% if translations|length > 0 %}
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 35%;">Key</th>
+                            <th>Value ({{ selectedLocale }})</th>
+                            {% if compareLocale %}
+                            <th>Value ({{ compareLocale }})</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for key, value in translations %}
+                        <tr>
+                            <td style="font-family: monospace; font-size: 0.85rem;">
+                                <input type="hidden" name="keys[]" value="{{ key }}">
+                                {{ key }}
+                            </td>
+                            <td>
+                                <input type="text" name="values[]" class="form-control" value="{{ value }}" style="font-size: 0.85rem;">
+                            </td>
+                            {% if compareLocale %}
+                            <td style="font-size: 0.85rem; color: var(--text-secondary);">
+                                {{ compareTranslations[key] is defined ? compareTranslations[key] : '—' }}
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div style="padding: var(--space-400); color: var(--text-secondary);">No translation keys in this group yet.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if translations|length > 0 %}
+    <div style="margin-bottom: var(--space-500);">
+        <button type="submit" class="btn btn-primary">Save Translations</button>
+    </div>
+    {% endif %}
+</form>
+
+{# Add New Key #}
+<div class="card">
+    <div class="card-header"><h3 style="margin:0; font-size:1rem;">Add New Key</h3></div>
+    <div class="card-body">
+        <form method="POST" action="/cms/system/translations/add-key" style="display: flex; gap: var(--space-300); align-items: flex-end;">
+            {{ csrf_field() | raw }}
+            <input type="hidden" name="locale" value="{{ selectedLocale }}">
+            <input type="hidden" name="group" value="{{ selectedGroup }}">
+            <div style="flex: 1;">
+                <label class="form-label">Key</label>
+                <input type="text" name="new_key" class="form-control" placeholder="e.g. welcome_message" required>
+            </div>
+            <div style="flex: 1;">
+                <label class="form-label">Value</label>
+                <input type="text" name="new_value" class="form-control" placeholder="Translation value...">
+            </div>
+            <button type="submit" class="btn btn-outline">Add Key</button>
+        </form>
+    </div>
+</div>
+
+{% elif locales|length == 0 %}
+<div class="empty-state">
+    <h3>No locales found</h3>
+    <p>Create a <code>lang/</code> directory with locale subdirectories (e.g. <code>lang/en/</code>) to get started.</p>
+</div>
+{% else %}
+<div class="empty-state">
+    <h3>Select a group</h3>
+    <p>Choose a locale and translation group above to begin editing.</p>
+</div>
+{% endif %}
+
+{% endblock %}

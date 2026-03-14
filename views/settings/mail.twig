@@ -1,0 +1,91 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Mail Settings{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / Settings / Mail
+</div>
+
+<div class="page-header">
+    <h1>Mail Settings</h1>
+</div>
+
+<div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card-header"><h3 style="margin:0; font-size:1rem;">Mail Configuration</h3></div>
+    <div class="card-body">
+        <form method="POST" action="/cms/settings/mail">
+            {{ csrf_field() | raw }}
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
+                <div class="form-group">
+                    <label for="MAIL_DRIVER">Mail Driver</label>
+                    <select id="MAIL_DRIVER" name="MAIL_DRIVER" class="form-control">
+                        <option value="mail" {% if settings.MAIL_DRIVER == 'mail' %}selected{% endif %}>PHP mail()</option>
+                        <option value="smtp" {% if settings.MAIL_DRIVER == 'smtp' %}selected{% endif %}>SMTP</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="MAIL_ENCRYPTION">Encryption</label>
+                    <select id="MAIL_ENCRYPTION" name="MAIL_ENCRYPTION" class="form-control">
+                        <option value="tls" {% if settings.MAIL_ENCRYPTION == 'tls' %}selected{% endif %}>TLS</option>
+                        <option value="ssl" {% if settings.MAIL_ENCRYPTION == 'ssl' %}selected{% endif %}>SSL</option>
+                        <option value="" {% if settings.MAIL_ENCRYPTION == '' %}selected{% endif %}>None</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="MAIL_HOST">SMTP Host</label>
+                    <input type="text" id="MAIL_HOST" name="MAIL_HOST" class="form-control" value="{{ settings.MAIL_HOST }}" placeholder="smtp.example.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="MAIL_PORT">SMTP Port</label>
+                    <input type="number" id="MAIL_PORT" name="MAIL_PORT" class="form-control" value="{{ settings.MAIL_PORT }}" placeholder="587">
+                </div>
+
+                <div class="form-group">
+                    <label for="MAIL_USERNAME">Username</label>
+                    <input type="text" id="MAIL_USERNAME" name="MAIL_USERNAME" class="form-control" value="{{ settings.MAIL_USERNAME }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="MAIL_PASSWORD">Password</label>
+                    <input type="password" id="MAIL_PASSWORD" name="MAIL_PASSWORD" class="form-control" value="{{ settings.MAIL_PASSWORD }}" placeholder="Leave blank to keep current">
+                </div>
+
+                <div class="form-group">
+                    <label for="MAIL_FROM_ADDRESS">From Address</label>
+                    <input type="email" id="MAIL_FROM_ADDRESS" name="MAIL_FROM_ADDRESS" class="form-control" value="{{ settings.MAIL_FROM_ADDRESS }}" placeholder="noreply@example.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="MAIL_FROM_NAME">From Name</label>
+                    <input type="text" id="MAIL_FROM_NAME" name="MAIL_FROM_NAME" class="form-control" value="{{ settings.MAIL_FROM_NAME }}">
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Save Mail Settings</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# Test Email #}
+<div class="card">
+    <div class="card-header"><h3 style="margin:0; font-size:1rem;">Send Test Email</h3></div>
+    <div class="card-body">
+        <form method="POST" action="/cms/settings/mail/test" style="display: flex; gap: var(--space-200); align-items: end;">
+            {{ csrf_field() | raw }}
+            <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                <label for="test_email">Recipient Email</label>
+                <input type="email" id="test_email" name="test_email" class="form-control" placeholder="your@email.com" required>
+            </div>
+            <button type="submit" class="btn btn-outline">Send Test</button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

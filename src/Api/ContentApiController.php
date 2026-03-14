@@ -8,6 +8,7 @@ use ZephyrPHP\Core\Controllers\Controller;
 use ZephyrPHP\Cms\Models\Collection;
 use ZephyrPHP\Cms\Models\ApiKey;
 use ZephyrPHP\Cms\Services\SchemaManager;
+use ZephyrPHP\Cms\Services\TranslationService;
 
 class ContentApiController extends Controller
 {
@@ -95,7 +96,76 @@ class ContentApiController extends Controller
             exit;
         }
 
+        // Per-collection API rate limiting
+        $rateLimit = $collection->getApiRateLimit();
+        if ($rateLimit > 0) {
+            $this->checkRateLimit($slug, $rateLimit);
+        }
+
         return $collection;
+    }
+
+    /**
+     * Check per-collection API rate limit (requests per minute).
+     */
+    private function checkRateLimit(string $collectionSlug, int $maxPerMinute): void
+    {
+        $ip = $_SERVER['HTTP_CF_CONNECTING_IP']
+            ?? $_SERVER['HTTP_X_FORWARDED_FOR']
+            ?? $_SERVER['HTTP_X_REAL_IP']
+            ?? $_SERVER['REMOTE_ADDR']
+            ?? '0.0.0.0';
+        // Use first IP if X-Forwarded-For contains multiple
+        if (str_contains($ip, ',')) {
+            $ip = trim(explode(',', $ip)[0]);
+        }
+
+        $key = "api_rate:{$collectionSlug}:{$ip}";
+
+        // Try cache-based rate limiting first
+        try {
+            $cache = \ZephyrPHP\Cache\CacheManager::getInstance();
+            $current = (int) $cache->get($key, 0);
+
+            if ($current >= $maxPerMinute) {
+                header('Content-Type: application/json');
+                header('X-RateLimit-Limit: ' . $maxPerMinute);
+                header('X-RateLimit-Remaining: 0');
+                header('Retry-After: 60');
+                http_response_code(429);
+                echo json_encode(['error' => 'Rate limit exceeded. Try again later.']);
+                exit;
+            }
+
+            $cache->set($key, $current + 1, 60);
+
+            header('X-RateLimit-Limit: ' . $maxPerMinute);
+            header('X-RateLimit-Remaining: ' . max(0, $maxPerMinute - $current - 1));
+            return;
+        } catch (\Exception $e) {
+            // Cache unavailable — fall through (no rate limiting)
+        }
+
+        // Fallback: session-based rate limiting
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        $data = $_SESSION[$key] ?? null;
+        $now = time();
+
+        if ($data && ($now - ($data['start'] ?? 0)) <= 60) {
+            if (($data['count'] ?? 0) >= $maxPerMinute) {
+                header('Content-Type: application/json');
+                header('Retry-After: 60');
+                http_response_code(429);
+                echo json_encode(['error' => 'Rate limit exceeded. Try again later.']);
+                exit;
+            }
+            $_SESSION[$key]['count'] = ($data['count'] ?? 0) + 1;
+        } else {
+            $_SESSION[$key] = ['start' => $now, 'count' => 1];
+        }
     }
 
     public function index(string $slug): string
@@ -120,6 +190,12 @@ class ContentApiController extends Controller
             'searchFields' => $searchableFields,
         ]);
 
+        // Apply locale translations
+        $locale = $this->input('locale');
+        if ($locale && $collection->isTranslatable()) {
+            $result['data'] = TranslationService::resolveEntries($result['data'], $collection->getTableName(), $locale);
+        }
+
         $this->json([
             'data' => $result['data'],
             'meta' => [
@@ -127,6 +203,7 @@ class ContentApiController extends Controller
                 'per_page' => $result['per_page'],
                 'current_page' => $result['current_page'],
                 'last_page' => $result['last_page'],
+                'locale' => $locale ?: TranslationService::getDefaultLocale(),
             ],
         ]);
         return '';
@@ -157,6 +234,12 @@ class ContentApiController extends Controller
                     );
                 }
             }
+        }
+
+        // Apply locale translations
+        $locale = $this->input('locale');
+        if ($locale && $collection->isTranslatable()) {
+            $entry = TranslationService::resolveEntry($entry, $collection->getTableName(), $locale);
         }
 
         $this->json(['data' => $entry]);

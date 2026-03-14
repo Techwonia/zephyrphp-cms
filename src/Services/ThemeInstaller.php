@@ -10,7 +10,6 @@ use ZephyrPHP\Event\Events\ThemeInstalled;
 use ZephyrPHP\Event\Events\ThemeUninstalled;
 use ZephyrPHP\Event\Events\ThemeActivating;
 use ZephyrPHP\Event\Events\ThemeActivated;
-use ZephyrPHP\Hook\HookManager;
 
 /**
  * Theme Installer — handles ZIP package installation, validation, and asset publishing.
@@ -150,7 +149,6 @@ class ThemeInstaller
             // Fire installed event
             $events = EventDispatcher::getInstance();
             $events->dispatch(new ThemeInstalled($slug, $config['name'], $themePath));
-            HookManager::getInstance()->doAction('theme.installed', $slug, $config);
 
             return [
                 'success' => true,
@@ -202,7 +200,6 @@ class ThemeInstaller
 
         // Fire uninstalled event
         EventDispatcher::getInstance()->dispatch(new ThemeUninstalled($slug));
-        HookManager::getInstance()->doAction('theme.uninstalled', $slug);
 
         return ['success' => true];
     }
@@ -295,8 +292,6 @@ class ThemeInstaller
             return ['success' => false, 'error' => 'Theme activation was blocked by a listener.'];
         }
 
-        HookManager::getInstance()->doAction('theme.activating', $slug, $currentSlug);
-
         // Publish theme assets
         if (!$this->publishAssets($slug)) {
             return ['success' => false, 'error' => 'Failed to publish theme assets.'];
@@ -312,7 +307,6 @@ class ThemeInstaller
 
         // Fire activated event
         EventDispatcher::getInstance()->dispatch(new ThemeActivated($slug));
-        HookManager::getInstance()->doAction('theme.activated', $slug);
 
         return ['success' => true];
     }

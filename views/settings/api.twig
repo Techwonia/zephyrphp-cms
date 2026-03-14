@@ -1,0 +1,125 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}API Settings{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / Settings / API
+</div>
+
+<div class="page-header">
+    <h1>API Settings</h1>
+</div>
+
+<form method="POST" action="/cms/settings/api">
+    {{ csrf_field() | raw }}
+
+    {# General #}
+    <div class="card" style="margin-bottom: var(--space-500);">
+        <div class="card-header"><h3 style="margin:0; font-size:1rem;">General</h3></div>
+        <div class="card-body">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
+                <div class="form-group">
+                    <label for="API_PREFIX">API Prefix</label>
+                    <input type="text" id="API_PREFIX" name="API_PREFIX" class="form-control" value="{{ settings.API_PREFIX }}" placeholder="api">
+                    <small style="color: var(--text-secondary);">URL prefix: /{{ settings.API_PREFIX }}/v1/...</small>
+                </div>
+                <div class="form-group">
+                    <label for="API_VERSION">Default Version</label>
+                    <input type="text" id="API_VERSION" name="API_VERSION" class="form-control" value="{{ settings.API_VERSION }}" placeholder="v1">
+                </div>
+                <div class="form-group">
+                    <label for="API_VERSION_STRATEGY">Versioning Strategy</label>
+                    <select id="API_VERSION_STRATEGY" name="API_VERSION_STRATEGY" class="form-control">
+                        <option value="uri" {{ settings.API_VERSION_STRATEGY == 'uri' ? 'selected' : '' }}>URI (/api/v1)</option>
+                        <option value="header" {{ settings.API_VERSION_STRATEGY == 'header' ? 'selected' : '' }}>Header (Accept)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="API_MAX_REQUEST_SIZE">Max Request Size (bytes)</label>
+                    <input type="number" id="API_MAX_REQUEST_SIZE" name="API_MAX_REQUEST_SIZE" class="form-control" value="{{ settings.API_MAX_REQUEST_SIZE }}" min="1024">
+                    <small style="color: var(--text-secondary);">Default: 10485760 (10 MB)</small>
+                </div>
+                <div style="display: flex; align-items: center; gap: var(--space-200);">
+                    <input type="hidden" name="API_DOCS_ENABLED" value="false">
+                    <input type="checkbox" id="API_DOCS_ENABLED" name="API_DOCS_ENABLED" value="true" {{ settings.API_DOCS_ENABLED == 'true' or settings.API_DOCS_ENABLED == '1' ? 'checked' : '' }}>
+                    <label for="API_DOCS_ENABLED" style="margin: 0; cursor: pointer;">Enable API Documentation</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Rate Limiting #}
+    <div class="card" style="margin-bottom: var(--space-500);">
+        <div class="card-header"><h3 style="margin:0; font-size:1rem;">Rate Limiting</h3></div>
+        <div class="card-body">
+            <div style="display: flex; align-items: center; gap: var(--space-200); margin-bottom: var(--space-400);">
+                <input type="hidden" name="API_RATE_LIMIT" value="false">
+                <input type="checkbox" id="API_RATE_LIMIT" name="API_RATE_LIMIT" value="true" {{ settings.API_RATE_LIMIT == 'true' or settings.API_RATE_LIMIT == '1' ? 'checked' : '' }}>
+                <label for="API_RATE_LIMIT" style="margin: 0; cursor: pointer; font-weight: 600;">Enable Rate Limiting</label>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: var(--space-400);">
+                <div class="form-group">
+                    <label for="API_RATE_LIMIT_DEFAULT">Default (req/min)</label>
+                    <input type="number" id="API_RATE_LIMIT_DEFAULT" name="API_RATE_LIMIT_DEFAULT" class="form-control" value="{{ settings.API_RATE_LIMIT_DEFAULT }}" min="1">
+                </div>
+                <div class="form-group">
+                    <label for="API_RATE_LIMIT_AUTH">Authenticated (req/min)</label>
+                    <input type="number" id="API_RATE_LIMIT_AUTH" name="API_RATE_LIMIT_AUTH" class="form-control" value="{{ settings.API_RATE_LIMIT_AUTH }}" min="1">
+                </div>
+                <div class="form-group">
+                    <label for="API_RATE_LIMIT_GUEST">Guest (req/min)</label>
+                    <input type="number" id="API_RATE_LIMIT_GUEST" name="API_RATE_LIMIT_GUEST" class="form-control" value="{{ settings.API_RATE_LIMIT_GUEST }}" min="1">
+                </div>
+                <div class="form-group">
+                    <label for="API_RATE_LIMIT_BY">Rate Limit By</label>
+                    <select id="API_RATE_LIMIT_BY" name="API_RATE_LIMIT_BY" class="form-control">
+                        <option value="ip" {{ settings.API_RATE_LIMIT_BY == 'ip' ? 'selected' : '' }}>IP Address</option>
+                        <option value="user" {{ settings.API_RATE_LIMIT_BY == 'user' ? 'selected' : '' }}>User</option>
+                        <option value="api_key" {{ settings.API_RATE_LIMIT_BY == 'api_key' ? 'selected' : '' }}>API Key</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# CORS #}
+    <div class="card" style="margin-bottom: var(--space-500);">
+        <div class="card-header"><h3 style="margin:0; font-size:1rem;">CORS (Cross-Origin Resource Sharing)</h3></div>
+        <div class="card-body">
+            <div style="display: flex; align-items: center; gap: var(--space-200); margin-bottom: var(--space-400);">
+                <input type="hidden" name="API_CORS_ENABLED" value="false">
+                <input type="checkbox" id="API_CORS_ENABLED" name="API_CORS_ENABLED" value="true" {{ settings.API_CORS_ENABLED == 'true' or settings.API_CORS_ENABLED == '1' ? 'checked' : '' }}>
+                <label for="API_CORS_ENABLED" style="margin: 0; cursor: pointer; font-weight: 600;">Enable CORS</label>
+            </div>
+
+            <div class="form-group">
+                <label for="API_CORS_ORIGINS">Allowed Origins</label>
+                <input type="text" id="API_CORS_ORIGINS" name="API_CORS_ORIGINS" class="form-control" value="{{ settings.API_CORS_ORIGINS }}">
+                <small style="color: var(--text-secondary);">Use <code>*</code> for all origins, or comma-separated domains (e.g. <code>https://example.com,https://app.example.com</code>)</small>
+            </div>
+        </div>
+    </div>
+
+    {# Pagination #}
+    <div class="card" style="margin-bottom: var(--space-500);">
+        <div class="card-header"><h3 style="margin:0; font-size:1rem;">Pagination</h3></div>
+        <div class="card-body">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
+                <div class="form-group">
+                    <label for="API_PER_PAGE">Default Per Page</label>
+                    <input type="number" id="API_PER_PAGE" name="API_PER_PAGE" class="form-control" value="{{ settings.API_PER_PAGE }}" min="1" max="500">
+                </div>
+                <div class="form-group">
+                    <label for="API_MAX_PER_PAGE">Max Per Page</label>
+                    <input type="number" id="API_MAX_PER_PAGE" name="API_MAX_PER_PAGE" class="form-control" value="{{ settings.API_MAX_PER_PAGE }}" min="1" max="1000">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save API Settings</button>
+</form>
+
+{% endblock %}

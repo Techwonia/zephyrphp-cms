@@ -1,0 +1,132 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}{{ item.getOriginalName() }} — Media{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / <a href="/cms/media">Media</a> / Detail
+</div>
+
+<div class="page-header">
+    <h1>{{ item.getOriginalName() }}</h1>
+    <div class="page-actions">
+        <a href="/cms/media" class="btn btn-outline">Back to Library</a>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
+    {# Preview #}
+    <div class="card">
+        <div class="card-header"><h3 style="margin:0; font-size:1rem;">Preview</h3></div>
+        <div class="card-body" style="text-align: center;">
+            {% if item.isImage() %}
+                <img src="{{ item.getUrl() }}" alt="{{ item.getAltText() ?? item.getOriginalName() }}"
+                     style="max-width: 100%; max-height: 400px; border-radius: 4px;">
+            {% else %}
+                <div style="font-size: 4rem; padding: var(--space-500);">&#128196;</div>
+                <p>{{ item.getMimeType() }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    {# Info & Edit #}
+    <div>
+        {# File Info #}
+        <div class="card" style="margin-bottom: var(--space-400);">
+            <div class="card-header"><h3 style="margin:0; font-size:1rem;">File Information</h3></div>
+            <div class="card-body">
+                <table style="width: 100%; font-size: 0.9rem;">
+                    <tr><td style="padding: 6px 0; color: var(--text-secondary); width: 120px;">Filename</td><td>{{ item.getFilename() }}</td></tr>
+                    <tr><td style="padding: 6px 0; color: var(--text-secondary);">Original Name</td><td>{{ item.getOriginalName() }}</td></tr>
+                    <tr><td style="padding: 6px 0; color: var(--text-secondary);">MIME Type</td><td>{{ item.getMimeType() }}</td></tr>
+                    <tr><td style="padding: 6px 0; color: var(--text-secondary);">Size</td><td>{{ item.getHumanSize() }}</td></tr>
+                    {% if dimensions %}
+                    <tr><td style="padding: 6px 0; color: var(--text-secondary);">Dimensions</td><td>{{ dimensions.width }} &times; {{ dimensions.height }}px</td></tr>
+                    {% endif %}
+                    <tr>
+                        <td style="padding: 6px 0; color: var(--text-secondary);">URL</td>
+                        <td>
+                            <code style="font-size: 0.8rem; word-break: break-all;">{{ item.getUrl() }}</code>
+                            <button class="btn btn-sm btn-outline copy-url-btn" data-url="{{ item.getUrl() }}" style="margin-left: 4px;">Copy</button>
+                        </td>
+                    </tr>
+                    <tr><td style="padding: 6px 0; color: var(--text-secondary);">Path</td><td style="font-size: 0.8rem; word-break: break-all;">{{ item.getPath() }}</td></tr>
+                </table>
+            </div>
+        </div>
+
+        {# Edit Metadata #}
+        <div class="card" style="margin-bottom: var(--space-400);">
+            <div class="card-header"><h3 style="margin:0; font-size:1rem;">Edit Metadata</h3></div>
+            <div class="card-body">
+                <form method="POST" action="/cms/media/{{ item.getId() }}/update">
+                    {{ csrf_field() | raw }}
+                    <div class="form-group">
+                        <label for="original_name">Display Name</label>
+                        <input type="text" id="original_name" name="original_name" class="form-control" value="{{ item.getOriginalName() }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="alt_text">Alt Text</label>
+                        <input type="text" id="alt_text" name="alt_text" class="form-control" value="{{ item.getAltText() ?? '' }}" placeholder="Describe this image for accessibility">
+                        <small style="color: var(--text-secondary);">Used as alt attribute for images. Important for SEO and accessibility.</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </form>
+            </div>
+        </div>
+
+        {# Usage #}
+        <div class="card" style="margin-bottom: var(--space-400);">
+            <div class="card-header"><h3 style="margin:0; font-size:1rem;">Usage</h3></div>
+            <div class="card-body">
+                {% if usage|length > 0 %}
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: var(--space-200);">This file is referenced in {{ usage|length }} entr{{ usage|length == 1 ? 'y' : 'ies' }}:</p>
+                    <ul style="list-style: none; padding: 0; margin: 0;">
+                        {% for ref in usage %}
+                        <li style="padding: 6px 0; border-bottom: 1px solid var(--border-color);">
+                            <a href="/cms/collections/{{ ref.collection_slug }}/entries/{{ ref.entry_id }}/edit">
+                                {{ ref.collection }} #{{ ref.entry_id }}
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p style="color: var(--text-secondary); font-size: 0.85rem;">No entries reference this file.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {# Danger Zone #}
+        <div class="card" style="border-color: var(--danger);">
+            <div class="card-body">
+                <form method="POST" action="/cms/media/{{ item.getId() }}/delete" onsubmit="return confirm('Permanently delete this file?')">
+                    {{ csrf_field() | raw }}
+                    <button type="submit" class="btn btn-danger">Delete File</button>
+                    {% if usage|length > 0 %}
+                        <small style="color: var(--danger); margin-left: var(--space-200);">Warning: This file is used in {{ usage|length }} entr{{ usage|length == 1 ? 'y' : 'ies' }}.</small>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script nonce="{{ csp_nonce() }}">
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.copy-url-btn').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            var fullUrl = window.location.origin + btn.dataset.url;
+            navigator.clipboard.writeText(fullUrl).then(function() {
+                btn.textContent = 'Copied!';
+                setTimeout(function() { btn.textContent = 'Copy'; }, 1500);
+            }).catch(function() {
+                prompt('Copy this URL:', fullUrl);
+            });
+        });
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

@@ -8,6 +8,9 @@
         <h1>Dashboard</h1>
         <p class="text-muted" style="margin-top: 2px;">Welcome back, {{ user.getName() }}</p>
     </div>
+    <div class="page-actions">
+        <button class="btn btn-outline btn-sm" id="customize-btn" onclick="toggleCustomize()">Customize</button>
+    </div>
 </div>
 
 <div class="stats-grid">
@@ -26,13 +29,6 @@
         </div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon stat-icon-purple">&#128195;</div>
-        <div>
-            <div class="stat-value">{{ totalPages }}</div>
-            <div class="stat-label">Pages</div>
-        </div>
-    </div>
-    <div class="stat-card">
         <div class="stat-icon stat-icon-orange">&#128247;</div>
         <div>
             <div class="stat-value">{{ totalMedia }}</div>
@@ -41,32 +37,40 @@
     </div>
 </div>
 
-<div class="card" style="margin-bottom: var(--space-500);">
-    <div class="card-header">
-        <h3>Quick Actions</h3>
-    </div>
-    <div class="card-body" style="display: flex; gap: 8px; flex-wrap: wrap;">
-        <a href="/cms/collections/create" class="btn btn-primary">New Collection</a>
-        <a href="/cms/pages" class="btn btn-outline">Pages</a>
-        <a href="/cms/media" class="btn btn-outline">Media</a>
-        <a href="/cms/themes" class="btn btn-outline">Themes</a>
-        {% if cms_can('users.view') %}
-        <a href="/cms/users" class="btn btn-outline">Users</a>
-        {% endif %}
-        {% if cms_can('roles.manage') %}
-        <a href="/cms/roles" class="btn btn-outline">Roles</a>
-        {% endif %}
-        <a href="/cms/settings/profile" class="btn btn-outline">Profile</a>
+{# Customize overlay #}
+<div id="customize-panel" style="display: none; margin-bottom: var(--space-400);">
+    <div class="card">
+        <div class="card-header">
+            <h3>Customize Dashboard</h3>
+        </div>
+        <div class="card-body">
+            <p class="text-muted" style="margin-bottom: 12px;">Toggle widgets and change their size. Changes save automatically.</p>
+            <div id="widget-toggles" style="display: flex; flex-direction: column; gap: 8px;">
+                {% for id, widget in widgets %}
+                <div style="display: flex; align-items: center; gap: 12px; padding: 8px; background: var(--bg-secondary); border-radius: 6px;">
+                    <label style="display: flex; align-items: center; gap: 6px; flex: 1; cursor: pointer;">
+                        <input type="checkbox" class="widget-toggle" data-widget-id="{{ id }}" checked>
+                        <span>{{ widget.title }}</span>
+                    </label>
+                    <select class="form-control widget-size-select" data-widget-id="{{ id }}" style="width: auto; padding: 4px 8px; font-size: 0.85em;">
+                        <option value="third" {% if widget.size == 'third' %}selected{% endif %}>Small</option>
+                        <option value="half" {% if widget.size == 'half' %}selected{% endif %}>Medium</option>
+                        <option value="full" {% if widget.size == 'full' %}selected{% endif %}>Large</option>
+                    </select>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
     </div>
 </div>
 
-{# Plugin Widgets #}
-{% set widgets = cms_dashboard_widgets() %}
+{# Widget grid #}
 {% if widgets|length > 0 %}
-<div class="widget-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:var(--space-400);margin-bottom:var(--space-500);">
+<div class="widget-grid" id="widget-grid" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--space-400); margin-bottom: var(--space-500);">
     {% for id, widget in widgets %}
-    <div class="card {{ cms_widget_size(widget.size) }}" {% if widget.size == 'full' %}style="grid-column:1/-1;"{% endif %}>
-        <div class="card-header">
+    {% set colSpan = widget.size == 'full' ? '1 / -1' : (widget.size == 'third' ? 'span 2' : 'span 3') %}
+    <div class="card widget-card" data-widget-id="{{ id }}" style="grid-column: {{ colSpan }};">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
             <h3>{{ widget.title }}</h3>
         </div>
         <div class="card-body">
@@ -81,6 +85,7 @@
 </div>
 {% endif %}
 
+{# Collections table #}
 {% if collections|length > 0 %}
 <div class="card">
     <div class="card-header">
@@ -131,4 +136,75 @@
     </div>
 </div>
 {% endif %}
+
+<script nonce="{{ csp_nonce() }}">
+function toggleCustomize() {
+    var panel = document.getElementById('customize-panel');
+    panel.style.display = panel.style.display === 'none' ? '' : 'none';
+}
+
+function saveLayout() {
+    var widgets = document.querySelectorAll('.widget-card');
+    var toggles = document.querySelectorAll('.widget-toggle');
+    var sizes = document.querySelectorAll('.widget-size-select');
+
+    var toggleMap = {};
+    var sizeMap = {};
+
+    toggles.forEach(function(t) {
+        toggleMap[t.getAttribute('data-widget-id')] = t.checked;
+    });
+    sizes.forEach(function(s) {
+        sizeMap[s.getAttribute('data-widget-id')] = s.value;
+    });
+
+    var layout = [];
+    var position = 0;
+    widgets.forEach(function(w) {
+        var wid = w.getAttribute('data-widget-id');
+        layout.push({
+            widget_id: wid,
+            position: position++,
+            size: sizeMap[wid] || 'half',
+            visible: toggleMap[wid] !== undefined ? toggleMap[wid] : true
+        });
+    });
+
+    var formData = new FormData();
+    formData.append('layout', JSON.stringify(layout));
+
+    var csrfInput = document.querySelector('input[name="_token"]');
+    if (csrfInput) {
+        formData.append('_token', csrfInput.value);
+    }
+
+    fetch('/cms/dashboard/layout', {
+        method: 'POST',
+        body: formData
+    }).catch(function() {});
+}
+
+document.querySelectorAll('.widget-toggle').forEach(function(toggle) {
+    toggle.addEventListener('change', function() {
+        var wid = this.getAttribute('data-widget-id');
+        var card = document.querySelector('.widget-card[data-widget-id="' + wid + '"]');
+        if (card) {
+            card.style.display = this.checked ? '' : 'none';
+        }
+        saveLayout();
+    });
+});
+
+document.querySelectorAll('.widget-size-select').forEach(function(select) {
+    select.addEventListener('change', function() {
+        var wid = this.getAttribute('data-widget-id');
+        var card = document.querySelector('.widget-card[data-widget-id="' + wid + '"]');
+        if (card) {
+            var size = this.value;
+            card.style.gridColumn = size === 'full' ? '1 / -1' : (size === 'third' ? 'span 2' : 'span 3');
+        }
+        saveLayout();
+    });
+});
+</script>
 {% endblock %}

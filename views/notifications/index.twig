@@ -1,0 +1,81 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Notifications{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-600);">
+    <div>
+        <h1 style="margin: 0;">Notifications</h1>
+        {% if unreadCount > 0 %}
+        <p style="color: var(--text-secondary); margin: var(--space-100) 0 0;">{{ unreadCount }} unread</p>
+        {% endif %}
+    </div>
+    <div style="display: flex; gap: var(--space-200);">
+        {% if unreadCount > 0 %}
+        <form method="POST" action="/cms/notifications/read-all" style="margin: 0;">
+            <input type="hidden" name="_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-outline btn-sm">Mark all as read</button>
+        </form>
+        {% endif %}
+        <a href="/cms/notifications/preferences" class="btn btn-outline btn-sm">Preferences</a>
+    </div>
+</div>
+
+{% if notifications|length > 0 %}
+<div class="card">
+    <div style="divide-y: 1px solid var(--border);">
+        {% for notification in notifications %}
+        <div style="display: flex; align-items: flex-start; gap: var(--space-400); padding: var(--space-400) var(--space-500); border-bottom: 1px solid var(--border); {% if not notification.isRead() %}background: var(--color-info-bg);{% endif %}">
+            <div style="flex-shrink: 0; margin-top: 2px;">
+                {% if notification.getType() == 'entry_published' %}
+                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--color-success);"></span>
+                {% elseif notification.getType() == 'form_submitted' %}
+                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--color-info);"></span>
+                {% elseif notification.getType() == 'user_registered' %}
+                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--color-warning);"></span>
+                {% else %}
+                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--text-secondary);"></span>
+                {% endif %}
+            </div>
+            <div style="flex: 1; min-width: 0;">
+                <div style="font-weight: {% if not notification.isRead() %}600{% else %}400{% endif %};">
+                    {% if notification.getLink() %}
+                        <a href="{{ notification.getLink() }}" style="color: inherit; text-decoration: none;">{{ notification.getTitle() }}</a>
+                    {% else %}
+                        {{ notification.getTitle() }}
+                    {% endif %}
+                </div>
+                {% if notification.getBody() %}
+                <div style="color: var(--text-secondary); font-size: var(--font-sm); margin-top: var(--space-100);">
+                    {{ notification.getBody()|length > 120 ? notification.getBody()|slice(0, 120) ~ '...' : notification.getBody() }}
+                </div>
+                {% endif %}
+                <div style="color: var(--text-disabled); font-size: var(--font-xs); margin-top: var(--space-100);">
+                    {{ notification.getCreatedAt()|date('M j, Y g:i A') }}
+                </div>
+            </div>
+            {% if not notification.isRead() %}
+            <form method="POST" action="/cms/notifications/{{ notification.getId() }}/read" style="margin: 0; flex-shrink: 0;">
+                <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-outline btn-sm" title="Mark as read" style="padding: 4px 8px; font-size: var(--font-xs);">
+                    Mark read
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% if notifications|length >= 20 %}
+<div style="text-align: center; margin-top: var(--space-600);">
+    <a href="/cms/notifications?page={{ page + 1 }}" class="btn btn-outline btn-sm">Load more</a>
+</div>
+{% endif %}
+
+{% else %}
+<div class="card" style="padding: var(--space-800); text-align: center;">
+    <p style="color: var(--text-secondary); margin: 0;">No notifications yet.</p>
+</div>
+{% endif %}
+{% endblock %}

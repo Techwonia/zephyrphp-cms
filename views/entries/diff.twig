@@ -1,0 +1,104 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Revision Comparison{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / <a href="/cms/collections">Collections</a> / <a href="/cms/collections/{{ collection.slug }}/entries">{{ collection.name }}</a> / <a href="/cms/collections/{{ collection.slug }}/entries/{{ entry.id }}/history">History</a> / Diff
+</div>
+
+<div class="page-header">
+    <h1>Revision Comparison</h1>
+</div>
+
+{# Revision Selector #}
+<div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card-body">
+        <form method="GET" action="/cms/collections/{{ collection.slug }}/entries/{{ entry.id }}/diff" style="display: flex; gap: var(--space-300); align-items: flex-end;">
+            <div style="flex: 1;">
+                <label class="form-label">From (Older)</label>
+                <select name="a" class="form-control">
+                    {% for rev in revisions %}
+                    <option value="{{ rev.id }}" {{ revisionA == rev.id ? 'selected' : '' }}>#{{ rev.id }} — {{ rev.action }} — {{ rev.createdAt|date('Y-m-d H:i:s') }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div style="flex: 1;">
+                <label class="form-label">To (Newer)</label>
+                <select name="b" class="form-control">
+                    {% for rev in revisions %}
+                    <option value="{{ rev.id }}" {{ revisionB == rev.id ? 'selected' : '' }}>#{{ rev.id }} — {{ rev.action }} — {{ rev.createdAt|date('Y-m-d H:i:s') }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Compare</button>
+        </form>
+    </div>
+</div>
+
+{# Diff Table #}
+{% if diff|length > 0 %}
+<div class="card">
+    <div class="card-header">
+        <h3 style="margin:0; font-size:1rem;">
+            {% if metaA and metaB %}
+            Revision #{{ metaA.id }} ({{ metaA.action }}) → #{{ metaB.id }} ({{ metaB.action }})
+            {% endif %}
+        </h3>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width: 20%;">Field</th>
+                        <th style="width: 40%;">Old Value</th>
+                        <th style="width: 40%;">New Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in diff %}
+                    <tr style="{{ row.changed ? 'background: rgba(255, 200, 50, 0.1);' : '' }}">
+                        <td>
+                            <strong>{{ row.field }}</strong>
+                            {% if row.changed %}
+                                <span class="badge" style="font-size: 0.6rem; margin-left: 4px; background: var(--warning); color: #333;">Changed</span>
+                            {% endif %}
+                        </td>
+                        <td style="font-size: 0.85rem; max-width: 350px; overflow: hidden; text-overflow: ellipsis; {{ row.changed ? 'color: var(--danger);' : 'color: var(--text-secondary);' }}">
+                            <pre style="margin: 0; white-space: pre-wrap; font-size: 0.8rem;">{{ row.old ?: '(empty)' }}</pre>
+                        </td>
+                        <td style="font-size: 0.85rem; max-width: 350px; overflow: hidden; text-overflow: ellipsis; {{ row.changed ? 'color: var(--success);' : 'color: var(--text-secondary);' }}">
+                            <pre style="margin: 0; white-space: pre-wrap; font-size: 0.8rem;">{{ row.new ?: '(empty)' }}</pre>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div style="margin-top: var(--space-400); display: flex; gap: var(--space-300);">
+    <a href="/cms/collections/{{ collection.slug }}/entries/{{ entry.id }}/history" class="btn btn-outline">Back to History</a>
+    {% if revisionA %}
+    <form method="POST" action="/cms/collections/{{ collection.slug }}/entries/{{ entry.id }}/restore/{{ revisionA }}" onsubmit="return confirm('Restore to revision #{{ revisionA }}?')">
+        {{ csrf_field() | raw }}
+        <button type="submit" class="btn btn-outline">Restore to #{{ revisionA }}</button>
+    </form>
+    {% endif %}
+</div>
+
+{% elseif revisions|length < 2 %}
+<div class="empty-state">
+    <h3>Not enough revisions</h3>
+    <p>At least 2 revisions are needed to compare.</p>
+</div>
+{% else %}
+<div class="empty-state">
+    <h3>Select revisions to compare</h3>
+    <p>Choose two revisions above and click Compare.</p>
+</div>
+{% endif %}
+
+{% endblock %}

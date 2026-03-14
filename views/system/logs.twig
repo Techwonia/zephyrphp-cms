@@ -1,0 +1,92 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Log Viewer{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / System / Logs
+</div>
+
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
+    <h1>Log Viewer</h1>
+    {% if files|length > 0 %}
+    <form method="POST" action="/cms/system/logs/clear-all" style="display: inline;" onsubmit="return confirm('Delete ALL log files?')">
+        {{ csrf_field() | raw }}
+        <button type="submit" class="btn btn-danger btn-sm">Clear All Logs</button>
+    </form>
+    {% endif %}
+</div>
+
+<div style="display: grid; grid-template-columns: 280px 1fr; gap: var(--space-400);">
+    {# File list sidebar #}
+    <div class="card">
+        <div class="card-header"><h3 style="margin:0; font-size:1rem;">Log Files</h3></div>
+        <div class="card-body" style="padding: 0;">
+            {% if files|length == 0 %}
+                <div style="padding: var(--space-400); color: var(--text-secondary);">No log files found.</div>
+            {% else %}
+                {% for file in files %}
+                <a href="/cms/system/logs?file={{ file.name|url_encode }}"
+                   style="display: block; padding: 10px 16px; border-bottom: 1px solid var(--border); text-decoration: none; color: var(--text-primary); {% if selectedFile == file.name %}background: var(--bg-active);{% endif %}">
+                    <div style="font-weight: 600; font-size: 0.85rem;">{{ file.name }}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary);">{{ file.size }} &middot; {{ file.modified }}</div>
+                </a>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+
+    {# Log content #}
+    <div>
+        {% if selectedFile %}
+        <div class="card" style="margin-bottom: var(--space-400);">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin:0; font-size:1rem;">{{ selectedFile }} <span style="color: var(--text-secondary); font-weight: 400;">({{ totalLines }} lines)</span></h3>
+                <div style="display: flex; gap: var(--space-200);">
+                    <a href="/cms/system/logs/download?file={{ selectedFile|url_encode }}" class="btn btn-outline btn-sm">Download</a>
+                    <form method="POST" action="/cms/system/logs/clear" style="display: inline;" onsubmit="return confirm('Delete this log file?')">
+                        {{ csrf_field() | raw }}
+                        <input type="hidden" name="file" value="{{ selectedFile }}">
+                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {# Search #}
+        <div class="card" style="margin-bottom: var(--space-400);">
+            <div class="card-body" style="padding: var(--space-300);">
+                <form method="GET" action="/cms/system/logs" style="display: flex; gap: var(--space-200);">
+                    <input type="hidden" name="file" value="{{ selectedFile }}">
+                    <input type="text" name="search" class="form-control" placeholder="Search logs..." value="{{ search }}" style="flex: 1;">
+                    <button type="submit" class="btn btn-outline">Search</button>
+                </form>
+            </div>
+        </div>
+
+        {# Log entries #}
+        <div class="card">
+            <div class="card-body" style="padding: 0; max-height: 600px; overflow-y: auto;">
+                {% if lines|length == 0 %}
+                    <div style="padding: var(--space-400); color: var(--text-secondary);">No log entries{% if search %} matching "{{ search }}"{% endif %}.</div>
+                {% else %}
+                    {% for entry in lines %}
+                    <div style="padding: 6px 16px; border-bottom: 1px solid var(--border); font-family: monospace; font-size: 0.8rem; {% if entry.level == 'error' %}background: rgba(220,38,38,0.05);{% elseif entry.level == 'warning' %}background: rgba(245,158,11,0.05);{% endif %}">
+                        {% if entry.timestamp %}
+                            <span style="color: var(--text-secondary);">[{{ entry.timestamp }}]</span>
+                        {% endif %}
+                        <span style="{% if entry.level == 'error' %}color: var(--danger);{% elseif entry.level == 'warning' %}color: var(--warning);{% elseif entry.level == 'trace' %}color: var(--text-secondary);{% endif %}">{{ entry.content }}</span>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <h3>Select a log file</h3>
+            <p>Choose a log file from the left panel to view its contents.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

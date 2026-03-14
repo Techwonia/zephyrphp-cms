@@ -1,0 +1,128 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Session Manager{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / System / Sessions
+</div>
+
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
+    <h1>Session Manager</h1>
+    <form method="POST" action="/cms/system/sessions/terminate-all" onsubmit="return confirm('Terminate ALL other sessions? All users except you will be logged out.')">
+        {{ csrf_field() | raw }}
+        <button type="submit" class="btn btn-danger btn-sm">Terminate All Others</button>
+    </form>
+</div>
+
+{# Stats #}
+<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-400); margin-bottom: var(--space-500);">
+    <div class="card">
+        <div class="card-body" style="text-align: center;">
+            <div style="font-size: 2rem; font-weight: 700; color: var(--primary);">{{ stats.active_sessions }}</div>
+            <div style="color: var(--text-secondary); font-size: 0.85rem;">Active Sessions</div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body" style="text-align: center;">
+            <div style="font-size: 2rem; font-weight: 700; color: var(--primary);">{{ stats.unique_users }}</div>
+            <div style="color: var(--text-secondary); font-size: 0.85rem;">Unique Users</div>
+        </div>
+    </div>
+</div>
+
+{# Active Sessions #}
+<div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card-header"><h3 style="margin:0; font-size:1rem;">Active Sessions</h3></div>
+    <div class="card-body" style="padding: 0;">
+        {% if sessions|length > 0 %}
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>IP Address</th>
+                        <th>Browser</th>
+                        <th>Last Activity</th>
+                        <th>Started</th>
+                        <th style="width: 120px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for session in sessions %}
+                    <tr>
+                        <td>
+                            {% if session.user_name %}
+                                <strong>{{ session.user_name }}</strong>
+                                <br><small style="color: var(--text-secondary);">{{ session.user_email }}</small>
+                            {% else %}
+                                <em style="color: var(--text-secondary);">Guest</em>
+                            {% endif %}
+                        </td>
+                        <td style="font-family: monospace; font-size: 0.85rem;">{{ session.ip_address }}</td>
+                        <td style="font-size: 0.85rem;">{{ session.browser }}</td>
+                        <td style="font-size: 0.85rem;">{{ session.last_activity }}</td>
+                        <td style="font-size: 0.85rem;">{{ session.created_at }}</td>
+                        <td>
+                            {% if session.is_current %}
+                                <span class="badge" style="background: var(--success); color: white;">Current</span>
+                            {% else %}
+                                <form method="POST" action="/cms/system/sessions/{{ session.id }}/terminate" style="display: inline;" onsubmit="return confirm('Terminate this session?')">
+                                    {{ csrf_field() | raw }}
+                                    <button type="submit" class="btn btn-danger btn-sm">Terminate</button>
+                                </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="padding: var(--space-400); color: var(--text-secondary);">No active sessions found.</div>
+        {% endif %}
+    </div>
+</div>
+
+{# Login History #}
+{% if history|length > 0 %}
+<div class="card">
+    <div class="card-header"><h3 style="margin:0; font-size:1rem;">Recent Login History</h3></div>
+    <div class="card-body" style="padding: 0;">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Action</th>
+                        <th>Status</th>
+                        <th>IP Address</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in history %}
+                    <tr>
+                        <td>
+                            {{ entry.user_name ?: entry.user_email ?: 'Unknown' }}
+                        </td>
+                        <td>{{ entry.action|replace({'_': ' '})|title }}</td>
+                        <td>
+                            {% if entry.status == 'success' %}
+                                <span class="badge" style="background: var(--success); color: white;">{{ entry.status }}</span>
+                            {% else %}
+                                <span class="badge" style="background: var(--danger); color: white;">{{ entry.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td style="font-family: monospace; font-size: 0.85rem;">{{ entry.ip_address }}</td>
+                        <td style="font-size: 0.85rem;">{{ entry.created_at }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

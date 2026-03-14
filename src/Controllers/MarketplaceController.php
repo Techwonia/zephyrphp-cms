@@ -11,7 +11,7 @@ use ZephyrPHP\Cms\Services\PermissionService;
 
 /**
  * Marketplace Controller — CMS admin panel for browsing and installing
- * themes, apps, and sections from the marketplace.
+ * themes from the marketplace.
  */
 class MarketplaceController extends Controller
 {

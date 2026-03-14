@@ -1,0 +1,179 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}System Health{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / System / Health
+</div>
+
+<div class="page-header">
+    <h1>System Health</h1>
+</div>
+
+{# Status Overview #}
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-400); margin-bottom: var(--space-500);">
+    <div class="card">
+        <div class="card-body" style="text-align: center; padding: var(--space-400);">
+            <div style="font-size: 2rem; font-weight: 700; color: var(--primary);">{{ php.version }}</div>
+            <div style="color: var(--text-secondary); font-size: 0.85rem;">PHP Version</div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body" style="text-align: center; padding: var(--space-400);">
+            <div style="font-size: 2rem; font-weight: 700; color: {% if database.connected %}var(--success){% else %}var(--danger){% endif %};">
+                {% if database.connected %}Connected{% else %}Error{% endif %}
+            </div>
+            <div style="color: var(--text-secondary); font-size: 0.85rem;">Database</div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body" style="text-align: center; padding: var(--space-400);">
+            <div style="font-size: 2rem; font-weight: 700; color: {% if disk.used_percent > 90 %}var(--danger){% elseif disk.used_percent > 70 %}var(--warning){% else %}var(--success){% endif %};">{{ disk.used_percent }}%</div>
+            <div style="color: var(--text-secondary); font-size: 0.85rem;">Disk Usage</div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body" style="text-align: center; padding: var(--space-400);">
+            <div style="font-size: 2rem; font-weight: 700; color: {% if maintenance.active %}var(--warning){% else %}var(--success){% endif %};">
+                {% if maintenance.active %}Down{% else %}Live{% endif %}
+            </div>
+            <div style="color: var(--text-secondary); font-size: 0.85rem;">App Status</div>
+        </div>
+    </div>
+</div>
+
+{# Environment #}
+<div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card-header"><h3 style="margin:0; font-size:1rem;">Environment</h3></div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="data-table">
+                <tbody>
+                    {% for key, value in environment %}
+                    <tr>
+                        <td style="width:200px; font-weight:600;">{{ key|capitalize }}</td>
+                        <td>{{ value }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{# PHP Info #}
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400); margin-bottom: var(--space-500);">
+    <div class="card">
+        <div class="card-header"><h3 style="margin:0; font-size:1rem;">PHP Configuration</h3></div>
+        <div class="card-body">
+            <table class="data-table">
+                <tbody>
+                    {% for key, value in php %}
+                    <tr>
+                        <td style="width:180px; font-weight:600;">{{ key|replace({'_': ' '})|title }}</td>
+                        <td>{{ value }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h3 style="margin:0; font-size:1rem;">Memory & Disk</h3></div>
+        <div class="card-body">
+            <table class="data-table">
+                <tbody>
+                    <tr><td style="font-weight:600;">Current Memory</td><td>{{ memory.current }}</td></tr>
+                    <tr><td style="font-weight:600;">Peak Memory</td><td>{{ memory.peak }}</td></tr>
+                    <tr><td style="font-weight:600;">Memory Limit</td><td>{{ memory.limit }}</td></tr>
+                    <tr><td style="font-weight:600;">Disk Total</td><td>{{ disk.total }}</td></tr>
+                    <tr><td style="font-weight:600;">Disk Free</td><td>{{ disk.free }}</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{# Storage Sizes #}
+<div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card-header"><h3 style="margin:0; font-size:1rem;">Storage Usage</h3></div>
+    <div class="card-body">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--space-400);">
+            {% for name, size in storage %}
+            <div style="text-align: center; padding: var(--space-300); background: var(--bg-secondary); border-radius: var(--radius);">
+                <div style="font-size: 1.25rem; font-weight: 600;">{{ size }}</div>
+                <div style="color: var(--text-secondary); font-size: 0.85rem;">{{ name|replace({'_': ' '})|title }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{# Database Info #}
+{% if database.connected %}
+<div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card-header"><h3 style="margin:0; font-size:1rem;">Database</h3></div>
+    <div class="card-body">
+        <table class="data-table">
+            <tbody>
+                <tr><td style="width:180px; font-weight:600;">Driver</td><td>{{ database.driver }}</td></tr>
+                <tr><td style="font-weight:600;">Host</td><td>{{ database.host }}</td></tr>
+                <tr><td style="font-weight:600;">Database</td><td>{{ database.database }}</td></tr>
+                <tr><td style="font-weight:600;">Tables</td><td>{{ database.table_count }}</td></tr>
+                <tr><td style="font-weight:600;">Size</td><td>{{ database.size }}</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{# Directory Permissions #}
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400); margin-bottom: var(--space-500);">
+    <div class="card">
+        <div class="card-header"><h3 style="margin:0; font-size:1rem;">Directory Permissions</h3></div>
+        <div class="card-body">
+            <table class="data-table">
+                <tbody>
+                    {% for dir, writable in writableDirs %}
+                    <tr>
+                        <td>{{ dir }}</td>
+                        <td>
+                            {% if writable %}
+                                <span class="badge" style="background: var(--success); color: #fff;">Writable</span>
+                            {% else %}
+                                <span class="badge" style="background: var(--danger); color: #fff;">Not Writable</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h3 style="margin:0; font-size:1rem;">Required Extensions</h3></div>
+        <div class="card-body">
+            <table class="data-table">
+                <tbody>
+                    {% for ext, loaded in extensionStatus %}
+                    <tr>
+                        <td>{{ ext }}</td>
+                        <td>
+                            {% if loaded %}
+                                <span class="badge" style="background: var(--success); color: #fff;">Loaded</span>
+                            {% else %}
+                                <span class="badge" style="background: var(--danger); color: #fff;">Missing</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,290 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}System Monitor{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / System / System Monitor
+</div>
+
+<div class="page-header">
+    <h1>System Monitor</h1>
+</div>
+
+{# Stats Cards Row 1 #}
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-400); margin-bottom: var(--space-500);">
+    <div class="card">
+        <div class="card-body" style="text-align: center; padding: var(--space-400);">
+            <div style="font-size: 2rem; font-weight: 700; color: var(--primary);">{{ phpInfo.version }}</div>
+            <div style="color: var(--text-secondary); font-size: 0.85rem;">PHP Version</div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body" style="text-align: center; padding: var(--space-400);">
+            <div style="font-size: 2rem; font-weight: 700; color: {% if memory.percentage > 90 %}var(--danger){% elseif memory.percentage > 70 %}var(--warning){% else %}var(--success){% endif %};" id="memory-percent">{{ memory.percentage }}%</div>
+            <div style="color: var(--text-secondary); font-size: 0.85rem;">Memory Usage</div>
+            <div style="background: var(--bg-secondary); border-radius: 4px; height: 24px; overflow: hidden; margin-top: var(--space-200);">
+                <div id="memory-bar" style="background: {% if memory.percentage > 90 %}var(--danger){% elseif memory.percentage > 70 %}var(--warning){% else %}var(--success){% endif %}; height: 100%; width: {{ memory.percentage }}%; transition: width 0.5s ease;"></div>
+            </div>
+            <div style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 4px;" id="memory-detail">{{ memory.current }} / {{ memory.limit }}</div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body" style="text-align: center; padding: var(--space-400);">
+            <div style="font-size: 2rem; font-weight: 700; color: {% if disk.percentage > 90 %}var(--danger){% elseif disk.percentage > 70 %}var(--warning){% else %}var(--success){% endif %};" id="disk-percent">{{ disk.percentage }}%</div>
+            <div style="color: var(--text-secondary); font-size: 0.85rem;">Disk Usage</div>
+            <div style="background: var(--bg-secondary); border-radius: 4px; height: 24px; overflow: hidden; margin-top: var(--space-200);">
+                <div id="disk-bar" style="background: {% if disk.percentage > 90 %}var(--danger){% elseif disk.percentage > 70 %}var(--warning){% else %}var(--success){% endif %}; height: 100%; width: {{ disk.percentage }}%; transition: width 0.5s ease;"></div>
+            </div>
+            <div style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 4px;" id="disk-detail">{{ disk.used }} / {{ disk.total }}</div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body" style="text-align: center; padding: var(--space-400);">
+            <div style="font-size: 2rem; font-weight: 700; color: var(--primary);">{{ uptime.formatted }}</div>
+            <div style="color: var(--text-secondary); font-size: 0.85rem;">Uptime</div>
+            <div style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 4px;">Since {{ uptime.start_time }}</div>
+        </div>
+    </div>
+</div>
+
+{# Stats Cards Row 2 #}
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-400); margin-bottom: var(--space-500);">
+    <div class="card">
+        <div class="card-body" style="text-align: center; padding: var(--space-400);">
+            <div style="font-size: 2rem; font-weight: 700; color: var(--primary);">
+                {% if database.connected %}{{ database.size }}{% else %}N/A{% endif %}
+            </div>
+            <div style="color: var(--text-secondary); font-size: 0.85rem;">Database Size</div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body" style="text-align: center; padding: var(--space-400);">
+            <div style="font-size: 2rem; font-weight: 700; color: var(--primary);">
+                {% if database.connected %}{{ database.table_count }}{% else %}N/A{% endif %}
+            </div>
+            <div style="color: var(--text-secondary); font-size: 0.85rem;">Tables</div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body" style="text-align: center; padding: var(--space-400);">
+            <div style="font-size: 2rem; font-weight: 700; color: {% if opcache and opcache.hit_rate > 80 %}var(--success){% elseif opcache %}var(--warning){% else %}var(--text-secondary){% endif %};">
+                {% if opcache %}{{ opcache.hit_rate }}%{% else %}N/A{% endif %}
+            </div>
+            <div style="color: var(--text-secondary); font-size: 0.85rem;">OPcache Hit Rate</div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body" style="text-align: center; padding: var(--space-400);">
+            <div style="font-size: 2rem; font-weight: 700; color: {% if errorCount > 50 %}var(--danger){% elseif errorCount > 10 %}var(--warning){% else %}var(--success){% endif %};">{{ errorCount }}</div>
+            <div style="color: var(--text-secondary); font-size: 0.85rem;">Errors Today</div>
+        </div>
+    </div>
+</div>
+
+{# Memory & Disk Detail #}
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400); margin-bottom: var(--space-500);">
+    <div class="card">
+        <div class="card-header"><h3 style="margin:0; font-size:1rem;">Memory Usage</h3></div>
+        <div class="card-body">
+            <div style="margin-bottom: var(--space-300);">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span>Used</span>
+                    <span id="memory-used-label">{{ memory.current }} / {{ memory.limit }} ({{ memory.percentage }}%)</span>
+                </div>
+                <div style="background: var(--bg-secondary); border-radius: 4px; height: 24px; overflow: hidden;">
+                    <div id="memory-bar-detail" style="background: {% if memory.percentage > 90 %}var(--danger){% elseif memory.percentage > 70 %}var(--warning){% else %}var(--success){% endif %}; height: 100%; width: {{ memory.percentage }}%; transition: width 0.5s ease;"></div>
+                </div>
+            </div>
+            <table class="data-table">
+                <tbody>
+                    <tr><td style="font-weight:600;">Current Usage</td><td id="memory-current">{{ memory.current }}</td></tr>
+                    <tr><td style="font-weight:600;">Peak Usage</td><td>{{ memory.peak }}</td></tr>
+                    <tr><td style="font-weight:600;">Memory Limit</td><td>{{ memory.limit }}</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h3 style="margin:0; font-size:1rem;">Disk Usage</h3></div>
+        <div class="card-body">
+            <div style="margin-bottom: var(--space-300);">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span>Used</span>
+                    <span id="disk-used-label">{{ disk.used }} / {{ disk.total }} ({{ disk.percentage }}%)</span>
+                </div>
+                <div style="background: var(--bg-secondary); border-radius: 4px; height: 24px; overflow: hidden;">
+                    <div id="disk-bar-detail" style="background: {% if disk.percentage > 90 %}var(--danger){% elseif disk.percentage > 70 %}var(--warning){% else %}var(--success){% endif %}; height: 100%; width: {{ disk.percentage }}%; transition: width 0.5s ease;"></div>
+                </div>
+            </div>
+            <table class="data-table">
+                <tbody>
+                    <tr><td style="font-weight:600;">Total Space</td><td>{{ disk.total }}</td></tr>
+                    <tr><td style="font-weight:600;">Used Space</td><td id="disk-used">{{ disk.used }}</td></tr>
+                    <tr><td style="font-weight:600;">Free Space</td><td id="disk-free">{{ disk.free }}</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{# PHP Configuration #}
+<div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card-header"><h3 style="margin:0; font-size:1rem;">PHP Configuration</h3></div>
+    <div class="card-body">
+        <table class="data-table">
+            <tbody>
+                {% for key, value in phpInfo %}
+                <tr>
+                    <td style="width:200px; font-weight:600;">{{ key|replace({'_': ' '})|title }}</td>
+                    <td>{{ value }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{# Database Stats #}
+{% if database.connected %}
+<div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card-header"><h3 style="margin:0; font-size:1rem;">Database</h3></div>
+    <div class="card-body">
+        <table class="data-table">
+            <tbody>
+                <tr><td style="width:200px; font-weight:600;">Tables</td><td>{{ database.table_count }}</td></tr>
+                <tr><td style="font-weight:600;">Database Size</td><td>{{ database.size }}</td></tr>
+                {% if database.slow_queries is not null %}
+                <tr><td style="font-weight:600;">Slow Queries</td><td>{{ database.slow_queries }}</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{# Request Stats #}
+<div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card-header"><h3 style="margin:0; font-size:1rem;">Request Statistics</h3></div>
+    <div class="card-body">
+        <div style="font-size: 1.5rem; font-weight: 700;" id="request-count">{{ requestCount }}</div>
+        <div style="color: var(--text-secondary); font-size: 0.85rem;">Total requests tracked since application start</div>
+    </div>
+</div>
+
+{# OPcache #}
+{% if opcache %}
+<div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card-header"><h3 style="margin:0; font-size:1rem;">OPcache</h3></div>
+    <div class="card-body">
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-400); margin-bottom: var(--space-400);">
+            <div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span style="font-weight: 600;">Hit Rate</span>
+                    <span>{{ opcache.hit_rate }}%</span>
+                </div>
+                <div style="background: var(--bg-secondary); border-radius: 4px; height: 24px; overflow: hidden;">
+                    <div style="background: var(--success); height: 100%; width: {{ opcache.hit_rate }}%;"></div>
+                </div>
+            </div>
+            <div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span style="font-weight: 600;">Memory Usage</span>
+                    <span>{{ opcache.memory_percentage }}%</span>
+                </div>
+                <div style="background: var(--bg-secondary); border-radius: 4px; height: 24px; overflow: hidden;">
+                    <div style="background: {% if opcache.memory_percentage > 90 %}var(--danger){% elseif opcache.memory_percentage > 70 %}var(--warning){% else %}var(--primary){% endif %}; height: 100%; width: {{ opcache.memory_percentage }}%;"></div>
+                </div>
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 1.5rem; font-weight: 700;">{{ opcache.cached_scripts }}</div>
+                <div style="color: var(--text-secondary); font-size: 0.85rem;">Cached Scripts</div>
+            </div>
+        </div>
+        <table class="data-table">
+            <tbody>
+                <tr><td style="width:200px; font-weight:600;">Memory Used</td><td>{{ opcache.memory_usage }} / {{ opcache.memory_total }}</td></tr>
+                <tr><td style="font-weight:600;">Cache Hits</td><td>{{ opcache.hits }}</td></tr>
+                <tr><td style="font-weight:600;">Cache Misses</td><td>{{ opcache.misses }}</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{# Loaded Extensions #}
+<div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card-header"><h3 style="margin:0; font-size:1rem;">Loaded Extensions ({{ extensions|length }})</h3></div>
+    <div class="card-body">
+        <div style="display: flex; flex-wrap: wrap; gap: var(--space-200);">
+            {% for ext in extensions %}
+            <span class="badge" style="background: var(--bg-secondary); padding: 4px 10px; border-radius: 4px; font-size: 0.8rem;">{{ ext }}</span>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{# Auto-refresh script #}
+<script nonce="{{ csp_nonce() }}">
+(function() {
+    var refreshInterval = 10000;
+    var statsUrl = '/cms/system/monitor/stats';
+
+    function updateStats() {
+        fetch(statsUrl, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin'
+        })
+        .then(function(response) {
+            if (!response.ok) return null;
+            return response.json();
+        })
+        .then(function(data) {
+            if (!data) return;
+
+            // Update memory
+            var memPercent = document.getElementById('memory-percent');
+            var memBar = document.getElementById('memory-bar');
+            var memBarDetail = document.getElementById('memory-bar-detail');
+            var memDetail = document.getElementById('memory-detail');
+            var memUsedLabel = document.getElementById('memory-used-label');
+            var memCurrent = document.getElementById('memory-current');
+
+            if (memPercent) memPercent.textContent = data.memory.percentage + '%';
+            if (memBar) memBar.style.width = data.memory.percentage + '%';
+            if (memBarDetail) memBarDetail.style.width = data.memory.percentage + '%';
+            if (memDetail) memDetail.textContent = data.memory.current + ' / ' + data.memory.limit;
+            if (memUsedLabel) memUsedLabel.textContent = data.memory.current + ' / ' + data.memory.limit + ' (' + data.memory.percentage + '%)';
+            if (memCurrent) memCurrent.textContent = data.memory.current;
+
+            // Update disk
+            var diskPercent = document.getElementById('disk-percent');
+            var diskBar = document.getElementById('disk-bar');
+            var diskBarDetail = document.getElementById('disk-bar-detail');
+            var diskDetail = document.getElementById('disk-detail');
+            var diskUsedLabel = document.getElementById('disk-used-label');
+            var diskUsed = document.getElementById('disk-used');
+            var diskFree = document.getElementById('disk-free');
+
+            if (diskPercent) diskPercent.textContent = data.disk.percentage + '%';
+            if (diskBar) diskBar.style.width = data.disk.percentage + '%';
+            if (diskBarDetail) diskBarDetail.style.width = data.disk.percentage + '%';
+            if (diskDetail) diskDetail.textContent = data.disk.used + ' / ' + data.disk.total;
+            if (diskUsedLabel) diskUsedLabel.textContent = data.disk.used + ' / ' + data.disk.total + ' (' + data.disk.percentage + '%)';
+            if (diskUsed) diskUsed.textContent = data.disk.used;
+            if (diskFree) diskFree.textContent = data.disk.free;
+
+            // Update request count
+            var reqCount = document.getElementById('request-count');
+            if (reqCount) reqCount.textContent = data.requestCount;
+        })
+        .catch(function() {
+            // Silently fail on network errors
+        });
+    }
+
+    setInterval(updateStats, refreshInterval);
+})();
+</script>
+{% endblock %}

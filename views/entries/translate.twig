@@ -1,0 +1,101 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Translate Entry #{{ entry.id }} — {{ language.getName() }}{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms/collections">Collections</a> /
+    <a href="/cms/collections/{{ collection.getSlug() }}">{{ collection.getName() }}</a> /
+    <a href="/cms/collections/{{ collection.getSlug() }}/entries">Entries</a> /
+    <a href="/cms/collections/{{ collection.getSlug() }}/entries/{{ entry.id }}">{{ entry.id }}</a> /
+    Translate
+</div>
+
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
+    <h1 style="margin: 0;">Translate to {{ language.getName() }} ({{ language.getNativeName() }})</h1>
+    <div style="display: flex; gap: var(--space-200); align-items: center;">
+        {# Language selector #}
+        <select onchange="if(this.value) window.location.href=this.value;" class="form-control" style="width: auto;">
+            {% for lang in languages %}
+                {% set defaultLocale = '' %}
+                {% if lang.isDefault() %}
+                    {% set defaultLocale = lang.getCode() %}
+                {% endif %}
+                {% if not lang.isDefault() %}
+                <option value="/cms/collections/{{ collection.getSlug() }}/entries/{{ entry.id }}/translate/{{ lang.getCode() }}"
+                    {% if lang.getCode() == locale %}selected{% endif %}>
+                    {{ lang.getName() }} ({{ lang.getCode() }})
+                </option>
+                {% endif %}
+            {% endfor %}
+        </select>
+        <a href="/cms/collections/{{ collection.getSlug() }}/entries/{{ entry.id }}" class="btn btn-outline btn-sm">Back to Entry</a>
+    </div>
+</div>
+
+<form method="POST" action="/cms/collections/{{ collection.getSlug() }}/entries/{{ entry.id }}/translate/{{ locale }}">
+    {{ csrf_field() | raw }}
+
+    {% if translatableFields|length == 0 %}
+    <div class="card" style="padding: var(--space-600); text-align: center;">
+        <p style="color: var(--text-secondary); margin: 0;">This collection has no translatable text fields.</p>
+    </div>
+    {% else %}
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
+        {# Left: source (default locale) #}
+        <div>
+            <div style="font-weight: 600; margin-bottom: var(--space-300); padding: var(--space-200) 0; border-bottom: 2px solid var(--border);">
+                Source (Original)
+            </div>
+            {% for field in translatableFields %}
+            <div class="card" style="margin-bottom: var(--space-300);">
+                <div style="padding: var(--space-300) var(--space-400);">
+                    <label class="form-label" style="font-weight: 600; color: var(--text-secondary); font-size: var(--font-xs); text-transform: uppercase; letter-spacing: 0.05em;">
+                        {{ field.getLabel() }}
+                    </label>
+                    {% if field.getType() == 'textarea' or field.getType() == 'richtext' %}
+                    <div style="background: var(--bg-subdued); padding: var(--space-300); border-radius: var(--radius-100); min-height: 80px; font-size: var(--font-sm); white-space: pre-wrap; word-break: break-word;">{{ entry[field.getSlug()] ?? '' }}</div>
+                    {% else %}
+                    <div style="background: var(--bg-subdued); padding: var(--space-200) var(--space-300); border-radius: var(--radius-100); font-size: var(--font-sm);">{{ entry[field.getSlug()] ?? '' }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {# Right: translation #}
+        <div>
+            <div style="font-weight: 600; margin-bottom: var(--space-300); padding: var(--space-200) 0; border-bottom: 2px solid var(--color-primary);">
+                {{ language.getName() }} ({{ locale }})
+            </div>
+            {% for field in translatableFields %}
+            <div class="card" style="margin-bottom: var(--space-300);">
+                <div style="padding: var(--space-300) var(--space-400);">
+                    <label class="form-label" style="font-weight: 600; color: var(--text-secondary); font-size: var(--font-xs); text-transform: uppercase; letter-spacing: 0.05em;">
+                        {{ field.getLabel() }}
+                        {% if translations[field.getSlug()] is defined and translations[field.getSlug()] %}
+                            <span style="color: var(--color-success); font-size: 0.8em; font-weight: 400;">Translated</span>
+                        {% else %}
+                            <span style="color: var(--color-warning); font-size: 0.8em; font-weight: 400;">Not translated</span>
+                        {% endif %}
+                    </label>
+                    {% if field.getType() == 'textarea' or field.getType() == 'richtext' %}
+                    <textarea name="translation_{{ field.getSlug() }}" class="form-control" rows="4" placeholder="Enter {{ language.getName() }} translation...">{{ translations[field.getSlug()] ?? '' }}</textarea>
+                    {% else %}
+                    <input type="text" name="translation_{{ field.getSlug() }}" class="form-control"
+                           value="{{ translations[field.getSlug()] ?? '' }}"
+                           placeholder="Enter {{ language.getName() }} translation...">
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div style="margin-top: var(--space-400); display: flex; gap: var(--space-200);">
+        <button type="submit" class="btn btn-primary">Save Translations</button>
+        <a href="/cms/collections/{{ collection.getSlug() }}/entries/{{ entry.id }}" class="btn btn-outline">Cancel</a>
+    </div>
+    {% endif %}
+</form>
+{% endblock %}

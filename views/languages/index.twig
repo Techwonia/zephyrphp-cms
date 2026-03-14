@@ -1,0 +1,143 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Languages{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-600);">
+    <h1 style="margin: 0;">Languages</h1>
+</div>
+
+{# Add Language Form #}
+<div class="card" style="margin-bottom: var(--space-600);">
+    <div style="padding: var(--space-400) var(--space-500); border-bottom: 1px solid var(--border); font-weight: 600;">Add Language</div>
+    <div style="padding: var(--space-500);">
+        <form method="POST" action="/cms/languages" style="display: flex; gap: var(--space-300); flex-wrap: wrap; align-items: flex-end;">
+            <input type="hidden" name="_token" value="{{ csrf_token() }}">
+            <div class="form-group" style="flex: 0 0 100px;">
+                <label class="form-label">Code</label>
+                <input type="text" name="code" class="form-control" placeholder="en" maxlength="10" required
+                       value="{{ flash('_old_input')['code'] ?? '' }}"
+                       pattern="[a-z]{2}(-[a-z]{2})?" title="e.g., en, fr, pt-br">
+            </div>
+            <div class="form-group" style="flex: 1; min-width: 150px;">
+                <label class="form-label">Name</label>
+                <input type="text" name="name" class="form-control" placeholder="English" required
+                       value="{{ flash('_old_input')['name'] ?? '' }}">
+            </div>
+            <div class="form-group" style="flex: 1; min-width: 150px;">
+                <label class="form-label">Native Name</label>
+                <input type="text" name="native_name" class="form-control" placeholder="English"
+                       value="{{ flash('_old_input')['native_name'] ?? '' }}">
+            </div>
+            <div class="form-group" style="display: flex; align-items: center; gap: var(--space-200); padding-bottom: 2px;">
+                <label style="display: flex; align-items: center; gap: var(--space-100); cursor: pointer;">
+                    <input type="checkbox" name="is_default" value="1"> Default
+                </label>
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Add</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# Language List #}
+{% if languages|length > 0 %}
+<div class="card">
+    <table class="table" style="width: 100%;">
+        <thead>
+            <tr>
+                <th>Code</th>
+                <th>Name</th>
+                <th>Native Name</th>
+                <th style="text-align: center;">Default</th>
+                <th style="text-align: center;">Active</th>
+                <th style="text-align: right;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for lang in languages %}
+            <tr>
+                <td><code style="background: var(--bg-subdued); padding: 2px 6px; border-radius: var(--radius-100); font-size: var(--font-xs);">{{ lang.getCode() }}</code></td>
+                <td style="font-weight: 500;">{{ lang.getName() }}</td>
+                <td>{{ lang.getNativeName() }}</td>
+                <td style="text-align: center;">
+                    {% if lang.isDefault() %}
+                        <span class="badge badge-success">Default</span>
+                    {% endif %}
+                </td>
+                <td style="text-align: center;">
+                    {% if lang.isActive() %}
+                        <span class="badge badge-success">Active</span>
+                    {% else %}
+                        <span class="badge badge-default">Inactive</span>
+                    {% endif %}
+                </td>
+                <td style="text-align: right;">
+                    <button onclick="editLanguage({{ lang.getId() }}, '{{ lang.getName()|e('js') }}', '{{ lang.getNativeName()|e('js') }}', {{ lang.isActive() ? 'true' : 'false' }}, {{ lang.isDefault() ? 'true' : 'false' }})" class="btn btn-outline btn-sm">Edit</button>
+                    {% if not lang.isDefault() %}
+                    <form method="POST" action="/cms/languages/{{ lang.getId() }}/delete" style="display: inline;" class="confirm-delete" data-message="Delete this language and all its translations?">
+                        <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="card" style="padding: var(--space-800); text-align: center;">
+    <p style="color: var(--text-secondary); margin: 0;">No languages configured. Add your first language above.</p>
+</div>
+{% endif %}
+
+{# Edit Modal #}
+<div id="edit-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:1000; display:none; align-items:center; justify-content:center;">
+    <div style="background:var(--bg-surface); border-radius:var(--radius-300); padding:var(--space-600); width:100%; max-width:420px; box-shadow:var(--shadow-dropdown);">
+        <h3 style="margin:0 0 var(--space-400);">Edit Language</h3>
+        <form id="edit-form" method="POST">
+            <input type="hidden" name="_token" value="{{ csrf_token() }}">
+            <div class="form-group" style="margin-bottom: var(--space-300);">
+                <label class="form-label">Name</label>
+                <input type="text" name="name" id="edit-name" class="form-control" required>
+            </div>
+            <div class="form-group" style="margin-bottom: var(--space-300);">
+                <label class="form-label">Native Name</label>
+                <input type="text" name="native_name" id="edit-native" class="form-control">
+            </div>
+            <div style="display:flex; gap:var(--space-400); margin-bottom:var(--space-400);">
+                <label style="display:flex; align-items:center; gap:var(--space-100); cursor:pointer;">
+                    <input type="checkbox" name="is_active" id="edit-active" value="1"> Active
+                </label>
+                <label style="display:flex; align-items:center; gap:var(--space-100); cursor:pointer;">
+                    <input type="checkbox" name="is_default" id="edit-default" value="1"> Default
+                </label>
+            </div>
+            <div style="display:flex; gap:var(--space-200); justify-content:flex-end;">
+                <button type="button" onclick="closeEditModal()" class="btn btn-outline">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script nonce="{{ csp_nonce() }}">
+function editLanguage(id, name, native, active, isDefault) {
+    document.getElementById('edit-form').action = '/cms/languages/' + id;
+    document.getElementById('edit-name').value = name;
+    document.getElementById('edit-native').value = native;
+    document.getElementById('edit-active').checked = active;
+    document.getElementById('edit-default').checked = isDefault;
+    var modal = document.getElementById('edit-modal');
+    modal.style.display = 'flex';
+}
+function closeEditModal() {
+    document.getElementById('edit-modal').style.display = 'none';
+}
+document.getElementById('edit-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeEditModal();
+});
+</script>
+{% endblock %}

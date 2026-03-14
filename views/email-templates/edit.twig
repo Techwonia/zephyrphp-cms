@@ -1,0 +1,72 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Edit Email Template{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-600);">
+    <div>
+        <h1 style="margin: 0;">Edit: {{ template.getName() }}</h1>
+        <p style="color: var(--text-secondary); margin: var(--space-100) 0 0;">Slug: <code style="font-size: var(--font-xs); background: var(--bg-subdued); padding: 2px 6px; border-radius: var(--radius-100);">{{ template.getSlug() }}</code></p>
+    </div>
+    <div style="display: flex; gap: var(--space-200);">
+        <a href="/cms/email-templates/{{ template.getId() }}/preview" target="_blank" class="btn btn-outline btn-sm">Preview</a>
+        <button onclick="testSend({{ template.getId() }})" class="btn btn-outline btn-sm">Test Send</button>
+        <a href="/cms/email-templates" class="btn btn-outline btn-sm">Back</a>
+    </div>
+</div>
+
+<form method="POST" action="/cms/email-templates/{{ template.getId() }}" class="card">
+    <input type="hidden" name="_token" value="{{ csrf_token() }}">
+
+    <div style="padding: var(--space-500);">
+        <div class="form-group" style="margin-bottom: var(--space-400);">
+            <label class="form-label">Name</label>
+            <input type="text" name="name" class="form-control" value="{{ template.getName() }}" required>
+        </div>
+
+        <div class="form-group" style="margin-bottom: var(--space-400);">
+            <label class="form-label">Subject Line</label>
+            <input type="text" name="subject" class="form-control" value="{{ template.getSubject() }}" required>
+            <small style="color: var(--text-secondary);">Use Twig variables: {{ '{{ app_name }}' }}, {{ '{{ entry_title }}' }}, {{ '{{ collection_name }}' }}, {{ '{{ user_name }}' }}</small>
+        </div>
+
+        <div class="form-group" style="margin-bottom: var(--space-400);">
+            <label class="form-label">Body (Twig HTML)</label>
+            <textarea name="body_twig" class="form-control" rows="15" style="font-family: var(--font-mono); font-size: var(--font-sm);" required>{{ template.getBodyTwig() }}</textarea>
+            <small style="color: var(--text-secondary);">
+                Available variables: {{ '{{ app_name }}' }}, {{ '{{ entry_title }}' }}, {{ '{{ collection_name }}' }}, {{ '{{ entry_url }}' }}, {{ '{{ admin_url }}' }}, {{ '{{ user_name }}' }}, {{ '{{ user_email }}' }}, {{ '{{ fields }}' }}
+            </small>
+        </div>
+
+        <div class="form-group" style="margin-bottom: var(--space-400);">
+            <label style="display: flex; align-items: center; gap: var(--space-200); cursor: pointer;">
+                <input type="checkbox" name="is_active" value="1" {% if template.isActive() %}checked{% endif %}>
+                <span>Active</span>
+            </label>
+        </div>
+    </div>
+
+    <div style="padding: var(--space-400) var(--space-500); border-top: 1px solid var(--border); display: flex; gap: var(--space-200);">
+        <button type="submit" class="btn btn-primary">Save Template</button>
+        <a href="/cms/email-templates" class="btn btn-outline">Cancel</a>
+    </div>
+</form>
+
+<script nonce="{{ csp_nonce() }}">
+function testSend(id) {
+    if (!confirm('Send a test email to your account email address?')) return;
+    fetch('/cms/email-templates/' + id + '/test', {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        alert(data.message || data.error || 'Done.');
+    })
+    .catch(() => alert('Request failed.'));
+}
+</script>
+{% endblock %}

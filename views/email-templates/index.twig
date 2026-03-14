@@ -1,0 +1,67 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Email Templates{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-600);">
+    <h1 style="margin: 0;">Email Templates</h1>
+</div>
+
+<div class="card">
+    <table class="table" style="width: 100%;">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Slug</th>
+                <th>Subject</th>
+                <th style="text-align: center;">Active</th>
+                <th style="text-align: right;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for template in templates %}
+            <tr>
+                <td style="font-weight: 500;">{{ template.getName() }}</td>
+                <td><code style="font-size: var(--font-xs); background: var(--bg-subdued); padding: 2px 6px; border-radius: var(--radius-100);">{{ template.getSlug() }}</code></td>
+                <td style="color: var(--text-secondary); font-size: var(--font-sm);">{{ template.getSubject()|length > 50 ? template.getSubject()|slice(0, 50) ~ '...' : template.getSubject() }}</td>
+                <td style="text-align: center;">
+                    {% if template.isActive() %}
+                        <span class="badge badge-success">Active</span>
+                    {% else %}
+                        <span class="badge badge-default">Inactive</span>
+                    {% endif %}
+                </td>
+                <td style="text-align: right;">
+                    <a href="/cms/email-templates/{{ template.getId() }}" class="btn btn-outline btn-sm">Edit</a>
+                    <a href="/cms/email-templates/{{ template.getId() }}/preview" target="_blank" class="btn btn-outline btn-sm">Preview</a>
+                    <button onclick="testSend({{ template.getId() }})" class="btn btn-outline btn-sm">Test Send</button>
+                </td>
+            </tr>
+            {% endfor %}
+            {% if templates|length == 0 %}
+            <tr>
+                <td colspan="5" style="text-align: center; color: var(--text-secondary); padding: var(--space-600);">No email templates found.</td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<script nonce="{{ csp_nonce() }}">
+function testSend(id) {
+    if (!confirm('Send a test email to your account email address?')) return;
+    fetch('/cms/email-templates/' + id + '/test', {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        alert(data.message || data.error || 'Done.');
+    })
+    .catch(() => alert('Request failed.'));
+}
+</script>
+{% endblock %}

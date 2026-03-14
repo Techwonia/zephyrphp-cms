@@ -1,0 +1,65 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Route Viewer{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / System / Routes
+</div>
+
+<div class="page-header">
+    <h1>Route Viewer <span style="color: var(--text-secondary); font-weight: 400; font-size: 1rem;">({{ totalRoutes }} routes)</span></h1>
+</div>
+
+<div class="search-bar" style="margin-bottom: var(--space-400);">
+    <form method="GET" action="/cms/system/routes" class="search-form" style="display: flex; gap: var(--space-200);">
+        <input type="text" name="search" class="form-control" placeholder="Search by URI or controller..." value="{{ search }}" style="flex: 1;">
+        <select name="method" class="form-control" style="width: 120px;">
+            <option value="">All Methods</option>
+            {% for method in methods %}
+                <option value="{{ method }}" {% if filterMethod == method %}selected{% endif %}>{{ method }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-outline">Filter</button>
+    </form>
+</div>
+
+{% if routes|length > 0 %}
+<div class="card">
+    <div class="card-body" style="padding: 0;">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width: 80px;">Method</th>
+                        <th>URI</th>
+                        <th>Action</th>
+                        <th>Name</th>
+                        <th>Middleware</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for route in routes %}
+                    <tr>
+                        <td>
+                            <span class="badge" style="{% if route.method == 'GET' %}background: var(--success); color: #fff;{% elseif route.method == 'POST' %}background: var(--primary); color: #fff;{% elseif route.method == 'PUT' or route.method == 'PATCH' %}background: var(--warning); color: #000;{% elseif route.method == 'DELETE' %}background: var(--danger); color: #fff;{% endif %}">{{ route.method }}</span>
+                        </td>
+                        <td style="font-family: monospace; font-size: 0.85rem;">{{ route.uri }}</td>
+                        <td style="font-family: monospace; font-size: 0.8rem; color: var(--text-secondary); max-width: 300px; overflow: hidden; text-overflow: ellipsis;">{{ route.action }}</td>
+                        <td style="font-size: 0.85rem;">{{ route.name }}</td>
+                        <td style="font-size: 0.8rem; color: var(--text-secondary);">{{ route.middleware }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="empty-state">
+    <h3>No routes found</h3>
+    <p>{% if search or filterMethod %}No routes match your filter criteria.{% else %}No routes are registered.{% endif %}</p>
+</div>
+{% endif %}
+
+{% endblock %}

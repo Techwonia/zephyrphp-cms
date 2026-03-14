@@ -1,0 +1,113 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Webhooks{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / Webhooks
+</div>
+
+<div class="page-header">
+    <h1>Webhooks</h1>
+</div>
+
+{# Create Webhook #}
+<div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card-header"><h3 style="margin:0; font-size:1rem;">Create Webhook</h3></div>
+    <div class="card-body">
+        <form method="POST" action="/cms/webhooks">
+            {{ csrf_field() | raw }}
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
+                <div class="form-group">
+                    <label for="url">Webhook URL (HTTPS only)</label>
+                    <input type="url" id="url" name="url" class="form-control" placeholder="https://example.com/webhook" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="secret">Signing Secret (optional)</label>
+                    <input type="text" id="secret" name="secret" class="form-control" placeholder="Used to sign payloads">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Events</label>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px;">
+                    {% for key, label in events %}
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.85rem;">
+                        <input type="checkbox" name="events[]" value="{{ key }}">
+                        {{ label }}
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Create Webhook</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# Webhook List #}
+{% if webhooks|length > 0 %}
+<div class="card">
+    <div class="card-header"><h3 style="margin:0; font-size:1rem;">Active Webhooks</h3></div>
+    <div class="card-body" style="padding: 0;">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>URL</th>
+                        <th>Events</th>
+                        <th>Status</th>
+                        <th style="width: 200px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for webhook in webhooks %}
+                    <tr>
+                        <td style="font-family: monospace; font-size: 0.85rem; max-width: 300px; overflow: hidden; text-overflow: ellipsis;">{{ webhook.url }}</td>
+                        <td>
+                            {% for event in webhook.events %}
+                                <span class="badge" style="margin: 2px;">{{ event }}</span>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% if webhook.is_active %}
+                                <span class="badge" style="background: var(--success); color: #fff;">Active</span>
+                            {% else %}
+                                <span class="badge">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: var(--space-200);">
+                                <form method="POST" action="/cms/webhooks/{{ webhook.id }}/test" style="display: inline;">
+                                    {{ csrf_field() | raw }}
+                                    <button type="submit" class="btn btn-outline btn-sm">Test</button>
+                                </form>
+                                <form method="POST" action="/cms/webhooks/{{ webhook.id }}/toggle" style="display: inline;">
+                                    {{ csrf_field() | raw }}
+                                    <button type="submit" class="btn btn-outline btn-sm">{{ webhook.is_active ? 'Disable' : 'Enable' }}</button>
+                                </form>
+                                <form method="POST" action="/cms/webhooks/{{ webhook.id }}/delete" style="display: inline;" onsubmit="return confirm('Delete this webhook?')">
+                                    {{ csrf_field() | raw }}
+                                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="empty-state">
+    <h3>No webhooks configured</h3>
+    <p>Create a webhook above to receive real-time notifications when events occur.</p>
+</div>
+{% endif %}
+
+{% endblock %}

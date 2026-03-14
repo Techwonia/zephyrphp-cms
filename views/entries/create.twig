@@ -193,6 +193,10 @@
             </div>
             {% endif %}
 
+            {% if collection.isSeoEnabled() %}
+                {% include "@cms/partials/seo-panel.twig" with {entry: {}, collection_slug: collection.getSlug()} %}
+            {% endif %}
+
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Create Entry</button>
                 <a href="/cms/collections/{{ collection.getSlug() }}/entries" class="btn btn-outline">Cancel</a>

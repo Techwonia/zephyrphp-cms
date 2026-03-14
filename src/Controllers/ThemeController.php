@@ -12,6 +12,7 @@ use ZephyrPHP\Cms\Services\ThemeManager;
 use ZephyrPHP\Cms\Services\ThemeInstaller;
 use ZephyrPHP\Cms\Services\SectionManager;
 use ZephyrPHP\Cms\Services\PermissionService;
+use ZephyrPHP\Cms\Services\ActivityLogger;
 
 class ThemeController extends Controller
 {
@@ -113,6 +114,7 @@ class ThemeController extends Controller
             $copyFrom ?: null
         );
 
+        ActivityLogger::log('created', 'theme', $slug, $name);
         $this->flash('success', "Theme \"{$name}\" created successfully.");
         $this->redirect('/cms/themes');
     }
@@ -142,12 +144,6 @@ class ThemeController extends Controller
 
         // Load available collections for the schema editor collection picker
         $collections = [];
-        try {
-            $pageTypes = \ZephyrPHP\Cms\Models\PageType::findAll();
-            foreach ($pageTypes as $col) {
-                $collections[] = ['slug' => $col->getSlug(), 'name' => $col->getName()];
-            }
-        } catch (\Exception $e) {}
         try {
             $cmsCollections = Collection::findAll();
             foreach ($cmsCollections as $col) {
@@ -214,6 +210,7 @@ class ThemeController extends Controller
         }
 
         if ($this->themeManager->publishTheme($slug)) {
+            ActivityLogger::log('published', 'theme', $slug, $theme->getName());
             $this->flash('success', "Theme \"{$theme->getName()}\" is now live.");
         } else {
             $this->flash('errors', ['Failed to publish theme.']);
@@ -240,6 +237,7 @@ class ThemeController extends Controller
         }
 
         if ($this->themeManager->deleteTheme($slug)) {
+            ActivityLogger::log('deleted', 'theme', $slug, $theme->getName());
             $this->flash('success', "Theme \"{$theme->getName()}\" deleted.");
         } else {
             $this->flash('errors', ['Failed to delete theme.']);
@@ -648,6 +646,7 @@ class ThemeController extends Controller
         $result = $installer->install($file['tmp_name'], $overwrite);
 
         if ($result['success']) {
+            ActivityLogger::log('installed', 'theme', $result['slug'] ?? '', $result['name']);
             $this->flash('success', "Theme \"{$result['name']}\" installed successfully.");
         } else {
             $this->flash('errors', [$result['error']]);
@@ -687,6 +686,7 @@ class ThemeController extends Controller
         $result = $installer->uninstall($slug);
 
         if ($result['success']) {
+            ActivityLogger::log('uninstalled', 'theme', $slug, $theme->getName());
             $this->flash('success', "Theme \"{$theme->getName()}\" has been uninstalled.");
         } else {
             $this->flash('errors', [$result['error'] ?? 'Failed to uninstall theme.']);

@@ -41,6 +41,39 @@ class Collection extends Model
     #[ORM\Column(name: 'slug_source_field', type: 'string', length: 100, nullable: true)]
     protected ?string $slugSourceField = null;
 
+    #[ORM\Column(name: 'is_submittable', type: 'boolean')]
+    protected bool $isSubmittable = false;
+
+    #[ORM\Column(name: 'submit_settings', type: 'json', nullable: true)]
+    protected ?array $submitSettings = null;
+
+    #[ORM\Column(name: 'url_prefix', type: 'string', length: 100, nullable: true)]
+    protected ?string $urlPrefix = null;
+
+    #[ORM\Column(name: 'items_per_page', type: 'integer')]
+    protected int $itemsPerPage = 10;
+
+    #[ORM\Column(name: 'permissions', type: 'json', nullable: true)]
+    protected ?array $permissions = null;
+
+    #[ORM\Column(name: 'api_rate_limit', type: 'integer')]
+    protected int $apiRateLimit = 0;
+
+    #[ORM\Column(name: 'seo_enabled', type: 'boolean')]
+    protected bool $seoEnabled = false;
+
+    #[ORM\Column(name: 'is_translatable', type: 'boolean')]
+    protected bool $isTranslatable = false;
+
+    #[ORM\Column(name: 'workflow_enabled', type: 'boolean')]
+    protected bool $workflowEnabled = false;
+
+    #[ORM\Column(name: 'workflow_stages', type: 'json', nullable: true)]
+    protected ?array $workflowStages = null;
+
+    #[ORM\Column(name: 'workflow_reviewers', type: 'json', nullable: true)]
+    protected ?array $workflowReviewers = null;
+
     #[ORM\Column(name: 'sort_order', type: 'integer')]
     protected int $sortOrder = 0;
 
@@ -106,6 +139,82 @@ class Collection extends Model
     public function getSlugSourceField(): ?string
     {
         return $this->slugSourceField;
+    }
+
+    public function isSubmittable(): bool
+    {
+        return $this->isSubmittable;
+    }
+
+    public function getSubmitSettings(): ?array
+    {
+        return $this->submitSettings;
+    }
+
+    public function getSubmitSetting(string $key, mixed $default = null): mixed
+    {
+        return $this->submitSettings[$key] ?? $default;
+    }
+
+    public function getUrlPrefix(): ?string
+    {
+        return $this->urlPrefix;
+    }
+
+    public function getItemsPerPage(): int
+    {
+        return $this->itemsPerPage;
+    }
+
+    /**
+     * Per-collection role permissions.
+     * Format: { "role_slug": ["view", "create", "edit", "delete", "publish", "submit"], ... }
+     * If null, falls back to global entries.* permissions.
+     */
+    public function getPermissions(): ?array
+    {
+        return $this->permissions;
+    }
+
+    /**
+     * Check if this collection has per-collection permissions configured.
+     */
+    public function hasCustomPermissions(): bool
+    {
+        return !empty($this->permissions);
+    }
+
+    /**
+     * API rate limit per minute. 0 = no limit.
+     */
+    public function getApiRateLimit(): int
+    {
+        return $this->apiRateLimit;
+    }
+
+    public function isSeoEnabled(): bool
+    {
+        return $this->seoEnabled;
+    }
+
+    public function isTranslatable(): bool
+    {
+        return $this->isTranslatable;
+    }
+
+    public function isWorkflowEnabled(): bool
+    {
+        return $this->workflowEnabled;
+    }
+
+    public function getWorkflowStages(): array
+    {
+        return $this->workflowStages ?? ['draft', 'review', 'approved', 'published'];
+    }
+
+    public function getWorkflowReviewers(): array
+    {
+        return $this->workflowReviewers ?? [];
     }
 
     public function getSortOrder(): int
@@ -208,6 +317,72 @@ class Collection extends Model
     public function setSlugSourceField(?string $slugSourceField): self
     {
         $this->slugSourceField = $slugSourceField;
+        return $this;
+    }
+
+    public function setIsSubmittable(bool $isSubmittable): self
+    {
+        $this->isSubmittable = $isSubmittable;
+        return $this;
+    }
+
+    public function setSubmitSettings(?array $submitSettings): self
+    {
+        $this->submitSettings = $submitSettings;
+        return $this;
+    }
+
+    public function setUrlPrefix(?string $urlPrefix): self
+    {
+        $this->urlPrefix = $urlPrefix;
+        return $this;
+    }
+
+    public function setItemsPerPage(int $itemsPerPage): self
+    {
+        $this->itemsPerPage = max(1, $itemsPerPage);
+        return $this;
+    }
+
+    public function setPermissions(?array $permissions): self
+    {
+        $this->permissions = $permissions;
+        return $this;
+    }
+
+    public function setApiRateLimit(int $apiRateLimit): self
+    {
+        $this->apiRateLimit = max(0, $apiRateLimit);
+        return $this;
+    }
+
+    public function setSeoEnabled(bool $seoEnabled): self
+    {
+        $this->seoEnabled = $seoEnabled;
+        return $this;
+    }
+
+    public function setIsTranslatable(bool $isTranslatable): self
+    {
+        $this->isTranslatable = $isTranslatable;
+        return $this;
+    }
+
+    public function setWorkflowEnabled(bool $workflowEnabled): self
+    {
+        $this->workflowEnabled = $workflowEnabled;
+        return $this;
+    }
+
+    public function setWorkflowStages(?array $workflowStages): self
+    {
+        $this->workflowStages = $workflowStages;
+        return $this;
+    }
+
+    public function setWorkflowReviewers(?array $workflowReviewers): self
+    {
+        $this->workflowReviewers = $workflowReviewers;
         return $this;
     }
 

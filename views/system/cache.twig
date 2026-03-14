@@ -1,0 +1,57 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Cache Management{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / System / Cache
+</div>
+
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
+    <h1>Cache Management</h1>
+    <form method="POST" action="/cms/system/cache/clear" onsubmit="return confirm('Clear ALL caches?')">
+        {{ csrf_field() | raw }}
+        <input type="hidden" name="type" value="all">
+        <button type="submit" class="btn btn-danger">Clear All Caches</button>
+    </form>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-400);">
+    {% for cache in caches %}
+    <div class="card">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin:0; font-size:1rem;">{{ cache.name }}</h3>
+            {% if cache.key == 'config' and cache.cached is defined and not cache.cached %}
+                <span class="badge">Not Cached</span>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: var(--space-300);">{{ cache.description }}</p>
+
+            <div style="display: flex; justify-content: space-between; margin-bottom: var(--space-300);">
+                <div>
+                    <div style="font-size: 1.5rem; font-weight: 700;">{{ cache.size }}</div>
+                    <div style="color: var(--text-secondary); font-size: 0.8rem;">{{ cache.files }} file(s)</div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: var(--space-200);">
+                <form method="POST" action="/cms/system/cache/clear" style="display: inline;">
+                    {{ csrf_field() | raw }}
+                    <input type="hidden" name="type" value="{{ cache.key }}">
+                    <button type="submit" class="btn btn-outline btn-sm">Clear</button>
+                </form>
+
+                {% if cache.key == 'config' %}
+                <form method="POST" action="/cms/system/cache/config" style="display: inline;">
+                    {{ csrf_field() | raw }}
+                    <button type="submit" class="btn btn-primary btn-sm">Cache Config</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

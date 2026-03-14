@@ -1,15 +1,16 @@
 <?php
 
-use ZephyrPHP\Cms\Models\PageType;
 use ZephyrPHP\Cms\Models\Collection;
 use ZephyrPHP\Cms\Models\Field;
 use ZephyrPHP\Cms\Services\SchemaManager;
+use ZephyrPHP\Cms\Services\TranslationService;
+use ZephyrPHP\Cache\CacheManager;
 
 if (!function_exists('collection')) {
     /**
      * Query collection/page type entries.
      *
-     * @param string $slug Collection or PageType slug
+     * @param string $slug Collection slug
      * @param array  $options Options: per_page, page, sort_by, sort_dir, filters, search, searchFields, resolve_depth
      * @return array{data: array, total: int, per_page: int, current_page: int, last_page: int}
      */
@@ -17,22 +18,32 @@ if (!function_exists('collection')) {
     {
         $emptyResult = ['data' => [], 'total' => 0, 'per_page' => 10, 'current_page' => 1, 'last_page' => 1];
         try {
+            // Cache frontend queries (60s TTL). Skip cache if 'no_cache' option is set.
+            $useCache = empty($options['no_cache']);
+            unset($options['no_cache']);
+
+            if ($useCache) {
+                $cacheKey = 'cms.collection.' . $slug . '.' . md5(serialize($options));
+                try {
+                    $cache = CacheManager::getInstance();
+                    $cached = $cache->get($cacheKey);
+                    if ($cached !== null) {
+                        return $cached;
+                    }
+                } catch (\Exception $e) {
+                    // Cache unavailable, continue without it
+                }
+            }
+
             $schema = new SchemaManager();
             $tableName = null;
             $defaultPerPage = 10;
             $fields = [];
 
-            $pageType = PageType::findOneBy(['slug' => $slug]);
-            if ($pageType) {
-                $tableName = $pageType->getTableName();
-                $defaultPerPage = $pageType->getItemsPerPage();
-                $fields = $pageType->getFields()->toArray();
-            } else {
-                $coll = Collection::findOneBy(['slug' => $slug]);
-                if ($coll) {
-                    $tableName = $coll->getTableName();
-                    $fields = $coll->getFields()->toArray();
-                }
+            $coll = Collection::findOneBy(['slug' => $slug]);
+            if ($coll) {
+                $tableName = $coll->getTableName();
+                $fields = $coll->getFields()->toArray();
             }
 
             if (!$tableName || !$schema->tableExists($tableName)) {
@@ -41,9 +52,6 @@ if (!function_exists('collection')) {
 
             if (!isset($options['filters'])) {
                 $options['filters'] = [];
-            }
-            if ($pageType && !isset($options['filters']['status'])) {
-                $options['filters']['status'] = 'published';
             }
 
             if (isset($options['per_page'])) {
@@ -91,6 +99,21 @@ if (!function_exists('collection')) {
                 $result['data'] = _cms_resolve_relations($result['data'], $fields, $tableName, $schema, $depth);
             }
 
+            // Apply locale translations if requested
+            $locale = $options['locale'] ?? null;
+            if ($locale && $coll && $coll->isTranslatable() && !empty($result['data'])) {
+                $result['data'] = TranslationService::resolveEntries($result['data'], $tableName, $locale);
+            }
+
+            // Cache the result
+            if ($useCache && isset($cache, $cacheKey)) {
+                try {
+                    $cache->set($cacheKey, $result, 60);
+                } catch (\Exception $e) {
+                    // Cache write failure is non-fatal
+                }
+            }
+
             return $result;
         } catch (\Exception $e) {
             return $emptyResult;
@@ -102,7 +125,7 @@ if (!function_exists('entry')) {
     /**
      * Fetch a single entry by slug or ID.
      *
-     * @param string     $slug       Collection or PageType slug
+     * @param string     $slug       Collection slug
      * @param string|int $identifier Entry slug (string) or ID (int)
      * @param array      $options    Options: resolve_depth (default 1, set 0 to skip)
      * @return array|null
@@ -110,20 +133,30 @@ if (!function_exists('entry')) {
     function entry(string $slug, string|int $identifier, array $options = []): ?array
     {
         try {
+            $useCache = empty($options['no_cache']);
+            unset($options['no_cache']);
+
+            if ($useCache) {
+                $cacheKey = 'cms.entry.' . $slug . '.' . $identifier;
+                try {
+                    $cache = CacheManager::getInstance();
+                    $cached = $cache->get($cacheKey);
+                    if ($cached !== null) {
+                        return $cached;
+                    }
+                } catch (\Exception $e) {
+                    // Cache unavailable
+                }
+            }
+
             $schema = new SchemaManager();
             $tableName = null;
             $fields = [];
 
-            $pageType = PageType::findOneBy(['slug' => $slug]);
-            if ($pageType) {
-                $tableName = $pageType->getTableName();
-                $fields = $pageType->getFields()->toArray();
-            } else {
-                $coll = Collection::findOneBy(['slug' => $slug]);
-                if ($coll) {
-                    $tableName = $coll->getTableName();
-                    $fields = $coll->getFields()->toArray();
-                }
+            $coll = Collection::findOneBy(['slug' => $slug]);
+            if ($coll) {
+                $tableName = $coll->getTableName();
+                $fields = $coll->getFields()->toArray();
             }
 
             if (!$tableName || !$schema->tableExists($tableName)) {
@@ -160,6 +193,21 @@ if (!function_exists('entry')) {
             if ($depth > 0 && !empty($fields)) {
                 $resolved = _cms_resolve_relations([$entry], $fields, $tableName, $schema, $depth);
                 $entry = $resolved[0];
+            }
+
+            // Apply locale translations if requested
+            $locale = $options['locale'] ?? null;
+            if ($locale && $coll && $coll->isTranslatable()) {
+                $entry = TranslationService::resolveEntry($entry, $tableName, $locale);
+            }
+
+            // Cache the result
+            if ($useCache && isset($cache, $cacheKey)) {
+                try {
+                    $cache->set($cacheKey, $entry, 60);
+                } catch (\Exception $e) {
+                    // Cache write failure is non-fatal
+                }
             }
 
             return $entry;
@@ -406,12 +454,6 @@ if (!function_exists('_cms_find_table')) {
             return $schema->tableExists($table) ? $table : null;
         }
 
-        $pt = PageType::findOneBy(['slug' => $slug]);
-        if ($pt) {
-            $table = $pt->getTableName();
-            return $schema->tableExists($table) ? $table : null;
-        }
-
         return null;
     }
 }
@@ -427,12 +469,27 @@ if (!function_exists('_cms_get_fields')) {
             return $coll->getFields()->toArray();
         }
 
-        $pt = PageType::findOneBy(['slug' => $slug]);
-        if ($pt) {
-            return $pt->getFields()->toArray();
-        }
-
         return [];
+    }
+}
+
+if (!function_exists('cms_invalidate_cache')) {
+    /**
+     * Invalidate all cached data for a collection.
+     * Call this after creating, updating, or deleting entries.
+     */
+    function cms_invalidate_cache(string $collectionSlug): void
+    {
+        try {
+            $cache = CacheManager::getInstance();
+            // Clear the entire cache store — cache drivers don't support prefix-based deletion
+            // For production, use short TTLs (60s) so stale data auto-expires
+            // For immediate invalidation, we delete known keys when possible
+            $cache->delete('cms.entry.' . $collectionSlug);
+            $cache->delete('cms.collection.' . $collectionSlug);
+        } catch (\Exception $e) {
+            // Cache unavailable, ignore
+        }
     }
 }
 

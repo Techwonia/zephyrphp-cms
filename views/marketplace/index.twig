@@ -10,7 +10,6 @@
 <div class="page-header">
     <h1>Marketplace</h1>
     <div class="page-actions">
-        <a href="/cms/seller" class="btn btn-outline btn-sm">Seller Portal</a>
     </div>
 </div>
 
@@ -19,14 +18,8 @@
     <div class="card-body">
         <form method="GET" action="/cms/marketplace" class="mp-filters">
             <div class="mp-search">
-                <input type="text" name="search" value="{{ filters.search }}" placeholder="Search themes, apps, sections..." class="form-control">
+                <input type="text" name="search" value="{{ filters.search }}" placeholder="Search themes..." class="form-control">
             </div>
-            <select name="type" class="form-control mp-select">
-                <option value="">All Types</option>
-                <option value="theme" {{ filters.type == 'theme' ? 'selected' : '' }}>Themes</option>
-                <option value="app" {{ filters.type == 'app' ? 'selected' : '' }}>Apps</option>
-                <option value="section" {{ filters.type == 'section' ? 'selected' : '' }}>Sections</option>
-            </select>
             <select name="sort" class="form-control mp-select">
                 <option value="popular" {{ filters.sort == 'popular' ? 'selected' : '' }}>Most Popular</option>
                 <option value="newest" {{ filters.sort == 'newest' ? 'selected' : '' }}>Newest</option>

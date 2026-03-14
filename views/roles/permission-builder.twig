@@ -1,0 +1,233 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Permission Builder{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / <a href="/cms/roles">Roles</a> / Permission Builder
+</div>
+
+<div class="page-header">
+    <h1>Permission Builder</h1>
+    <div class="page-actions">
+        <a href="/cms/roles" class="btn btn-outline">Back to Roles</a>
+    </div>
+</div>
+
+{# ═══ Global Permission Matrix ═══ #}
+<div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card-header">
+        <h3 style="margin: 0; font-size: 1rem;">Global Permission Matrix</h3>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <form method="POST" action="/cms/permissions/save-matrix">
+            {{ csrf_field() | raw }}
+            <div class="table-responsive">
+                <table class="data-table" style="font-size: 0.85rem;">
+                    <thead>
+                        <tr>
+                            <th style="min-width: 200px;">Permission</th>
+                            {% for role in roles %}
+                                {% if role.getSlug() != 'admin' %}
+                                <th style="text-align: center; min-width: 100px;">
+                                    {{ role.getName() }}
+                                    <br><small style="color: var(--text-secondary);">{{ role.getSlug() }}</small>
+                                </th>
+                                {% endif %}
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {# Built-in permissions #}
+                        {% for group, perms in allPermissions %}
+                        <tr style="background: var(--bg-secondary);">
+                            <td colspan="{{ roles|length }}"><strong>{{ group }}</strong></td>
+                        </tr>
+                        {% for key, label in perms %}
+                        <tr>
+                            <td>
+                                {{ label }}
+                                <br><code style="font-size: 0.75rem; color: var(--text-secondary);">{{ key }}</code>
+                            </td>
+                            {% for role in roles %}
+                                {% if role.getSlug() != 'admin' %}
+                                <td style="text-align: center;">
+                                    <input type="checkbox"
+                                           name="permissions[{{ role.getSlug() }}][]"
+                                           value="{{ key }}"
+                                           {% if key in (rolePermissions[role.getSlug()] ?? []) %}checked{% endif %}>
+                                </td>
+                                {% endif %}
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                        {% endfor %}
+
+                        {# Custom permissions #}
+                        {% if customPermissions|length > 0 %}
+                            {% set currentGroup = '' %}
+                            {% for cp in customPermissions %}
+                                {% if cp.group_name != currentGroup %}
+                                    {% set currentGroup = cp.group_name %}
+                                    <tr style="background: var(--bg-secondary);">
+                                        <td colspan="{{ roles|length }}"><strong>{{ currentGroup }}</strong> <span class="badge" style="font-size: 0.6rem;">Custom</span></td>
+                                    </tr>
+                                {% endif %}
+                                <tr>
+                                    <td>
+                                        {{ cp.label }}
+                                        <br><code style="font-size: 0.75rem; color: var(--text-secondary);">{{ cp.permission_key }}</code>
+                                    </td>
+                                    {% for role in roles %}
+                                        {% if role.getSlug() != 'admin' %}
+                                        <td style="text-align: center;">
+                                            <input type="checkbox"
+                                                   name="permissions[{{ role.getSlug() }}][]"
+                                                   value="{{ cp.permission_key }}"
+                                                   {% if cp.permission_key in (rolePermissions[role.getSlug()] ?? []) %}checked{% endif %}>
+                                        </td>
+                                        {% endif %}
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="padding: var(--space-300) var(--space-400); border-top: 1px solid var(--border-color); display: flex; gap: var(--space-300); align-items: center;">
+                <button type="submit" class="btn btn-primary">Save All Permissions</button>
+                <span style="color: var(--text-secondary); font-size: 0.8rem;">Admin role always has all permissions and cannot be modified.</span>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# ═══ Per-Collection Permissions ═══ #}
+{% if collections|length > 0 %}
+<div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card-header">
+        <h3 style="margin: 0; font-size: 1rem;">Per-Collection Permissions</h3>
+        <p style="margin: 4px 0 0; font-size: 0.8rem; color: var(--text-secondary);">
+            Override global entry permissions for specific collections. Leave unchecked to use global defaults.
+        </p>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <form method="POST" action="/cms/permissions/save-collection">
+            {{ csrf_field() | raw }}
+
+            {% for col in collections %}
+            <details style="border-bottom: 1px solid var(--border-color);">
+                <summary style="padding: var(--space-300) var(--space-400); cursor: pointer; font-weight: 600;">
+                    {{ col.name }}
+                    <span style="font-size: 0.8rem; color: var(--text-secondary); font-weight: normal;">({{ col.slug }})</span>
+                    {% if col.permissions|length > 0 %}
+                        <span class="badge" style="margin-left: var(--space-200); font-size: 0.65rem;">Custom</span>
+                    {% endif %}
+                </summary>
+                <div style="padding: 0 var(--space-400) var(--space-400);">
+                    <div class="table-responsive">
+                        <table class="data-table" style="font-size: 0.85rem;">
+                            <thead>
+                                <tr>
+                                    <th>Role</th>
+                                    {% for action in collectionActions %}
+                                    <th style="text-align: center;">{{ action|capitalize }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for role in roles %}
+                                    {% if role.getSlug() != 'admin' %}
+                                    <tr>
+                                        <td>{{ role.getName() }}</td>
+                                        {% for action in collectionActions %}
+                                        <td style="text-align: center;">
+                                            <input type="checkbox"
+                                                   name="collection_permissions[{{ col.id }}][{{ role.getSlug() }}][]"
+                                                   value="{{ action }}"
+                                                   {% if action in (col.permissions[role.getSlug()] ?? []) %}checked{% endif %}>
+                                        </td>
+                                        {% endfor %}
+                                    </tr>
+                                    {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </details>
+            {% endfor %}
+
+            <div style="padding: var(--space-300) var(--space-400);">
+                <button type="submit" class="btn btn-primary">Save Collection Permissions</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{# ═══ Custom Permissions ═══ #}
+<div class="card">
+    <div class="card-header">
+        <h3 style="margin: 0; font-size: 1rem;">Custom Permissions</h3>
+        <p style="margin: 4px 0 0; font-size: 0.8rem; color: var(--text-secondary);">
+            Create custom permission keys for use in your application logic via <code>PermissionService::can('key')</code>.
+        </p>
+    </div>
+    <div class="card-body">
+        {# Add form #}
+        <form method="POST" action="/cms/permissions/custom/add" style="margin-bottom: var(--space-400);">
+            {{ csrf_field() | raw }}
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: var(--space-300); align-items: flex-end;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Permission Key</label>
+                    <input type="text" name="permission_key" class="form-control" placeholder="e.g. reports.export" pattern="[a-z][a-z0-9_\.\-]*" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Label</label>
+                    <input type="text" name="permission_label" class="form-control" placeholder="e.g. Export Reports" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Group</label>
+                    <input type="text" name="permission_group" class="form-control" value="Custom" placeholder="e.g. Reports">
+                </div>
+                <button type="submit" class="btn btn-primary">Add</button>
+            </div>
+        </form>
+
+        {# Existing custom permissions #}
+        {% if customPermissions|length > 0 %}
+        <div class="table-responsive">
+            <table class="data-table" style="font-size: 0.85rem;">
+                <thead>
+                    <tr>
+                        <th>Key</th>
+                        <th>Label</th>
+                        <th>Group</th>
+                        <th style="width: 80px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cp in customPermissions %}
+                    <tr>
+                        <td><code>{{ cp.permission_key }}</code></td>
+                        <td>{{ cp.label }}</td>
+                        <td>{{ cp.group_name }}</td>
+                        <td>
+                            <form method="POST" action="/cms/permissions/custom/{{ cp.id }}/delete" style="display:inline;" onsubmit="return confirm('Delete this permission?')">
+                                {{ csrf_field() | raw }}
+                                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="color: var(--text-secondary); font-size: 0.85rem;">No custom permissions defined yet.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -145,6 +145,174 @@ class DashboardManager
     }
 
     /**
+     * Register the built-in CMS dashboard widgets.
+     */
+    public function registerBuiltInWidgets(): void
+    {
+        $this->register('recent-entries', [
+            'title' => 'Recent Entries',
+            'template' => '@cms/widgets/recent-entries.twig',
+            'size' => 'half',
+            'position' => 10,
+            'data' => fn() => ['entries' => AnalyticsService::getRecentEntries(8)],
+        ]);
+
+        $this->register('entry-counts', [
+            'title' => 'Collection Stats',
+            'template' => '@cms/widgets/entry-counts.twig',
+            'size' => 'half',
+            'position' => 20,
+            'data' => fn() => ['counts' => AnalyticsService::getEntryCountsByCollection()],
+        ]);
+
+        $this->register('recent-activity', [
+            'title' => 'Recent Activity',
+            'template' => '@cms/widgets/recent-activity.twig',
+            'size' => 'half',
+            'position' => 30,
+            'data' => fn() => ['logs' => ActivityLogger::recent(1, 8)['data'] ?? []],
+        ]);
+
+        $this->register('draft-count', [
+            'title' => 'Drafts',
+            'template' => '@cms/widgets/draft-count.twig',
+            'size' => 'third',
+            'position' => 40,
+            'data' => fn() => ['count' => AnalyticsService::getDraftCount()],
+        ]);
+
+        $this->register('scheduled-posts', [
+            'title' => 'Scheduled',
+            'template' => '@cms/widgets/scheduled-posts.twig',
+            'size' => 'third',
+            'position' => 50,
+            'data' => fn() => [
+                'count' => AnalyticsService::getScheduledCount(),
+                'entries' => AnalyticsService::getScheduledEntries(5),
+            ],
+        ]);
+
+        $this->register('media-usage', [
+            'title' => 'Media',
+            'template' => '@cms/widgets/media-usage.twig',
+            'size' => 'third',
+            'position' => 60,
+            'data' => fn() => ['stats' => AnalyticsService::getMediaUsageStats()],
+        ]);
+
+        $this->register('entries-chart', [
+            'title' => 'Entries (Last 30 Days)',
+            'template' => '@cms/widgets/entries-chart.twig',
+            'size' => 'full',
+            'position' => 70,
+            'data' => fn() => ['chart_data' => AnalyticsService::getEntriesOverTime(30)],
+        ]);
+
+        $this->register('quick-actions', [
+            'title' => 'Quick Actions',
+            'template' => '@cms/widgets/quick-actions.twig',
+            'size' => 'half',
+            'position' => 5,
+            'data' => fn() => ['collections' => \ZephyrPHP\Cms\Models\Collection::findAll()],
+        ]);
+
+        $this->register('pending-reviews', [
+            'title' => 'Pending Reviews',
+            'template' => '@cms/widgets/pending-reviews.twig',
+            'size' => 'half',
+            'position' => 25,
+            'data' => fn() => [
+                'reviews' => WorkflowService::getPendingReviews(
+                    \ZephyrPHP\Auth\Auth::user()?->getId()
+                ),
+            ],
+        ]);
+    }
+
+    /**
+     * Get a user's dashboard layout, or return default layout.
+     */
+    public function getUserLayout(int $userId): array
+    {
+        try {
+            $layout = \ZephyrPHP\Cms\Models\DashboardLayout::findOneBy(['userId' => $userId]);
+            if ($layout) {
+                return $layout->getLayout();
+            }
+        } catch (\Exception $e) {
+            // Table may not exist yet
+        }
+
+        // Default: all widgets visible in their registered order
+        $defaults = [];
+        $position = 0;
+        foreach ($this->widgets as $id => $widget) {
+            $defaults[] = [
+                'widget_id' => $id,
+                'position' => $position++,
+                'size' => $widget['size'] ?? 'half',
+                'visible' => true,
+            ];
+        }
+        return $defaults;
+    }
+
+    /**
+     * Save a user's dashboard layout.
+     */
+    public function saveUserLayout(int $userId, array $layout): void
+    {
+        try {
+            $existing = \ZephyrPHP\Cms\Models\DashboardLayout::findOneBy(['userId' => $userId]);
+            if ($existing) {
+                $existing->setLayout($layout);
+                $existing->save();
+            } else {
+                $dl = new \ZephyrPHP\Cms\Models\DashboardLayout();
+                $dl->setUserId($userId);
+                $dl->setLayout($layout);
+                $dl->save();
+            }
+        } catch (\Exception $e) {
+            // Silently fail — dashboard layout is non-critical
+        }
+    }
+
+    /**
+     * Get widgets ordered and filtered by user layout.
+     */
+    public function getWidgetsForUser(int $userId): array
+    {
+        $allWidgets = $this->getWidgets();
+        $layout = $this->getUserLayout($userId);
+
+        if (empty($layout)) {
+            return $allWidgets;
+        }
+
+        // Build ordered list from layout
+        $ordered = [];
+        foreach ($layout as $item) {
+            $wid = $item['widget_id'] ?? '';
+            if (!isset($allWidgets[$wid])) continue;
+            if (!($item['visible'] ?? true)) continue;
+
+            $widget = $allWidgets[$wid];
+            $widget['size'] = $item['size'] ?? $widget['size'];
+            $ordered[$wid] = $widget;
+        }
+
+        // Add any new widgets not in the layout
+        foreach ($allWidgets as $id => $widget) {
+            if (!isset($ordered[$id])) {
+                $ordered[$id] = $widget;
+            }
+        }
+
+        return $ordered;
+    }
+
+    /**
      * Reset the singleton (for testing).
      */
     public static function reset(): void

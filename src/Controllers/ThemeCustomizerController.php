@@ -62,19 +62,6 @@ class ThemeCustomizerController extends Controller
         // Load available collections for the "collection" setting type
         $collections = [];
         try {
-            $allCollections = \ZephyrPHP\Cms\Models\PageType::findAll();
-            foreach ($allCollections as $col) {
-                $collections[] = [
-                    'slug' => $col->getSlug(),
-                    'name' => $col->getName(),
-                ];
-            }
-        } catch (\Exception $e) {
-            // DB may not be ready
-        }
-
-        // Also include CMS collections
-        try {
             $cmsCollections = Collection::findAll();
             foreach ($cmsCollections as $col) {
                 $collections[] = [
@@ -83,7 +70,7 @@ class ThemeCustomizerController extends Controller
                 ];
             }
         } catch (\Exception $e) {
-            // ignore
+            // DB may not be ready
         }
 
         // Current page (from query param or first page)
@@ -251,23 +238,11 @@ class ThemeCustomizerController extends Controller
         $collections = [];
 
         try {
-            $pageTypes = \ZephyrPHP\Cms\Models\PageType::findAll();
-            foreach ($pageTypes as $pt) {
-                $collections[] = [
-                    'slug' => $pt->getSlug(),
-                    'name' => $pt->getName(),
-                    'source' => 'page_type',
-                ];
-            }
-        } catch (\Exception $e) {}
-
-        try {
             $cmsCollections = Collection::findAll();
             foreach ($cmsCollections as $col) {
                 $collections[] = [
                     'slug' => $col->getSlug(),
                     'name' => $col->getName(),
-                    'source' => 'collection',
                 ];
             }
         } catch (\Exception $e) {}
@@ -287,32 +262,6 @@ class ThemeCustomizerController extends Controller
 
         $fields = [];
 
-        // Try PageType first
-        try {
-            $pageType = \ZephyrPHP\Cms\Models\PageType::findOneBy(['slug' => $collectionSlug]);
-            if ($pageType) {
-                // Built-in fields that every PageType table has
-                $fields[] = ['slug' => 'title', 'name' => 'Title', 'type' => 'text'];
-                $fields[] = ['slug' => 'slug', 'name' => 'Slug', 'type' => 'slug'];
-
-                // User-defined fields
-                foreach ($pageType->getFields() as $f) {
-                    $fields[] = ['slug' => $f->getSlug(), 'name' => $f->getName(), 'type' => $f->getType()];
-                }
-
-                // SEO fields
-                if ($pageType->hasSeo()) {
-                    $fields[] = ['slug' => 'seo_title', 'name' => 'SEO Title', 'type' => 'text'];
-                    $fields[] = ['slug' => 'seo_description', 'name' => 'SEO Description', 'type' => 'textarea'];
-                    $fields[] = ['slug' => 'seo_image', 'name' => 'SEO Image', 'type' => 'image'];
-                }
-
-                echo json_encode(['fields' => $fields]);
-                return;
-            }
-        } catch (\Exception $e) {}
-
-        // Try Collection
         try {
             $collection = Collection::findOneBy(['slug' => $collectionSlug]);
             if ($collection) {

@@ -1,0 +1,24 @@
+{% if chart_data|length > 0 %}
+{% set max_val = 1 %}
+{% for day, cnt in chart_data %}
+    {% if cnt > max_val %}
+        {% set max_val = cnt %}
+    {% endif %}
+{% endfor %}
+<div style="display: flex; align-items: flex-end; gap: 2px; height: 120px; padding: 0 4px;">
+    {% for day, cnt in chart_data %}
+    {% set height = max_val > 0 ? (cnt / max_val * 100) : 0 %}
+    <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%;"
+         title="{{ day }}: {{ cnt }} entries">
+        <div style="width: 100%; min-height: 2px; background: var(--color-primary, #4A90D9); border-radius: 2px 2px 0 0; height: {{ height > 0 ? height : 2 }}%;"></div>
+    </div>
+    {% endfor %}
+</div>
+<div style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.75em; color: var(--text-secondary);">
+    {% set days = chart_data|keys %}
+    <span>{{ days|first }}</span>
+    <span>{{ days|last }}</span>
+</div>
+{% else %}
+<p class="text-muted">No data available.</p>
+{% endif %}

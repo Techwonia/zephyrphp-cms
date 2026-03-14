@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace ZephyrPHP\Cms\Controllers;
 
 use ZephyrPHP\Core\Controllers\Controller;
-use ZephyrPHP\Cms\Models\PageType;
 use ZephyrPHP\Cms\Models\Collection;
 use ZephyrPHP\Cms\Services\SchemaManager;
 use ZephyrPHP\Cms\Services\ThemeManager;
@@ -45,53 +44,6 @@ class SitemapController extends Controller
             // pages.json might not exist
         }
 
-        // Add page type entries
-        try {
-            $pageTypes = PageType::findAll();
-            foreach ($pageTypes as $pt) {
-                $prefix = $pt->getUrlPrefix();
-                if (empty($prefix)) continue;
-                $prefix = '/' . ltrim(rtrim($prefix, '/'), '/');
-                $tableName = $pt->getTableName();
-
-                if (!$schema->tableExists($tableName)) continue;
-
-                // Add listing page
-                $urls[] = [
-                    'loc' => $baseUrl . $prefix,
-                    'changefreq' => 'daily',
-                    'priority' => '0.8',
-                ];
-
-                // Add individual entries (published only)
-                if ($pt->isDynamic()) {
-                    $conn = $schema->getConnection();
-                    $qb = $conn->createQueryBuilder()
-                        ->select('slug, updated_at')
-                        ->from($tableName);
-
-                    if ($pt->isPublishable()) {
-                        $qb->where('status = :status')->setParameter('status', 'published');
-                    }
-
-                    $entries = $qb->executeQuery()->fetchAllAssociative();
-                    foreach ($entries as $entry) {
-                        $url = [
-                            'loc' => $baseUrl . $prefix . '/' . ($entry['slug'] ?? $entry['id'] ?? ''),
-                            'changefreq' => 'weekly',
-                            'priority' => '0.6',
-                        ];
-                        if (!empty($entry['updated_at'])) {
-                            $url['lastmod'] = date('Y-m-d', strtotime($entry['updated_at']));
-                        }
-                        $urls[] = $url;
-                    }
-                }
-            }
-        } catch (\Exception $e) {
-            // Tables might not exist yet
-        }
-
         // Add collection entries that have slugs and are publishable
         try {
             $collections = Collection::findAll();
@@ -102,8 +54,15 @@ class SitemapController extends Controller
                 if (!$schema->tableExists($tableName)) continue;
 
                 $conn = $schema->getConnection();
+
+                // Select SEO columns if available
+                $selectCols = 'slug, updated_at';
+                if ($collection->isSeoEnabled()) {
+                    $selectCols .= ', meta_title, robots';
+                }
+
                 $qb = $conn->createQueryBuilder()
-                    ->select('slug, updated_at')
+                    ->select($selectCols)
                     ->from($tableName);
 
                 if ($collection->isPublishable()) {
@@ -111,12 +70,44 @@ class SitemapController extends Controller
                 }
 
                 $entries = $qb->executeQuery()->fetchAllAssociative();
+
+                // Determine URL prefix for this collection
+                $urlPrefix = $collection->getUrlPrefix();
+                $collPath = $urlPrefix ? ltrim($urlPrefix, '/') : $collection->getSlug();
+
                 foreach ($entries as $entry) {
                     if (empty($entry['slug'])) continue;
+
+                    // Skip entries with noindex robots directive
+                    $robots = $entry['robots'] ?? '';
+                    if (str_contains($robots, 'noindex')) continue;
+
+                    // Determine priority based on recency
+                    $priority = '0.5';
+                    if (!empty($entry['updated_at'])) {
+                        $daysSinceUpdate = (time() - strtotime($entry['updated_at'])) / 86400;
+                        if ($daysSinceUpdate < 7) {
+                            $priority = '0.8';
+                        } elseif ($daysSinceUpdate < 30) {
+                            $priority = '0.6';
+                        }
+                    }
+
+                    // Determine changefreq based on update recency
+                    $changefreq = 'monthly';
+                    if (!empty($entry['updated_at'])) {
+                        $daysSinceUpdate = $daysSinceUpdate ?? ((time() - strtotime($entry['updated_at'])) / 86400);
+                        if ($daysSinceUpdate < 7) {
+                            $changefreq = 'daily';
+                        } elseif ($daysSinceUpdate < 30) {
+                            $changefreq = 'weekly';
+                        }
+                    }
+
                     $url = [
-                        'loc' => $baseUrl . '/' . $collection->getSlug() . '/' . $entry['slug'],
-                        'changefreq' => 'weekly',
-                        'priority' => '0.5',
+                        'loc' => $baseUrl . '/' . $collPath . '/' . $entry['slug'],
+                        'changefreq' => $changefreq,
+                        'priority' => $priority,
                     ];
                     if (!empty($entry['updated_at'])) {
                         $url['lastmod'] = date('Y-m-d', strtotime($entry['updated_at']));

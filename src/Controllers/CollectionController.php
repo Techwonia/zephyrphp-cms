@@ -10,6 +10,7 @@ use ZephyrPHP\Cms\Models\Collection;
 use ZephyrPHP\Cms\Models\Field;
 use ZephyrPHP\Cms\Services\SchemaManager;
 use ZephyrPHP\Cms\Services\PermissionService;
+use ZephyrPHP\Cms\Services\ActivityLogger;
 
 class CollectionController extends Controller
 {
@@ -115,6 +116,10 @@ class CollectionController extends Controller
             return;
         }
 
+        $isSubmittable = $this->boolean('is_submittable');
+        $urlPrefix = trim($this->input('url_prefix', ''));
+        $itemsPerPage = (int) $this->input('items_per_page', 10);
+
         $collection = new Collection();
         $collection->setName($name);
         $collection->setSlug($slug);
@@ -123,11 +128,23 @@ class CollectionController extends Controller
         $collection->setIsPublishable($isPublishable);
         $collection->setHasSlug($hasSlug);
         $collection->setPrimaryKeyType($primaryKeyType);
+        $collection->setIsSubmittable($isSubmittable);
+        $collection->setUrlPrefix($urlPrefix ?: null);
+        $collection->setItemsPerPage($itemsPerPage > 0 ? $itemsPerPage : 10);
+        $collection->setSeoEnabled($this->boolean('seo_enabled'));
+        $collection->setIsTranslatable($this->boolean('is_translatable'));
         $collection->setCreatedBy(Auth::user()?->getId());
         $collection->save();
 
         // Create the dynamic table
         $this->schema->createCollectionTable($collection);
+
+        // Add SEO columns if enabled
+        if ($collection->isSeoEnabled()) {
+            $this->schema->addSeoColumns($collection->getTableName());
+        }
+
+        ActivityLogger::log('created', 'collection', $collection->getSlug(), $name);
 
         $this->flash('success', "Collection \"{$name}\" created successfully.");
         $this->redirect("/cms/collections/{$slug}");
@@ -167,12 +184,16 @@ class CollectionController extends Controller
 
         $allCollections = Collection::findAll();
 
+        // Load roles for per-collection permissions tab
+        $roles = $this->loadRoles();
+
         return $this->render('cms::collections/edit', [
             'collection' => $collection,
             'collections' => $allCollections,
             'fields' => $collection->getFields()->toArray(),
             'fieldTypes' => $fieldTypes,
             'entryCount' => $entryCount,
+            'roles' => $roles,
             'user' => Auth::user(),
         ]);
     }
@@ -185,6 +206,12 @@ class CollectionController extends Controller
         if (!$collection) {
             $this->flash('errors', ['collection' => 'Collection not found.']);
             $this->redirect('/cms/collections');
+            return;
+        }
+
+        // Handle permissions save (separate form on the Permissions tab)
+        if ($this->input('_save_permissions') === '1') {
+            $this->saveCollectionPermissions($collection);
             return;
         }
 
@@ -231,6 +258,25 @@ class CollectionController extends Controller
             $slugSourceField = '';
         }
 
+        $isSubmittable = $this->boolean('is_submittable');
+        $urlPrefix = trim($this->input('url_prefix', ''));
+        $itemsPerPage = (int) $this->input('items_per_page', 10);
+        $apiRateLimit = max(0, (int) $this->input('api_rate_limit', 0));
+
+        // Build submit settings from form inputs
+        $submitSettings = null;
+        if ($isSubmittable) {
+            $submitSettings = [
+                'success_message' => trim($this->input('submit_success_message', 'Thank you for your submission.')),
+                'redirect_url' => trim($this->input('submit_redirect_url', '')),
+                'submit_button_text' => trim($this->input('submit_button_text', 'Submit')),
+                'email_notify' => $this->boolean('submit_email_notify'),
+                'email_to' => trim($this->input('submit_email_to', '')),
+                'honeypot_enabled' => $this->boolean('submit_honeypot_enabled'),
+                'rate_limit_per_ip' => max(0, (int) $this->input('submit_rate_limit', 0)),
+            ];
+        }
+
         $collection->setName($name);
         $collection->setDescription($description ?: null);
         $collection->setIsApiEnabled($isApiEnabled);
@@ -238,9 +284,76 @@ class CollectionController extends Controller
         $collection->setHasSlug($hasSlug);
         $collection->setSlugSourceField($slugSourceField ?: null);
         $collection->setPrimaryKeyType($primaryKeyType);
+        $collection->setIsSubmittable($isSubmittable);
+        $collection->setSubmitSettings($submitSettings);
+        $collection->setUrlPrefix($urlPrefix ?: null);
+        $collection->setItemsPerPage($itemsPerPage > 0 ? $itemsPerPage : 10);
+        $collection->setApiRateLimit($apiRateLimit);
+
+        // Handle SEO toggle
+        $seoEnabled = $this->boolean('seo_enabled');
+        $oldSeoEnabled = $collection->isSeoEnabled();
+        $collection->setSeoEnabled($seoEnabled);
+
+        if ($seoEnabled && !$oldSeoEnabled) {
+            $this->schema->addSeoColumns($tableName);
+        } elseif (!$seoEnabled && $oldSeoEnabled) {
+            $this->schema->removeSeoColumns($tableName);
+        }
+
+        $collection->setIsTranslatable($this->boolean('is_translatable'));
+
+        // Handle workflow config save (separate form on Workflow tab)
+        if ($this->input('_save_workflow') === '1') {
+            $this->saveWorkflowConfig($collection);
+            return;
+        }
+
+        $collection->setWorkflowEnabled($this->boolean('workflow_enabled'));
+
         $collection->save();
 
+        ActivityLogger::log('updated', 'collection', $collection->getSlug(), $collection->getName());
+
         $this->flash('success', 'Collection updated successfully.');
+        $this->back();
+    }
+
+    /**
+     * Save workflow configuration from the Workflow tab.
+     */
+    private function saveWorkflowConfig(Collection $collection): void
+    {
+        $workflowEnabled = $this->boolean('workflow_enabled');
+        $collection->setWorkflowEnabled($workflowEnabled);
+
+        if ($workflowEnabled) {
+            $stagesRaw = trim($this->input('workflow_stages', ''));
+            if (!empty($stagesRaw)) {
+                $stages = array_filter(array_map('trim', explode(',', $stagesRaw)));
+                $stages = array_values(array_map(function ($s) {
+                    return preg_replace('/[^a-z0-9_-]/', '', strtolower($s));
+                }, $stages));
+
+                if (count($stages) >= 2) {
+                    $collection->setWorkflowStages($stages);
+                }
+            }
+
+            // Parse reviewers: stage => [user_id, ...]
+            $reviewers = [];
+            foreach ($collection->getWorkflowStages() as $stage) {
+                $ids = $this->input("reviewers_{$stage}", '');
+                if (!empty($ids)) {
+                    $reviewers[$stage] = array_map('intval', array_filter(explode(',', $ids)));
+                }
+            }
+            $collection->setWorkflowReviewers(!empty($reviewers) ? $reviewers : null);
+        }
+
+        $collection->save();
+
+        $this->flash('success', 'Workflow configuration saved.');
         $this->back();
     }
 
@@ -262,6 +375,8 @@ class CollectionController extends Controller
 
         // Delete the collection record (cascade deletes field records)
         $collection->delete();
+
+        ActivityLogger::log('deleted', 'collection', $slug, $collectionName);
 
         $this->flash('success', "Collection \"{$collectionName}\" deleted.");
         $this->redirect('/cms/collections');
@@ -628,10 +743,68 @@ class CollectionController extends Controller
     // HELPERS
     // ========================================================================
 
+    /**
+     * Save per-collection permissions from the Permissions tab form.
+     */
+    private function saveCollectionPermissions(Collection $collection): void
+    {
+        $enabled = $this->boolean('enable_custom_permissions');
+
+        if (!$enabled) {
+            $collection->setPermissions(null);
+            $collection->save();
+            $this->flash('success', 'Per-collection permissions disabled. Using global permissions.');
+            $this->back();
+            return;
+        }
+
+        $permsInput = $_POST['perms'] ?? [];
+        $validActions = ['view', 'create', 'edit', 'delete', 'publish'];
+        $permissions = [];
+
+        foreach ($permsInput as $roleSlug => $actions) {
+            $roleSlug = preg_replace('/[^a-z0-9_-]/', '', strtolower((string) $roleSlug));
+            if (empty($roleSlug)) continue;
+
+            $filtered = array_values(array_intersect((array) $actions, $validActions));
+            if (!empty($filtered)) {
+                $permissions[$roleSlug] = $filtered;
+            }
+        }
+
+        $collection->setPermissions(!empty($permissions) ? $permissions : null);
+        $collection->save();
+
+        $this->flash('success', 'Per-collection permissions saved.');
+        $this->back();
+    }
+
     private function generateSlug(string $name): string
     {
         $slug = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '_', trim($name)));
         $slug = trim($slug, '_');
         return $slug;
+    }
+
+    /**
+     * Load all roles from the database for the permissions UI.
+     */
+    private function loadRoles(): array
+    {
+        try {
+            $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
+            $sm = $conn->createSchemaManager();
+            if (!$sm->tablesExist(['roles'])) {
+                return [];
+            }
+            return $conn->createQueryBuilder()
+                ->select('name', 'slug')
+                ->from('roles')
+                ->orderBy('name', 'ASC')
+                ->executeQuery()
+                ->fetchAllAssociative();
+        } catch (\Exception $e) {
+            return [];
+        }
     }
 }

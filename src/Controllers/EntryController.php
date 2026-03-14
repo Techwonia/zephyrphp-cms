@@ -10,9 +10,16 @@ use ZephyrPHP\Cms\Models\Collection;
 use ZephyrPHP\Cms\Models\Field;
 use ZephyrPHP\Cms\Models\Media;
 use ZephyrPHP\Cms\Models\Revision;
+use ZephyrPHP\Cms\Models\SavedView;
 use ZephyrPHP\Cms\Services\SchemaManager;
 use ZephyrPHP\Cms\Services\FileValidator;
 use ZephyrPHP\Cms\Services\PermissionService;
+use ZephyrPHP\Cms\Services\ActivityLogger;
+use ZephyrPHP\Cms\Services\SeoService;
+use ZephyrPHP\Cms\Services\NotificationService;
+use ZephyrPHP\Cms\Services\TranslationService;
+use ZephyrPHP\Cms\Services\WorkflowService;
+use ZephyrPHP\Cms\Models\Language;
 use ZephyrPHP\Cms\Api\ContentApiController;
 
 class EntryController extends Controller
@@ -47,6 +54,19 @@ class EntryController extends Controller
         }
     }
 
+    /**
+     * Check per-collection permission. Uses collection-level overrides if configured,
+     * otherwise falls back to global entries.{action} permission.
+     */
+    private function requireCollectionPermission(string $action, Collection $collection): void
+    {
+        $this->requireCmsAccess();
+        if (!PermissionService::canForCollection($action, $collection)) {
+            $this->flash('errors', ['auth' => 'You do not have permission to perform this action.']);
+            $this->redirect('/cms');
+        }
+    }
+
     private function resolveCollection(string $slug): ?Collection
     {
         $collection = Collection::findOneBy(['slug' => $slug]);
@@ -60,14 +80,18 @@ class EntryController extends Controller
 
     public function index(string $slug): string
     {
-        $this->requirePermission('entries.view');
-
         $collection = $this->resolveCollection($slug);
         if (!$collection) return '';
+        $this->requireCollectionPermission('view', $collection);
 
         $fields = $collection->getFields()->toArray();
         $listableFields = $collection->getListableFields();
         $searchableFields = $collection->getSearchableFields();
+
+        // Load saved views for this collection
+        $savedViews = SavedView::findBy(['collectionSlug' => $slug], ['sortOrder' => 'ASC']);
+        $activeViewSlug = $this->input('view', '');
+        $activeView = null;
 
         $options = [
             'page' => max(1, (int) ($this->input('page') ?? 1)),
@@ -77,6 +101,45 @@ class EntryController extends Controller
             'search' => $this->input('search'),
             'searchFields' => array_map(fn(Field $f) => $f->getSlug(), $searchableFields),
         ];
+
+        // Apply saved view filters if one is selected
+        if ($activeViewSlug) {
+            foreach ($savedViews as $sv) {
+                if ($sv->getSlug() === $activeViewSlug) {
+                    $activeView = $sv;
+                    break;
+                }
+            }
+        } elseif (empty($this->input('search')) && empty($this->input('sort_by'))) {
+            // Auto-apply default view if no explicit params
+            foreach ($savedViews as $sv) {
+                if ($sv->isDefault()) {
+                    $activeView = $sv;
+                    $activeViewSlug = $sv->getSlug();
+                    break;
+                }
+            }
+        }
+
+        if ($activeView) {
+            // Apply saved view's filters
+            $filters = [];
+            foreach ($activeView->getFilters() as $filter) {
+                $field = $filter['field'] ?? '';
+                $value = $filter['value'] ?? '';
+                if ($field !== '' && $value !== '') {
+                    $filters[$field] = $value;
+                }
+            }
+            if (!empty($filters)) {
+                $options['filters'] = $filters;
+            }
+            // Apply saved view's sort (unless user overrides via query params)
+            if (empty($this->input('sort_by')) && $activeView->getSortBy()) {
+                $options['sort_by'] = $activeView->getSortBy();
+                $options['sort_dir'] = $activeView->getSortDir();
+            }
+        }
 
         $entries = $this->schema->listEntries($collection->getTableName(), $options);
 
@@ -91,16 +154,17 @@ class EntryController extends Controller
             'search' => $options['search'] ?? '',
             'sortBy' => $options['sort_by'],
             'sortDir' => $options['sort_dir'],
+            'savedViews' => $savedViews,
+            'activeViewSlug' => $activeViewSlug,
             'user' => Auth::user(),
         ]);
     }
 
     public function create(string $slug): string
     {
-        $this->requirePermission('entries.create');
-
         $collection = $this->resolveCollection($slug);
         if (!$collection) return '';
+        $this->requireCollectionPermission('create', $collection);
 
         // Load related collection data for relation fields
         $relationData = $this->loadRelationData($collection->getFields()->toArray());
@@ -115,10 +179,9 @@ class EntryController extends Controller
 
     public function store(string $slug): void
     {
-        $this->requirePermission('entries.create');
-
         $collection = $this->resolveCollection($slug);
         if (!$collection) return;
+        $this->requireCollectionPermission('create', $collection);
 
         $fields = $collection->getFields()->toArray();
         $data = $this->buildEntryData($fields);
@@ -168,6 +231,15 @@ class EntryController extends Controller
             }
         }
 
+        // SEO meta fields
+        if ($collection->isSeoEnabled()) {
+            $data['meta_title'] = trim($this->input('meta_title', ''));
+            $data['meta_description'] = trim($this->input('meta_description', ''));
+            $data['og_image'] = trim($this->input('og_image', ''));
+            $data['canonical_url'] = trim($this->input('canonical_url', ''));
+            $data['robots'] = trim($this->input('robots', 'index,follow'));
+        }
+
         $entryId = $this->schema->insertEntry($collection->getTableName(), $data, $collection->isUuid());
 
         // Sync pivot relations
@@ -176,16 +248,37 @@ class EntryController extends Controller
         // Record revision
         Revision::record($collection->getTableName(), $entryId, $data, 'create');
 
+        // Invalidate collection cache
+        cms_invalidate_cache($slug);
+
+        ActivityLogger::log('created', 'entry', (string) $entryId, $data['title'] ?? $data['name'] ?? "#{$entryId}", ['collection' => $slug]);
+
+        // Notify on publish
+        if (($data['status'] ?? '') === 'published') {
+            $entryTitle = $data['title'] ?? $data['name'] ?? "#{$entryId}";
+            NotificationService::notifyAdmins(
+                'entry_published',
+                "Entry published: {$entryTitle}",
+                "The entry \"{$entryTitle}\" in {$collection->getName()} has been published.",
+                "/cms/collections/{$slug}/entries/{$entryId}",
+                ['collection' => $slug, 'entry_id' => $entryId],
+                [
+                    'entry_title' => $entryTitle,
+                    'collection_name' => $collection->getName(),
+                    'entry_url' => rtrim($_ENV['APP_URL'] ?? '', '/') . "/cms/collections/{$slug}/entries/{$entryId}",
+                ]
+            );
+        }
+
         $this->flash('success', 'Entry created successfully.');
         $this->redirect("/cms/collections/{$slug}/entries");
     }
 
     public function edit(string $slug, string $id): string
     {
-        $this->requirePermission('entries.edit');
-
         $collection = $this->resolveCollection($slug);
         if (!$collection) return '';
+        $this->requireCollectionPermission('edit', $collection);
 
         $entry = $this->schema->findEntry($collection->getTableName(), $id);
         if (!$entry) {
@@ -224,10 +317,9 @@ class EntryController extends Controller
 
     public function update(string $slug, string $id): void
     {
-        $this->requirePermission('entries.edit');
-
         $collection = $this->resolveCollection($slug);
         if (!$collection) return;
+        $this->requireCollectionPermission('edit', $collection);
 
         $entry = $this->schema->findEntry($collection->getTableName(), $id);
         if (!$entry) {
@@ -283,6 +375,15 @@ class EntryController extends Controller
             }
         }
 
+        // SEO meta fields
+        if ($collection->isSeoEnabled()) {
+            $data['meta_title'] = trim($this->input('meta_title', ''));
+            $data['meta_description'] = trim($this->input('meta_description', ''));
+            $data['og_image'] = trim($this->input('og_image', ''));
+            $data['canonical_url'] = trim($this->input('canonical_url', ''));
+            $data['robots'] = trim($this->input('robots', 'index,follow'));
+        }
+
         // Determine changed fields for revision
         $changedFields = [];
         foreach ($data as $key => $val) {
@@ -299,16 +400,37 @@ class EntryController extends Controller
         // Record revision
         Revision::record($collection->getTableName(), $id, $data, 'update', $changedFields);
 
+        // Invalidate collection cache
+        cms_invalidate_cache($slug);
+
+        ActivityLogger::log('updated', 'entry', (string) $id, $data['title'] ?? $data['name'] ?? "#{$id}", ['collection' => $slug, 'changed' => $changedFields]);
+
+        // Notify if just published (status changed to published)
+        if (($data['status'] ?? '') === 'published' && ($entry['status'] ?? '') !== 'published') {
+            $entryTitle = $data['title'] ?? $data['name'] ?? "#{$id}";
+            NotificationService::notifyAdmins(
+                'entry_published',
+                "Entry published: {$entryTitle}",
+                "The entry \"{$entryTitle}\" in {$collection->getName()} has been published.",
+                "/cms/collections/{$slug}/entries/{$id}",
+                ['collection' => $slug, 'entry_id' => $id],
+                [
+                    'entry_title' => $entryTitle,
+                    'collection_name' => $collection->getName(),
+                    'entry_url' => rtrim($_ENV['APP_URL'] ?? '', '/') . "/cms/collections/{$slug}/entries/{$id}",
+                ]
+            );
+        }
+
         $this->flash('success', 'Entry updated successfully.');
         $this->redirect("/cms/collections/{$slug}/entries");
     }
 
     public function destroy(string $slug, string $id): void
     {
-        $this->requirePermission('entries.delete');
-
         $collection = $this->resolveCollection($slug);
         if (!$collection) return;
+        $this->requireCollectionPermission('delete', $collection);
 
         // Record revision before deleting
         $entry = $this->schema->findEntry($collection->getTableName(), $id);
@@ -318,8 +440,236 @@ class EntryController extends Controller
 
         $this->schema->deleteEntry($collection->getTableName(), $id);
 
+        // Invalidate collection cache
+        cms_invalidate_cache($slug);
+
+        ActivityLogger::log('deleted', 'entry', (string) $id, null, ['collection' => $slug]);
+
         $this->flash('success', 'Entry deleted.');
         $this->redirect("/cms/collections/{$slug}/entries");
+    }
+
+    /**
+     * Return SEO score as JSON for an entry (AJAX endpoint).
+     */
+    public function seoAnalysis(string $slug, string $id): void
+    {
+        $collection = $this->resolveCollection($slug);
+        if (!$collection) {
+            $this->json(['score' => 0, 'issues' => ['Collection not found.']], 404);
+            return;
+        }
+
+        if (!$collection->isSeoEnabled()) {
+            $this->json(['score' => 0, 'issues' => ['SEO is not enabled for this collection.']]);
+            return;
+        }
+
+        $entry = $this->schema->findEntry($collection->getTableName(), $id);
+        if (!$entry) {
+            $this->json(['score' => 0, 'issues' => ['Entry not found.']], 404);
+            return;
+        }
+
+        $result = SeoService::calculateSeoScore($entry, $collection);
+        $this->json($result);
+    }
+
+    /**
+     * Show side-by-side translation view for an entry.
+     */
+    public function translate(string $slug, string $id, string $locale): string
+    {
+        $collection = $this->resolveCollection($slug);
+        if (!$collection) return '';
+        $this->requireCollectionPermission('edit', $collection);
+
+        if (!$collection->isTranslatable()) {
+            $this->flash('errors', ['translation' => 'Translations are not enabled for this collection.']);
+            $this->redirect("/cms/collections/{$slug}/entries/{$id}");
+            return '';
+        }
+
+        $entry = $this->schema->findEntry($collection->getTableName(), $id);
+        if (!$entry) {
+            $this->flash('errors', ['entry' => 'Entry not found.']);
+            $this->redirect("/cms/collections/{$slug}/entries");
+            return '';
+        }
+
+        $language = Language::findOneBy(['code' => $locale, 'isActive' => true]);
+        if (!$language) {
+            $this->flash('errors', ['locale' => 'Language not found.']);
+            $this->redirect("/cms/collections/{$slug}/entries/{$id}");
+            return '';
+        }
+
+        $fields = $collection->getFields()->toArray();
+        $translatableFields = TranslationService::getTranslatableFields($fields);
+        $translations = TranslationService::getTranslations($collection->getTableName(), $id, $locale);
+        $languages = TranslationService::getActiveLanguages();
+
+        return $this->render('cms::entries/translate', [
+            'collection' => $collection,
+            'entry' => $entry,
+            'locale' => $locale,
+            'language' => $language,
+            'fields' => $fields,
+            'translatableFields' => $translatableFields,
+            'translations' => $translations,
+            'languages' => $languages,
+            'user' => Auth::user(),
+        ]);
+    }
+
+    /**
+     * Save translations for an entry.
+     */
+    public function saveTranslation(string $slug, string $id, string $locale): void
+    {
+        $collection = $this->resolveCollection($slug);
+        if (!$collection) return;
+        $this->requireCollectionPermission('edit', $collection);
+
+        if (!$collection->isTranslatable()) {
+            $this->flash('errors', ['translation' => 'Translations are not enabled.']);
+            $this->back();
+            return;
+        }
+
+        $entry = $this->schema->findEntry($collection->getTableName(), $id);
+        if (!$entry) {
+            $this->flash('errors', ['entry' => 'Entry not found.']);
+            $this->redirect("/cms/collections/{$slug}/entries");
+            return;
+        }
+
+        if (!TranslationService::isValidLocale($locale)) {
+            $this->flash('errors', ['locale' => 'Invalid locale.']);
+            $this->back();
+            return;
+        }
+
+        $fields = $collection->getFields()->toArray();
+        $translatableFields = TranslationService::getTranslatableFields($fields);
+
+        $fieldValues = [];
+        foreach ($translatableFields as $field) {
+            $value = $this->input('translation_' . $field->getSlug(), '');
+            // Sanitize richtext fields
+            if ($field->getType() === 'richtext' && !empty($value)) {
+                $value = ContentApiController::sanitizeHtml($value);
+            }
+            $fieldValues[$field->getSlug()] = $value;
+        }
+
+        TranslationService::saveTranslations($collection->getTableName(), $id, $locale, $fieldValues);
+
+        $this->flash('success', "Translations saved for {$locale}.");
+        $this->redirect("/cms/collections/{$slug}/entries/{$id}/translate/{$locale}");
+    }
+
+    /**
+     * Advance entry to next workflow stage.
+     */
+    public function advanceWorkflow(string $slug, string $id): void
+    {
+        $collection = $this->resolveCollection($slug);
+        if (!$collection) return;
+        $this->requireCollectionPermission('edit', $collection);
+
+        if (!$collection->isWorkflowEnabled()) {
+            $this->flash('errors', ['workflow' => 'Workflow is not enabled.']);
+            $this->back();
+            return;
+        }
+
+        $userId = Auth::user()?->getId();
+        $userName = Auth::user()?->getName();
+        $comment = trim($this->input('workflow_comment', ''));
+
+        $newStage = WorkflowService::advance($collection, $id, $userId, $userName, $comment ?: null);
+
+        if ($newStage) {
+            $entry = $this->schema->findEntry($collection->getTableName(), $id);
+            $entryTitle = $entry['title'] ?? $entry['name'] ?? "#{$id}";
+
+            ActivityLogger::log('workflow_advanced', 'entry', (string) $id, $entryTitle, [
+                'collection' => $slug,
+                'to_stage' => $newStage,
+            ]);
+
+            // Notify about stage change
+            NotificationService::notifyAdmins(
+                'entry_published',
+                "Workflow: \"{$entryTitle}\" moved to {$newStage}",
+                "{$userName} advanced \"{$entryTitle}\" to the \"{$newStage}\" stage in {$collection->getName()}.",
+                "/cms/collections/{$slug}/entries/{$id}",
+                ['collection' => $slug, 'entry_id' => $id, 'stage' => $newStage],
+                [
+                    'entry_title' => $entryTitle,
+                    'collection_name' => $collection->getName(),
+                    'entry_url' => rtrim($_ENV['APP_URL'] ?? '', '/') . "/cms/collections/{$slug}/entries/{$id}",
+                ]
+            );
+
+            $this->flash('success', "Entry advanced to \"{$newStage}\".");
+        } else {
+            $this->flash('errors', ['workflow' => 'Cannot advance. You may not have permission or the entry is at the final stage.']);
+        }
+
+        $this->redirect("/cms/collections/{$slug}/entries/{$id}");
+    }
+
+    /**
+     * Reject entry (send back to previous workflow stage).
+     */
+    public function rejectWorkflow(string $slug, string $id): void
+    {
+        $collection = $this->resolveCollection($slug);
+        if (!$collection) return;
+        $this->requireCollectionPermission('edit', $collection);
+
+        if (!$collection->isWorkflowEnabled()) {
+            $this->flash('errors', ['workflow' => 'Workflow is not enabled.']);
+            $this->back();
+            return;
+        }
+
+        $userId = Auth::user()?->getId();
+        $userName = Auth::user()?->getName();
+        $comment = trim($this->input('workflow_comment', ''));
+
+        $newStage = WorkflowService::reject($collection, $id, $userId, $userName, $comment ?: null);
+
+        if ($newStage) {
+            $entry = $this->schema->findEntry($collection->getTableName(), $id);
+            $entryTitle = $entry['title'] ?? $entry['name'] ?? "#{$id}";
+
+            ActivityLogger::log('workflow_rejected', 'entry', (string) $id, $entryTitle, [
+                'collection' => $slug,
+                'to_stage' => $newStage,
+            ]);
+
+            NotificationService::notifyAdmins(
+                'entry_published',
+                "Workflow: \"{$entryTitle}\" sent back to {$newStage}",
+                "{$userName} rejected \"{$entryTitle}\" back to the \"{$newStage}\" stage in {$collection->getName()}.",
+                "/cms/collections/{$slug}/entries/{$id}",
+                ['collection' => $slug, 'entry_id' => $id, 'stage' => $newStage],
+                [
+                    'entry_title' => $entryTitle,
+                    'collection_name' => $collection->getName(),
+                    'entry_url' => rtrim($_ENV['APP_URL'] ?? '', '/') . "/cms/collections/{$slug}/entries/{$id}",
+                ]
+            );
+
+            $this->flash('success', "Entry sent back to \"{$newStage}\".");
+        } else {
+            $this->flash('errors', ['workflow' => 'Cannot reject. You may not have permission or the entry is at the first stage.']);
+        }
+
+        $this->redirect("/cms/collections/{$slug}/entries/{$id}");
     }
 
     /**
@@ -327,10 +677,9 @@ class EntryController extends Controller
      */
     public function history(string $slug, string $id): string
     {
-        $this->requirePermission('entries.view');
-
         $collection = $this->resolveCollection($slug);
         if (!$collection) return '';
+        $this->requireCollectionPermission('view', $collection);
 
         $entry = $this->schema->findEntry($collection->getTableName(), $id);
         if (!$entry) {
@@ -354,10 +703,9 @@ class EntryController extends Controller
      */
     public function restore(string $slug, string $id, int $revisionId): void
     {
-        $this->requirePermission('entries.edit');
-
         $collection = $this->resolveCollection($slug);
         if (!$collection) return;
+        $this->requireCollectionPermission('edit', $collection);
 
         $revision = Revision::find($revisionId);
         if (!$revision || $revision->getEntryId() !== (string) $id) {
@@ -380,6 +728,90 @@ class EntryController extends Controller
     }
 
     /**
+     * Compare two revisions side-by-side.
+     */
+    public function diff(string $slug, string $id): string
+    {
+        $collection = $this->resolveCollection($slug);
+        if (!$collection) return '';
+        $this->requireCollectionPermission('view', $collection);
+
+        $entry = $this->schema->findEntry($collection->getTableName(), $id);
+        if (!$entry) {
+            $this->flash('errors', ['Entry not found.']);
+            $this->redirect("/cms/collections/{$slug}/entries");
+            return '';
+        }
+
+        $revisionA = (int) $this->input('a', 0);
+        $revisionB = (int) $this->input('b', 0);
+
+        $revisions = Revision::getHistory($collection->getTableName(), $id);
+
+        $dataA = null;
+        $dataB = null;
+        $metaA = null;
+        $metaB = null;
+
+        foreach ($revisions as $rev) {
+            if ($rev->getId() === $revisionA) {
+                $dataA = $rev->getData();
+                $metaA = ['id' => $rev->getId(), 'action' => $rev->getAction(), 'created_at' => $rev->getCreatedAt()];
+            }
+            if ($rev->getId() === $revisionB) {
+                $dataB = $rev->getData();
+                $metaB = ['id' => $rev->getId(), 'action' => $rev->getAction(), 'created_at' => $rev->getCreatedAt()];
+            }
+        }
+
+        // If no specific revisions selected, compare last two
+        if ($dataA === null && $dataB === null && count($revisions) >= 2) {
+            $dataA = $revisions[1]->getData();
+            $metaA = ['id' => $revisions[1]->getId(), 'action' => $revisions[1]->getAction(), 'created_at' => $revisions[1]->getCreatedAt()];
+            $dataB = $revisions[0]->getData();
+            $metaB = ['id' => $revisions[0]->getId(), 'action' => $revisions[0]->getAction(), 'created_at' => $revisions[0]->getCreatedAt()];
+            $revisionA = $revisions[1]->getId();
+            $revisionB = $revisions[0]->getId();
+        }
+
+        // Build diff
+        $diff = [];
+        if ($dataA !== null && $dataB !== null) {
+            $allKeys = array_unique(array_merge(array_keys($dataA), array_keys($dataB)));
+            sort($allKeys);
+
+            foreach ($allKeys as $key) {
+                if (in_array($key, ['id', 'created_at', 'updated_at'], true)) {
+                    continue;
+                }
+                $valA = $dataA[$key] ?? null;
+                $valB = $dataB[$key] ?? null;
+                $diff[] = [
+                    'field' => $key,
+                    'old' => $valA !== null ? (string) $valA : '',
+                    'new' => $valB !== null ? (string) $valB : '',
+                    'changed' => $valA !== $valB,
+                ];
+            }
+        }
+
+        $fields = $collection->getFields();
+
+        return $this->render('cms::entries/diff', [
+            'collection' => $collection,
+            'entry' => $entry,
+            'revisions' => $revisions,
+            'revisionA' => $revisionA,
+            'revisionB' => $revisionB,
+            'metaA' => $metaA,
+            'metaB' => $metaB,
+            'diff' => $diff,
+            'fields' => $fields,
+            'user' => Auth::user(),
+        ]);
+    }
+
+    /**
      * Bulk operations: delete, publish, unpublish selected entries.
      */
     public function bulk(string $slug): void
@@ -391,14 +823,14 @@ class EntryController extends Controller
 
         $action = $this->input('bulk_action', '');
 
-        // Check permission based on the actual action
-        $permissionMap = [
-            'delete' => 'entries.delete',
-            'publish' => 'entries.publish',
-            'unpublish' => 'entries.publish',
+        // Check per-collection permission based on the actual action
+        $actionMap = [
+            'delete' => 'delete',
+            'publish' => 'publish',
+            'unpublish' => 'publish',
         ];
-        $requiredPermission = $permissionMap[$action] ?? 'entries.delete';
-        if (!PermissionService::can($requiredPermission)) {
+        $requiredAction = $actionMap[$action] ?? 'delete';
+        if (!PermissionService::canForCollection($requiredAction, $collection)) {
             $this->flash('errors', ['auth' => 'You do not have permission to perform this action.']);
             $this->redirect('/cms');
             return;
@@ -446,6 +878,11 @@ class EntryController extends Controller
             default => 'processed',
         };
 
+        // Invalidate collection cache
+        cms_invalidate_cache($slug);
+
+        ActivityLogger::log("bulk_{$action}", 'entry', null, "{$count} entries", ['collection' => $slug, 'count' => $count]);
+
         $this->flash('success', "{$count} entries {$actionLabel}.");
         $this->redirect("/cms/collections/{$slug}/entries");
     }
@@ -455,10 +892,9 @@ class EntryController extends Controller
      */
     public function export(string $slug): void
     {
-        $this->requirePermission('entries.view');
-
         $collection = $this->resolveCollection($slug);
         if (!$collection) return;
+        $this->requireCollectionPermission('view', $collection);
 
         $format = $this->input('format', 'csv');
         $entries = $this->schema->listEntries($collection->getTableName(), ['per_page' => 10000])['data'];
@@ -490,24 +926,231 @@ class EntryController extends Controller
     }
 
     /**
-     * Import entries from CSV or JSON.
+     * Step 1: Upload file and show preview with column mapping.
      */
-    public function import(string $slug): void
+    public function importPreview(string $slug): string
     {
-        $this->requirePermission('entries.create');
-
         $collection = $this->resolveCollection($slug);
-        if (!$collection) return;
+        if (!$collection) return '';
+        $this->requireCollectionPermission('create', $collection);
 
         $file = $_FILES['import_file'] ?? null;
         if (!$file || $file['error'] !== UPLOAD_ERR_OK) {
             $this->flash('errors', ['import' => 'File upload failed.']);
-            $this->back();
+            $this->redirect("/cms/collections/{$slug}/entries");
+            return '';
+        }
+
+        // Validate file type
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if (!in_array($ext, ['csv', 'json'])) {
+            $this->flash('errors', ['import' => 'Only CSV and JSON files are supported.']);
+            $this->redirect("/cms/collections/{$slug}/entries");
+            return '';
+        }
+
+        $content = file_get_contents($file['tmp_name']);
+        if ($content === false || strlen($content) === 0) {
+            $this->flash('errors', ['import' => 'File is empty.']);
+            $this->redirect("/cms/collections/{$slug}/entries");
+            return '';
+        }
+
+        // Cap file size at 5MB for preview
+        if (strlen($content) > 5 * 1024 * 1024) {
+            $this->flash('errors', ['import' => 'File too large. Maximum 5MB.']);
+            $this->redirect("/cms/collections/{$slug}/entries");
+            return '';
+        }
+
+        $entries = $this->parseImportFile($content, $ext);
+
+        if (empty($entries)) {
+            $this->flash('errors', ['import' => 'No valid entries found in the file.']);
+            $this->redirect("/cms/collections/{$slug}/entries");
+            return '';
+        }
+
+        // Get file columns from first entry
+        $fileColumns = array_keys($entries[0]);
+
+        // Get collection fields
+        $collectionFields = [];
+        foreach ($collection->getFields()->toArray() as $field) {
+            $collectionFields[$field->getSlug()] = $field->getName();
+        }
+        if ($collection->isPublishable()) {
+            $collectionFields['status'] = 'Status';
+            $collectionFields['published_at'] = 'Published At';
+        }
+        if ($collection->hasSlug()) {
+            $collectionFields['slug'] = 'Slug';
+        }
+
+        // Auto-map: match file columns to collection fields by slug/name
+        $autoMapping = [];
+        foreach ($fileColumns as $col) {
+            $colLower = strtolower(str_replace([' ', '-'], '_', $col));
+            if (isset($collectionFields[$colLower])) {
+                $autoMapping[$col] = $colLower;
+            } else {
+                // Try matching by name
+                foreach ($collectionFields as $fieldSlug => $fieldName) {
+                    if (strtolower($fieldName) === strtolower($col)) {
+                        $autoMapping[$col] = $fieldSlug;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Save file to temp for step 2
+        $basePath = defined('BASE_PATH') ? BASE_PATH : getcwd();
+        $tempDir = $basePath . '/storage/tmp';
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+        $tempFile = $tempDir . '/' . uniqid('import_') . '.' . $ext;
+        file_put_contents($tempFile, $content);
+
+        // Preview: first 10 rows
+        $preview = array_slice($entries, 0, 10);
+
+        return $this->render('cms::entries/import-preview', [
+            'collection' => $collection,
+            'fileColumns' => $fileColumns,
+            'collectionFields' => $collectionFields,
+            'autoMapping' => $autoMapping,
+            'preview' => $preview,
+            'totalRows' => count($entries),
+            'tempFile' => basename($tempFile),
+            'user' => Auth::user(),
+        ]);
+    }
+
+    /**
+     * Step 2: Execute import with column mapping.
+     */
+    public function import(string $slug): void
+    {
+        $collection = $this->resolveCollection($slug);
+        if (!$collection) return;
+        $this->requireCollectionPermission('create', $collection);
+
+        $tempFilename = $this->input('temp_file', '');
+
+        // Validate temp filename — prevent directory traversal
+        if ($tempFilename === '' || !preg_match('/^import_[a-f0-9]+\.(csv|json)$/', $tempFilename)) {
+            $this->flash('errors', ['import' => 'Invalid import session. Please re-upload the file.']);
+            $this->redirect("/cms/collections/{$slug}/entries");
             return;
         }
 
-        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        $content = file_get_contents($file['tmp_name']);
+        $basePath = defined('BASE_PATH') ? BASE_PATH : getcwd();
+        $tempFile = $basePath . '/storage/tmp/' . $tempFilename;
+
+        if (!file_exists($tempFile)) {
+            $this->flash('errors', ['import' => 'Import session expired. Please re-upload the file.']);
+            $this->redirect("/cms/collections/{$slug}/entries");
+            return;
+        }
+
+        $content = file_get_contents($tempFile);
+        $ext = pathinfo($tempFile, PATHINFO_EXTENSION);
+        $entries = $this->parseImportFile($content, $ext);
+
+        // Clean up temp file
+        @unlink($tempFile);
+
+        if (empty($entries)) {
+            $this->flash('errors', ['import' => 'No valid entries found.']);
+            $this->redirect("/cms/collections/{$slug}/entries");
+            return;
+        }
+
+        // Get column mapping from form
+        $mapping = $this->input('mapping', []);
+        if (!is_array($mapping) || empty(array_filter($mapping))) {
+            $this->flash('errors', ['import' => 'No columns mapped. Please map at least one column.']);
+            $this->redirect("/cms/collections/{$slug}/entries");
+            return;
+        }
+
+        // Get valid field slugs
+        $validFields = [];
+        foreach ($collection->getFields()->toArray() as $field) {
+            $validFields[] = $field->getSlug();
+        }
+        if ($collection->isPublishable()) {
+            $validFields = array_merge($validFields, ['status', 'published_at']);
+        }
+        if ($collection->hasSlug()) {
+            $validFields[] = 'slug';
+        }
+
+        // Build field type map for sanitization
+        $fieldTypeMap = [];
+        foreach ($collection->getFields()->toArray() as $field) {
+            $fieldTypeMap[$field->getSlug()] = $field->getType();
+        }
+
+        $imported = 0;
+        $skipped = 0;
+
+        foreach ($entries as $entry) {
+            $data = [];
+            foreach ($mapping as $fileCol => $targetField) {
+                if ($targetField === '' || $targetField === '_skip') continue;
+                if (!in_array($targetField, $validFields)) continue;
+                $data[$targetField] = $entry[$fileCol] ?? null;
+            }
+
+            if (empty($data)) {
+                $skipped++;
+                continue;
+            }
+
+            // Sanitize imported data
+            foreach ($data as $key => &$value) {
+                $fieldType = $fieldTypeMap[$key] ?? null;
+                if ($fieldType === 'richtext' && is_string($value)) {
+                    $value = ContentApiController::sanitizeHtml($value);
+                } elseif ($fieldType === 'boolean') {
+                    $value = in_array(strtolower((string) $value), ['1', 'true', 'yes'], true) ? 1 : 0;
+                } elseif ($fieldType === 'number' && $value !== null && $value !== '') {
+                    $value = (int) $value;
+                } elseif ($fieldType === 'decimal' && $value !== null && $value !== '') {
+                    $value = (float) $value;
+                } elseif ($fieldType === 'email' && !empty($value)) {
+                    if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
+                        $value = null;
+                    }
+                } elseif ($fieldType === 'url' && !empty($value)) {
+                    if (!filter_var($value, FILTER_VALIDATE_URL)) {
+                        $value = null;
+                    }
+                }
+            }
+            unset($value);
+
+            $this->schema->insertEntry($collection->getTableName(), $data, $collection->isUuid());
+            $imported++;
+        }
+
+        $msg = "{$imported} entries imported successfully.";
+        if ($skipped > 0) {
+            $msg .= " {$skipped} rows skipped (no mapped data).";
+        }
+
+        $this->flash('success', $msg);
+        $this->redirect("/cms/collections/{$slug}/entries");
+    }
+
+    /**
+     * Parse import file content into array of entries.
+     */
+    private function parseImportFile(string $content, string $ext): array
+    {
         $entries = [];
 
         if ($ext === 'json') {
@@ -529,70 +1172,7 @@ class EntryController extends Controller
             }
         }
 
-        if (empty($entries)) {
-            $this->flash('errors', ['import' => 'No valid entries found in the file.']);
-            $this->back();
-            return;
-        }
-
-        // Get valid field slugs
-        $validFields = [];
-        foreach ($collection->getFields()->toArray() as $field) {
-            $validFields[] = $field->getSlug();
-        }
-        // Include system fields
-        if ($collection->isPublishable()) {
-            $validFields = array_merge($validFields, ['status', 'published_at']);
-        }
-        if ($collection->hasSlug()) {
-            $validFields[] = 'slug';
-        }
-
-        // Build field type map for sanitization
-        $fieldTypeMap = [];
-        foreach ($collection->getFields()->toArray() as $field) {
-            $fieldTypeMap[$field->getSlug()] = $field->getType();
-        }
-
-        $imported = 0;
-        foreach ($entries as $entry) {
-            $data = [];
-            foreach ($entry as $key => $value) {
-                if (in_array($key, $validFields)) {
-                    $data[$key] = $value;
-                }
-            }
-            if (!empty($data)) {
-                // Sanitize imported data: type coercion and XSS prevention
-                foreach ($data as $key => &$value) {
-                    $fieldType = $fieldTypeMap[$key] ?? null;
-                    if ($fieldType === 'richtext' && is_string($value)) {
-                        $value = ContentApiController::sanitizeHtml($value);
-                    } elseif ($fieldType === 'boolean') {
-                        $value = in_array(strtolower((string) $value), ['1', 'true', 'yes'], true) ? 1 : 0;
-                    } elseif ($fieldType === 'number' && $value !== null && $value !== '') {
-                        $value = (int) $value;
-                    } elseif ($fieldType === 'decimal' && $value !== null && $value !== '') {
-                        $value = (float) $value;
-                    } elseif ($fieldType === 'email' && !empty($value)) {
-                        if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
-                            $value = null;
-                        }
-                    } elseif ($fieldType === 'url' && !empty($value)) {
-                        if (!filter_var($value, FILTER_VALIDATE_URL)) {
-                            $value = null;
-                        }
-                    }
-                }
-                unset($value);
-
-                $this->schema->insertEntry($collection->getTableName(), $data, $collection->isUuid());
-                $imported++;
-            }
-        }
-
-        $this->flash('success', "{$imported} entries imported successfully.");
-        $this->redirect("/cms/collections/{$slug}/entries");
+        return $entries;
     }
 
     // ========================================================================
@@ -904,5 +1484,104 @@ class EntryController extends Controller
         }
 
         return $slug;
+    }
+
+    // ========================================================================
+    // SAVED VIEWS
+    // ========================================================================
+
+    /**
+     * POST /cms/collections/{slug}/views — Create or update a saved view.
+     */
+    public function saveView(string $slug): void
+    {
+        $collection = $this->resolveCollection($slug);
+        if (!$collection) return;
+        $this->requireCollectionPermission('view', $collection);
+
+        $name = trim($this->input('view_name', ''));
+        if (empty($name)) {
+            $this->flash('errors', ['view_name' => 'View name is required.']);
+            $this->back();
+            return;
+        }
+
+        $viewSlug = strtolower(preg_replace('/[^a-z0-9]+/', '-', $name));
+        $viewSlug = trim($viewSlug, '-');
+        if (empty($viewSlug)) {
+            $viewSlug = 'view';
+        }
+
+        // Build filters from form input
+        $filterFields = (array) ($this->input('filter_field') ?? []);
+        $filterValues = (array) ($this->input('filter_value') ?? []);
+        $filters = [];
+        foreach ($filterFields as $i => $field) {
+            $field = trim((string) $field);
+            $value = trim((string) ($filterValues[$i] ?? ''));
+            if ($field !== '' && $value !== '') {
+                $filters[] = ['field' => $field, 'value' => $value];
+            }
+        }
+
+        $sortBy = $this->input('view_sort_by', '') ?: null;
+        $sortDir = $this->input('view_sort_dir', 'DESC');
+        $isDefault = $this->boolean('view_is_default');
+
+        // If setting as default, clear other defaults for this collection
+        if ($isDefault) {
+            $existing = SavedView::findBy(['collectionSlug' => $slug]);
+            foreach ($existing as $sv) {
+                if ($sv->isDefault()) {
+                    $sv->setIsDefault(false);
+                    $sv->save();
+                }
+            }
+        }
+
+        // Check if view with this slug already exists for this collection
+        $existing = SavedView::findOneBy(['collectionSlug' => $slug, 'slug' => $viewSlug]);
+        if ($existing) {
+            $existing->setName($name);
+            $existing->setFilters($filters);
+            $existing->setSortBy($sortBy);
+            $existing->setSortDir($sortDir);
+            $existing->setIsDefault($isDefault);
+            $existing->save();
+            $this->flash('success', "View \"{$name}\" updated.");
+        } else {
+            $view = new SavedView();
+            $view->setCollectionSlug($slug);
+            $view->setName($name);
+            $view->setSlug($viewSlug);
+            $view->setFilters($filters);
+            $view->setSortBy($sortBy);
+            $view->setSortDir($sortDir);
+            $view->setIsDefault($isDefault);
+            $view->setCreatedBy(Auth::user()?->getId());
+            $view->save();
+            $this->flash('success', "View \"{$name}\" created.");
+        }
+
+        $this->redirect("/cms/collections/{$slug}/entries");
+    }
+
+    /**
+     * POST /cms/collections/{slug}/views/{viewId}/delete — Delete a saved view.
+     */
+    public function deleteView(string $slug, int $viewId): void
+    {
+        $collection = $this->resolveCollection($slug);
+        if (!$collection) return;
+        $this->requireCollectionPermission('view', $collection);
+
+        $view = SavedView::find($viewId);
+        if ($view && $view->getCollectionSlug() === $slug) {
+            $viewName = $view->getName();
+            $view->delete();
+            $this->flash('success', "View \"{$viewName}\" deleted.");
+        }
+
+        $this->redirect("/cms/collections/{$slug}/entries");
     }
 }

@@ -9,8 +9,8 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use ZephyrPHP\Cms\Models\Collection;
-use ZephyrPHP\Cms\Models\PageType;
 use ZephyrPHP\Cms\Services\SchemaManager;
+use ZephyrPHP\Cms\Services\NotificationService;
 
 #[AsCommand(
     name: 'cms:publish-scheduled',
@@ -53,6 +53,26 @@ class PublishScheduledCommand extends Command
                         'published_at' => $now,
                     ], ['id' => $entry['id']]);
                     $totalPublished++;
+
+                    // Notify admins about scheduled publish
+                    try {
+                        $full = $schema->findEntry($tableName, $entry['id']);
+                        $entryTitle = $full['title'] ?? $full['name'] ?? "#{$entry['id']}";
+                        NotificationService::notifyAdmins(
+                            'scheduled_published',
+                            "Scheduled entry published: {$entryTitle}",
+                            "The scheduled entry \"{$entryTitle}\" in {$collection->getName()} has been automatically published.",
+                            "/cms/collections/{$collection->getSlug()}/entries/{$entry['id']}",
+                            ['collection' => $collection->getSlug(), 'entry_id' => $entry['id']],
+                            [
+                                'entry_title' => $entryTitle,
+                                'collection_name' => $collection->getName(),
+                                'entry_url' => rtrim($_ENV['APP_URL'] ?? '', '/') . "/cms/collections/{$collection->getSlug()}/entries/{$entry['id']}",
+                            ]
+                        );
+                    } catch (\Exception $ne) {
+                        // Notification failure should not break scheduled publishing
+                    }
                 }
 
                 if (count($entries) > 0) {
@@ -61,44 +81,6 @@ class PublishScheduledCommand extends Command
             }
         } catch (\Exception $e) {
             $output->writeln("<error>Error processing collections: {$e->getMessage()}</error>");
-        }
-
-        // Process page types
-        try {
-            $pageTypes = PageType::findAll();
-            foreach ($pageTypes as $pt) {
-                $tableName = $pt->getTableName();
-                if (!$schema->tableExists($tableName)) continue;
-
-                $sm = $conn->createSchemaManager();
-                $columns = $sm->listTableColumns($tableName);
-                if (!isset($columns['scheduled_at']) || !isset($columns['status'])) continue;
-
-                $entries = $conn->createQueryBuilder()
-                    ->select('id')
-                    ->from($tableName)
-                    ->where('status = :status')
-                    ->andWhere('scheduled_at IS NOT NULL')
-                    ->andWhere('scheduled_at <= :now')
-                    ->setParameter('status', 'scheduled')
-                    ->setParameter('now', $now)
-                    ->executeQuery()
-                    ->fetchAllAssociative();
-
-                foreach ($entries as $entry) {
-                    $conn->update($tableName, [
-                        'status' => 'published',
-                        'published_at' => $now,
-                    ], ['id' => $entry['id']]);
-                    $totalPublished++;
-                }
-
-                if (count($entries) > 0) {
-                    $output->writeln("  Published " . count($entries) . " pages in {$pt->getName()}");
-                }
-            }
-        } catch (\Exception $e) {
-            $output->writeln("<error>Error processing page types: {$e->getMessage()}</error>");
         }
 
         if ($totalPublished > 0) {

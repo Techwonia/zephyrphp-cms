@@ -1,0 +1,49 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Notification Preferences{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-600);">
+    <div>
+        <h1 style="margin: 0;">Notification Preferences</h1>
+        <p style="color: var(--text-secondary); margin: var(--space-100) 0 0;">Choose which notifications you receive.</p>
+    </div>
+    <a href="/cms/notifications" class="btn btn-outline btn-sm">Back to Notifications</a>
+</div>
+
+<form method="POST" action="/cms/notifications/preferences" class="card">
+    <input type="hidden" name="_token" value="{{ csrf_token() }}">
+
+    <table class="table" style="width: 100%;">
+        <thead>
+            <tr>
+                <th style="text-align: left;">Notification Type</th>
+                {% for channel in channels %}
+                <th style="text-align: center; width: 120px;">{{ channel|capitalize }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for type, label in types %}
+            <tr>
+                <td>{{ label }}</td>
+                {% for channel in channels %}
+                <td style="text-align: center;">
+                    <input
+                        type="checkbox"
+                        name="{{ type }}_{{ channel }}"
+                        value="1"
+                        {% if preferences[type][channel] is not defined or preferences[type][channel] %}checked{% endif %}
+                    >
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div style="padding: var(--space-400) var(--space-500); border-top: 1px solid var(--border);">
+        <button type="submit" class="btn btn-primary">Save Preferences</button>
+    </div>
+</form>
+{% endblock %}

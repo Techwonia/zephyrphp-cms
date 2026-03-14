@@ -1,0 +1,108 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Import Preview — {{ collection.name }}{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / <a href="/cms/collections">Collections</a> / <a href="/cms/collections/{{ collection.slug }}/entries">{{ collection.name }}</a> / Import
+</div>
+
+<div class="page-header">
+    <h1>Import Preview</h1>
+    <p style="color: var(--text-secondary); margin-top: var(--space-100);">
+        {{ totalRows }} row(s) found. Map file columns to collection fields, then confirm.
+    </p>
+</div>
+
+<form method="POST" action="/cms/collections/{{ collection.slug }}/import">
+    {{ csrf_field() | raw }}
+    <input type="hidden" name="temp_file" value="{{ tempFile }}">
+
+    {# Column Mapping #}
+    <div class="card" style="margin-bottom: var(--space-400);">
+        <div class="card-header"><h3 style="margin: 0; font-size: 1rem;">Column Mapping</h3></div>
+        <div class="card-body" style="padding: 0;">
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>File Column</th>
+                            <th>Maps To</th>
+                            <th>Sample Values</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for col in fileColumns %}
+                        <tr>
+                            <td><strong>{{ col }}</strong></td>
+                            <td>
+                                <select name="mapping[{{ col }}]" class="form-control" style="min-width: 180px;">
+                                    <option value="_skip">-- Skip this column --</option>
+                                    {% for fieldSlug, fieldName in collectionFields %}
+                                        <option value="{{ fieldSlug }}" {{ autoMapping[col] is defined and autoMapping[col] == fieldSlug ? 'selected' : '' }}>
+                                            {{ fieldName }} ({{ fieldSlug }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td style="font-size: 0.8rem; color: var(--text-secondary); max-width: 300px;">
+                                {% set samples = [] %}
+                                {% for row in preview|slice(0, 3) %}
+                                    {% if row[col] is defined and row[col] is not null %}
+                                        {% set val = row[col]|slice(0, 50) %}
+                                        {% set samples = samples|merge([val]) %}
+                                    {% endif %}
+                                {% endfor %}
+                                {{ samples|join(' | ') ?: '(empty)' }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {# Data Preview #}
+    <div class="card" style="margin-bottom: var(--space-400);">
+        <div class="card-header"><h3 style="margin: 0; font-size: 1rem;">Data Preview (first {{ preview|length }} of {{ totalRows }} rows)</h3></div>
+        <div class="card-body" style="padding: 0;">
+            <div class="table-responsive">
+                <table class="data-table" style="font-size: 0.8rem;">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            {% for col in fileColumns %}
+                                <th>{{ col }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in preview %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            {% for col in fileColumns %}
+                                <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                    {{ row[col] is defined ? row[col]|slice(0, 80) : '' }}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {# Actions #}
+    <div style="display: flex; gap: var(--space-300); align-items: center;">
+        <button type="submit" class="btn btn-primary" onclick="return confirm('Import {{ totalRows }} entries into {{ collection.name }}?')">
+            Import {{ totalRows }} Entries
+        </button>
+        <a href="/cms/collections/{{ collection.slug }}/entries" class="btn btn-outline">Cancel</a>
+        <span style="color: var(--text-secondary); font-size: 0.85rem;">
+            Columns mapped to "Skip" will be ignored. Unmapped columns will also be skipped.
+        </span>
+    </div>
+</form>
+{% endblock %}

@@ -1,0 +1,191 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Workflow Visualizer{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / System / Workflow Visualizer
+</div>
+
+<div class="page-header">
+    <h1>Workflow Visualizer</h1>
+    <p style="color: var(--text-secondary); margin-top: var(--space-100);">Visual pipeline overview of all workflow-enabled collections.</p>
+</div>
+
+{% if collections is empty %}
+    <div class="card">
+        <div class="card-body" style="text-align: center; padding: var(--space-600); color: var(--text-secondary);">
+            No workflow-enabled collections found. Enable workflow on a collection to see it here.
+        </div>
+    </div>
+{% else %}
+    {% for collection in collections %}
+    <div class="card" style="margin-bottom: var(--space-500);">
+        <div class="card-header" style="display: flex; align-items: center; justify-content: space-between;">
+            <h3 style="margin: 0; font-size: 1rem;">
+                {% if collection.icon %}
+                    <i class="{{ collection.icon }}" style="margin-right: var(--space-100);"></i>
+                {% endif %}
+                {{ collection.name }}
+            </h3>
+            <span class="badge" style="background: var(--bg-secondary); color: var(--text-secondary); font-size: 0.8rem;">
+                {{ collection.total }} total {{ collection.total == 1 ? 'entry' : 'entries' }}
+            </span>
+        </div>
+        <div class="card-body">
+            {# Pipeline visualization #}
+            <div style="display: flex; align-items: center; gap: 0; overflow-x: auto; padding: var(--space-400) 0;">
+                {% for stage in collection.stages %}
+                    {# Stage box #}
+                    {% set bgColor = 'var(--bg-secondary)' %}
+                    {% set textColor = 'var(--text-primary)' %}
+                    {% set borderColor = 'var(--border)' %}
+                    {% set countColor = 'var(--text-secondary)' %}
+
+                    {% if stage.name == 'draft' %}
+                        {% set bgColor = 'var(--bg-secondary)' %}
+                        {% set countColor = 'var(--text-secondary)' %}
+                        {% set borderColor = 'var(--text-secondary)' %}
+                    {% elseif stage.name == 'review' %}
+                        {% set bgColor = 'rgba(234, 179, 8, 0.1)' %}
+                        {% set countColor = 'var(--warning)' %}
+                        {% set borderColor = 'var(--warning)' %}
+                    {% elseif stage.name == 'approved' %}
+                        {% set bgColor = 'rgba(59, 130, 246, 0.1)' %}
+                        {% set countColor = 'var(--info, #3b82f6)' %}
+                        {% set borderColor = 'var(--info, #3b82f6)' %}
+                    {% elseif stage.name == 'published' %}
+                        {% set bgColor = 'rgba(34, 197, 94, 0.1)' %}
+                        {% set countColor = 'var(--success)' %}
+                        {% set borderColor = 'var(--success)' %}
+                    {% else %}
+                        {% set bgColor = 'var(--bg-secondary)' %}
+                        {% set countColor = 'var(--text-secondary)' %}
+                        {% set borderColor = 'var(--border)' %}
+                    {% endif %}
+
+                    <div style="
+                        display: inline-flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        min-width: 120px;
+                        padding: var(--space-300) var(--space-400);
+                        background: {{ bgColor }};
+                        border: 2px solid {{ borderColor }};
+                        border-radius: var(--radius, 8px);
+                        text-align: center;
+                        position: relative;
+                        {% if collection.bottleneck == stage.name and stage.count > 0 %}
+                            box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.3);
+                        {% endif %}
+                    ">
+                        <div style="font-size: 1.75rem; font-weight: 700; color: {{ countColor }}; line-height: 1;">
+                            {{ stage.count }}
+                        </div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: var(--space-100); text-transform: capitalize;">
+                            {{ stage.name }}
+                        </div>
+                        {% if collection.bottleneck == stage.name and stage.count > 0 %}
+                            <span style="
+                                position: absolute;
+                                top: -10px;
+                                right: -10px;
+                                background: var(--warning);
+                                color: #fff;
+                                font-size: 0.65rem;
+                                font-weight: 600;
+                                padding: 2px 6px;
+                                border-radius: 10px;
+                                white-space: nowrap;
+                            ">Bottleneck</span>
+                        {% endif %}
+                    </div>
+
+                    {# Arrow between stages #}
+                    {% if not loop.last %}
+                        <div style="
+                            display: inline-flex;
+                            align-items: center;
+                            padding: 0 var(--space-100);
+                            color: var(--text-secondary);
+                            font-size: 1.25rem;
+                            flex-shrink: 0;
+                        ">&rarr;</div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            {# Stats row #}
+            <div style="
+                display: flex;
+                gap: var(--space-400);
+                padding-top: var(--space-300);
+                border-top: 1px solid var(--border);
+                font-size: 0.85rem;
+                color: var(--text-secondary);
+            ">
+                <span><strong>{{ collection.total }}</strong> total entries</span>
+                <span><strong>{{ collection.stages|length }}</strong> stages</span>
+                {% if collection.bottleneck %}
+                    <span>Bottleneck: <strong style="text-transform: capitalize;">{{ collection.bottleneck }}</strong></span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% endif %}
+
+{# Recent Transitions #}
+<div class="card" style="margin-top: var(--space-500);">
+    <div class="card-header">
+        <h3 style="margin: 0; font-size: 1rem;">Recent Transitions</h3>
+    </div>
+    <div class="card-body">
+        {% if transitions is empty %}
+            <p style="text-align: center; color: var(--text-secondary); padding: var(--space-400);">
+                No workflow transitions recorded yet.
+            </p>
+        {% else %}
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Collection</th>
+                            <th>Entry</th>
+                            <th>Transition</th>
+                            <th>User</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in transitions %}
+                        <tr>
+                            <td style="white-space: nowrap;">{{ t.date }}</td>
+                            <td>{{ t.collection }}</td>
+                            <td>#{{ t.entry_id }}</td>
+                            <td>
+                                <span style="text-transform: capitalize;">{{ t.from }}</span>
+                                &rarr;
+                                <span style="text-transform: capitalize;">{{ t.to }}</span>
+                            </td>
+                            <td>{{ t.user }}</td>
+                            <td>
+                                {% if t.action == 'advance' %}
+                                    <span class="badge" style="background: var(--success); color: #fff;">Advance</span>
+                                {% elseif t.action == 'reject' %}
+                                    <span class="badge" style="background: var(--danger); color: #fff;">Reject</span>
+                                {% else %}
+                                    <span class="badge" style="background: var(--bg-secondary); color: var(--text-secondary);">{{ t.action|capitalize }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

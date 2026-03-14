@@ -6,7 +6,6 @@ namespace ZephyrPHP\Cms\Api;
 
 use ZephyrPHP\Core\Controllers\Controller;
 use ZephyrPHP\Cms\Models\Collection;
-use ZephyrPHP\Cms\Models\PageType;
 use ZephyrPHP\Cms\Models\Theme;
 use ZephyrPHP\Cms\Services\SchemaManager;
 use ZephyrPHP\Cms\Services\ThemeManager;
@@ -34,66 +33,6 @@ class ApiV1Controller extends Controller
         if (!OAuthMiddleware::hasScope($scope)) {
             $this->json(['error' => 'insufficient_scope', 'error_description' => "Required scope: {$scope}"], 403);
             exit;
-        }
-    }
-
-    // ========================================================================
-    // PAGES
-    // ========================================================================
-
-    /**
-     * GET /api/v1/pages — List all page types and their pages.
-     */
-    public function listPages(): void
-    {
-        $this->requireScope('read_pages');
-
-        try {
-            $pageTypes = PageType::findAll();
-            $result = [];
-
-            foreach ($pageTypes as $pt) {
-                $result[] = [
-                    'id' => $pt->getId(),
-                    'name' => $pt->getName(),
-                    'slug' => $pt->getSlug(),
-                    'template' => $pt->getTemplate(),
-                    'page_mode' => $pt->getPageMode(),
-                ];
-            }
-
-            $this->json(['data' => $result, 'meta' => ['total' => count($result)]]);
-        } catch (\Exception $e) {
-            $this->json(['error' => 'server_error', 'error_description' => 'Failed to fetch pages.'], 500);
-        }
-    }
-
-    /**
-     * GET /api/v1/pages/{id} — Get a single page type.
-     */
-    public function getPage(string $id): void
-    {
-        $this->requireScope('read_pages');
-
-        try {
-            $pt = PageType::find((int) $id);
-            if (!$pt) {
-                $this->json(['error' => 'not_found', 'error_description' => 'Page type not found.'], 404);
-                return;
-            }
-
-            $this->json(['data' => [
-                'id' => $pt->getId(),
-                'name' => $pt->getName(),
-                'slug' => $pt->getSlug(),
-                'template' => $pt->getTemplate(),
-                'description' => $pt->getDescription(),
-                'page_mode' => $pt->getPageMode(),
-                'has_seo' => $pt->hasSeo(),
-                'is_publishable' => $pt->isPublishable(),
-            ]]);
-        } catch (\Exception $e) {
-            $this->json(['error' => 'server_error'], 500);
         }
     }
 

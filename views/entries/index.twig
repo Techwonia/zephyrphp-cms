@@ -23,18 +23,109 @@
 {# Import Form #}
 <div id="import-form" class="card" style="display: none; margin-bottom: 16px;">
     <div class="card-body">
-        <form method="POST" action="/cms/collections/{{ collection.getSlug() }}/import" enctype="multipart/form-data">
+        <form method="POST" action="/cms/collections/{{ collection.getSlug() }}/import/preview" enctype="multipart/form-data">
             {{ csrf_field() | raw }}
             <div style="display: flex; gap: 12px; align-items: flex-end;">
                 <div class="form-group" style="flex: 1; margin-bottom: 0;">
                     <label for="import_file">Import File (CSV or JSON)</label>
                     <input type="file" id="import_file" name="import_file" class="form-control" accept=".csv,.json" required>
                 </div>
-                <button type="submit" class="btn btn-primary">Import</button>
+                <button type="submit" class="btn btn-primary">Preview &amp; Map</button>
+            </div>
+            <p style="margin-top: 8px; font-size: 0.8rem; color: var(--text-secondary);">Upload your file to preview data and map columns before importing.</p>
+        </form>
+    </div>
+</div>
+
+{% if savedViews is defined and savedViews|length > 0 %}
+<div class="saved-views-bar" style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items: center;">
+    <a href="/cms/collections/{{ collection.getSlug() }}/entries"
+       class="btn btn-sm {% if activeViewSlug is empty %}btn-primary{% else %}btn-outline{% endif %}">All</a>
+    {% for sv in savedViews %}
+        <a href="/cms/collections/{{ collection.getSlug() }}/entries?view={{ sv.getSlug() }}"
+           class="btn btn-sm {% if activeViewSlug == sv.getSlug() %}btn-primary{% else %}btn-outline{% endif %}"
+           title="{{ sv.getFilters()|length }} filter(s){% if sv.isDefault() %} (default){% endif %}">
+            {{ sv.getName() }}{% if sv.isDefault() %} *{% endif %}
+        </a>
+    {% endfor %}
+    <button class="btn btn-sm btn-outline" id="toggle-save-view-btn" style="margin-left: auto;">+ Save View</button>
+</div>
+{% else %}
+<div style="margin-bottom: 12px; text-align: right;">
+    <button class="btn btn-sm btn-outline" id="toggle-save-view-btn">+ Save View</button>
+</div>
+{% endif %}
+
+{# Save View Form #}
+<div id="save-view-form" class="card" style="display: none; margin-bottom: 16px;">
+    <div class="card-body">
+        <form method="POST" action="/cms/collections/{{ collection.getSlug() }}/views">
+            {{ csrf_field() | raw }}
+            <h4 style="margin-bottom: 12px;">Save Current View</h4>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
+                <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
+                    <label for="view_name">View Name *</label>
+                    <input type="text" id="view_name" name="view_name" class="form-control" placeholder="e.g. Published Posts" required>
+                </div>
+                <div class="form-group" style="min-width: 150px; margin-bottom: 0;">
+                    <label for="view_sort_by">Sort By</label>
+                    <select name="view_sort_by" id="view_sort_by" class="form-control">
+                        <option value="">Default (ID)</option>
+                        {% for field in listableFields %}
+                            <option value="{{ field.getSlug() }}">{{ field.getName() }}</option>
+                        {% endfor %}
+                        <option value="created_at">Created At</option>
+                        {% if collection.isPublishable() %}
+                            <option value="status">Status</option>
+                        {% endif %}
+                    </select>
+                </div>
+                <div class="form-group" style="min-width: 100px; margin-bottom: 0;">
+                    <label for="view_sort_dir">Direction</label>
+                    <select name="view_sort_dir" id="view_sort_dir" class="form-control">
+                        <option value="DESC">Descending</option>
+                        <option value="ASC">Ascending</option>
+                    </select>
+                </div>
+            </div>
+            <div id="view-filters" style="margin-top: 12px;">
+                <label>Filters</label>
+                <div class="view-filter-row" style="display: flex; gap: 8px; margin-bottom: 8px;">
+                    <select name="filter_field[]" class="form-control" style="flex: 1;">
+                        <option value="">-- Field --</option>
+                        {% for field in listableFields %}
+                            <option value="{{ field.getSlug() }}">{{ field.getName() }}</option>
+                        {% endfor %}
+                        {% if collection.isPublishable() %}
+                            <option value="status">Status</option>
+                        {% endif %}
+                    </select>
+                    <input type="text" name="filter_value[]" class="form-control" style="flex: 1;" placeholder="Value (exact match)">
+                </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline" id="add-filter-btn" style="margin-bottom: 12px;">+ Add Filter</button>
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <label style="margin: 0;"><input type="checkbox" name="view_is_default" value="1"> Set as default view</label>
+                <button type="submit" class="btn btn-primary">Save View</button>
             </div>
         </form>
     </div>
 </div>
+
+{# Delete View (if active) #}
+{% if activeViewSlug is defined and activeViewSlug %}
+    {% for sv in savedViews %}
+        {% if sv.getSlug() == activeViewSlug %}
+        <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+            <span class="text-muted">Viewing: <strong>{{ sv.getName() }}</strong></span>
+            <form method="POST" action="/cms/collections/{{ collection.getSlug() }}/views/{{ sv.getId() }}/delete" style="display:inline;">
+                {{ csrf_field() | raw }}
+                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this saved view?')">Delete View</button>
+            </form>
+        </div>
+        {% endif %}
+    {% endfor %}
+{% endif %}
 
 {% if listableFields|length > 0 %}
 <div class="search-bar">
@@ -202,6 +293,29 @@ document.addEventListener('DOMContentLoaded', function() {
     checkboxes.forEach(function(cb) {
         cb.addEventListener('change', updateBulk);
     });
+
+    // Save View toggle
+    var saveViewBtn = document.getElementById('toggle-save-view-btn');
+    var saveViewForm = document.getElementById('save-view-form');
+    if (saveViewBtn && saveViewForm) {
+        saveViewBtn.addEventListener('click', function() {
+            saveViewForm.style.display = saveViewForm.style.display === 'none' ? 'block' : 'none';
+        });
+    }
+
+    // Add filter row
+    var addFilterBtn = document.getElementById('add-filter-btn');
+    var viewFilters = document.getElementById('view-filters');
+    if (addFilterBtn && viewFilters) {
+        addFilterBtn.addEventListener('click', function() {
+            var firstRow = viewFilters.querySelector('.view-filter-row');
+            if (firstRow) {
+                var clone = firstRow.cloneNode(true);
+                clone.querySelectorAll('input, select').forEach(function(el) { el.value = ''; });
+                viewFilters.appendChild(clone);
+            }
+        });
+    }
 
     // Confirm delete forms
     document.querySelectorAll('.confirm-delete').forEach(function(form) {

@@ -1,0 +1,217 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}API Analytics{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / System / API Analytics
+</div>
+
+<div class="page-header">
+    <h1>API Analytics</h1>
+</div>
+
+{% if error is defined and error %}
+<div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card-body" style="color: var(--danger);">
+        <strong>Error loading analytics:</strong> {{ error }}
+    </div>
+</div>
+{% else %}
+
+{# Stats Cards #}
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-400); margin-bottom: var(--space-500);">
+    <div class="card">
+        <div class="card-body" style="text-align: center; padding: var(--space-400);">
+            <div style="font-size: 2rem; font-weight: 700; color: var(--primary);">{{ total24h|number_format }}</div>
+            <div style="color: var(--text-secondary); font-size: 0.85rem;">Requests (24h)</div>
+            <div style="color: var(--text-secondary); font-size: 0.75rem; margin-top: var(--space-100);">
+                7d: {{ total7d|number_format }} &middot; 30d: {{ total30d|number_format }}
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body" style="text-align: center; padding: var(--space-400);">
+            <div style="font-size: 2rem; font-weight: 700; color: {% if errorRate > 10 %}var(--danger){% elseif errorRate > 5 %}var(--warning){% else %}var(--success){% endif %};">{{ errorRate }}%</div>
+            <div style="color: var(--text-secondary); font-size: 0.85rem;">Error Rate (7d)</div>
+            <div style="color: var(--text-secondary); font-size: 0.75rem; margin-top: var(--space-100);">
+                {{ (errors4xx + errors5xx)|number_format }} errors of {{ total7d|number_format }}
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body" style="text-align: center; padding: var(--space-400);">
+            <div style="font-size: 2rem; font-weight: 700; color: {% if rateLimited > 0 %}var(--warning){% else %}var(--success){% endif %};">{{ rateLimited|number_format }}</div>
+            <div style="color: var(--text-secondary); font-size: 0.85rem;">Rate Limited (7d)</div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body" style="text-align: center; padding: var(--space-400);">
+            <div style="font-size: 2rem; font-weight: 700; color: var(--primary);">{{ avgResponseTime }}ms</div>
+            <div style="color: var(--text-secondary); font-size: 0.85rem;">Avg Response Time</div>
+        </div>
+    </div>
+</div>
+
+{# Requests Per Day Chart #}
+<div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card-header"><h3 style="margin:0; font-size:1rem;">Requests Per Day (Last 30 Days)</h3></div>
+    <div class="card-body">
+        {% set max_count = 1 %}
+        {% for day in requestsPerDay %}
+            {% if day.count > max_count %}
+                {% set max_count = day.count %}
+            {% endif %}
+        {% endfor %}
+        <div style="display: flex; align-items: flex-end; gap: 2px; height: 200px; padding-top: var(--space-300);">
+            {% for day in requestsPerDay %}
+                {% set bar_height = (day.count / max_count * 100)|round %}
+                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end;" title="{{ day.day }}: {{ day.count }} requests">
+                    <div style="font-size: 0.65rem; color: var(--text-secondary); margin-bottom: 2px;">{{ day.count }}</div>
+                    <div style="width: 100%; height: {{ bar_height }}%; min-height: 2px; background: var(--primary); border-radius: 2px 2px 0 0;"></div>
+                    <div style="font-size: 0.6rem; color: var(--text-secondary); margin-top: 4px; writing-mode: vertical-rl; transform: rotate(180deg); max-height: 50px; overflow: hidden;">{{ day.day|date('M d') }}</div>
+                </div>
+            {% else %}
+                <div style="flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); height: 100%;">
+                    No data available
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{# Top API Keys and Error Breakdown #}
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: var(--space-400); margin-bottom: var(--space-500);">
+    <div class="card">
+        <div class="card-header"><h3 style="margin:0; font-size:1rem;">Top API Keys (7 Days)</h3></div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Key Name</th>
+                            <th>Requests</th>
+                            <th>Errors</th>
+                            <th>Avg Response</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for key in topKeys %}
+                        <tr>
+                            <td>{{ key.api_key_name ?? 'Unknown' }}</td>
+                            <td>{{ key.request_count|number_format }}</td>
+                            <td>
+                                {% if key.error_count > 0 %}
+                                    <span style="color: var(--danger);">{{ key.error_count|number_format }}</span>
+                                {% else %}
+                                    <span style="color: var(--success);">0</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ key.avg_response_time ?? 0 }}ms</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">No API key usage recorded</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h3 style="margin:0; font-size:1rem;">Error Breakdown (7 Days)</h3></div>
+        <div class="card-body">
+            <div style="display: flex; flex-direction: column; gap: var(--space-400);">
+                <div style="text-align: center; padding: var(--space-400); background: var(--bg-secondary); border-radius: var(--radius);">
+                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--warning);">{{ errors4xx|number_format }}</div>
+                    <div style="color: var(--text-secondary); font-size: 0.85rem;">4xx Client Errors</div>
+                </div>
+                <div style="text-align: center; padding: var(--space-400); background: var(--bg-secondary); border-radius: var(--radius);">
+                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--danger);">{{ errors5xx|number_format }}</div>
+                    <div style="color: var(--text-secondary); font-size: 0.85rem;">5xx Server Errors</div>
+                </div>
+                <div style="text-align: center; padding: var(--space-400); background: var(--bg-secondary); border-radius: var(--radius);">
+                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">{{ (errors4xx + errors5xx)|number_format }}</div>
+                    <div style="color: var(--text-secondary); font-size: 0.85rem;">Total Errors</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Top Endpoints #}
+<div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card-header"><h3 style="margin:0; font-size:1rem;">Top Endpoints (7 Days)</h3></div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Endpoint</th>
+                        <th>Method</th>
+                        <th>Requests</th>
+                        <th>Avg Response</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ep in topEndpoints %}
+                    <tr>
+                        <td><code>{{ ep.endpoint }}</code></td>
+                        <td>
+                            <span class="badge" style="background: {% if ep.method == 'GET' %}var(--primary){% elseif ep.method == 'POST' %}var(--success){% elseif ep.method == 'PUT' or ep.method == 'PATCH' %}var(--warning){% elseif ep.method == 'DELETE' %}var(--danger){% else %}var(--text-secondary){% endif %}; color: #fff; font-size: 0.75rem;">{{ ep.method }}</span>
+                        </td>
+                        <td>{{ ep.request_count|number_format }}</td>
+                        <td>{{ ep.avg_response_time ?? 0 }}ms</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">No endpoint data recorded</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{# Recent Requests #}
+<div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card-header"><h3 style="margin:0; font-size:1rem;">Recent Requests</h3></div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Method</th>
+                        <th>Endpoint</th>
+                        <th>Status</th>
+                        <th>API Key</th>
+                        <th>Response Time</th>
+                        <th>IP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in recentRequests %}
+                    <tr>
+                        <td style="white-space: nowrap; font-size: 0.85rem;">{{ req.created_at|date('M d, H:i:s') }}</td>
+                        <td>
+                            <span class="badge" style="background: {% if req.method == 'GET' %}var(--primary){% elseif req.method == 'POST' %}var(--success){% elseif req.method == 'PUT' or req.method == 'PATCH' %}var(--warning){% elseif req.method == 'DELETE' %}var(--danger){% else %}var(--text-secondary){% endif %}; color: #fff; font-size: 0.75rem;">{{ req.method }}</span>
+                        </td>
+                        <td><code style="font-size: 0.8rem;">{{ req.endpoint|length > 60 ? req.endpoint[:60] ~ '...' : req.endpoint }}</code></td>
+                        <td>
+                            <span class="badge" style="background: {% if req.status_code >= 500 %}var(--danger){% elseif req.status_code >= 400 %}var(--warning){% elseif req.status_code >= 200 and req.status_code < 300 %}var(--success){% else %}var(--text-secondary){% endif %}; color: #fff; font-size: 0.75rem;">{{ req.status_code }}</span>
+                        </td>
+                        <td style="font-size: 0.85rem;">{{ req.api_key_name ?? '-' }}</td>
+                        <td style="font-size: 0.85rem;">{{ req.response_time_ms ?? '-' }}{% if req.response_time_ms %}ms{% endif %}</td>
+                        <td style="font-size: 0.85rem; font-family: monospace;">{{ req.ip_address ?? '-' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="7" style="text-align: center; color: var(--text-secondary);">No requests recorded yet</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endif %}
+{% endblock %}

@@ -6,9 +6,6 @@ use ZephyrPHP\Cms\Controllers\CollectionController;
 use ZephyrPHP\Cms\Controllers\EntryController;
 use ZephyrPHP\Cms\Controllers\MediaController;
 use ZephyrPHP\Cms\Controllers\DatabaseSettingsController;
-use ZephyrPHP\Cms\Controllers\PageTypeController;
-use ZephyrPHP\Cms\Controllers\PageController;
-use ZephyrPHP\Cms\Controllers\PageFrontendController;
 use ZephyrPHP\Cms\Controllers\ThemeController;
 use ZephyrPHP\Cms\Controllers\ThemeCustomizerController;
 use ZephyrPHP\Cms\Controllers\UserController;
@@ -17,28 +14,47 @@ use ZephyrPHP\Cms\Controllers\ProfileController;
 use ZephyrPHP\Cms\Controllers\SystemSettingsController;
 use ZephyrPHP\Cms\Controllers\ApiKeyController;
 use ZephyrPHP\Cms\Controllers\AssetSettingsController;
-use ZephyrPHP\Cms\Controllers\AppController;
 use ZephyrPHP\Cms\Api\ContentApiController;
 use ZephyrPHP\Cms\Api\ApiV1Controller;
 use ZephyrPHP\Cms\Api\OAuthController;
 use ZephyrPHP\Cms\Api\MarketplaceApiController;
 use ZephyrPHP\Cms\Controllers\OAuthClientController;
 use ZephyrPHP\Cms\Controllers\MarketplaceController;
-use ZephyrPHP\Cms\Controllers\SellerController;
 use ZephyrPHP\Cms\Controllers\AiBuilderController;
+use ZephyrPHP\Cms\Controllers\ActivityLogController;
+use ZephyrPHP\Cms\Controllers\NotificationController;
+use ZephyrPHP\Cms\Controllers\EmailTemplateController;
+use ZephyrPHP\Cms\Controllers\LanguageController;
+use ZephyrPHP\Cms\Controllers\SystemHealthController;
+use ZephyrPHP\Cms\Controllers\LogViewerController;
+use ZephyrPHP\Cms\Controllers\MaintenanceController;
+use ZephyrPHP\Cms\Controllers\CacheController;
+use ZephyrPHP\Cms\Controllers\MailSettingsController;
+use ZephyrPHP\Cms\Controllers\WebhookController;
+use ZephyrPHP\Cms\Controllers\RouteViewerController;
+use ZephyrPHP\Cms\Controllers\ModuleManagerController;
+use ZephyrPHP\Cms\Controllers\DatabaseToolsController;
+use ZephyrPHP\Cms\Controllers\BackupController;
+use ZephyrPHP\Cms\Controllers\FileManagerController;
+use ZephyrPHP\Cms\Controllers\TranslationManagerController;
+use ZephyrPHP\Cms\Controllers\ScheduledTaskController;
+use ZephyrPHP\Cms\Controllers\AuthSettingsController;
+use ZephyrPHP\Cms\Controllers\SessionManagerController;
+use ZephyrPHP\Cms\Controllers\ApiSettingsController;
+use ZephyrPHP\Cms\Controllers\CacheSettingsController;
+use ZephyrPHP\Cms\Controllers\PermissionBuilderController;
+use ZephyrPHP\Cms\Controllers\ErrorPageController;
+use ZephyrPHP\Cms\Controllers\WorkflowVisualizerController;
+use ZephyrPHP\Cms\Controllers\ApiAnalyticsController;
+use ZephyrPHP\Cms\Controllers\QueueMonitorController;
+use ZephyrPHP\Cms\Controllers\SystemMonitorController;
 
 // CMS Admin Routes (protected by auth middleware)
 Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMiddleware::class]], function () {
     // Dashboard
     Route::get('/', [CmsController::class, 'dashboard']);
-
-    // Marketplace Apps
-    Route::get('/apps', [AppController::class, 'index']);
-    Route::post('/apps/install', [AppController::class, 'installUpload']);
-    Route::post('/apps/{slug}/enable', [AppController::class, 'enable']);
-    Route::post('/apps/{slug}/disable', [AppController::class, 'disable']);
-    Route::post('/apps/{slug}/uninstall', [AppController::class, 'uninstallApp']);
-    Route::post('/apps/{slug}/update', [AppController::class, 'updateApp']);
+    Route::post('/dashboard/layout', [CmsController::class, 'saveLayout']);
+    Route::post('/publish-scheduled', [CmsController::class, 'publishScheduled']);
 
     // OAuth Client Management
     Route::get('/oauth-clients', [OAuthClientController::class, 'index']);
@@ -61,42 +77,43 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     Route::post('/collections/{slug}/fields/{id}', [CollectionController::class, 'updateField']);
     Route::post('/collections/{slug}/fields/{id}/delete', [CollectionController::class, 'deleteField']);
 
+    // Saved Views (per-collection filter presets)
+    Route::post('/collections/{slug}/views', [EntryController::class, 'saveView']);
+    Route::post('/collections/{slug}/views/{viewId}/delete', [EntryController::class, 'deleteView']);
+
     // Entries (nested under collection)
     Route::get('/collections/{slug}/entries', [EntryController::class, 'index']);
     Route::get('/collections/{slug}/entries/create', [EntryController::class, 'create']);
     Route::post('/collections/{slug}/entries', [EntryController::class, 'store']);
     Route::get('/collections/{slug}/entries/{id}', [EntryController::class, 'edit']);
     Route::get('/collections/{slug}/entries/{id}/history', [EntryController::class, 'history']);
+    Route::get('/collections/{slug}/entries/{id}/seo-score', [EntryController::class, 'seoAnalysis']);
+    Route::get('/collections/{slug}/entries/{id}/translate/{locale}', [EntryController::class, 'translate']);
+    Route::post('/collections/{slug}/entries/{id}/translate/{locale}', [EntryController::class, 'saveTranslation']);
     Route::post('/collections/{slug}/entries/{id}/restore/{revisionId}', [EntryController::class, 'restore']);
+    Route::post('/collections/{slug}/entries/{id}/workflow/advance', [EntryController::class, 'advanceWorkflow']);
+    Route::post('/collections/{slug}/entries/{id}/workflow/reject', [EntryController::class, 'rejectWorkflow']);
     Route::post('/collections/{slug}/entries/{id}', [EntryController::class, 'update']);
     Route::post('/collections/{slug}/entries/{id}/delete', [EntryController::class, 'destroy']);
+
+    // Languages
+    Route::get('/languages', [LanguageController::class, 'index']);
+    Route::post('/languages', [LanguageController::class, 'store']);
+    Route::post('/languages/{id}', [LanguageController::class, 'update']);
+    Route::post('/languages/{id}/delete', [LanguageController::class, 'destroy']);
 
     // Media
     Route::get('/media', [MediaController::class, 'index']);
     Route::get('/media/browse', [MediaController::class, 'browse']);
+    Route::get('/media/{id}', [MediaController::class, 'detail']);
     Route::post('/media/upload', [MediaController::class, 'upload']);
+    Route::post('/media/bulk', [MediaController::class, 'bulk']);
+    Route::post('/media/folders/create', [MediaController::class, 'createFolder']);
+    Route::post('/media/folders/rename', [MediaController::class, 'renameFolder']);
+    Route::post('/media/folders/delete', [MediaController::class, 'deleteFolder']);
+    Route::post('/media/{id}/update', [MediaController::class, 'update']);
     Route::post('/media/{id}/delete', [MediaController::class, 'destroy']);
-
-    // Page Types
-    Route::get('/pages', [PageTypeController::class, 'index']);
-    Route::get('/pages/types/create', [PageTypeController::class, 'create']);
-    Route::post('/pages/types', [PageTypeController::class, 'store']);
-    Route::get('/pages/types/{slug}', [PageTypeController::class, 'edit']);
-    Route::post('/pages/types/{slug}', [PageTypeController::class, 'update']);
-    Route::post('/pages/types/{slug}/delete', [PageTypeController::class, 'destroy']);
-    Route::post('/pages/types/{slug}/fields', [PageTypeController::class, 'addField']);
-    Route::post('/pages/types/{slug}/fields/{id}', [PageTypeController::class, 'updateField']);
-    Route::post('/pages/types/{slug}/fields/{id}/delete', [PageTypeController::class, 'deleteField']);
-    Route::post('/pages/types/{slug}/template', [PageTypeController::class, 'saveTemplate']);
-
-    // Pages (entries under a page type)
-    Route::get('/pages/{ptSlug}/list', [PageController::class, 'index']);
-    Route::get('/pages/{ptSlug}/create', [PageController::class, 'create']);
-    Route::post('/pages/{ptSlug}', [PageController::class, 'store']);
-    Route::get('/pages/{ptSlug}/preview/{id}', [PageController::class, 'preview']);
-    Route::get('/pages/{ptSlug}/{id}', [PageController::class, 'edit']);
-    Route::post('/pages/{ptSlug}/{id}', [PageController::class, 'update']);
-    Route::post('/pages/{ptSlug}/{id}/delete', [PageController::class, 'destroy']);
+    Route::get('/media/{id}/usage', [MediaController::class, 'usage']);
 
     // Theme Customizer
     Route::get('/themes/{slug}/customize', [ThemeCustomizerController::class, 'customize']);
@@ -145,6 +162,13 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     Route::post('/roles/{id}', [RoleController::class, 'update']);
     Route::post('/roles/{id}/delete', [RoleController::class, 'destroy']);
 
+    // Permission Builder
+    Route::get('/permissions', [PermissionBuilderController::class, 'index']);
+    Route::post('/permissions/save-matrix', [PermissionBuilderController::class, 'saveMatrix']);
+    Route::post('/permissions/save-collection', [PermissionBuilderController::class, 'saveCollectionPermissions']);
+    Route::post('/permissions/custom/add', [PermissionBuilderController::class, 'addCustomPermission']);
+    Route::post('/permissions/custom/{id}/delete', [PermissionBuilderController::class, 'deleteCustomPermission']);
+
     // Profile Settings
     Route::get('/settings/profile', [ProfileController::class, 'index']);
     Route::post('/settings/profile', [ProfileController::class, 'update']);
@@ -178,17 +202,13 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
 
     // Import/Export
     Route::get('/collections/{slug}/export', [\ZephyrPHP\Cms\Controllers\EntryController::class, 'export']);
+    Route::post('/collections/{slug}/import/preview', [\ZephyrPHP\Cms\Controllers\EntryController::class, 'importPreview']);
     Route::post('/collections/{slug}/import', [\ZephyrPHP\Cms\Controllers\EntryController::class, 'import']);
 
     // Marketplace Browse
     Route::get('/marketplace', [MarketplaceController::class, 'index']);
     Route::get('/marketplace/{slug}', [MarketplaceController::class, 'show']);
     Route::post('/marketplace/{slug}/install', [MarketplaceController::class, 'install']);
-
-    // Seller Portal
-    Route::get('/seller', [SellerController::class, 'index']);
-    Route::get('/seller/submit', [SellerController::class, 'create']);
-    Route::post('/seller/submit', [SellerController::class, 'store']);
 
     // AI Builder
     Route::get('/ai-builder', [AiBuilderController::class, 'index']);
@@ -197,6 +217,148 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     Route::post('/ai-builder/save-section', [AiBuilderController::class, 'saveSection']);
     Route::get('/ai-builder/settings', [AiBuilderController::class, 'settings']);
     Route::post('/ai-builder/settings', [AiBuilderController::class, 'updateSettings']);
+
+    // Activity Log
+    Route::get('/activity-log', [ActivityLogController::class, 'index']);
+
+    // Notifications
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::get('/notifications/preferences', [NotificationController::class, 'preferences']);
+    Route::post('/notifications/preferences', [NotificationController::class, 'savePreferences']);
+
+    // Email Templates
+    Route::get('/email-templates', [EmailTemplateController::class, 'index']);
+    Route::get('/email-templates/{id}', [EmailTemplateController::class, 'edit']);
+    Route::post('/email-templates/{id}', [EmailTemplateController::class, 'update']);
+    Route::get('/email-templates/{id}/preview', [EmailTemplateController::class, 'preview']);
+    Route::post('/email-templates/{id}/test', [EmailTemplateController::class, 'testSend']);
+
+    // System Health
+    Route::get('/system/health', [SystemHealthController::class, 'index']);
+
+    // Log Viewer
+    Route::get('/system/logs', [LogViewerController::class, 'index']);
+    Route::get('/system/logs/view', [LogViewerController::class, 'view']);
+    Route::post('/system/logs/clear', [LogViewerController::class, 'clear']);
+    Route::post('/system/logs/clear-all', [LogViewerController::class, 'clearAll']);
+    Route::get('/system/logs/download', [LogViewerController::class, 'download']);
+
+    // Maintenance Mode
+    Route::get('/system/maintenance', [MaintenanceController::class, 'index']);
+    Route::post('/system/maintenance/activate', [MaintenanceController::class, 'activate']);
+    Route::post('/system/maintenance/deactivate', [MaintenanceController::class, 'deactivate']);
+
+    // Cache Management
+    Route::get('/system/cache', [CacheController::class, 'index']);
+    Route::post('/system/cache/clear', [CacheController::class, 'clear']);
+    Route::post('/system/cache/clear-all', [CacheController::class, 'clearAll']);
+    Route::post('/system/cache/config', [CacheController::class, 'cacheConfig']);
+
+    // Mail Settings
+    Route::get('/settings/mail', [MailSettingsController::class, 'index']);
+    Route::post('/settings/mail', [MailSettingsController::class, 'update']);
+    Route::post('/settings/mail/test', [MailSettingsController::class, 'testSend']);
+
+    // Webhooks
+    Route::get('/webhooks', [WebhookController::class, 'index']);
+    Route::post('/webhooks', [WebhookController::class, 'store']);
+    Route::post('/webhooks/{id}/toggle', [WebhookController::class, 'toggle']);
+    Route::post('/webhooks/{id}/test', [WebhookController::class, 'test']);
+    Route::post('/webhooks/{id}/delete', [WebhookController::class, 'destroy']);
+
+    // Route Viewer
+    Route::get('/system/routes', [RouteViewerController::class, 'index']);
+
+    // Module Manager
+    Route::get('/system/modules', [ModuleManagerController::class, 'index']);
+    Route::post('/system/modules/{name}/toggle', [ModuleManagerController::class, 'toggle']);
+
+    // Database Tools
+    Route::get('/system/database', [DatabaseToolsController::class, 'index']);
+    Route::get('/system/database/browse/{table}', [DatabaseToolsController::class, 'browse']);
+    Route::get('/system/database/download', [DatabaseToolsController::class, 'downloadBackup']);
+
+    // Backups
+    Route::get('/system/backups', [BackupController::class, 'index']);
+    Route::post('/system/backups/create', [BackupController::class, 'create']);
+    Route::get('/system/backups/{filename}/download', [BackupController::class, 'download']);
+    Route::post('/system/backups/{filename}/delete', [BackupController::class, 'destroy']);
+
+    // File Manager
+    Route::get('/system/files', [FileManagerController::class, 'index']);
+    Route::get('/system/files/edit', [FileManagerController::class, 'edit']);
+    Route::post('/system/files/save', [FileManagerController::class, 'save']);
+
+    // Translation Manager
+    Route::get('/system/translations', [TranslationManagerController::class, 'index']);
+    Route::post('/system/translations/update', [TranslationManagerController::class, 'update']);
+    Route::post('/system/translations/add-key', [TranslationManagerController::class, 'addKey']);
+    Route::post('/system/translations/create-group', [TranslationManagerController::class, 'createGroup']);
+
+    // Scheduled Tasks
+    Route::get('/system/scheduled-tasks', [ScheduledTaskController::class, 'index']);
+    Route::post('/system/scheduled-tasks', [ScheduledTaskController::class, 'store']);
+    Route::post('/system/scheduled-tasks/{id}/run', [ScheduledTaskController::class, 'run']);
+    Route::post('/system/scheduled-tasks/{id}/toggle', [ScheduledTaskController::class, 'toggle']);
+    Route::post('/system/scheduled-tasks/{id}/delete', [ScheduledTaskController::class, 'destroy']);
+
+    // Translation Progress
+    Route::get('/system/translations/progress', [TranslationManagerController::class, 'progress']);
+
+    // Auth Settings
+    Route::get('/settings/auth', [AuthSettingsController::class, 'index']);
+    Route::post('/settings/auth', [AuthSettingsController::class, 'update']);
+    Route::post('/settings/auth/oauth', [AuthSettingsController::class, 'updateOAuth']);
+
+    // Session Manager
+    Route::get('/system/sessions', [SessionManagerController::class, 'index']);
+    Route::post('/system/sessions/{id}/terminate', [SessionManagerController::class, 'terminate']);
+    Route::post('/system/sessions/terminate-all', [SessionManagerController::class, 'terminateAll']);
+    Route::post('/system/sessions/terminate-user/{userId}', [SessionManagerController::class, 'terminateUser']);
+
+    // API Settings
+    Route::get('/settings/api', [ApiSettingsController::class, 'index']);
+    Route::post('/settings/api', [ApiSettingsController::class, 'update']);
+
+    // Cache Settings
+    Route::get('/settings/cache', [CacheSettingsController::class, 'index']);
+    Route::post('/settings/cache', [CacheSettingsController::class, 'update']);
+    Route::post('/settings/cache/test-redis', [CacheSettingsController::class, 'testRedis']);
+
+    // Webhook Delivery Logs
+    Route::get('/webhooks/{id}/logs', [WebhookController::class, 'logs']);
+    Route::post('/webhooks/{id}/retry/{deliveryId}', [WebhookController::class, 'retry']);
+
+    // Revision Diff
+    Route::get('/collections/{slug}/entries/{id}/diff', [EntryController::class, 'diff']);
+
+    // Error Pages & Messages
+    Route::get('/settings/error-pages', [ErrorPageController::class, 'index']);
+    Route::post('/settings/error-pages/http', [ErrorPageController::class, 'updateHttp']);
+    Route::post('/settings/error-pages/database', [ErrorPageController::class, 'updateDatabase']);
+    Route::post('/settings/error-pages/fields', [ErrorPageController::class, 'updateFields']);
+    Route::post('/settings/error-pages/fields/add', [ErrorPageController::class, 'addField']);
+    Route::get('/settings/error-pages/preview/{code}', [ErrorPageController::class, 'preview']);
+
+    // Workflow Visualizer
+    Route::get('/system/workflow', [WorkflowVisualizerController::class, 'index']);
+
+    // API Analytics
+    Route::get('/system/api-analytics', [ApiAnalyticsController::class, 'index']);
+
+    // Queue Monitor
+    Route::get('/system/queue', [QueueMonitorController::class, 'index']);
+    Route::post('/system/queue/{id}/retry', [QueueMonitorController::class, 'retry']);
+    Route::post('/system/queue/retry-all', [QueueMonitorController::class, 'retryAll']);
+    Route::post('/system/queue/{id}/delete', [QueueMonitorController::class, 'delete']);
+    Route::post('/system/queue/purge', [QueueMonitorController::class, 'purge']);
+
+    // System Monitor
+    Route::get('/system/monitor', [SystemMonitorController::class, 'index']);
+    Route::get('/system/monitor/stats', [SystemMonitorController::class, 'stats']);
 });
 
 
@@ -220,11 +382,12 @@ Route::get('/cms-assets/js/{file}', function (string $file) {
     exit;
 });
 
+// Public Collection Submit (no auth required)
+Route::post('/collections/{slug}/submit', [\ZephyrPHP\Cms\Controllers\PublicSubmitController::class, 'submit']);
+
 // Sitemap
 Route::get('/sitemap.xml', [\ZephyrPHP\Cms\Controllers\SitemapController::class, 'index']);
 
-// Public Page Frontend
-Route::get('/page/{slug}', [PageFrontendController::class, 'show']);
 
 // CMS Public API Routes (legacy, API-key based)
 Route::group(['prefix' => '/api/cms'], function () {
@@ -253,10 +416,6 @@ Route::post('/oauth/revoke', [OAuthController::class, 'revoke']);
 
 // REST API v1 (OAuth-protected)
 Route::group(['prefix' => '/api/v1', 'middleware' => [\ZephyrPHP\OAuth\OAuthMiddleware::class]], function () {
-    // Pages
-    Route::get('/pages', [ApiV1Controller::class, 'listPages']);
-    Route::get('/pages/{id}', [ApiV1Controller::class, 'getPage']);
-
     // Collections + Entries
     Route::get('/collections', [ApiV1Controller::class, 'listCollections']);
     Route::get('/collections/{slug}/entries', [ApiV1Controller::class, 'listEntries']);

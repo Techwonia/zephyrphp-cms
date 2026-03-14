@@ -1,0 +1,19 @@
+{% if data.reviews is defined and data.reviews|length > 0 %}
+<div class="widget-list">
+    {% for review in data.reviews %}
+    <a href="/cms/collections/{{ review.collection_slug }}/entries/{{ review.entry_id }}" class="widget-list-item">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <div>
+                <span class="widget-list-title">{{ review.entry_title ?? '#' ~ review.entry_id }}</span>
+                <span class="widget-list-meta">{{ review.collection_name }} &middot; {{ review.stage|capitalize }}</span>
+            </div>
+            <span class="badge" style="background: var(--color-warning-subdued); color: var(--color-warning); font-size: var(--font-xs); padding: 2px 8px; border-radius: var(--radius-full);">
+                {{ review.stage|capitalize }}
+            </span>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<p class="text-muted" style="text-align: center; padding: var(--space-400) 0;">No pending reviews</p>
+{% endif %}

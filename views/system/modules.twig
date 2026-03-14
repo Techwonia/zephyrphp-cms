@@ -1,0 +1,47 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Module Manager{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / System / Modules
+</div>
+
+<div class="page-header">
+    <h1>Module Manager</h1>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: var(--space-400);">
+    {% for module in modules %}
+    <div class="card">
+        <div class="card-body">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: var(--space-300);">
+                <div>
+                    <h3 style="margin: 0; font-size: 1rem;">{{ module.name|title }}
+                        {% if module.core %}
+                            <span class="badge" style="font-size: 0.65rem;">Core</span>
+                        {% endif %}
+                    </h3>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px;">{{ module.description }}</p>
+                </div>
+                <span class="badge" style="{% if module.enabled %}background: var(--success); color: #fff;{% else %}background: var(--bg-secondary);{% endif %}">
+                    {{ module.enabled ? 'Enabled' : 'Disabled' }}
+                </span>
+            </div>
+
+            {% if not module.core %}
+            <form method="POST" action="/cms/system/modules/{{ module.name }}/toggle">
+                {{ csrf_field() | raw }}
+                <button type="submit" class="btn {{ module.enabled ? 'btn-outline' : 'btn-primary' }} btn-sm">
+                    {{ module.enabled ? 'Disable' : 'Enable' }}
+                </button>
+            </form>
+            {% else %}
+            <span style="font-size: 0.8rem; color: var(--text-secondary);">Core modules cannot be disabled</span>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

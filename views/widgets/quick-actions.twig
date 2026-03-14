@@ -1,0 +1,10 @@
+<div style="display: flex; gap: 8px; flex-wrap: wrap;">
+    <a href="/cms/collections/create" class="btn btn-primary btn-sm">New Collection</a>
+    {% for collection in collections %}
+    <a href="/cms/collections/{{ collection.getSlug() }}/entries/create" class="btn btn-outline btn-sm">
+        + {{ collection.getName() }}
+    </a>
+    {% endfor %}
+    <a href="/cms/media" class="btn btn-outline btn-sm">Media</a>
+    <a href="/cms/themes" class="btn btn-outline btn-sm">Themes</a>
+</div>

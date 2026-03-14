@@ -1,0 +1,17 @@
+<div style="text-align: center; padding: 8px 0;">
+    <div style="font-size: 2.5em; font-weight: 700; color: var(--text-primary);">{{ stats.total }}</div>
+    <div style="font-size: 0.9em; color: var(--text-secondary); margin-top: 4px;">Media files</div>
+</div>
+{% if stats.types|length > 0 %}
+<div style="margin-top: 8px; border-top: 1px solid var(--border-color); padding-top: 8px;">
+    {% for type, cnt in stats.types %}
+    <div style="display: flex; justify-content: space-between; padding: 3px 0; font-size: 0.85em;">
+        <span>{{ type|capitalize }}</span>
+        <span style="color: var(--text-secondary);">{{ cnt }}</span>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+<div style="margin-top: 8px;">
+    <a href="/cms/media" style="font-size: 0.85em;">Manage media &rarr;</a>
+</div>

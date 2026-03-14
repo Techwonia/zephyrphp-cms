@@ -1,0 +1,117 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Activity Log{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / Activity Log
+</div>
+
+<div class="page-header">
+    <h1>Activity Log</h1>
+</div>
+
+<div class="search-bar" style="margin-bottom: 16px;">
+    <form method="GET" action="/cms/activity-log" class="search-form" style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <input type="text" name="search" class="form-control" placeholder="Search..." value="{{ filters.search }}" style="flex: 1; min-width: 200px;">
+        <select name="resource_type" class="form-control" style="width: auto;">
+            <option value="">All Types</option>
+            <option value="entry" {% if filters.resource_type == 'entry' %}selected{% endif %}>Entry</option>
+            <option value="collection" {% if filters.resource_type == 'collection' %}selected{% endif %}>Collection</option>
+            <option value="theme" {% if filters.resource_type == 'theme' %}selected{% endif %}>Theme</option>
+            <option value="user" {% if filters.resource_type == 'user' %}selected{% endif %}>User</option>
+            <option value="media" {% if filters.resource_type == 'media' %}selected{% endif %}>Media</option>
+        </select>
+        <select name="action" class="form-control" style="width: auto;">
+            <option value="">All Actions</option>
+            <option value="created" {% if filters.action == 'created' %}selected{% endif %}>Created</option>
+            <option value="updated" {% if filters.action == 'updated' %}selected{% endif %}>Updated</option>
+            <option value="deleted" {% if filters.action == 'deleted' %}selected{% endif %}>Deleted</option>
+            <option value="published" {% if filters.action == 'published' %}selected{% endif %}>Published</option>
+            <option value="installed" {% if filters.action == 'installed' %}selected{% endif %}>Installed</option>
+            <option value="login" {% if filters.action == 'login' %}selected{% endif %}>Login</option>
+        </select>
+        <button type="submit" class="btn btn-outline">Filter</button>
+        {% if filters.search or filters.action or filters.resource_type %}
+            <a href="/cms/activity-log" class="btn btn-outline">Clear</a>
+        {% endif %}
+    </form>
+</div>
+
+{% if logs.data|length > 0 %}
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>When</th>
+                        <th>User</th>
+                        <th>Action</th>
+                        <th>Type</th>
+                        <th>Resource</th>
+                        <th>IP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs.data %}
+                    <tr>
+                        <td style="white-space: nowrap;">{{ log.createdAt }}</td>
+                        <td>{{ log.user_name ?? 'System' }}</td>
+                        <td>
+                            {% set actionColor = {
+                                'created': '#d4edda',
+                                'updated': '#fff3cd',
+                                'deleted': '#f8d7da',
+                                'published': '#cce5ff',
+                                'installed': '#d4edda',
+                                'uninstalled': '#f8d7da',
+                                'login': '#e2e3e5'
+                            } %}
+                            <span class="badge" style="background: {{ actionColor[log.action] ?? '#e2e3e5' }}; color: #333;">
+                                {{ log.action }}
+                            </span>
+                        </td>
+                        <td>{{ log.resource_type }}</td>
+                        <td>
+                            {% if log.resource_label %}
+                                {{ log.resource_label }}
+                            {% elseif log.resource_id %}
+                                #{{ log.resource_id }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td style="font-size: 0.85em; color: var(--text-secondary, #666);">{{ log.ip_address ?? '—' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if logs.last_page > 1 %}
+        <div class="pagination">
+            {% if logs.current_page > 1 %}
+                <a href="/cms/activity-log?page={{ logs.current_page - 1 }}&search={{ filters.search }}&action={{ filters.action }}&resource_type={{ filters.resource_type }}">&laquo; Prev</a>
+            {% endif %}
+            {% for p in 1..logs.last_page %}
+                {% if p == logs.current_page %}
+                    <span class="active">{{ p }}</span>
+                {% else %}
+                    <a href="/cms/activity-log?page={{ p }}&search={{ filters.search }}&action={{ filters.action }}&resource_type={{ filters.resource_type }}">{{ p }}</a>
+                {% endif %}
+            {% endfor %}
+            {% if logs.current_page < logs.last_page %}
+                <a href="/cms/activity-log?page={{ logs.current_page + 1 }}&search={{ filters.search }}&action={{ filters.action }}&resource_type={{ filters.resource_type }}">Next &raquo;</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% else %}
+<div class="empty-state">
+    <h3>No activity logged yet</h3>
+    <p>Actions in the CMS will appear here as they happen.</p>
+</div>
+{% endif %}
+{% endblock %}

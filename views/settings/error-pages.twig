@@ -1,0 +1,180 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Error Pages & Messages{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / Settings / Error Pages
+</div>
+
+<div class="page-header">
+    <h1>Error Pages & Messages</h1>
+    <p style="color: var(--text-secondary); margin-top: var(--space-100); font-size: 0.85rem;">
+        Customize error messages shown to users. Changes apply immediately in production mode.
+    </p>
+</div>
+
+{# ═══ HTTP Error Messages ═══ #}
+<div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card-header"><h3 style="margin:0; font-size:1rem;">HTTP Error Pages</h3></div>
+    <div class="card-body" style="padding: 0;">
+        <form method="POST" action="/cms/settings/error-pages/http">
+            {{ csrf_field() | raw }}
+            <div class="table-responsive">
+                <table class="data-table" style="font-size: 0.85rem;">
+                    <thead>
+                        <tr>
+                            <th style="width: 80px;">Code</th>
+                            <th style="width: 150px;">Title</th>
+                            <th>Message</th>
+                            <th style="width: 120px;">Template</th>
+                            <th style="width: 80px;">Preview</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for code in httpCodes %}
+                        <tr>
+                            <td><strong>{{ code }}</strong></td>
+                            <td>{{ httpTitles[code] }}</td>
+                            <td>
+                                <input type="text" name="http[{{ code }}]" class="form-control"
+                                       value="{{ config.http[code] ?? '' }}"
+                                       placeholder="Default message will be used">
+                            </td>
+                            <td>
+                                {% if errorTemplates[code ~ ''] is defined %}
+                                    <span class="badge" style="background: var(--success); color: white;">Custom</span>
+                                {% else %}
+                                    <span class="badge">Default</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="/cms/settings/error-pages/preview/{{ code }}" target="_blank" class="btn btn-outline btn-sm">View</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div style="padding: var(--space-300) var(--space-400); border-top: 1px solid var(--border-color);">
+                <button type="submit" class="btn btn-primary">Save HTTP Messages</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# ═══ Database Error Messages ═══ #}
+<div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card-header">
+        <h3 style="margin:0; font-size:1rem;">Database Error Messages</h3>
+        <p style="margin: 4px 0 0; font-size: 0.8rem; color: var(--text-secondary);">
+            Use <code>:field</code> placeholder to include the detected field name.
+        </p>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <form method="POST" action="/cms/settings/error-pages/database">
+            {{ csrf_field() | raw }}
+            <div class="table-responsive">
+                <table class="data-table" style="font-size: 0.85rem;">
+                    <thead>
+                        <tr>
+                            <th style="width: 200px;">Error Type</th>
+                            <th>Message</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for type, label in dbErrorTypes %}
+                        <tr>
+                            <td>
+                                <strong>{{ label }}</strong>
+                                <br><code style="font-size: 0.75rem; color: var(--text-secondary);">{{ type }}</code>
+                            </td>
+                            <td>
+                                <input type="text" name="database[{{ type }}]" class="form-control"
+                                       value="{{ config.database[type] ?? '' }}"
+                                       placeholder="Default message will be used">
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div style="padding: var(--space-300) var(--space-400); border-top: 1px solid var(--border-color);">
+                <button type="submit" class="btn btn-primary">Save Database Messages</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# ═══ Field-Specific Messages ═══ #}
+<div class="card">
+    <div class="card-header">
+        <h3 style="margin:0; font-size:1rem;">Field-Specific Messages</h3>
+        <p style="margin: 4px 0 0; font-size: 0.8rem; color: var(--text-secondary);">
+            Override error messages for specific database fields. These take priority over generic messages.
+        </p>
+    </div>
+    <div class="card-body">
+        {# Add new field message #}
+        <form method="POST" action="/cms/settings/error-pages/fields/add" style="margin-bottom: var(--space-400);">
+            {{ csrf_field() | raw }}
+            <div style="display: grid; grid-template-columns: 1fr 1fr 2fr auto; gap: var(--space-300); align-items: flex-end;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Field Name</label>
+                    <input type="text" name="field_name" class="form-control" placeholder="e.g. email" pattern="[a-zA-Z0-9_]+" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Error Type</label>
+                    <select name="error_type" class="form-control" required>
+                        {% for type, label in dbErrorTypes %}
+                            <option value="{{ type }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Custom Message</label>
+                    <input type="text" name="message" class="form-control" placeholder="e.g. This email is already registered." required>
+                </div>
+                <button type="submit" class="btn btn-primary">Add</button>
+            </div>
+        </form>
+
+        {# Existing field messages #}
+        {% if config.fields is defined and config.fields|length > 0 %}
+        <form method="POST" action="/cms/settings/error-pages/fields">
+            {{ csrf_field() | raw }}
+            <div class="table-responsive">
+                <table class="data-table" style="font-size: 0.85rem;">
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Error Type</th>
+                            <th>Message</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fieldName, types in config.fields %}
+                            {% for type, message in types %}
+                            <tr>
+                                <td><code>{{ fieldName }}</code></td>
+                                <td>{{ dbErrorTypes[type] ?? type }}</td>
+                                <td>
+                                    <input type="text" name="fields[{{ fieldName }}][{{ type }}]" class="form-control" value="{{ message }}">
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div style="margin-top: var(--space-300);">
+                <button type="submit" class="btn btn-primary">Save Field Messages</button>
+                <small style="color: var(--text-secondary); margin-left: var(--space-200);">Clear a message to remove it.</small>
+            </div>
+        </form>
+        {% else %}
+        <p style="color: var(--text-secondary); font-size: 0.85rem;">No field-specific messages configured. Add one above.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

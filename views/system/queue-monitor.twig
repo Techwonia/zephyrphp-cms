@@ -1,0 +1,205 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Queue Monitor{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / System / Queue Monitor
+</div>
+
+<div class="page-header">
+    <h1>Queue Monitor</h1>
+</div>
+
+{# Stats Cards #}
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--space-400); margin-bottom: var(--space-500);">
+    <div class="card">
+        <div class="card-body" style="text-align: center;">
+            <div style="font-size: 2rem; font-weight: 700; color: var(--warning);">{{ counts.pending }}</div>
+            <div style="font-size: 0.85rem; color: var(--text-secondary);">Pending</div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body" style="text-align: center;">
+            <div style="font-size: 2rem; font-weight: 700; color: var(--info);">{{ counts.running }}</div>
+            <div style="font-size: 0.85rem; color: var(--text-secondary);">Running</div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body" style="text-align: center;">
+            <div style="font-size: 2rem; font-weight: 700; color: var(--success);">{{ completed24h }}</div>
+            <div style="font-size: 0.85rem; color: var(--text-secondary);">Completed (24h)</div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body" style="text-align: center;">
+            <div style="font-size: 2rem; font-weight: 700; color: var(--danger);">{{ counts.failed }}</div>
+            <div style="font-size: 0.85rem; color: var(--text-secondary);">Failed</div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body" style="text-align: center;">
+            <div style="font-size: 2rem; font-weight: 700;">{{ avgProcessingTime is not null ? avgProcessingTime ~ 's' : 'N/A' }}</div>
+            <div style="font-size: 0.85rem; color: var(--text-secondary);">Avg Processing Time</div>
+        </div>
+    </div>
+</div>
+
+{# Action Buttons #}
+<div style="display: flex; gap: var(--space-300); margin-bottom: var(--space-500);">
+    {% if counts.failed > 0 %}
+    <form method="POST" action="/cms/system/queue/retry-all" onsubmit="return confirm('Retry all {{ counts.failed }} failed job(s)?')">
+        {{ csrf_field() | raw }}
+        <button type="submit" class="btn btn-primary">Retry All Failed</button>
+    </form>
+    {% endif %}
+    <form method="POST" action="/cms/system/queue/purge" onsubmit="return confirm('Delete all completed jobs older than 7 days?')">
+        {{ csrf_field() | raw }}
+        <button type="submit" class="btn btn-outline">Purge Completed</button>
+    </form>
+</div>
+
+{# Failed Jobs #}
+<div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card-header"><h3 style="margin:0; font-size:1rem;">Failed Jobs ({{ counts.failed }})</h3></div>
+    <div class="card-body" style="padding: 0;">
+        {% if failedJobs|length > 0 %}
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Job Class</th>
+                        <th>Queue</th>
+                        <th>Error</th>
+                        <th>Attempts</th>
+                        <th>Created</th>
+                        <th style="width: 160px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for job in failedJobs %}
+                    <tr>
+                        <td>{{ job.id }}</td>
+                        <td style="font-family: monospace; font-size: 0.85rem;">{{ job.job_class }}</td>
+                        <td><span class="badge">{{ job.queue }}</span></td>
+                        <td style="max-width: 300px;">
+                            {% if job.error %}
+                            <details>
+                                <summary style="cursor: pointer; font-size: 0.85rem; color: var(--danger);">{{ job.error|length > 80 ? job.error[:80] ~ '...' : job.error }}</summary>
+                                <pre style="margin-top: var(--space-200); font-size: 0.8rem; white-space: pre-wrap; max-height: 200px; overflow-y: auto;">{{ job.error }}</pre>
+                            </details>
+                            {% else %}
+                            <span style="color: var(--text-secondary);">No error details</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ job.attempts }} / {{ job.max_attempts }}</td>
+                        <td style="font-size: 0.85rem; color: var(--text-secondary);">{{ job.created_at }}</td>
+                        <td>
+                            <div style="display: flex; gap: var(--space-200);">
+                                <form method="POST" action="/cms/system/queue/{{ job.id }}/retry" style="display: inline;">
+                                    {{ csrf_field() | raw }}
+                                    <button type="submit" class="btn btn-outline btn-sm">Retry</button>
+                                </form>
+                                <form method="POST" action="/cms/system/queue/{{ job.id }}/delete" style="display: inline;" onsubmit="return confirm('Delete this job?')">
+                                    {{ csrf_field() | raw }}
+                                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="padding: var(--space-400); text-align: center; color: var(--text-secondary);">
+            No failed jobs.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{# Pending Jobs #}
+<div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card-header"><h3 style="margin:0; font-size:1rem;">Pending Jobs ({{ counts.pending }})</h3></div>
+    <div class="card-body" style="padding: 0;">
+        {% if pendingJobs|length > 0 %}
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Job Class</th>
+                        <th>Queue</th>
+                        <th>Payload</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for job in pendingJobs %}
+                    <tr>
+                        <td>{{ job.id }}</td>
+                        <td style="font-family: monospace; font-size: 0.85rem;">{{ job.job_class }}</td>
+                        <td><span class="badge">{{ job.queue }}</span></td>
+                        <td style="font-size: 0.85rem; color: var(--text-secondary); max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            {{ job.payload ? (job.payload|length > 100 ? job.payload[:100] ~ '...' : job.payload) : '—' }}
+                        </td>
+                        <td style="font-size: 0.85rem; color: var(--text-secondary);">{{ job.created_at }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="padding: var(--space-400); text-align: center; color: var(--text-secondary);">
+            No pending jobs.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{# Recent Completed #}
+<div class="card">
+    <div class="card-header"><h3 style="margin:0; font-size:1rem;">Recent Completed (Last 50)</h3></div>
+    <div class="card-body" style="padding: 0;">
+        {% if completedJobs|length > 0 %}
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Job Class</th>
+                        <th>Queue</th>
+                        <th>Processing Time</th>
+                        <th>Completed</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for job in completedJobs %}
+                    <tr>
+                        <td>{{ job.id }}</td>
+                        <td style="font-family: monospace; font-size: 0.85rem;">{{ job.job_class }}</td>
+                        <td><span class="badge">{{ job.queue }}</span></td>
+                        <td style="font-size: 0.85rem;">
+                            {% if job.processing_seconds is not null %}
+                                {{ job.processing_seconds }}s
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td style="font-size: 0.85rem; color: var(--text-secondary);">{{ job.completed_at }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="padding: var(--space-400); text-align: center; color: var(--text-secondary);">
+            No completed jobs.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

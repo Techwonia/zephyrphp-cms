@@ -12,11 +12,7 @@ use ZephyrPHP\Cms\Services\SidebarManager;
 use ZephyrPHP\Cms\Services\DashboardManager;
 use ZephyrPHP\Cms\Services\SettingsManager;
 use ZephyrPHP\Cms\Services\ThemeInstaller;
-use ZephyrPHP\App\AppManager;
-use ZephyrPHP\App\AppInstaller;
-use ZephyrPHP\Cms\Models\PageType;
 use ZephyrPHP\Database\EntityManager;
-use ZephyrPHP\Hook\HookManager;
 
 class CmsServiceProvider
 {
@@ -52,13 +48,6 @@ class CmsServiceProvider
 
         $container->singleton(ThemeInstaller::class, fn() => new ThemeInstaller(new ThemeManager()));
         $container->alias('cms.theme_installer', ThemeInstaller::class);
-
-        // Register App Manager and Installer
-        $container->singleton(AppManager::class, fn() => AppManager::getInstance());
-        $container->alias('cms.apps', AppManager::class);
-
-        $container->singleton(AppInstaller::class, fn() => new AppInstaller(AppManager::getInstance()));
-        $container->alias('cms.app_installer', AppInstaller::class);
 
         // Register CMS models path with Doctrine
         $em = EntityManager::getInstance();
@@ -99,19 +88,7 @@ class CmsServiceProvider
         $sidebar = SidebarManager::getInstance();
         $sidebar->registerDefaults();
 
-        // Add dynamic collection sub-items to sidebar
-        $this->registerCollectionSidebarItems($sidebar);
-
-        // Add Apps sidebar item
-        $sidebar->addItem('content', [
-            'id' => 'apps',
-            'label' => 'Apps',
-            'url' => '/cms/apps',
-            'icon' => 'puzzle',
-            'match' => 'prefix:/cms/apps',
-        ]);
-
-        // Add Marketplace sidebar item
+        // Add Marketplace sidebar item (themes only)
         $sidebar->addItem('content', [
             'id' => 'marketplace',
             'label' => 'Marketplace',
@@ -120,13 +97,13 @@ class CmsServiceProvider
             'match' => 'prefix:/cms/marketplace',
         ]);
 
-        // Add Seller Portal sidebar item
-        $sidebar->addItem('content', [
-            'id' => 'seller',
-            'label' => 'Seller Portal',
-            'url' => '/cms/seller',
-            'icon' => 'tag',
-            'match' => 'prefix:/cms/seller',
+        // Add Activity Log sidebar item
+        $sidebar->addItem('admin', [
+            'id' => 'activity-log',
+            'label' => 'Activity Log',
+            'url' => '/cms/activity-log',
+            'icon' => 'clock',
+            'match' => 'prefix:/cms/activity-log',
         ]);
 
         // Add AI Builder sidebar item
@@ -138,20 +115,255 @@ class CmsServiceProvider
             'match' => 'prefix:/cms/ai-builder',
         ]);
 
-        // Discover and boot marketplace apps
-        $appManager = AppManager::getInstance();
-        $appManager->discoverAndLoad();
-        $appManager->registerAll();
-        $appManager->bootAll();
+        // Add Languages sidebar item
+        $sidebar->addItem('admin', [
+            'id' => 'languages',
+            'label' => 'Languages',
+            'url' => '/cms/languages',
+            'icon' => 'globe',
+            'match' => 'prefix:/cms/languages',
+        ]);
 
-        // Fire hook so apps can add sidebar items, dashboard widgets, settings pages
-        $hooks = HookManager::getInstance();
-        $hooks->doAction('cms.sidebar.rendering', $sidebar);
-        $hooks->doAction('cms.dashboard.rendering', DashboardManager::getInstance());
-        $hooks->doAction('cms.settings.rendering', SettingsManager::getInstance());
+        // Add Notifications sidebar item
+        $sidebar->addItem('admin', [
+            'id' => 'notifications',
+            'label' => 'Notifications',
+            'url' => '/cms/notifications',
+            'icon' => 'bell',
+            'match' => 'prefix:/cms/notifications',
+        ]);
 
-        // Register app settings pages as sidebar items
-        SettingsManager::getInstance()->registerSidebarItems($sidebar);
+        // Add Email Templates sidebar item
+        $sidebar->addItem('admin', [
+            'id' => 'email-templates',
+            'label' => 'Email Templates',
+            'url' => '/cms/email-templates',
+            'icon' => 'mail',
+            'match' => 'prefix:/cms/email-templates',
+        ]);
+
+        // Add Webhooks sidebar item
+        $sidebar->addItem('admin', [
+            'id' => 'webhooks',
+            'label' => 'Webhooks',
+            'url' => '/cms/webhooks',
+            'icon' => 'link',
+            'match' => 'prefix:/cms/webhooks',
+        ]);
+
+        $sidebar->addItem('admin', [
+            'id' => 'permission-builder',
+            'label' => 'Permission Builder',
+            'url' => '/cms/permissions',
+            'icon' => 'shield',
+            'permission' => 'roles.manage',
+            'match' => 'prefix:/cms/permissions',
+        ]);
+
+        // Add Mail Settings to settings section
+        $sidebar->addItem('settings', [
+            'id' => 'mail',
+            'label' => 'Mail',
+            'url' => '/cms/settings/mail',
+            'icon' => 'mail',
+            'permission' => 'settings.view',
+            'position' => 5,
+            'match' => 'prefix:/cms/settings/mail',
+        ]);
+
+        // Auth Settings
+        $sidebar->addItem('settings', [
+            'id' => 'auth-settings',
+            'label' => 'Authentication',
+            'url' => '/cms/settings/auth',
+            'icon' => 'shield',
+            'permission' => 'settings.view',
+            'position' => 6,
+            'match' => 'prefix:/cms/settings/auth',
+        ]);
+
+        // API Settings
+        $sidebar->addItem('settings', [
+            'id' => 'api-settings',
+            'label' => 'API',
+            'url' => '/cms/settings/api',
+            'icon' => 'code',
+            'permission' => 'settings.view',
+            'position' => 7,
+            'match' => 'prefix:/cms/settings/api',
+        ]);
+
+        // Cache Settings
+        $sidebar->addItem('settings', [
+            'id' => 'cache-settings',
+            'label' => 'Cache',
+            'url' => '/cms/settings/cache',
+            'icon' => 'zap',
+            'permission' => 'settings.view',
+            'position' => 8,
+            'match' => 'prefix:/cms/settings/cache',
+        ]);
+
+        // Error Pages
+        $sidebar->addItem('settings', [
+            'id' => 'error-pages',
+            'label' => 'Error Pages',
+            'url' => '/cms/settings/error-pages',
+            'icon' => 'alert-triangle',
+            'permission' => 'settings.edit',
+            'position' => 9,
+            'match' => 'prefix:/cms/settings/error-pages',
+        ]);
+
+        // System section
+        $sidebar->addSection('system', 'System', 35);
+
+        $sidebar->addItem('system', [
+            'id' => 'system-health',
+            'label' => 'Health Check',
+            'url' => '/cms/system/health',
+            'icon' => 'heart',
+            'match' => 'exact:/cms/system/health',
+            'permission' => 'settings.view',
+        ]);
+
+        $sidebar->addItem('system', [
+            'id' => 'system-logs',
+            'label' => 'Log Viewer',
+            'url' => '/cms/system/logs',
+            'icon' => 'file-text',
+            'match' => 'prefix:/cms/system/logs',
+            'permission' => 'settings.view',
+        ]);
+
+        $sidebar->addItem('system', [
+            'id' => 'system-cache',
+            'label' => 'Cache',
+            'url' => '/cms/system/cache',
+            'icon' => 'zap',
+            'match' => 'exact:/cms/system/cache',
+            'permission' => 'settings.view',
+        ]);
+
+        $sidebar->addItem('system', [
+            'id' => 'system-maintenance',
+            'label' => 'Maintenance',
+            'url' => '/cms/system/maintenance',
+            'icon' => 'tool',
+            'match' => 'exact:/cms/system/maintenance',
+            'permission' => 'settings.view',
+        ]);
+
+        $sidebar->addItem('system', [
+            'id' => 'system-database',
+            'label' => 'Database',
+            'url' => '/cms/system/database',
+            'icon' => 'database',
+            'match' => 'prefix:/cms/system/database',
+            'permission' => 'settings.view',
+        ]);
+
+        $sidebar->addItem('system', [
+            'id' => 'system-backups',
+            'label' => 'Backups',
+            'url' => '/cms/system/backups',
+            'icon' => 'archive',
+            'match' => 'prefix:/cms/system/backups',
+            'permission' => 'settings.view',
+        ]);
+
+        $sidebar->addItem('system', [
+            'id' => 'system-files',
+            'label' => 'File Manager',
+            'url' => '/cms/system/files',
+            'icon' => 'folder',
+            'match' => 'prefix:/cms/system/files',
+            'permission' => 'settings.view',
+        ]);
+
+        $sidebar->addItem('system', [
+            'id' => 'system-translations',
+            'label' => 'Translations',
+            'url' => '/cms/system/translations',
+            'icon' => 'globe',
+            'match' => 'prefix:/cms/system/translations',
+            'permission' => 'settings.view',
+        ]);
+
+        $sidebar->addItem('system', [
+            'id' => 'system-routes',
+            'label' => 'Routes',
+            'url' => '/cms/system/routes',
+            'icon' => 'map',
+            'match' => 'exact:/cms/system/routes',
+            'permission' => 'settings.view',
+        ]);
+
+        $sidebar->addItem('system', [
+            'id' => 'system-modules',
+            'label' => 'Modules',
+            'url' => '/cms/system/modules',
+            'icon' => 'package',
+            'match' => 'exact:/cms/system/modules',
+            'permission' => 'settings.view',
+        ]);
+
+        $sidebar->addItem('system', [
+            'id' => 'system-scheduled-tasks',
+            'label' => 'Scheduled Tasks',
+            'url' => '/cms/system/scheduled-tasks',
+            'icon' => 'clock',
+            'match' => 'prefix:/cms/system/scheduled-tasks',
+            'permission' => 'settings.view',
+        ]);
+
+        $sidebar->addItem('system', [
+            'id' => 'system-sessions',
+            'label' => 'Sessions',
+            'url' => '/cms/system/sessions',
+            'icon' => 'monitor',
+            'match' => 'prefix:/cms/system/sessions',
+            'permission' => 'users.view',
+        ]);
+
+        $sidebar->addItem('system', [
+            'id' => 'system-workflow',
+            'label' => 'Workflow Visualizer',
+            'url' => '/cms/system/workflow',
+            'icon' => 'git-branch',
+            'match' => 'exact:/cms/system/workflow',
+            'permission' => 'entries.view',
+        ]);
+
+        $sidebar->addItem('system', [
+            'id' => 'system-api-analytics',
+            'label' => 'API Analytics',
+            'url' => '/cms/system/api-analytics',
+            'icon' => 'bar-chart',
+            'match' => 'exact:/cms/system/api-analytics',
+            'permission' => 'api-keys.manage',
+        ]);
+
+        $sidebar->addItem('system', [
+            'id' => 'system-queue',
+            'label' => 'Queue Monitor',
+            'url' => '/cms/system/queue',
+            'icon' => 'layers',
+            'match' => 'prefix:/cms/system/queue',
+            'permission' => 'settings.edit',
+        ]);
+
+        $sidebar->addItem('system', [
+            'id' => 'system-monitor',
+            'label' => 'System Monitor',
+            'url' => '/cms/system/monitor',
+            'icon' => 'activity',
+            'match' => 'prefix:/cms/system/monitor',
+            'permission' => 'settings.view',
+        ]);
+
+        // Register built-in dashboard widgets
+        DashboardManager::getInstance()->registerBuiltInWidgets();
 
         // Register Twig helper functions
         $this->registerTwigHelpers($view, $themeManager);
@@ -162,11 +374,11 @@ class CmsServiceProvider
             require $routesFile;
         }
 
-        // Register dynamic page routes
-        $this->registerDynamicRoutes();
-
         // Register theme page routes from pages.json
         $this->registerThemePageRoutes($themeManager);
+
+        // Register frontend routes for collections with url_prefix
+        $this->registerCollectionRoutes($themeManager);
 
         // Auto-create CMS tables if they don't exist
         $this->ensureTablesExist();
@@ -244,26 +456,75 @@ class CmsServiceProvider
         $view->addFunction('cms_can', function (string $permission) {
             return \ZephyrPHP\Cms\Services\PermissionService::can($permission);
         });
-    }
 
-    /**
-     * Add collection entries as sub-items under the Collections sidebar item.
-     */
-    private function registerCollectionSidebarItems(SidebarManager $sidebar): void
-    {
-        try {
-            $pageTypes = PageType::findAll();
-            foreach ($pageTypes as $index => $col) {
-                $sidebar->addChild('collections', [
-                    'id' => 'collection-' . $col->getSlug(),
-                    'label' => $col->getName(),
-                    'url' => '/cms/collections/' . $col->getSlug() . '/entries',
-                    'match' => 'prefix:/cms/collections/' . $col->getSlug(),
-                ]);
+        // render_collection_form(slug, options) - Render an HTML form for public collection submission
+        $view->addFunction('render_collection_form', function (string $slug, array $options = []) {
+            return $this->renderCollectionForm($slug, $options);
+        });
+
+        // SEO helpers for theme templates
+        $view->addFunction('seo_meta', function (array $entry = [], ?string $collectionSlug = null) {
+            return $this->buildSeoOutput('meta', $entry, $collectionSlug);
+        });
+
+        $view->addFunction('og_tags', function (array $entry = [], ?string $collectionSlug = null) {
+            return $this->buildSeoOutput('og', $entry, $collectionSlug);
+        });
+
+        $view->addFunction('json_ld', function (array $entry = [], ?string $collectionSlug = null) {
+            return $this->buildSeoOutput('jsonld', $entry, $collectionSlug);
+        });
+
+        $view->addFunction('seo_title', function (array $entry = [], ?string $collectionSlug = null) {
+            return $this->buildSeoOutput('title', $entry, $collectionSlug);
+        });
+
+        $view->addFunction('notification_count', function () {
+            if (!\ZephyrPHP\Auth\Auth::check()) return 0;
+            $userId = \ZephyrPHP\Auth\Auth::user()?->getId();
+            if (!$userId) return 0;
+            return Services\NotificationService::getUnreadCount($userId);
+        });
+
+        $view->addFunction('current_locale', function () {
+            return Services\TranslationService::detectLocale();
+        });
+
+        $view->addFunction('available_locales', function () {
+            return Services\TranslationService::getActiveLanguages();
+        });
+
+        $view->addFunction('translate', function (string $key, ?string $locale = null) {
+            // Simple key-based translation — returns key if no translation found
+            return $key;
+        });
+
+        // Workflow helpers
+        $view->addFunction('workflow_stages', function ($collection) {
+            if ($collection instanceof \ZephyrPHP\Cms\Models\Collection) {
+                return $collection->getWorkflowStages();
             }
-        } catch (\Exception $e) {
-            // Tables may not exist yet
-        }
+            return ['draft', 'review', 'approved', 'published'];
+        });
+
+        $view->addFunction('workflow_current', function (array $entry) {
+            return $entry['status'] ?? 'draft';
+        });
+
+        $view->addFunction('workflow_history', function (string $tableName, $entryId) {
+            return Services\WorkflowService::getHistory($tableName, $entryId);
+        });
+
+        $view->addFunction('entry_translated', function (array $entry, ?string $locale = null) {
+            if ($locale === null) {
+                $locale = Services\TranslationService::detectLocale();
+            }
+            // Need collection context — get table from entry if available
+            // This is a convenience function for theme templates
+            $tableName = $entry['_table_name'] ?? null;
+            if (!$tableName) return $entry;
+            return Services\TranslationService::resolveEntry($entry, $tableName, $locale);
+        });
     }
 
     private function registerThemePageRoutes(ThemeManager $themeManager): void
@@ -389,46 +650,268 @@ class CmsServiceProvider
         }
     }
 
-    private function registerDynamicRoutes(): void
+    private function registerCollectionRoutes(ThemeManager $themeManager): void
     {
         try {
-            $pageTypes = PageType::findAll();
+            $collections = \ZephyrPHP\Cms\Models\Collection::findAll();
+            $view = \ZephyrPHP\View\View::getInstance();
+            $schema = new SchemaManager();
 
-            foreach ($pageTypes as $pageType) {
-                $prefix = $pageType->getUrlPrefix();
-                if (empty($prefix)) continue;
+            foreach ($collections as $collection) {
+                $prefix = $collection->getUrlPrefix();
+                if (empty($prefix)) {
+                    continue;
+                }
 
-                $prefix = '/' . ltrim(rtrim($prefix, '/'), '/');
+                $prefix = '/' . ltrim($prefix, '/');
+                $collSlug = $collection->getSlug();
+                $perPage = $collection->getItemsPerPage();
 
-                // Skip root prefix — a catch-all /{slug} would break other routes
-                if ($prefix === '/' || $prefix === '') continue;
+                // List route: /prefix
+                \ZephyrPHP\Router\Route::get($prefix, function () use ($collSlug, $perPage, $view, $themeManager, $collection) {
+                    $page = max(1, (int) ($_GET['page'] ?? 1));
+                    $result = collection($collSlug, ['page' => $page, 'per_page' => $perPage]);
 
-                $ptSlug = $pageType->getSlug();
+                    $sectionManager = new SectionManager($themeManager);
+                    $data = [
+                        'collection' => [
+                            'name' => $collection->getName(),
+                            'slug' => $collSlug,
+                            'description' => $collection->getDescription(),
+                        ],
+                        'entries' => $result,
+                        'page' => ['title' => $collection->getName()],
+                        'theme_settings' => $sectionManager->getGlobalSettings(),
+                    ];
 
-                if ($pageType->isDynamic()) {
-                    // Dynamic: listing + detail
-                    \ZephyrPHP\Router\Route::get($prefix, function () use ($ptSlug) {
-                        $controller = new \ZephyrPHP\Cms\Controllers\PageFrontendController();
-                        return $controller->listing($ptSlug);
-                    });
-                    \ZephyrPHP\Router\Route::get($prefix . '/{slug}', function (string $slug) use ($ptSlug) {
-                        $controller = new \ZephyrPHP\Cms\Controllers\PageFrontendController();
-                        return $controller->detail($ptSlug, $slug);
-                    });
-                } else {
-                    // Static: show pages at this prefix
-                    \ZephyrPHP\Router\Route::get($prefix, function () use ($ptSlug) {
-                        $controller = new \ZephyrPHP\Cms\Controllers\PageFrontendController();
-                        return $controller->staticPage($ptSlug);
-                    });
-                    \ZephyrPHP\Router\Route::get($prefix . '/{slug}', function (string $slug) use ($ptSlug) {
-                        $controller = new \ZephyrPHP\Cms\Controllers\PageFrontendController();
-                        return $controller->staticPage($ptSlug, $slug);
+                    // Try theme template first, then fallback
+                    $templates = [
+                        "@theme/templates/collection-{$collSlug}",
+                        '@theme/templates/collection',
+                    ];
+
+                    foreach ($templates as $tpl) {
+                        if ($view->exists($tpl)) {
+                            echo $view->render($tpl, $data);
+                            return;
+                        }
+                    }
+
+                    // Generic fallback — render layout with sections if available
+                    if ($sectionManager->hasSections(null, "collection-{$collSlug}")) {
+                        $data['sections_html'] = $sectionManager->renderSections("collection-{$collSlug}");
+                        $data['use_sections'] = true;
+                        echo $view->render('@theme/layouts/base', $data);
+                    } else {
+                        echo $view->render('@theme/layouts/base', $data);
+                    }
+                });
+
+                // Detail route: /prefix/{slug} (only if collection has slugs)
+                if ($collection->hasSlug()) {
+                    \ZephyrPHP\Router\Route::get($prefix . '/{entrySlug}', function (string $entrySlug) use ($collSlug, $view, $themeManager, $collection) {
+                        $entryData = entry($collSlug, $entrySlug);
+                        if (!$entryData) {
+                            http_response_code(404);
+                            if ($view->exists('errors/404')) {
+                                echo $view->render('errors/404', []);
+                            } else {
+                                echo '<h1>404 — Not Found</h1>';
+                            }
+                            return;
+                        }
+
+                        // For publishable collections, only show published entries
+                        if ($collection->isPublishable() && ($entryData['status'] ?? '') !== 'published') {
+                            http_response_code(404);
+                            if ($view->exists('errors/404')) {
+                                echo $view->render('errors/404', []);
+                            } else {
+                                echo '<h1>404 — Not Found</h1>';
+                            }
+                            return;
+                        }
+
+                        $sectionManager = new SectionManager($themeManager);
+
+                        // Apply locale translations
+                        if ($collection->isTranslatable()) {
+                            $locale = Services\TranslationService::detectLocale();
+                            $entryData = Services\TranslationService::resolveEntry($entryData, $collection->getTableName(), $locale);
+                        }
+
+                        // Resolve SEO meta for this entry
+                        $seoMeta = [];
+                        if ($collection->isSeoEnabled()) {
+                            $seoMeta = Services\SeoService::getEntryMeta($entryData, $collection);
+                        }
+
+                        $pageTitle = $entryData['title'] ?? $entryData['name'] ?? $collection->getName();
+                        if (!empty($seoMeta['title'])) {
+                            $pageTitle = $seoMeta['title'];
+                        }
+
+                        $data = [
+                            'collection' => [
+                                'name' => $collection->getName(),
+                                'slug' => $collSlug,
+                            ],
+                            'entry' => $entryData,
+                            'page' => ['title' => $pageTitle],
+                            'seo' => $seoMeta,
+                            'seo_meta_tags' => $collection->isSeoEnabled() ? Services\SeoService::buildMetaTags($seoMeta) : '',
+                            'seo_og_tags' => $collection->isSeoEnabled() ? Services\SeoService::buildOgTags($seoMeta) : '',
+                            'seo_json_ld' => $collection->isSeoEnabled() ? '<script type="application/ld+json">' . Services\SeoService::generateJsonLd($entryData, $collection, $this->getBaseUrl()) . '</script>' : '',
+                            'theme_settings' => $sectionManager->getGlobalSettings(),
+                        ];
+
+                        $templates = [
+                            "@theme/templates/collection-{$collSlug}-detail",
+                            '@theme/templates/collection-detail',
+                        ];
+
+                        foreach ($templates as $tpl) {
+                            if ($view->exists($tpl)) {
+                                echo $view->render($tpl, $data);
+                                return;
+                            }
+                        }
+
+                        echo $view->render('@theme/layouts/base', $data);
                     });
                 }
             }
         } catch (\Exception $e) {
-            // Tables may not exist yet on first load
+            // Collections may not exist yet
+        }
+    }
+
+    private function buildSeoOutput(string $type, array $entry, ?string $collectionSlug): string
+    {
+        try {
+            if (empty($entry) || empty($collectionSlug)) {
+                return '';
+            }
+
+            $collection = \ZephyrPHP\Cms\Models\Collection::findOneBy(['slug' => $collectionSlug]);
+            if (!$collection || !$collection->isSeoEnabled()) {
+                return '';
+            }
+
+            $meta = Services\SeoService::getEntryMeta($entry, $collection);
+
+            return match ($type) {
+                'meta' => Services\SeoService::buildMetaTags($meta),
+                'og' => Services\SeoService::buildOgTags($meta),
+                'jsonld' => '<script type="application/ld+json">' . Services\SeoService::generateJsonLd($entry, $collection, $this->getBaseUrl()) . '</script>',
+                'title' => $meta['title'],
+                default => '',
+            };
+        } catch (\Exception $e) {
+            return '';
+        }
+    }
+
+    private function getBaseUrl(): string
+    {
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        return $scheme . '://' . $host;
+    }
+
+    private function renderCollectionForm(string $slug, array $options = []): string
+    {
+        try {
+            $collection = \ZephyrPHP\Cms\Models\Collection::findOneBy(['slug' => $slug]);
+            if (!$collection || !$collection->isSubmittable()) {
+                return '<!-- Collection not found or not submittable -->';
+            }
+
+            $fields = $collection->getFields()->toArray();
+            $settings = $collection->getSubmitSettings() ?? [];
+            $cssClass = $options['class'] ?? 'collection-form';
+            $buttonText = $options['button'] ?? $settings['submit_button_text'] ?? 'Submit';
+
+            $html = '<form method="POST" action="/collections/' . htmlspecialchars($slug) . '/submit"';
+            $html .= ' class="' . htmlspecialchars($cssClass) . '">';
+            $html .= \ZephyrPHP\Security\Csrf::getHiddenInput();
+
+            // Honeypot field (hidden from users, catches bots)
+            if (!empty($settings['honeypot_enabled'])) {
+                $html .= '<div style="position:absolute;left:-9999px;"><input type="text" name="_hp_email" tabindex="-1" autocomplete="off"></div>';
+            }
+
+            foreach ($fields as $field) {
+                // Skip types not suitable for public forms
+                if (in_array($field->getType(), ['relation', 'file', 'image', 'json', 'richtext', 'slug'])) {
+                    continue;
+                }
+
+                $fieldSlug = htmlspecialchars($field->getSlug());
+                $fieldName = htmlspecialchars($field->getName());
+                $required = $field->isRequired() ? ' required' : '';
+                $requiredMark = $field->isRequired() ? ' <span class="required">*</span>' : '';
+
+                $html .= '<div class="form-group">';
+                $html .= '<label for="' . $fieldSlug . '">' . $fieldName . $requiredMark . '</label>';
+
+                switch ($field->getType()) {
+                    case 'textarea':
+                        $html .= '<textarea id="' . $fieldSlug . '" name="' . $fieldSlug . '" class="form-control" rows="4"' . $required . '></textarea>';
+                        break;
+
+                    case 'select':
+                        $choices = $field->getOptions()['choices'] ?? [];
+                        $html .= '<select id="' . $fieldSlug . '" name="' . $fieldSlug . '" class="form-control"' . $required . '>';
+                        $html .= '<option value="">-- Select --</option>';
+                        foreach ($choices as $choice) {
+                            $html .= '<option value="' . htmlspecialchars($choice) . '">' . htmlspecialchars($choice) . '</option>';
+                        }
+                        $html .= '</select>';
+                        break;
+
+                    case 'boolean':
+                        $html .= '<label class="checkbox-label"><input type="checkbox" id="' . $fieldSlug . '" name="' . $fieldSlug . '" value="1"> ' . $fieldName . '</label>';
+                        break;
+
+                    case 'email':
+                        $html .= '<input type="email" id="' . $fieldSlug . '" name="' . $fieldSlug . '" class="form-control"' . $required . '>';
+                        break;
+
+                    case 'url':
+                        $html .= '<input type="url" id="' . $fieldSlug . '" name="' . $fieldSlug . '" class="form-control"' . $required . '>';
+                        break;
+
+                    case 'number':
+                    case 'decimal':
+                        $step = $field->getType() === 'decimal' ? ' step="0.01"' : '';
+                        $html .= '<input type="number" id="' . $fieldSlug . '" name="' . $fieldSlug . '" class="form-control"' . $step . $required . '>';
+                        break;
+
+                    case 'date':
+                        $html .= '<input type="date" id="' . $fieldSlug . '" name="' . $fieldSlug . '" class="form-control"' . $required . '>';
+                        break;
+
+                    case 'datetime':
+                        $html .= '<input type="datetime-local" id="' . $fieldSlug . '" name="' . $fieldSlug . '" class="form-control"' . $required . '>';
+                        break;
+
+                    default: // text
+                        $html .= '<input type="text" id="' . $fieldSlug . '" name="' . $fieldSlug . '" class="form-control"' . $required . '>';
+                        break;
+                }
+
+                $html .= '</div>';
+            }
+
+            $html .= '<div class="form-actions">';
+            $html .= '<button type="submit" class="btn btn-primary">' . htmlspecialchars($buttonText) . '</button>';
+            $html .= '</div>';
+            $html .= '</form>';
+
+            return $html;
+        } catch (\Exception $e) {
+            return '<!-- Form render error: ' . htmlspecialchars($e->getMessage()) . ' -->';
         }
     }
 
@@ -439,52 +922,6 @@ class CmsServiceProvider
             if (!$conn) return;
 
             $sm = $conn->createSchemaManager();
-
-            // Fix: if tables exist with wrong column names (created_at instead of createdAt), drop and recreate
-            if ($sm->tablesExist(['cms_page_types'])) {
-                $columns = $sm->listTableColumns('cms_page_types');
-                if (isset($columns['created_at']) && !isset($columns['createdat'])) {
-                    $conn->executeStatement('SET FOREIGN_KEY_CHECKS = 0');
-                    $conn->executeStatement('DROP TABLE IF EXISTS `cms_page_type_fields`');
-                    $conn->executeStatement('DROP TABLE IF EXISTS `cms_page_types`');
-                    $conn->executeStatement('SET FOREIGN_KEY_CHECKS = 1');
-                }
-            }
-
-            if (!$sm->tablesExist(['cms_page_types'])) {
-                $conn->executeStatement("CREATE TABLE `cms_page_types` (
-                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                    `name` VARCHAR(255) NOT NULL,
-                    `slug` VARCHAR(100) NOT NULL,
-                    `template` VARCHAR(255) NOT NULL,
-                    `description` TEXT NULL DEFAULT NULL,
-                    `has_seo` TINYINT(1) NOT NULL DEFAULT 1,
-                    `is_publishable` TINYINT(1) NOT NULL DEFAULT 1,
-                    `created_by` INT NULL DEFAULT NULL,
-                    `page_mode` VARCHAR(20) NOT NULL DEFAULT 'static',
-                    `layout` VARCHAR(100) NOT NULL DEFAULT 'base',
-                    `url_prefix` VARCHAR(255) NULL DEFAULT NULL,
-                    `items_per_page` INT NOT NULL DEFAULT 10,
-                    `createdAt` DATETIME NULL DEFAULT NULL,
-                    `updatedAt` DATETIME NULL DEFAULT NULL,
-                    UNIQUE KEY `uniq_slug` (`slug`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-            } else {
-                // Migration: add new columns if they don't exist
-                $columns = $sm->listTableColumns('cms_page_types');
-                if (!isset($columns['page_mode'])) {
-                    $conn->executeStatement("ALTER TABLE `cms_page_types` ADD COLUMN `page_mode` VARCHAR(20) NOT NULL DEFAULT 'static'");
-                }
-                if (!isset($columns['layout'])) {
-                    $conn->executeStatement("ALTER TABLE `cms_page_types` ADD COLUMN `layout` VARCHAR(100) NOT NULL DEFAULT 'base'");
-                }
-                if (!isset($columns['url_prefix'])) {
-                    $conn->executeStatement("ALTER TABLE `cms_page_types` ADD COLUMN `url_prefix` VARCHAR(255) NULL DEFAULT NULL");
-                }
-                if (!isset($columns['items_per_page'])) {
-                    $conn->executeStatement("ALTER TABLE `cms_page_types` ADD COLUMN `items_per_page` INT NOT NULL DEFAULT 10");
-                }
-            }
 
             // Themes table
             if (!$sm->tablesExist(['cms_themes'])) {
@@ -509,25 +946,7 @@ class CmsServiceProvider
                 }
             }
 
-            if (!$sm->tablesExist(['cms_page_type_fields'])) {
-                $conn->executeStatement("CREATE TABLE `cms_page_type_fields` (
-                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                    `page_type_id` INT UNSIGNED NOT NULL,
-                    `name` VARCHAR(255) NOT NULL,
-                    `slug` VARCHAR(100) NOT NULL,
-                    `type` VARCHAR(50) NOT NULL DEFAULT 'text',
-                    `options` JSON NULL DEFAULT NULL,
-                    `is_required` TINYINT(1) NOT NULL DEFAULT 0,
-                    `is_searchable` TINYINT(1) NOT NULL DEFAULT 0,
-                    `is_listable` TINYINT(1) NOT NULL DEFAULT 1,
-                    `default_value` TEXT NULL DEFAULT NULL,
-                    `sort_order` INT NOT NULL DEFAULT 0,
-                    `createdAt` DATETIME NULL DEFAULT NULL,
-                    `updatedAt` DATETIME NULL DEFAULT NULL,
-                    CONSTRAINT `fk_ptf_page_type` FOREIGN KEY (`page_type_id`) REFERENCES `cms_page_types`(`id`) ON DELETE CASCADE
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-            }
-            // Migrate cms_collections: add has_slug and slug_source_field columns
+            // Migrate cms_collections: add columns for newer features
             if ($sm->tablesExist(['cms_collections'])) {
                 $columns = $sm->listTableColumns('cms_collections');
                 if (!isset($columns['has_slug'])) {
@@ -535,6 +954,39 @@ class CmsServiceProvider
                 }
                 if (!isset($columns['slug_source_field'])) {
                     $conn->executeStatement("ALTER TABLE `cms_collections` ADD COLUMN `slug_source_field` VARCHAR(100) NULL DEFAULT NULL");
+                }
+                if (!isset($columns['is_submittable'])) {
+                    $conn->executeStatement("ALTER TABLE `cms_collections` ADD COLUMN `is_submittable` TINYINT(1) NOT NULL DEFAULT 0");
+                }
+                if (!isset($columns['submit_settings'])) {
+                    $conn->executeStatement("ALTER TABLE `cms_collections` ADD COLUMN `submit_settings` JSON NULL DEFAULT NULL");
+                }
+                if (!isset($columns['url_prefix'])) {
+                    $conn->executeStatement("ALTER TABLE `cms_collections` ADD COLUMN `url_prefix` VARCHAR(100) NULL DEFAULT NULL");
+                }
+                if (!isset($columns['items_per_page'])) {
+                    $conn->executeStatement("ALTER TABLE `cms_collections` ADD COLUMN `items_per_page` INT NOT NULL DEFAULT 10");
+                }
+                if (!isset($columns['permissions'])) {
+                    $conn->executeStatement("ALTER TABLE `cms_collections` ADD COLUMN `permissions` JSON NULL DEFAULT NULL");
+                }
+                if (!isset($columns['api_rate_limit'])) {
+                    $conn->executeStatement("ALTER TABLE `cms_collections` ADD COLUMN `api_rate_limit` INT NOT NULL DEFAULT 0");
+                }
+                if (!isset($columns['seo_enabled'])) {
+                    $conn->executeStatement("ALTER TABLE `cms_collections` ADD COLUMN `seo_enabled` TINYINT(1) NOT NULL DEFAULT 0");
+                }
+                if (!isset($columns['is_translatable'])) {
+                    $conn->executeStatement("ALTER TABLE `cms_collections` ADD COLUMN `is_translatable` TINYINT(1) NOT NULL DEFAULT 0");
+                }
+                if (!isset($columns['workflow_enabled'])) {
+                    $conn->executeStatement("ALTER TABLE `cms_collections` ADD COLUMN `workflow_enabled` TINYINT(1) NOT NULL DEFAULT 0");
+                }
+                if (!isset($columns['workflow_stages'])) {
+                    $conn->executeStatement("ALTER TABLE `cms_collections` ADD COLUMN `workflow_stages` JSON NULL DEFAULT NULL");
+                }
+                if (!isset($columns['workflow_reviewers'])) {
+                    $conn->executeStatement("ALTER TABLE `cms_collections` ADD COLUMN `workflow_reviewers` JSON NULL DEFAULT NULL");
                 }
             }
 
@@ -730,6 +1182,159 @@ class CmsServiceProvider
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
             }
 
+            // Activity Log (system-wide audit trail)
+            if (!$sm->tablesExist(['cms_activity_log'])) {
+                $conn->executeStatement("CREATE TABLE `cms_activity_log` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `action` VARCHAR(50) NOT NULL,
+                    `resource_type` VARCHAR(50) NOT NULL,
+                    `resource_id` VARCHAR(100) NULL DEFAULT NULL,
+                    `resource_label` VARCHAR(255) NULL DEFAULT NULL,
+                    `user_id` INT NULL DEFAULT NULL,
+                    `user_name` VARCHAR(255) NULL DEFAULT NULL,
+                    `ip_address` VARCHAR(45) NULL DEFAULT NULL,
+                    `meta` JSON NULL DEFAULT NULL,
+                    `createdAt` DATETIME NULL DEFAULT NULL,
+                    `updatedAt` DATETIME NULL DEFAULT NULL,
+                    INDEX `idx_al_action` (`action`),
+                    INDEX `idx_al_resource` (`resource_type`, `resource_id`),
+                    INDEX `idx_al_user` (`user_id`),
+                    INDEX `idx_al_created` (`createdAt`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            }
+
+            // Languages
+            if (!$sm->tablesExist(['cms_languages'])) {
+                $conn->executeStatement("CREATE TABLE `cms_languages` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `code` VARCHAR(10) NOT NULL,
+                    `name` VARCHAR(100) NOT NULL,
+                    `native_name` VARCHAR(100) NOT NULL,
+                    `is_default` TINYINT(1) NOT NULL DEFAULT 0,
+                    `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+                    `sort_order` INT NOT NULL DEFAULT 0,
+                    `createdAt` DATETIME NULL DEFAULT NULL,
+                    `updatedAt` DATETIME NULL DEFAULT NULL,
+                    UNIQUE KEY `uniq_lang_code` (`code`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            }
+
+            // Translations (EAV-style per-field)
+            if (!$sm->tablesExist(['cms_translations'])) {
+                $conn->executeStatement("CREATE TABLE `cms_translations` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `table_name` VARCHAR(255) NOT NULL,
+                    `entry_id` VARCHAR(50) NOT NULL,
+                    `locale` VARCHAR(10) NOT NULL,
+                    `field_slug` VARCHAR(100) NOT NULL,
+                    `value` TEXT NULL DEFAULT NULL,
+                    `createdAt` DATETIME NULL DEFAULT NULL,
+                    `updatedAt` DATETIME NULL DEFAULT NULL,
+                    UNIQUE KEY `uniq_translation` (`table_name`, `entry_id`, `locale`, `field_slug`),
+                    INDEX `idx_trans_entry` (`table_name`, `entry_id`),
+                    INDEX `idx_trans_locale` (`locale`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            }
+
+            // Saved Views (per-collection filter presets)
+            if (!$sm->tablesExist(['cms_saved_views'])) {
+                $conn->executeStatement("CREATE TABLE `cms_saved_views` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `collection_slug` VARCHAR(100) NOT NULL,
+                    `name` VARCHAR(255) NOT NULL,
+                    `slug` VARCHAR(100) NOT NULL,
+                    `filters` JSON NOT NULL,
+                    `sort_by` VARCHAR(100) NULL DEFAULT NULL,
+                    `sort_dir` VARCHAR(4) NOT NULL DEFAULT 'DESC',
+                    `is_default` TINYINT(1) NOT NULL DEFAULT 0,
+                    `created_by` INT NULL DEFAULT NULL,
+                    `sort_order` INT NOT NULL DEFAULT 0,
+                    `createdAt` DATETIME NULL DEFAULT NULL,
+                    `updatedAt` DATETIME NULL DEFAULT NULL,
+                    INDEX `idx_sv_collection` (`collection_slug`),
+                    UNIQUE KEY `uniq_sv_slug` (`collection_slug`, `slug`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            }
+
+            // Dashboard Layouts (per-user widget configuration)
+            if (!$sm->tablesExist(['cms_dashboard_layouts'])) {
+                $conn->executeStatement("CREATE TABLE `cms_dashboard_layouts` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `user_id` INT UNSIGNED NOT NULL,
+                    `layout` JSON NOT NULL,
+                    `createdAt` DATETIME NULL DEFAULT NULL,
+                    `updatedAt` DATETIME NULL DEFAULT NULL,
+                    UNIQUE KEY `uniq_user_layout` (`user_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            }
+
+            // Notifications
+            if (!$sm->tablesExist(['cms_notifications'])) {
+                $conn->executeStatement("CREATE TABLE `cms_notifications` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `user_id` INT UNSIGNED NOT NULL,
+                    `type` VARCHAR(50) NOT NULL,
+                    `title` VARCHAR(255) NOT NULL,
+                    `body` TEXT NULL DEFAULT NULL,
+                    `link` VARCHAR(500) NULL DEFAULT NULL,
+                    `is_read` TINYINT(1) NOT NULL DEFAULT 0,
+                    `meta` JSON NULL DEFAULT NULL,
+                    `createdAt` DATETIME NULL DEFAULT NULL,
+                    `updatedAt` DATETIME NULL DEFAULT NULL,
+                    INDEX `idx_notif_user_read` (`user_id`, `is_read`),
+                    INDEX `idx_notif_created` (`createdAt`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            }
+
+            // Notification Preferences
+            if (!$sm->tablesExist(['cms_notification_preferences'])) {
+                $conn->executeStatement("CREATE TABLE `cms_notification_preferences` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `user_id` INT UNSIGNED NOT NULL,
+                    `preferences` JSON NOT NULL,
+                    `createdAt` DATETIME NULL DEFAULT NULL,
+                    `updatedAt` DATETIME NULL DEFAULT NULL,
+                    UNIQUE KEY `uniq_notif_pref_user` (`user_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            }
+
+            // Email Templates
+            if (!$sm->tablesExist(['cms_email_templates'])) {
+                $conn->executeStatement("CREATE TABLE `cms_email_templates` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `slug` VARCHAR(100) NOT NULL,
+                    `name` VARCHAR(255) NOT NULL,
+                    `subject` VARCHAR(255) NOT NULL,
+                    `body_twig` TEXT NOT NULL,
+                    `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+                    `createdAt` DATETIME NULL DEFAULT NULL,
+                    `updatedAt` DATETIME NULL DEFAULT NULL,
+                    UNIQUE KEY `uniq_email_tpl_slug` (`slug`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+                // Seed default email templates
+                $this->seedEmailTemplates($conn);
+            }
+
+            // Workflow Transitions
+            if (!$sm->tablesExist(['cms_workflow_transitions'])) {
+                $conn->executeStatement("CREATE TABLE `cms_workflow_transitions` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `table_name` VARCHAR(255) NOT NULL,
+                    `entry_id` VARCHAR(50) NOT NULL,
+                    `from_stage` VARCHAR(50) NOT NULL,
+                    `to_stage` VARCHAR(50) NOT NULL,
+                    `user_id` INT NULL DEFAULT NULL,
+                    `user_name` VARCHAR(255) NULL DEFAULT NULL,
+                    `comment` TEXT NULL DEFAULT NULL,
+                    `action` VARCHAR(20) NOT NULL DEFAULT 'advance',
+                    `createdAt` DATETIME NULL DEFAULT NULL,
+                    `updatedAt` DATETIME NULL DEFAULT NULL,
+                    INDEX `idx_wft_entry` (`table_name`, `entry_id`),
+                    INDEX `idx_wft_created` (`createdAt`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            }
+
             // AI Builder History
             if (!$sm->tablesExist(['cms_ai_history'])) {
                 $conn->executeStatement("CREATE TABLE `cms_ai_history` (
@@ -747,6 +1352,49 @@ class CmsServiceProvider
             }
         } catch (\Exception $e) {
             // Silently fail - tables will be created on next request or via CLI
+        }
+    }
+
+    private function seedEmailTemplates($conn): void
+    {
+        $now = (new \DateTime())->format('Y-m-d H:i:s');
+        $templates = [
+            [
+                'slug' => 'entry-published',
+                'name' => 'Entry Published',
+                'subject' => '[{{ app_name }}] "{{ entry_title }}" has been published',
+                'body_twig' => '<h2>Entry Published</h2><p>The entry <strong>{{ entry_title }}</strong> in the <em>{{ collection_name }}</em> collection has been published.</p><p><a href="{{ entry_url }}">View Entry</a></p>',
+            ],
+            [
+                'slug' => 'form-submitted',
+                'name' => 'Form Submission Received',
+                'subject' => '[{{ app_name }}] New submission in "{{ collection_name }}"',
+                'body_twig' => '<h2>New Submission</h2><p>A new entry has been submitted to the <em>{{ collection_name }}</em> collection.</p>{% if fields is defined %}{% for key, val in fields %}<p><strong>{{ key }}:</strong> {{ val }}</p>{% endfor %}{% endif %}<p><a href="{{ entry_url }}">Review Submission</a></p>',
+            ],
+            [
+                'slug' => 'user-registered',
+                'name' => 'User Registered',
+                'subject' => '[{{ app_name }}] New user registration: {{ user_name }}',
+                'body_twig' => '<h2>New User Registration</h2><p>A new user has registered:</p><ul><li><strong>Name:</strong> {{ user_name }}</li><li><strong>Email:</strong> {{ user_email }}</li></ul><p><a href="{{ admin_url }}">Go to Admin</a></p>',
+            ],
+            [
+                'slug' => 'scheduled-published',
+                'name' => 'Scheduled Entry Published',
+                'subject' => '[{{ app_name }}] Scheduled entry "{{ entry_title }}" is now live',
+                'body_twig' => '<h2>Scheduled Entry Published</h2><p>The scheduled entry <strong>{{ entry_title }}</strong> in <em>{{ collection_name }}</em> has been automatically published.</p><p><a href="{{ entry_url }}">View Entry</a></p>',
+            ],
+        ];
+
+        foreach ($templates as $tpl) {
+            $conn->insert('cms_email_templates', [
+                'slug' => $tpl['slug'],
+                'name' => $tpl['name'],
+                'subject' => $tpl['subject'],
+                'body_twig' => $tpl['body_twig'],
+                'is_active' => 1,
+                'createdAt' => $now,
+                'updatedAt' => $now,
+            ]);
         }
     }
 }

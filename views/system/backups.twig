@@ -1,0 +1,84 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Backup Manager{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / System / Backups
+</div>
+
+<div class="page-header">
+    <h1>Backup Manager</h1>
+</div>
+
+{# Create Backup #}
+<div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card-header"><h3 style="margin:0; font-size:1rem;">Create New Backup</h3></div>
+    <div class="card-body">
+        <div style="display: flex; gap: var(--space-300);">
+            <form method="POST" action="/cms/system/backups/create" style="display: inline;">
+                {{ csrf_field() | raw }}
+                <input type="hidden" name="type" value="full">
+                <button type="submit" class="btn btn-primary">Full Backup</button>
+            </form>
+            <form method="POST" action="/cms/system/backups/create" style="display: inline;">
+                {{ csrf_field() | raw }}
+                <input type="hidden" name="type" value="database">
+                <button type="submit" class="btn btn-outline">Database Only</button>
+            </form>
+            <form method="POST" action="/cms/system/backups/create" style="display: inline;">
+                {{ csrf_field() | raw }}
+                <input type="hidden" name="type" value="files">
+                <button type="submit" class="btn btn-outline">Files Only</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# Backup List #}
+{% if backups|length > 0 %}
+<div class="card">
+    <div class="card-header"><h3 style="margin:0; font-size:1rem;">Existing Backups</h3></div>
+    <div class="card-body" style="padding: 0;">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Filename</th>
+                        <th>Type</th>
+                        <th>Size</th>
+                        <th>Created</th>
+                        <th style="width: 150px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for backup in backups %}
+                    <tr>
+                        <td style="font-family: monospace; font-size: 0.85rem;">{{ backup.name }}</td>
+                        <td><span class="badge">{{ backup.type|title }}</span></td>
+                        <td>{{ backup.size }}</td>
+                        <td>{{ backup.created }}</td>
+                        <td>
+                            <div style="display: flex; gap: var(--space-200);">
+                                <a href="/cms/system/backups/{{ backup.name }}/download" class="btn btn-outline btn-sm">Download</a>
+                                <form method="POST" action="/cms/system/backups/{{ backup.name }}/delete" style="display: inline;" onsubmit="return confirm('Delete this backup?')">
+                                    {{ csrf_field() | raw }}
+                                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="empty-state">
+    <h3>No backups yet</h3>
+    <p>Create a backup above to get started.</p>
+</div>
+{% endif %}
+
+{% endblock %}

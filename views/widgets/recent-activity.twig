@@ -1,0 +1,29 @@
+{% if logs|length > 0 %}
+<div style="display: flex; flex-direction: column; gap: 8px;">
+    {% for log in logs %}
+    <div style="display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border-color);">
+        {% set actionColor = {
+            'created': '#d4edda',
+            'updated': '#fff3cd',
+            'deleted': '#f8d7da',
+            'published': '#cce5ff',
+            'login': '#e2e3e5'
+        } %}
+        <span class="badge" style="background: {{ actionColor[log.action] ?? '#e2e3e5' }}; color: #333; font-size: 0.75em;">
+            {{ log.action }}
+        </span>
+        <span style="flex: 1; font-size: 0.9em;">
+            {{ log.resource_label ?? log.resource_type }}
+        </span>
+        <span style="font-size: 0.8em; color: var(--text-secondary); white-space: nowrap;">
+            {{ log.createdAt ? log.createdAt[:10] : '' }}
+        </span>
+    </div>
+    {% endfor %}
+</div>
+<div style="margin-top: 8px;">
+    <a href="/cms/activity-log" style="font-size: 0.85em;">View all activity &rarr;</a>
+</div>
+{% else %}
+<p class="text-muted">No activity recorded yet.</p>
+{% endif %}

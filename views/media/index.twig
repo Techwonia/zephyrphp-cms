@@ -5,58 +5,178 @@
 {% block content %}
 <div class="breadcrumb">
     <a href="/cms">Dashboard</a> / Media
+    {% if currentFolder %}
+        {% set parts = currentFolder|split('/') %}
+        {% set pathSoFar = '' %}
+        {% for part in parts %}
+            {% set pathSoFar = pathSoFar ? pathSoFar ~ '/' ~ part : part %}
+            / <a href="/cms/media?folder={{ pathSoFar }}">{{ part }}</a>
+        {% endfor %}
+    {% endif %}
 </div>
 
 <div class="page-header">
     <h1>Media Library</h1>
-    <div class="page-actions">
-        <button class="btn btn-primary" id="toggle-upload-btn">
-            + Upload File
-        </button>
+    <div class="page-actions" style="display: flex; gap: var(--space-200);">
+        <button class="btn btn-outline" id="toggle-folder-btn">+ Folder</button>
+        <button class="btn btn-primary" id="toggle-upload-btn">+ Upload File</button>
+    </div>
+</div>
+
+{# Create Folder Form #}
+<div id="folder-form" class="card" style="display: none; margin-bottom: var(--space-400);">
+    <div class="card-body">
+        <form method="POST" action="/cms/media/folders/create" style="display: flex; gap: var(--space-300); align-items: flex-end;">
+            {{ csrf_field() | raw }}
+            <input type="hidden" name="parent_folder" value="{{ currentFolder }}">
+            <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                <label for="folder_name">Folder Name</label>
+                <input type="text" id="folder_name" name="folder_name" class="form-control"
+                       placeholder="e.g. products, banners" pattern="[a-zA-Z0-9_\-]+" required>
+                <small style="color: var(--text-secondary);">Letters, numbers, hyphens, underscores only.</small>
+            </div>
+            <button type="submit" class="btn btn-primary">Create Folder</button>
+        </form>
     </div>
 </div>
 
 {# Upload Form #}
-<div id="upload-form" class="card upload-card" style="display: none;">
+<div id="upload-form" class="card upload-card" style="display: none; margin-bottom: var(--space-400);">
     <div class="card-body">
         <form method="POST" action="/cms/media/upload" enctype="multipart/form-data">
             {{ csrf_field() | raw }}
-            <div class="upload-row">
-                <div class="form-group upload-field">
+            <input type="hidden" name="folder" value="{{ currentFolder }}">
+            <div class="upload-row" style="display: flex; gap: var(--space-300); align-items: flex-end;">
+                <div class="form-group upload-field" style="flex: 1; margin-bottom: 0;">
                     <label for="file">Select File</label>
                     <input type="file" id="file" name="file" class="form-control" required>
                 </div>
                 <button type="submit" class="btn btn-primary">Upload</button>
             </div>
-            <p class="text-muted">
+            <p class="text-muted" style="margin-top: var(--space-200);">
                 Allowed: images, PDF, SVG, ZIP, and documents. Max size: {{ config('cms.max_upload_size', '10MB') }}.
+                {% if currentFolder %}<strong>Uploading to: {{ currentFolder }}</strong>{% endif %}
             </p>
         </form>
     </div>
 </div>
 
+{# Filters & Search #}
+<div class="card" style="margin-bottom: var(--space-400);">
+    <div class="card-body" style="padding: var(--space-300);">
+        <form method="GET" action="/cms/media" style="display: flex; gap: var(--space-300); align-items: flex-end; flex-wrap: wrap;">
+            {% if currentFolder %}
+                <input type="hidden" name="folder" value="{{ currentFolder }}">
+            {% endif %}
+            <div class="form-group" style="margin-bottom: 0; min-width: 200px;">
+                <label class="form-label" style="font-size: 0.8rem;">Search</label>
+                <input type="text" name="search" class="form-control" value="{{ search }}" placeholder="File name...">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="font-size: 0.8rem;">Type</label>
+                <select name="filter" class="form-control">
+                    <option value="all" {{ currentFilter == 'all' ? 'selected' : '' }}>All Files</option>
+                    <option value="images" {{ currentFilter == 'images' ? 'selected' : '' }}>Images</option>
+                    <option value="documents" {{ currentFilter == 'documents' ? 'selected' : '' }}>Documents</option>
+                    <option value="video" {{ currentFilter == 'video' ? 'selected' : '' }}>Video</option>
+                    <option value="audio" {{ currentFilter == 'audio' ? 'selected' : '' }}>Audio</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-outline">Filter</button>
+            {% if search or currentFilter != 'all' %}
+                <a href="/cms/media{% if currentFolder %}?folder={{ currentFolder }}{% endif %}" class="btn btn-outline">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+{# Folder Navigation #}
+{% if folders|length > 0 or currentFolder %}
+<div style="display: flex; gap: var(--space-200); flex-wrap: wrap; margin-bottom: var(--space-400);">
+    {% if currentFolder %}
+        {% set parentFolder = currentFolder|split('/')|slice(0, -1)|join('/') %}
+        <a href="/cms/media{% if parentFolder %}?folder={{ parentFolder }}{% endif %}" class="btn btn-outline btn-sm" style="display: inline-flex; align-items: center; gap: 4px;">
+            &larr; Up
+        </a>
+    {% endif %}
+    {% for folder in folders %}
+        {% set folderName = folder|split('/')|last %}
+        {% set isChild = currentFolder ? (folder starts with currentFolder ~ '/' and folder|split('/')|length == currentFolder|split('/')|length + 1) : (folder|split('/')|length == 1) %}
+        {% if isChild %}
+        <div style="display: inline-flex; align-items: center; gap: 0;">
+            <a href="/cms/media?folder={{ folder }}" class="btn btn-outline btn-sm" style="border-radius: 4px 0 0 4px;">
+                &#128193; {{ folderName }}
+            </a>
+            <div style="position: relative; display: inline-block;">
+                <button class="btn btn-outline btn-sm folder-menu-btn" data-folder="{{ folder }}" style="border-radius: 0 4px 4px 0; border-left: 0; padding: 4px 6px;">&#8942;</button>
+                <div class="folder-menu" data-folder="{{ folder }}" style="display:none; position:absolute; top:100%; right:0; background:var(--bg-primary); border:1px solid var(--border-color); border-radius:4px; z-index:10; min-width:150px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+                    <button class="folder-action" data-action="rename" data-folder="{{ folder }}" data-name="{{ folderName }}" style="display:block; width:100%; text-align:left; padding:8px 12px; border:none; background:none; cursor:pointer; font-size:0.85rem;">Rename</button>
+                    <form method="POST" action="/cms/media/folders/delete" style="margin:0;" onsubmit="return confirm('Delete folder {{ folderName }}?')">
+                        {{ csrf_field() | raw }}
+                        <input type="hidden" name="folder_path" value="{{ folder }}">
+                        <button type="submit" style="display:block; width:100%; text-align:left; padding:8px 12px; border:none; background:none; cursor:pointer; color:var(--danger); font-size:0.85rem;">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    {% endfor %}
+</div>
+{% endif %}
+
+{# Bulk Action Bar #}
+<form method="POST" action="/cms/media/bulk" id="bulk-form">
+    {{ csrf_field() | raw }}
+
+    <div id="bulk-bar" style="display: none; margin-bottom: var(--space-400); padding: var(--space-300); background: var(--bg-secondary); border-radius: 8px; align-items: center; gap: var(--space-300);">
+        <span id="bulk-count">0 selected</span>
+        <select name="action" class="form-control" style="width: auto; display: inline-block;">
+            <option value="">Choose action...</option>
+            <option value="delete">Delete Selected</option>
+            <option value="move">Move to Folder</option>
+        </select>
+        <select name="target_folder" class="form-control" id="move-target" style="width: auto; display: none;">
+            <option value="">Root (date folder)</option>
+            {% for folder in folders %}
+                <option value="{{ folder }}">{{ folder }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-primary btn-sm" id="bulk-submit">Apply</button>
+    </div>
+
 {% if media|length > 0 %}
+<div style="margin-bottom: var(--space-200);">
+    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.85rem;">
+        <input type="checkbox" id="select-all"> Select All
+    </label>
+</div>
+
 <div class="media-grid">
     {% for item in media %}
-    <div class="media-card">
-        <div class="media-preview">
-            {% if item.isImage() %}
-                <img src="{{ item.getUrl() }}" alt="{{ item.getOriginalName() }}">
-            {% else %}
-                <div class="media-file-icon">&#128196;</div>
-            {% endif %}
+    <div class="media-card" data-id="{{ item.getId() }}">
+        <div style="position: absolute; top: 8px; left: 8px; z-index: 2;">
+            <input type="checkbox" name="ids[]" value="{{ item.getId() }}" class="media-checkbox">
         </div>
-        <div class="media-info">
-            <div class="media-name" title="{{ item.getOriginalName() }}">{{ item.getOriginalName() }}</div>
-            <div class="media-size">{{ item.getHumanSize() }}</div>
-            <div class="media-actions">
-                <button class="btn btn-sm btn-outline copy-url-btn" data-url="{{ item.getUrl() }}" title="Copy URL">Copy URL</button>
-                <form method="POST" action="/cms/media/{{ item.getId() }}/delete"
-                      style="display:inline" class="confirm-delete" data-message="Delete this file?">
-                    {{ csrf_field() | raw }}
-                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
-                </form>
+        <a href="/cms/media/{{ item.getId() }}" style="text-decoration: none; color: inherit;">
+            <div class="media-preview">
+                {% if item.isImage() %}
+                    <img src="{{ item.getThumbnailUrl() ?: item.getUrl() }}" alt="{{ item.getOriginalName() }}" loading="lazy">
+                {% else %}
+                    <div class="media-file-icon">&#128196;</div>
+                {% endif %}
             </div>
+            <div class="media-info">
+                <div class="media-name" title="{{ item.getOriginalName() }}">{{ item.getOriginalName() }}</div>
+                <div class="media-size">{{ item.getHumanSize() }} &middot; {{ item.getMimeType()|split('/')|last }}</div>
+            </div>
+        </a>
+        <div class="media-actions" style="padding: 0 var(--space-200) var(--space-200);">
+            <button class="btn btn-sm btn-outline copy-url-btn" data-url="{{ item.getUrl() }}" title="Copy URL">Copy URL</button>
+            <form method="POST" action="/cms/media/{{ item.getId() }}/delete"
+                  style="display:inline" onsubmit="return confirm('Delete this file?')">
+                {{ csrf_field() | raw }}
+                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+            </form>
         </div>
     </div>
     {% endfor %}
@@ -66,69 +186,158 @@
 {% if lastPage > 1 %}
 <div class="pagination">
     {% if currentPage > 1 %}
-        <a href="/cms/media?page={{ currentPage - 1 }}">&laquo; Prev</a>
+        <a href="/cms/media?page={{ currentPage - 1 }}{% if currentFolder %}&folder={{ currentFolder }}{% endif %}{% if currentFilter != 'all' %}&filter={{ currentFilter }}{% endif %}{% if search %}&search={{ search }}{% endif %}">&laquo; Prev</a>
     {% endif %}
 
     {% for p in 1..lastPage %}
         {% if p == currentPage %}
             <span class="active">{{ p }}</span>
         {% else %}
-            <a href="/cms/media?page={{ p }}">{{ p }}</a>
+            <a href="/cms/media?page={{ p }}{% if currentFolder %}&folder={{ currentFolder }}{% endif %}{% if currentFilter != 'all' %}&filter={{ currentFilter }}{% endif %}{% if search %}&search={{ search }}{% endif %}">{{ p }}</a>
         {% endif %}
     {% endfor %}
 
     {% if currentPage < lastPage %}
-        <a href="/cms/media?page={{ currentPage + 1 }}">Next &raquo;</a>
+        <a href="/cms/media?page={{ currentPage + 1 }}{% if currentFolder %}&folder={{ currentFolder }}{% endif %}{% if currentFilter != 'all' %}&filter={{ currentFilter }}{% endif %}{% if search %}&search={{ search }}{% endif %}">Next &raquo;</a>
     {% endif %}
 </div>
 {% endif %}
 
 {% else %}
 <div class="empty-state">
-    <h3>No media files yet</h3>
+    <h3>No media files{% if currentFolder %} in this folder{% endif %}</h3>
     <p>Upload your first file to get started.</p>
-    <button class="btn btn-primary" id="show-upload-btn">
-        + Upload File
-    </button>
+    <button class="btn btn-primary" id="show-upload-btn">+ Upload File</button>
 </div>
 {% endif %}
+
+</form>{# end bulk form #}
+
+{# Rename Folder Modal #}
+<div id="rename-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:100; align-items:center; justify-content:center;">
+    <div style="background:var(--bg-primary); border-radius:8px; padding:var(--space-400); max-width:400px; width:90%;">
+        <h3 style="margin-top:0;">Rename Folder</h3>
+        <form method="POST" action="/cms/media/folders/rename">
+            {{ csrf_field() | raw }}
+            <input type="hidden" name="old_path" id="rename-old-path">
+            <div class="form-group">
+                <label for="rename-input">New Name</label>
+                <input type="text" id="rename-input" name="new_name" class="form-control" pattern="[a-zA-Z0-9_\-]+" required>
+            </div>
+            <div style="display:flex; gap:var(--space-200); justify-content:flex-end;">
+                <button type="button" class="btn btn-outline" id="rename-cancel">Cancel</button>
+                <button type="submit" class="btn btn-primary">Rename</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<p style="margin-top: var(--space-400); font-size: 0.8rem; color: var(--text-secondary);">
+    {{ total }} file(s) total
+</p>
 
 {% block scripts %}
 <script nonce="{{ csp_nonce() }}">
 document.addEventListener('DOMContentLoaded', function() {
+    // Toggle buttons
     var toggleBtn = document.getElementById('toggle-upload-btn');
     var showBtn = document.getElementById('show-upload-btn');
     var uploadForm = document.getElementById('upload-form');
+    var folderBtn = document.getElementById('toggle-folder-btn');
+    var folderForm = document.getElementById('folder-form');
 
-    if (toggleBtn) {
-        toggleBtn.addEventListener('click', function() {
-            uploadForm.style.display = uploadForm.style.display === 'none' ? 'block' : 'none';
-        });
-    }
-    if (showBtn) {
-        showBtn.addEventListener('click', function() {
-            uploadForm.style.display = 'block';
-        });
-    }
+    if (toggleBtn) toggleBtn.addEventListener('click', function() { uploadForm.style.display = uploadForm.style.display === 'none' ? 'block' : 'none'; });
+    if (showBtn) showBtn.addEventListener('click', function() { uploadForm.style.display = 'block'; });
+    if (folderBtn) folderBtn.addEventListener('click', function() { folderForm.style.display = folderForm.style.display === 'none' ? 'block' : 'none'; });
 
+    // Copy URL
     document.querySelectorAll('.copy-url-btn').forEach(function(btn) {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
             var fullUrl = window.location.origin + btn.dataset.url;
             navigator.clipboard.writeText(fullUrl).then(function() {
-                alert('URL copied to clipboard!');
+                btn.textContent = 'Copied!';
+                setTimeout(function() { btn.textContent = 'Copy URL'; }, 1500);
             }).catch(function() {
                 prompt('Copy this URL:', fullUrl);
             });
         });
     });
 
-    document.querySelectorAll('.confirm-delete').forEach(function(form) {
-        form.addEventListener('submit', function(e) {
-            if (!confirm(form.dataset.message || 'Are you sure?')) {
-                e.preventDefault();
-            }
+    // Bulk selection
+    var selectAll = document.getElementById('select-all');
+    var checkboxes = document.querySelectorAll('.media-checkbox');
+    var bulkBar = document.getElementById('bulk-bar');
+    var bulkCount = document.getElementById('bulk-count');
+    var actionSelect = document.querySelector('[name="action"]');
+    var moveTarget = document.getElementById('move-target');
+
+    function updateBulkBar() {
+        var checked = document.querySelectorAll('.media-checkbox:checked').length;
+        if (checked > 0) {
+            bulkBar.style.display = 'flex';
+            bulkCount.textContent = checked + ' selected';
+        } else {
+            bulkBar.style.display = 'none';
+        }
+    }
+
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            checkboxes.forEach(function(cb) { cb.checked = selectAll.checked; });
+            updateBulkBar();
+        });
+    }
+
+    checkboxes.forEach(function(cb) {
+        cb.addEventListener('change', updateBulkBar);
+    });
+
+    if (actionSelect) {
+        actionSelect.addEventListener('change', function() {
+            moveTarget.style.display = this.value === 'move' ? 'inline-block' : 'none';
+        });
+    }
+
+    // Bulk submit confirmation
+    var bulkForm = document.getElementById('bulk-form');
+    var bulkSubmit = document.getElementById('bulk-submit');
+    if (bulkSubmit) {
+        bulkSubmit.addEventListener('click', function(e) {
+            var action = actionSelect.value;
+            if (!action) { e.preventDefault(); alert('Please choose an action.'); return; }
+            if (action === 'delete' && !confirm('Delete selected files?')) { e.preventDefault(); }
+        });
+    }
+
+    // Folder context menus
+    document.querySelectorAll('.folder-menu-btn').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var folder = btn.dataset.folder;
+            var menu = document.querySelector('.folder-menu[data-folder="' + folder + '"]');
+            document.querySelectorAll('.folder-menu').forEach(function(m) { if (m !== menu) m.style.display = 'none'; });
+            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
         });
     });
+
+    document.addEventListener('click', function() {
+        document.querySelectorAll('.folder-menu').forEach(function(m) { m.style.display = 'none'; });
+    });
+
+    // Folder rename
+    var renameModal = document.getElementById('rename-modal');
+    document.querySelectorAll('.folder-action[data-action="rename"]').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            document.getElementById('rename-old-path').value = btn.dataset.folder;
+            document.getElementById('rename-input').value = btn.dataset.name;
+            renameModal.style.display = 'flex';
+        });
+    });
+    document.getElementById('rename-cancel').addEventListener('click', function() { renameModal.style.display = 'none'; });
+    renameModal.addEventListener('click', function(e) { if (e.target === renameModal) renameModal.style.display = 'none'; });
 });
 </script>
 {% endblock %}

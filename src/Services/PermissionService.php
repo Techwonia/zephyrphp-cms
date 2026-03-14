@@ -35,6 +35,11 @@ use ZephyrPHP\Auth\Auth;
  *   - settings.view        View settings
  *   - settings.edit        Edit system settings
  *   - api-keys.manage      Manage API keys
+ *
+ * Per-collection permissions (stored on each collection's `permissions` JSON column):
+ *   When a collection has custom permissions, they override global entries.* checks.
+ *   Actions: view, create, edit, delete, publish, submit
+ *   Format: { "role_slug": ["view", "create", ...], ... }
  */
 class PermissionService
 {
@@ -118,6 +123,55 @@ class PermissionService
         }
 
         return false;
+    }
+
+    /**
+     * Check if the current user can perform an action on a specific collection.
+     *
+     * If the collection has per-collection permissions configured, those are checked.
+     * Otherwise falls back to the global entries.{action} permission.
+     *
+     * @param string $action One of: view, create, edit, delete, publish, submit
+     * @param \ZephyrPHP\Cms\Models\Collection $collection
+     */
+    public static function canForCollection(string $action, \ZephyrPHP\Cms\Models\Collection $collection): bool
+    {
+        if (!Auth::check()) {
+            return false;
+        }
+
+        $user = Auth::user();
+
+        // Admin role always has all permissions
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        // If collection has custom per-collection permissions, use those
+        $collPerms = $collection->getPermissions();
+        if (!empty($collPerms)) {
+            $userRoles = self::getUserRoles($user);
+            foreach ($userRoles as $roleSlug) {
+                $roleActions = $collPerms[$roleSlug] ?? [];
+                if (in_array($action, $roleActions) || in_array('*', $roleActions)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Fallback to global permission: entries.{action}
+        $globalPerm = match ($action) {
+            'view' => 'entries.view',
+            'create' => 'entries.create',
+            'edit' => 'entries.edit',
+            'delete' => 'entries.delete',
+            'publish' => 'entries.publish',
+            'submit' => 'entries.create', // submit maps to create for global perms
+            default => 'entries.view',
+        };
+
+        return self::can($globalPerm);
     }
 
     /**

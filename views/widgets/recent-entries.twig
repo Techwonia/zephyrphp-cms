@@ -1,0 +1,28 @@
+{% if entries|length > 0 %}
+<div class="table-responsive">
+    <table class="data-table" style="margin: 0;">
+        <thead>
+            <tr>
+                <th>Entry</th>
+                <th>Collection</th>
+                <th>Created</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in entries %}
+            <tr>
+                <td>
+                    <a href="/cms/collections/{{ entry.collection_slug }}/entries/{{ entry.id }}">
+                        {{ entry.label|length > 40 ? entry.label[:40] ~ '...' : entry.label }}
+                    </a>
+                </td>
+                <td><span class="badge" style="background: var(--bg-secondary); color: var(--text-secondary);">{{ entry.collection_name }}</span></td>
+                <td style="white-space: nowrap; font-size: 0.85em; color: var(--text-secondary);">{{ entry.created_at ? entry.created_at[:10] : '-' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="text-muted">No entries yet.</p>
+{% endif %}

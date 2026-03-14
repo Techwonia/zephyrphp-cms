@@ -1,0 +1,84 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Webhook Delivery Logs{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / <a href="/cms/webhooks">Webhooks</a> / Delivery Logs
+</div>
+
+<div class="page-header">
+    <h1>Delivery Logs</h1>
+    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: var(--space-200);">
+        <strong>URL:</strong> <code>{{ webhook.url }}</code>
+        &nbsp;|&nbsp;
+        <strong>Events:</strong> {{ webhook.events|join(', ') }}
+    </p>
+</div>
+
+{% if logs|length > 0 %}
+<div class="card">
+    <div class="card-body" style="padding: 0;">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Event</th>
+                        <th>Status</th>
+                        <th>Duration</th>
+                        <th>Time</th>
+                        <th style="width: 120px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td><span class="badge">{{ log.event }}</span></td>
+                        <td>
+                            {% if log.error %}
+                                <span class="badge" style="background: var(--danger); color: white;">Error</span>
+                            {% elseif log.response_code >= 200 and log.response_code < 300 %}
+                                <span class="badge" style="background: var(--success); color: white;">{{ log.response_code }}</span>
+                            {% else %}
+                                <span class="badge" style="background: var(--warning); color: white;">{{ log.response_code }}</span>
+                            {% endif %}
+                        </td>
+                        <td style="font-size: 0.85rem;">{{ log.duration_ms }}ms</td>
+                        <td style="font-size: 0.85rem;">{{ log.created_at }}</td>
+                        <td>
+                            <form method="POST" action="/cms/webhooks/{{ webhook.id }}/retry/{{ log.id }}" style="display: inline;">
+                                {{ csrf_field() | raw }}
+                                <button type="submit" class="btn btn-outline btn-sm">Retry</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% if log.error or log.response_body %}
+                    <tr>
+                        <td colspan="5" style="background: var(--bg-secondary); padding: var(--space-200) var(--space-400);">
+                            <details>
+                                <summary style="cursor: pointer; font-size: 0.85rem; color: var(--text-secondary);">
+                                    {% if log.error %}Error{% else %}Response{% endif %}
+                                </summary>
+                                <pre style="margin-top: var(--space-200); font-size: 0.8rem; white-space: pre-wrap; max-height: 150px; overflow-y: auto;">{% if log.error %}{{ log.error }}{% else %}{{ log.response_body }}{% endif %}</pre>
+                            </details>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="empty-state">
+    <h3>No deliveries yet</h3>
+    <p>Send a test to see delivery logs here.</p>
+</div>
+{% endif %}
+
+<div style="margin-top: var(--space-400);">
+    <a href="/cms/webhooks" class="btn btn-outline">Back to Webhooks</a>
+</div>
+
+{% endblock %}

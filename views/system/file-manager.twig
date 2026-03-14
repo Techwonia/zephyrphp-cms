@@ -1,0 +1,92 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}File Manager{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / System / Files
+</div>
+
+<div class="page-header">
+    <h1>File Manager</h1>
+</div>
+
+{# Root selector #}
+<div style="display: flex; gap: var(--space-200); margin-bottom: var(--space-400);">
+    {% for r in roots %}
+    <a href="/cms/system/files?root={{ r }}" class="btn {{ root == r ? 'btn-primary' : 'btn-outline' }} btn-sm">{{ r|title }}</a>
+    {% endfor %}
+</div>
+
+{# Breadcrumb navigation #}
+<div style="margin-bottom: var(--space-400); font-size: 0.85rem;">
+    {% for crumb in breadcrumbs %}
+        {% if not loop.last %}
+            <a href="{{ crumb.url }}">{{ crumb.label }}</a> /
+        {% else %}
+            <strong>{{ crumb.label }}</strong>
+        {% endif %}
+    {% endfor %}
+</div>
+
+{# File listing #}
+<div class="card">
+    <div class="card-body" style="padding: 0;">
+        {% if items|length > 0 %}
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th style="width: 100px;">Size</th>
+                        <th style="width: 160px;">Modified</th>
+                        <th style="width: 80px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if path %}
+                    <tr>
+                        <td colspan="4">
+                            {% set parentPath = path|split('/')|slice(0, -1)|join('/') %}
+                            <a href="/cms/system/files?root={{ root }}&path={{ parentPath|url_encode }}" style="font-weight: 600;">..</a>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% for item in items %}
+                    <tr>
+                        <td>
+                            {% if item.is_dir %}
+                                {% set itemPath = path ? path ~ '/' ~ item.name : item.name %}
+                                <a href="/cms/system/files?root={{ root }}&path={{ itemPath|url_encode }}" style="font-weight: 600;">{{ item.name }}/</a>
+                            {% else %}
+                                {% if item.editable %}
+                                    {% set filePath = path ? path ~ '/' ~ item.name : item.name %}
+                                    <a href="/cms/system/files/edit?root={{ root }}&file={{ filePath|url_encode }}">{{ item.name }}</a>
+                                {% else %}
+                                    {{ item.name }}
+                                {% endif %}
+                                {% if item.extension %}
+                                    <span class="badge" style="font-size: 0.65rem; margin-left: 4px;">{{ item.extension }}</span>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        <td style="font-size: 0.85rem; color: var(--text-secondary);">{{ item.size }}</td>
+                        <td style="font-size: 0.85rem; color: var(--text-secondary);">{{ item.modified }}</td>
+                        <td>
+                            {% if item.editable %}
+                                {% set filePath = path ? path ~ '/' ~ item.name : item.name %}
+                                <a href="/cms/system/files/edit?root={{ root }}&file={{ filePath|url_encode }}" class="btn btn-outline btn-sm">Edit</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="padding: var(--space-400); color: var(--text-secondary);">Directory is empty.</div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

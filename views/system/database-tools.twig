@@ -1,0 +1,128 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Database Tools{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / System / Database Tools
+</div>
+
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
+    <h1>Database Tools</h1>
+    <form method="POST" action="/cms/system/database/backup">
+        {{ csrf_field() | raw }}
+        <button type="submit" class="btn btn-primary">Download Backup</button>
+    </form>
+</div>
+
+{% if dbInfo %}
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--space-400); margin-bottom: var(--space-500);">
+    <div class="card">
+        <div class="card-body" style="text-align: center; padding: var(--space-400);">
+            <div style="font-size: 1.5rem; font-weight: 700;">{{ dbInfo.driver }}</div>
+            <div style="color: var(--text-secondary); font-size: 0.85rem;">Driver</div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body" style="text-align: center; padding: var(--space-400);">
+            <div style="font-size: 1.5rem; font-weight: 700;">{{ dbInfo.database }}</div>
+            <div style="color: var(--text-secondary); font-size: 0.85rem;">Database</div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body" style="text-align: center; padding: var(--space-400);">
+            <div style="font-size: 1.5rem; font-weight: 700;">{{ dbInfo.table_count }}</div>
+            <div style="color: var(--text-secondary); font-size: 0.85rem;">Tables</div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{# Tables List #}
+{% if tables|length > 0 %}
+<div class="card">
+    <div class="card-header"><h3 style="margin:0; font-size:1rem;">Tables</h3></div>
+    <div class="card-body" style="padding: 0;">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Table Name</th>
+                        <th>Columns</th>
+                        <th>Rows</th>
+                        <th style="width: 100px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for table in tables %}
+                    <tr>
+                        <td>
+                            <a href="/cms/system/database/browse/{{ table.name }}" style="font-weight: 600;">{{ table.name }}</a>
+                        </td>
+                        <td>{{ table.column_count }}</td>
+                        <td>{{ table.row_count }}</td>
+                        <td>
+                            <a href="/cms/system/database/browse/{{ table.name }}" class="btn btn-outline btn-sm">Browse</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{# Table Schema Detail #}
+{% for table in tables %}
+<details style="margin-top: var(--space-400);">
+    <summary style="cursor: pointer; padding: 12px 16px; background: var(--bg-secondary); border-radius: var(--radius); font-weight: 600;">
+        {{ table.name }} - Schema ({{ table.column_count }} columns, {{ table.indexes|length }} indexes)
+    </summary>
+    <div class="card" style="margin-top: var(--space-200); border-top-left-radius: 0; border-top-right-radius: 0;">
+        <div class="card-body" style="padding: 0;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Column</th>
+                        <th>Type</th>
+                        <th>Nullable</th>
+                        <th>Default</th>
+                        <th>Auto Inc</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for col in table.columns %}
+                    <tr>
+                        <td style="font-weight: 600;">{{ col.name }}</td>
+                        <td><span class="badge">{{ col.type }}{% if col.length %}({{ col.length }}){% endif %}</span></td>
+                        <td>{{ col.nullable ? 'Yes' : 'No' }}</td>
+                        <td style="color: var(--text-secondary);">{{ col.default ?? '-' }}</td>
+                        <td>{{ col.autoincrement ? 'Yes' : '' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            {% if table.indexes|length > 0 %}
+            <div style="border-top: 2px solid var(--border); padding: 12px 16px;">
+                <strong style="font-size: 0.85rem;">Indexes:</strong>
+                {% for idx in table.indexes %}
+                    <span class="badge" style="margin: 4px;" title="{{ idx.columns|join(', ') }}">
+                        {{ idx.name }}{% if idx.primary %} (PK){% elseif idx.unique %} (UNIQUE){% endif %}
+                    </span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</details>
+{% endfor %}
+
+{% else %}
+<div class="empty-state">
+    <h3>No tables found</h3>
+    <p>The database has no tables or the connection failed.</p>
+</div>
+{% endif %}
+
+{% endblock %}
