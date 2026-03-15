@@ -287,21 +287,37 @@
         .editor-container {
             flex: 1; position: relative; overflow: hidden;
         }
-        .editor-container .cm-editor { height: 100%; }
+        .editor-container .cm-editor { height: 100%; background: #1e1e1e; }
         .editor-container .cm-editor .cm-scroller {
             font-family: var(--font-mono); font-size: 13px; line-height: 1.6;
         }
+        .editor-container .cm-editor .cm-content { color: #d4d4d4; caret-color: #aeafad; }
+        .editor-container .cm-editor .cm-cursor { border-left-color: #aeafad; }
         .editor-container .cm-editor .cm-gutters {
-            background: var(--bg-subdued); border-right: 1px solid var(--border);
-            color: var(--text-disabled);
+            background: #1e1e1e; border-right: 1px solid #333; color: #858585;
         }
         .editor-container .cm-editor .cm-activeLineGutter {
-            background: var(--bg-hover); color: var(--text-secondary);
+            background: #2a2d2e; color: #c6c6c6;
         }
         .editor-container .cm-editor .cm-activeLine {
-            background: rgba(0,91,211,0.03);
+            background: rgba(255,255,255,0.04);
         }
         .editor-container .cm-editor.cm-focused { outline: none; }
+        .editor-container .cm-editor .cm-selectionBackground,
+        .editor-container .cm-editor.cm-focused .cm-selectionBackground,
+        .editor-container .cm-editor ::selection { background: #264f78 !important; }
+        .editor-container .cm-editor .cm-matchingBracket {
+            background: rgba(255,255,255,0.1); outline: 1px solid #888;
+        }
+        .editor-container .cm-editor .cm-searchMatch { background: rgba(234,184,57,0.3); }
+        .editor-container .cm-editor .cm-searchMatch.cm-searchMatch-selected { background: rgba(81,154,186,0.4); }
+        .editor-container .cm-editor .cm-foldPlaceholder { background: #3c3c3c; border: none; color: #c5c5c5; }
+        .editor-container .cm-editor .cm-tooltip { background: #252526; color: #ccc; border: 1px solid #454545; }
+        .editor-container .cm-editor .cm-tooltip-autocomplete > ul > li[aria-selected] { background: #04395e; color: #fff; }
+        .editor-container .cm-editor .cm-panels { background: #252526; color: #ccc; }
+        .editor-container .cm-editor .cm-panels.cm-panels-top { border-bottom: 1px solid #333; }
+        .editor-container .cm-editor .cm-panel input { background: #3c3c3c; color: #ccc; border: 1px solid #555; }
+        .editor-container .cm-editor .cm-panel button { background: #0e639c; color: #fff; border: none; border-radius: 3px; }
 
         /* Empty state */
         .editor-empty {
@@ -323,14 +339,14 @@
         .editor-fallback {
             width: 100%; height: 100%; border: none; outline: none; resize: none;
             padding: 16px; font-family: var(--font-mono); font-size: 13px;
-            line-height: 1.6; color: var(--text); background: var(--bg-surface); tab-size: 4;
+            line-height: 1.6; color: #d4d4d4; background: #1e1e1e; tab-size: 4;
         }
 
         /* ── Schema Panel (right side for sections) ── */
         .schema-panel {
-            width: 320px; min-width: 320px; display: none;
+            width: 360px; min-width: 360px; display: none;
             flex-direction: column; border-left: 1px solid var(--border);
-            background: var(--bg-subdued);
+            background: var(--bg-surface);
         }
         .schema-panel.visible { display: flex; }
         .schema-panel-header {
@@ -349,13 +365,115 @@
             display: flex; align-items: center; justify-content: center;
         }
         .schema-panel-close:hover { background: var(--bg-hover); color: var(--text); }
+        .schema-panel-tabs {
+            display: flex; border-bottom: 1px solid var(--border); background: var(--bg-subdued);
+        }
+        .schema-panel-tab {
+            flex: 1; padding: 8px; text-align: center; font-size: 11px; font-weight: 600;
+            color: var(--text-secondary); cursor: pointer; border: none; background: none;
+            border-bottom: 2px solid transparent; transition: all 0.15s; font-family: var(--font);
+        }
+        .schema-panel-tab:hover { color: var(--text); }
+        .schema-panel-tab.active { color: var(--primary); border-bottom-color: var(--primary); background: var(--bg-surface); }
         .schema-panel-body {
             flex: 1; overflow-y: auto; padding: 0;
         }
-        .schema-panel .cm-editor { height: 100%; }
-        .schema-panel .cm-editor .cm-scroller {
+        .schema-panel-view { display: none; height: 100%; }
+        .schema-panel-view.active { display: flex; flex-direction: column; }
+
+        /* Schema visual designer */
+        .schema-designer { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+        .schema-field { background: var(--bg-subdued); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+        .schema-field-header {
+            display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+        }
+        .schema-field-type {
+            font-size: 10px; font-weight: 600; text-transform: uppercase;
+            padding: 2px 6px; border-radius: 4px;
+            background: var(--primary-bg); color: var(--primary);
+        }
+        .schema-field-id {
+            font-size: 12px; font-weight: 600; color: var(--text); font-family: var(--font-mono);
+        }
+        .schema-field-label { font-size: 11px; color: var(--text-secondary); }
+        .schema-field-row {
+            display: grid; grid-template-columns: 80px 1fr; gap: 4px; align-items: center;
+            margin-top: 4px;
+        }
+        .schema-field-row label {
+            font-size: 10px; font-weight: 600; color: var(--text-disabled); text-transform: uppercase;
+        }
+        .schema-field-row input, .schema-field-row select {
+            width: 100%; padding: 5px 8px; border: 1px solid var(--border); border-radius: 4px;
+            font-size: 12px; font-family: var(--font); color: var(--text); background: var(--bg-surface);
+        }
+        .schema-field-row input:focus, .schema-field-row select:focus {
+            border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px rgba(0,91,211,0.1);
+        }
+        .schema-field-actions {
+            display: flex; gap: 4px; margin-left: auto;
+        }
+        .schema-field-action-btn {
+            width: 22px; height: 22px; border: none; background: transparent; border-radius: 4px;
+            cursor: pointer; color: var(--text-disabled); display: flex; align-items: center; justify-content: center;
+        }
+        .schema-field-action-btn:hover { background: var(--bg-hover); color: var(--text); }
+        .schema-field-action-btn.danger:hover { background: var(--danger-bg); color: var(--danger); }
+
+        .schema-section-info {
+            background: var(--bg-subdued); border: 1px solid var(--border); border-radius: 8px; padding: 12px;
+        }
+        .schema-section-info .field-group { margin-bottom: 10px; }
+        .schema-section-info .field-group:last-child { margin-bottom: 0; }
+        .schema-section-info label {
+            display: block; font-size: 10px; font-weight: 600; color: var(--text-disabled);
+            text-transform: uppercase; margin-bottom: 4px;
+        }
+        .schema-section-info input {
+            width: 100%; padding: 6px 10px; border: 1px solid var(--border); border-radius: 5px;
+            font-size: 12px; font-family: var(--font); color: var(--text); background: var(--bg-surface);
+        }
+        .schema-section-info input:focus {
+            border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px rgba(0,91,211,0.1);
+        }
+
+        .schema-add-setting {
+            width: 100%; padding: 8px; border: 2px dashed var(--border); border-radius: 8px;
+            background: transparent; cursor: pointer; color: var(--text-secondary);
+            font-size: 12px; font-weight: 500; font-family: var(--font); transition: all 0.15s;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        .schema-add-setting:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-bg); }
+
+        .schema-empty {
+            padding: 30px 16px; text-align: center; color: var(--text-disabled); font-size: 12px;
+        }
+        .schema-empty svg { width: 32px; height: 32px; opacity: 0.3; margin-bottom: 8px; }
+
+        .schema-apply-btn {
+            margin: 12px 16px; padding: 8px 16px; background: var(--primary); color: #fff;
+            border: none; border-radius: 6px; font-size: 12px; font-weight: 600;
+            cursor: pointer; font-family: var(--font); transition: background 0.15s;
+        }
+        .schema-apply-btn:hover { background: var(--primary-hover); }
+
+        /* Schema JSON tab */
+        .schema-json-view { flex: 1; position: relative; }
+        .schema-json-view .cm-editor { height: 100%; background: #1e1e1e; }
+        .schema-json-view .cm-editor .cm-content { color: #d4d4d4; }
+        .schema-json-view .cm-editor .cm-gutters { background: #1e1e1e; border-right: 1px solid #333; color: #858585; }
+        .schema-json-view .cm-editor .cm-scroller {
             font-family: var(--font-mono); font-size: 12px; line-height: 1.5;
         }
+
+        /* Split file selector */
+        .split-file-picker {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100%; color: var(--text-disabled); gap: 12px; padding: 24px;
+        }
+        .split-file-picker p { font-size: 13px; }
+        .split-file-picker-hint { font-size: 11px; color: var(--text-disabled); }
+        .split-file-picker svg { width: 36px; height: 36px; opacity: 0.3; }
 
         /* ── Toast ── */
         .toast-container {
@@ -588,7 +706,17 @@
                         <span class="pane-filename" id="pane2Name">—</span>
                         <button class="pane-close-btn" id="btnCloseSplit">&times;</button>
                     </div>
-                    <div class="editor-container" id="editorContainer2"></div>
+                    <div class="editor-container" id="editorContainer2">
+                        <div class="split-file-picker" id="splitFilePicker">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M14.25 2.25H6.75A2.25 2.25 0 004.5 4.5v15a2.25 2.25 0 002.25 2.25h10.5a2.25 2.25 0 002.25-2.25V7.5L14.25 2.25z"/>
+                                <path d="M14.25 2.25V7.5h5.25"/><path d="M9.75 12.75h4.5M9.75 15.75h4.5"/>
+                            </svg>
+                            <p>Right-click a file &rarr; "Open in split"</p>
+                            <span class="split-file-picker-hint">or select from open tabs below</span>
+                            <select id="splitFileSelect" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:var(--font);color:var(--text);background:var(--bg-surface);min-width:200px;"></select>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -602,7 +730,18 @@
                 </span>
                 <button class="schema-panel-close" id="btnSchemaClose">&times;</button>
             </div>
-            <div class="schema-panel-body" id="schemaPanelBody"></div>
+            <div class="schema-panel-tabs">
+                <button class="schema-panel-tab active" data-schema-tab="designer">Designer</button>
+                <button class="schema-panel-tab" data-schema-tab="json">JSON</button>
+            </div>
+            <div class="schema-panel-body">
+                <div class="schema-panel-view active" id="schemaDesignerView">
+                    <div class="schema-designer" id="schemaDesigner"></div>
+                </div>
+                <div class="schema-panel-view" id="schemaJsonView">
+                    <div class="schema-json-view" id="schemaJsonEditor"></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -711,7 +850,9 @@
             "@codemirror/view": "https://cdn.jsdelivr.net/npm/@codemirror/view@6.36.5/+esm",
             "@codemirror/state": "https://cdn.jsdelivr.net/npm/@codemirror/state@6.5.2/+esm",
             "@codemirror/commands": "https://cdn.jsdelivr.net/npm/@codemirror/commands@6.8.0/+esm",
-            "@codemirror/search": "https://cdn.jsdelivr.net/npm/@codemirror/search@6.5.10/+esm"
+            "@codemirror/search": "https://cdn.jsdelivr.net/npm/@codemirror/search@6.5.10/+esm",
+            "@codemirror/language": "https://cdn.jsdelivr.net/npm/@codemirror/language@6.10.8/+esm",
+            "@lezer/highlight": "https://cdn.jsdelivr.net/npm/@lezer/highlight@1.2.1/+esm"
         }
     }
     </script>
@@ -763,6 +904,7 @@
 
     // ── Load CodeMirror ──
     let EditorView, EditorState, basicSetup, keymap, langHtml, langJson, langCss, langJs, indentWithTab;
+    let syntaxHighlighting, HighlightStyle, tags;
 
     try {
         const cmCore = await import('codemirror');
@@ -773,6 +915,8 @@
         const cmCss = await import('@codemirror/lang-css');
         const cmJs = await import('@codemirror/lang-javascript');
         const cmCommands = await import('@codemirror/commands');
+        const cmLang = await import('@codemirror/language');
+        const lezerHL = await import('@lezer/highlight');
 
         EditorView = cmCore.EditorView || cmView.EditorView;
         EditorState = cmState.EditorState;
@@ -783,6 +927,9 @@
         langCss = cmCss.css;
         langJs = cmJs.javascript;
         indentWithTab = cmCommands.indentWithTab;
+        syntaxHighlighting = cmLang.syntaxHighlighting;
+        HighlightStyle = lezerHL.HighlightStyle;
+        tags = lezerHL.tags;
 
         if (!EditorView || !EditorState || !basicSetup) throw new Error('Core CodeMirror exports missing');
 
@@ -1094,6 +1241,8 @@
         }
         state.splitTab = path;
         $('pane2Name').textContent = path.split('/').pop();
+        // Hide file picker, show editor
+        if ($('splitFilePicker')) $('splitFilePicker').style.display = 'none';
         createEditor($container2, tab.content, path, 'split');
         renderTabs();
     }
@@ -1142,16 +1291,69 @@
                 { key: 'Mod-s', run: () => { window._saveFile(); return true; } },
                 ...(indentWithTab ? [indentWithTab] : []),
             ]) : null;
+
+            // VS Code Dark+ syntax theme
+            let darkThemeExt = null;
+            if (syntaxHighlighting && HighlightStyle && tags) {
+                const darkHL = HighlightStyle.define([
+                    { tag: tags.keyword, color: '#569cd6' },
+                    { tag: tags.controlKeyword, color: '#c586c0' },
+                    { tag: tags.operatorKeyword, color: '#569cd6' },
+                    { tag: tags.definitionKeyword, color: '#569cd6' },
+                    { tag: tags.moduleKeyword, color: '#c586c0' },
+                    { tag: [tags.name, tags.variableName], color: '#9cdcfe' },
+                    { tag: tags.definition(tags.variableName), color: '#4fc1ff' },
+                    { tag: tags.function(tags.variableName), color: '#dcdcaa' },
+                    { tag: tags.definition(tags.function(tags.variableName)), color: '#dcdcaa' },
+                    { tag: tags.propertyName, color: '#9cdcfe' },
+                    { tag: tags.definition(tags.propertyName), color: '#9cdcfe' },
+                    { tag: tags.function(tags.propertyName), color: '#dcdcaa' },
+                    { tag: tags.typeName, color: '#4ec9b0' },
+                    { tag: tags.className, color: '#4ec9b0' },
+                    { tag: tags.namespace, color: '#4ec9b0' },
+                    { tag: tags.macroName, color: '#dcdcaa' },
+                    { tag: tags.labelName, color: '#9cdcfe' },
+                    { tag: tags.comment, color: '#6a9955', fontStyle: 'italic' },
+                    { tag: tags.lineComment, color: '#6a9955', fontStyle: 'italic' },
+                    { tag: tags.blockComment, color: '#6a9955', fontStyle: 'italic' },
+                    { tag: tags.docComment, color: '#6a9955', fontStyle: 'italic' },
+                    { tag: tags.string, color: '#ce9178' },
+                    { tag: tags.special(tags.string), color: '#d7ba7d' },
+                    { tag: tags.regexp, color: '#d16969' },
+                    { tag: tags.number, color: '#b5cea8' },
+                    { tag: tags.bool, color: '#569cd6' },
+                    { tag: tags.null, color: '#569cd6' },
+                    { tag: tags.atom, color: '#569cd6' },
+                    { tag: tags.operator, color: '#d4d4d4' },
+                    { tag: tags.punctuation, color: '#d4d4d4' },
+                    { tag: tags.separator, color: '#d4d4d4' },
+                    { tag: tags.bracket, color: '#ffd700' },
+                    { tag: tags.angleBracket, color: '#808080' },
+                    { tag: tags.tagName, color: '#569cd6' },
+                    { tag: tags.attributeName, color: '#9cdcfe' },
+                    { tag: tags.attributeValue, color: '#ce9178' },
+                    { tag: tags.self, color: '#569cd6' },
+                    { tag: tags.meta, color: '#d4d4d4' },
+                    { tag: tags.invalid, color: '#f44747' },
+                    { tag: tags.link, color: '#569cd6', textDecoration: 'underline' },
+                    { tag: tags.heading, color: '#569cd6', fontWeight: 'bold' },
+                    { tag: tags.emphasis, fontStyle: 'italic' },
+                    { tag: tags.strong, fontWeight: 'bold' },
+                ]);
+                darkThemeExt = syntaxHighlighting(darkHL);
+            }
+
             const extensions = [
                 basicSetup,
                 saveKeymap,
+                darkThemeExt,
                 EditorView.updateListener.of(update => {
                     if (update.docChanged && role === 'main') onEditorChange();
                     if (update.selectionSet && role === 'main') updateCursorPos(update.state);
                 }),
                 EditorView.theme({ '&': { height: '100%' }, '.cm-scroller': { overflow: 'auto' } }),
             ].filter(Boolean);
-            if (state.wordWrap && EditorView.lineWrapping) {
+            if (state.wordWrap) {
                 extensions.push(EditorView.lineWrapping);
             }
             if (langExt) extensions.push(langExt);
@@ -1501,6 +1703,24 @@
     };
 
     // ── Split View ──
+    const $splitFilePicker = $('splitFilePicker');
+    const $splitFileSelect = $('splitFileSelect');
+
+    function updateSplitFilePicker() {
+        // Populate dropdown with all file paths
+        let html = '<option value="">— Select a file —</option>';
+        for (const p of state.allFilePaths) {
+            if (/\.(png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|eot)$/i.test(p)) continue;
+            html += `<option value="${escAttr(p)}">${esc(p)}</option>`;
+        }
+        $splitFileSelect.innerHTML = html;
+    }
+
+    $splitFileSelect.addEventListener('change', () => {
+        const path = $splitFileSelect.value;
+        if (path) openInSplit(path);
+    });
+
     window._toggleSplitView = function() {
         state.splitActive = !state.splitActive;
         $('btnSplit').classList.toggle('active', state.splitActive);
@@ -1510,10 +1730,18 @@
         if (!state.splitActive) {
             if (state.splitView) { state.splitView.destroy(); state.splitView = null; }
             state.splitTab = null;
+            $splitFilePicker.style.display = '';
         } else if (state.openTabs.length > 1 && !state.splitTab) {
-            // Auto-open second tab in split
             const other = state.openTabs.find(t => t.path !== state.activeTab);
-            if (other) openInSplit(other.path);
+            if (other) {
+                openInSplit(other.path);
+            } else {
+                updateSplitFilePicker();
+                $splitFilePicker.style.display = '';
+            }
+        } else {
+            updateSplitFilePicker();
+            $splitFilePicker.style.display = '';
         }
     };
 
@@ -1524,11 +1752,29 @@
         $pane2.style.display = 'none';
         if (state.splitView) { state.splitView.destroy(); state.splitView = null; }
         state.splitTab = null;
+        $splitFilePicker.style.display = '';
     };
 
     // ══════════════════════════════════════════════
     // SCHEMA PANEL (for sections)
     // ══════════════════════════════════════════════
+
+    const SETTING_TYPES = [
+        { value: 'text', label: 'Text' },
+        { value: 'textarea', label: 'Textarea' },
+        { value: 'richtext', label: 'Rich Text' },
+        { value: 'number', label: 'Number' },
+        { value: 'range', label: 'Range' },
+        { value: 'checkbox', label: 'Checkbox' },
+        { value: 'select', label: 'Select' },
+        { value: 'radio', label: 'Radio' },
+        { value: 'color', label: 'Color' },
+        { value: 'image_picker', label: 'Image Picker' },
+        { value: 'url', label: 'URL' },
+        { value: 'html', label: 'HTML' },
+    ];
+
+    let currentSchema = null;
 
     window._toggleSchemaPanel = function() {
         state.schemaPanelOpen = !state.schemaPanelOpen;
@@ -1538,34 +1784,224 @@
         if (state.schemaPanelOpen && state.activeTab) {
             const tab = state.openTabs.find(t => t.path === state.activeTab);
             if (tab) {
-                const schema = extractSchema(tab.content);
-                createEditor($('schemaPanelBody'), schema, 'schema.json', 'schema');
+                currentSchema = parseSchema(tab.content);
+                renderSchemaDesigner();
+                renderSchemaJson();
             }
         } else {
             if (state.schemaView) { state.schemaView.destroy(); state.schemaView = null; }
+            currentSchema = null;
         }
     };
 
-    function extractSchema(twigContent) {
+    // Schema panel tab switching
+    $schemaPanel.addEventListener('click', (e) => {
+        const tabBtn = e.target.closest('[data-schema-tab]');
+        if (!tabBtn) return;
+        const tabName = tabBtn.dataset.schemaTab;
+        $schemaPanel.querySelectorAll('.schema-panel-tab').forEach(t => t.classList.toggle('active', t.dataset.schemaTab === tabName));
+        $('schemaDesignerView').classList.toggle('active', tabName === 'designer');
+        $('schemaJsonView').classList.toggle('active', tabName === 'json');
+        if (tabName === 'json') renderSchemaJson();
+    });
+
+    function extractSchemaRaw(twigContent) {
         const re = new RegExp('\\{' + '%\\s*schema\\s*%' + '\\}([\\s\\S]*?)\\{' + '%\\s*endschema\\s*%' + '\\}');
-        const match = twigContent.match(re);
-        if (!match) return '{\n  "name": "Section Name",\n  "settings": []\n}';
+        return twigContent.match(re);
+    }
+
+    function parseSchema(twigContent) {
+        const match = extractSchemaRaw(twigContent);
+        if (!match) return { name: 'Section Name', tag: null, class: null, max_blocks: null, settings: [], blocks: [], presets: [] };
         try {
-            return JSON.stringify(JSON.parse(match[1].trim()), null, 2);
+            const obj = JSON.parse(match[1].trim());
+            return {
+                name: obj.name || 'Section Name',
+                tag: obj.tag || null,
+                class: obj.class || null,
+                max_blocks: obj.max_blocks || null,
+                settings: Array.isArray(obj.settings) ? obj.settings : [],
+                blocks: Array.isArray(obj.blocks) ? obj.blocks : [],
+                presets: Array.isArray(obj.presets) ? obj.presets : [],
+            };
         } catch {
-            return match[1].trim();
+            return { name: 'Section Name', tag: null, class: null, max_blocks: null, settings: [], blocks: [], presets: [] };
         }
     }
 
-    function syncSchemaPanel(twigContent) {
-        if (!state.schemaPanelOpen || !state.schemaView) return;
-        const schema = extractSchema(twigContent);
-        const current = state.schemaView.state.doc.toString();
-        if (schema !== current) {
-            state.schemaView.dispatch({
-                changes: { from: 0, to: state.schemaView.state.doc.length, insert: schema }
-            });
+    function schemaToJson() {
+        if (!currentSchema) return '{}';
+        const obj = { name: currentSchema.name };
+        if (currentSchema.tag) obj.tag = currentSchema.tag;
+        if (currentSchema.class) obj.class = currentSchema.class;
+        if (currentSchema.max_blocks) obj.max_blocks = currentSchema.max_blocks;
+        obj.settings = currentSchema.settings;
+        if (currentSchema.blocks.length > 0) obj.blocks = currentSchema.blocks;
+        if (currentSchema.presets.length > 0) obj.presets = currentSchema.presets;
+        return JSON.stringify(obj, null, 2);
+    }
+
+    function renderSchemaDesigner() {
+        if (!currentSchema) return;
+        const s = currentSchema;
+        let html = '';
+
+        // Section info
+        html += `<div class="schema-section-info">
+            <div class="field-group"><label>Section Name</label>
+                <input type="text" data-schema-field="name" value="${escAttr(s.name)}">
+            </div>
+            <div class="field-group"><label>Tag</label>
+                <input type="text" data-schema-field="tag" value="${escAttr(s.tag || '')}" placeholder="section">
+            </div>
+            <div class="field-group"><label>CSS Class</label>
+                <input type="text" data-schema-field="class" value="${escAttr(s.class || '')}" placeholder="optional">
+            </div>
+        </div>`;
+
+        // Settings
+        html += `<div style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.05em;margin-top:4px;">Settings (${s.settings.length})</div>`;
+
+        for (let i = 0; i < s.settings.length; i++) {
+            const setting = s.settings[i];
+            const typeOpts = SETTING_TYPES.map(t =>
+                `<option value="${t.value}"${t.value === setting.type ? ' selected' : ''}>${t.label}</option>`
+            ).join('');
+
+            html += `<div class="schema-field" data-setting-index="${i}">
+                <div class="schema-field-header">
+                    <span class="schema-field-type">${esc(setting.type || 'text')}</span>
+                    <span class="schema-field-id">${esc(setting.id || '')}</span>
+                    <div class="schema-field-actions">
+                        <button class="schema-field-action-btn" data-move-setting="${i}" data-dir="up" title="Move up">&#9650;</button>
+                        <button class="schema-field-action-btn" data-move-setting="${i}" data-dir="down" title="Move down">&#9660;</button>
+                        <button class="schema-field-action-btn danger" data-delete-setting="${i}" title="Remove">&#10005;</button>
+                    </div>
+                </div>
+                <div class="schema-field-row"><label>ID</label><input type="text" data-setting="${i}" data-prop="id" value="${escAttr(setting.id || '')}"></div>
+                <div class="schema-field-row"><label>Type</label><select data-setting="${i}" data-prop="type">${typeOpts}</select></div>
+                <div class="schema-field-row"><label>Label</label><input type="text" data-setting="${i}" data-prop="label" value="${escAttr(setting.label || '')}"></div>
+                <div class="schema-field-row"><label>Default</label><input type="text" data-setting="${i}" data-prop="default" value="${escAttr(setting.default != null ? String(setting.default) : '')}"></div>
+                ${setting.info ? `<div class="schema-field-row"><label>Info</label><input type="text" data-setting="${i}" data-prop="info" value="${escAttr(setting.info)}"></div>` : ''}
+            </div>`;
         }
+
+        html += `<button class="schema-add-setting" id="btnAddSetting">+ Add setting</button>`;
+        html += `<button class="schema-apply-btn" id="btnApplySchema">Apply to file</button>`;
+
+        $('schemaDesigner').innerHTML = html;
+    }
+
+    function renderSchemaJson() {
+        if (!currentSchema) return;
+        const jsonStr = schemaToJson();
+        createEditor($('schemaJsonEditor'), jsonStr, 'schema.json', 'schema');
+    }
+
+    // Schema designer event delegation
+    $('schemaDesigner').addEventListener('input', (e) => {
+        if (!currentSchema) return;
+        const el = e.target;
+
+        // Section-level fields
+        if (el.dataset.schemaField) {
+            currentSchema[el.dataset.schemaField] = el.value || null;
+            return;
+        }
+
+        // Setting fields
+        if (el.dataset.setting !== undefined) {
+            const idx = parseInt(el.dataset.setting);
+            const prop = el.dataset.prop;
+            if (currentSchema.settings[idx]) {
+                currentSchema.settings[idx][prop] = el.value;
+            }
+        }
+    });
+
+    $('schemaDesigner').addEventListener('change', (e) => {
+        if (!currentSchema) return;
+        const el = e.target;
+        if (el.dataset.setting !== undefined) {
+            const idx = parseInt(el.dataset.setting);
+            const prop = el.dataset.prop;
+            if (currentSchema.settings[idx]) {
+                currentSchema.settings[idx][prop] = el.value;
+                if (prop === 'type') renderSchemaDesigner(); // re-render on type change
+            }
+        }
+    });
+
+    $('schemaDesigner').addEventListener('click', (e) => {
+        if (!currentSchema) return;
+
+        // Add setting
+        if (e.target.closest('#btnAddSetting')) {
+            currentSchema.settings.push({ type: 'text', id: 'new_setting', label: 'New Setting', default: '' });
+            renderSchemaDesigner();
+            return;
+        }
+
+        // Apply schema to file
+        if (e.target.closest('#btnApplySchema')) {
+            applySchemaToFile();
+            return;
+        }
+
+        // Delete setting
+        const delBtn = e.target.closest('[data-delete-setting]');
+        if (delBtn) {
+            const idx = parseInt(delBtn.dataset.deleteSetting);
+            currentSchema.settings.splice(idx, 1);
+            renderSchemaDesigner();
+            return;
+        }
+
+        // Move setting
+        const moveBtn = e.target.closest('[data-move-setting]');
+        if (moveBtn) {
+            const idx = parseInt(moveBtn.dataset.moveSetting);
+            const dir = moveBtn.dataset.dir;
+            const newIdx = dir === 'up' ? idx - 1 : idx + 1;
+            if (newIdx >= 0 && newIdx < currentSchema.settings.length) {
+                const tmp = currentSchema.settings[idx];
+                currentSchema.settings[idx] = currentSchema.settings[newIdx];
+                currentSchema.settings[newIdx] = tmp;
+                renderSchemaDesigner();
+            }
+            return;
+        }
+    });
+
+    function applySchemaToFile() {
+        if (!currentSchema || !state.activeTab || !state.editorView) return;
+        const content = state.editorView.state.doc.toString();
+        const jsonStr = schemaToJson();
+
+        const schemaOpen = '{' + '% schema %' + '}';
+        const schemaClose = '{' + '% endschema %' + '}';
+        const schemaBlock = `${schemaOpen}\n${jsonStr}\n${schemaClose}`;
+
+        const match = extractSchemaRaw(content);
+        let newContent;
+        if (match) {
+            newContent = content.substring(0, match.index) + schemaBlock + content.substring(match.index + match[0].length);
+        } else {
+            newContent = content + '\n\n' + schemaBlock + '\n';
+        }
+
+        state.editorView.dispatch({
+            changes: { from: 0, to: state.editorView.state.doc.length, insert: newContent }
+        });
+        onEditorChange();
+        showToast('Schema applied to file');
+    }
+
+    function syncSchemaPanel(twigContent) {
+        if (!state.schemaPanelOpen) return;
+        currentSchema = parseSchema(twigContent);
+        renderSchemaDesigner();
+        // Don't auto-sync JSON tab to avoid overwriting user edits
     }
 
     // ══════════════════════════════════════════════
