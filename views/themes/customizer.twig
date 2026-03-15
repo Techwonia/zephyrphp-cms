@@ -1681,7 +1681,15 @@
 
         var sectionSchema = state.availableSections[sec.type] || {};
         var blockSchema = findBlockSchema(sectionSchema, block.type);
-        document.getElementById('rightTitle').textContent = (blockSchema ? blockSchema.name : block.type);
+        var sectionName = sectionSchema.name || sec.type;
+        var blockName = blockSchema ? blockSchema.name : block.type;
+        var titleEl = document.getElementById('rightTitle');
+        titleEl.textContent = '';
+        var breadcrumb = document.createElement('span');
+        breadcrumb.style.cssText = 'color:var(--text-secondary);font-weight:400;';
+        breadcrumb.textContent = sectionName + ' \u203A ';
+        titleEl.appendChild(breadcrumb);
+        titleEl.appendChild(document.createTextNode(blockName));
 
         var body = document.getElementById('rightBody');
         body.innerHTML = '';
@@ -2863,7 +2871,7 @@
                 '  padding: 4px 10px; font-family: -apple-system, sans-serif; font-weight: 500;' +
                 '  pointer-events: none; z-index: 99999; border-radius: 0 0 6px 0;' +
                 '}' +
-                '[data-section-id].inspector-active { outline: 2px solid #005bd3; outline-offset: -2px; z-index: 99998; }' +
+                '[data-section-id].inspector-active { outline: 2px solid #005bd3; outline-offset: -2px; z-index: 99998; animation: inspector-pulse 0.5s ease-out; }' +
                 '[data-section-id].inspector-active::before {' +
                 '  content: attr(data-section-type); position: absolute; top: -1px; left: -1px;' +
                 '  background: #005bd3; color: #fff; font-size: 11px; line-height: 1;' +
@@ -2880,7 +2888,11 @@
                 '  padding: 3px 8px; font-family: -apple-system, sans-serif; font-weight: 500;' +
                 '  pointer-events: none; z-index: 100000; border-radius: 0 0 4px 0;' +
                 '}' +
-                '[data-block-id].inspector-block-active { outline: 2px solid #005bd3; outline-offset: -1px; z-index: 99999; }' +
+                '[data-block-id].inspector-block-active { outline: 2px solid #005bd3; outline-offset: -1px; z-index: 99999; animation: inspector-pulse 0.5s ease-out; }' +
+                '@keyframes inspector-pulse {' +
+                '  0% { outline-color: rgba(0,91,211,0.8); box-shadow: 0 0 12px rgba(0,91,211,0.4); }' +
+                '  100% { outline-color: #005bd3; box-shadow: none; }' +
+                '}' +
                 '[data-block-id].inspector-block-active::before {' +
                 '  content: attr(data-block-type); position: absolute; top: -1px; left: -1px;' +
                 '  background: #005bd3; color: #fff; font-size: 10px; line-height: 1;' +
@@ -2972,6 +2984,8 @@
     }
 
     function injectInspectorOnSection(doc, el) {
+        if (el.dataset.inspectorBound) return;
+        el.dataset.inspectorBound = '1';
         el.addEventListener('click', function(e) {
             if (!state.inspectorEnabled) return;
             // Don't fire if a block was clicked (block handler will fire instead)
@@ -2987,6 +3001,8 @@
     }
 
     function injectInspectorOnBlock(doc, el) {
+        if (el.dataset.inspectorBound) return;
+        el.dataset.inspectorBound = '1';
         el.addEventListener('click', function(e) {
             if (!state.inspectorEnabled) return;
             e.preventDefault();
