@@ -658,10 +658,28 @@ class CmsServiceProvider
             $sectionsHtml = $sectionManager->renderSections($template);
             $pageData['sections_html'] = $sectionsHtml;
             $pageData['use_sections'] = true;
-            echo $view->render('@theme/layouts/' . $layout, $pageData);
+            $html = $view->render('@theme/layouts/' . $layout, $pageData);
         } else {
-            echo $view->render('@theme/templates/' . $template, $pageData);
+            $html = $view->render('@theme/templates/' . $template, $pageData);
         }
+
+        // Auto-inject companion CSS/JS for this template into the rendered HTML
+        $themePath = $themeManager->getActiveThemePath();
+        $themeSlug = $themeManager->getEffectiveTheme();
+
+        $pageCssFile = $themePath . '/public/css/' . $template . '.css';
+        if (file_exists($pageCssFile)) {
+            $cssTag = '<link rel="stylesheet" href="/themes/' . htmlspecialchars($themeSlug) . '/css/' . htmlspecialchars($template) . '.css?v=' . filemtime($pageCssFile) . '">';
+            $html = str_replace('</head>', $cssTag . "\n</head>", $html);
+        }
+
+        $pageJsFile = $themePath . '/public/js/' . $template . '.js';
+        if (file_exists($pageJsFile)) {
+            $jsTag = '<script src="/themes/' . htmlspecialchars($themeSlug) . '/js/' . htmlspecialchars($template) . '.js?v=' . filemtime($pageJsFile) . '" defer></script>';
+            $html = str_replace('</body>', $jsTag . "\n</body>", $html);
+        }
+
+        echo $html;
     }
 
     private function registerCollectionRoutes(ThemeManager $themeManager): void

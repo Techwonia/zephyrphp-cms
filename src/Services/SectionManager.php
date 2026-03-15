@@ -541,6 +541,16 @@ class SectionManager
                 'theme_settings' => $themeSettings,
             ]);
 
+            // Auto-inject companion CSS if it exists
+            $themePath = $this->themeManager->getActiveThemePath();
+            $cssRelative = 'css/sections/' . $type . '.css';
+            $cssFile = $themePath . '/public/' . $cssRelative;
+            if (file_exists($cssFile)) {
+                $themeSlug = $this->themeManager->getEffectiveTheme();
+                $cssUrl = '/themes/' . $themeSlug . '/' . $cssRelative . '?v=' . filemtime($cssFile);
+                $renderedHtml = '<link rel="stylesheet" href="' . htmlspecialchars($cssUrl) . '">' . "\n" . $renderedHtml;
+            }
+
             // Wrap with data attributes for inspector/customizer mode
             if ($sectionId !== null) {
                 $safeSectionId = htmlspecialchars($sectionId, ENT_QUOTES, 'UTF-8');
