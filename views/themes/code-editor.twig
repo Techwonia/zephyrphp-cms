@@ -816,6 +816,15 @@
                     <button class="schema-view-tab" data-view="json">JSON</button>
                 </div>
                 <div class="toolbar-separator"></div>
+                <button class="toolbar-btn" id="btnOpenCss" title="Open/create CSS file" style="display:none;">
+                    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 3a1 1 0 011-1h10a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3zm2 1v2h2V4H4zm4 0v2h4V4H8zM4 8v2h8V8H4zm0 4h8v-1H4v1z"/></svg>
+                    CSS
+                </button>
+                <button class="toolbar-btn" id="btnOpenJs" title="Open/create JS file" style="display:none;">
+                    <svg viewBox="0 0 16 16" fill="currentColor"><text x="2" y="12" font-size="10" font-weight="bold" font-family="sans-serif">JS</text></svg>
+                    JS
+                </button>
+                <div class="toolbar-separator"></div>
                 <button class="toolbar-btn" id="btnCopyPath" title="Copy file path" style="display:none;">
                     <svg viewBox="0 0 16 16" fill="currentColor" width="13" height="13"><rect x="5" y="1" width="8" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="3" y="5" width="8" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>
                     Copy
@@ -1110,6 +1119,8 @@
     const $unsaved = $('unsavedIndicator');
     const $btnSave = $('btnSave');
     const $btnCopyPath = $('btnCopyPath');
+    const $btnOpenCss = $('btnOpenCss');
+    const $btnOpenJs = $('btnOpenJs');
     const $btnDeleteFile = $('btnDeleteFile');
     const $toastContainer = $('toastContainer');
     const $quickSearchOverlay = $('quickSearchOverlay');
@@ -1813,7 +1824,10 @@
 
     function updateToolbarActions(path) {
         const isSection = path.startsWith('sections/') && path.endsWith('.twig');
+        const isTemplate = path.startsWith('templates/') && path.endsWith('.twig');
         $schemaViewTabs.classList.toggle('visible', isSection);
+        $btnOpenCss.style.display = (isSection || isTemplate) ? '' : 'none';
+        $btnOpenJs.style.display = isTemplate ? '' : 'none';
         $btnCopyPath.style.display = path && (path.startsWith('snippets/') || path.startsWith('public/')) ? '' : 'none';
         $btnDeleteFile.style.display = path && isDeletablePath(path) ? '' : 'none';
         // When switching away from a section file, reset to code view
@@ -3299,7 +3313,46 @@
     $('btnSearch').addEventListener('click', () => window._openQuickSearch());
     $('btnFormat').addEventListener('click', () => window._formatCode());
     $('btnSplit').addEventListener('click', () => window._toggleSplitView());
-    // Schema button removed — view tabs handle switching
+    // CSS/JS companion file buttons
+    async function openOrCreateCompanion(ext) {
+        const path = state.activeTab;
+        if (!path) return;
+
+        // Determine companion file path
+        let companionPath;
+        const name = path.split('/').pop().replace('.twig', '');
+        if (path.startsWith('sections/')) {
+            companionPath = `public/css/sections/${name}.${ext}`;
+        } else if (path.startsWith('templates/')) {
+            companionPath = `public/${ext}/${name}.${ext}`;
+        } else {
+            return;
+        }
+
+        // Check if already in file tree (i.e. exists)
+        const exists = state.allFilePaths.includes(companionPath);
+
+        if (!exists) {
+            // Create the file with a starter comment
+            const comment = ext === 'css'
+                ? `/* Styles for ${name} */\n`
+                : `// Script for ${name}\n`;
+            try {
+                await apiFetch(`${BASE_URL}/file/create`, { method: 'POST', body: { path: companionPath, content: comment } });
+                await loadFileTree();
+                showToast(`Created ${companionPath}`);
+            } catch (err) {
+                showToast(err.message || 'Failed to create file', 'error');
+                return;
+            }
+        }
+
+        openFile(companionPath);
+    }
+
+    $btnOpenCss.addEventListener('click', () => openOrCreateCompanion('css'));
+    $btnOpenJs.addEventListener('click', () => openOrCreateCompanion('js'));
+
     $btnCopyPath.addEventListener('click', () => {
         const path = state.activeTab;
         if (!path) return;
