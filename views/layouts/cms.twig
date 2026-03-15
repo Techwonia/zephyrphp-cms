@@ -1088,6 +1088,12 @@
             });
         });
 
+        // Hash-based tab activation (e.g. #settings → tab-settings, #pages → tab-pages)
+        if (window.location.hash) {
+            var hashTab = document.querySelector('[data-tab="tab-' + window.location.hash.slice(1) + '"]');
+            if (hashTab) hashTab.click();
+        }
+
         // Confirm delete forms
         document.querySelectorAll('.confirm-delete').forEach(function(form) {
             form.addEventListener('submit', function(e) {

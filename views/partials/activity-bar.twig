@@ -79,27 +79,26 @@
 }
 </style>
 
+{% set current_path = request().path() %}
+{% set theme_slug = theme.getSlug() %}
+
 <nav class="activity-bar">
     <div class="activity-bar-top">
-        {% set current_path = request().path() %}
-        {% set theme_slug = theme.getSlug() %}
-        {% set ab_items = [
-            { icon: 'home',    url: '/cms',             label: 'Dashboard',   match: 'exact:/cms' },
-            { icon: 'folder',  url: '/cms/collections', label: 'Collections', match: 'prefix:/cms/collections' },
-            { icon: 'image',   url: '/cms/media',       label: 'Media',       match: 'prefix:/cms/media' },
-            { icon: 'palette', url: '/cms/themes',      label: 'Themes',      match: 'prefix:/cms/themes' },
-            { icon: 'code',    url: '/cms/themes/' ~ theme_slug ~ '/code', label: 'Code Editor', match: 'prefix:/cms/themes/' ~ theme_slug ~ '/code' },
-            { icon: 'settings',url: '/cms/settings/system', label: 'Settings', match: 'prefix:/cms/settings' },
-        ] %}
-
-        {% for item in ab_items %}
-        <a href="{{ item.url }}" class="ab-item{% if cms_sidebar_active(current_path, item) %} active{% endif %}" data-tooltip="{{ item.label }}">
-            {% include '@cms/partials/sidebar-icon.twig' with {icon: item.icon} only %}
+        <a href="/cms/themes/{{ theme_slug }}/customize" class="ab-item{% if '/customize' in current_path %} active{% endif %}" data-tooltip="Customize">
+            {% include '@cms/partials/sidebar-icon.twig' with {icon: 'palette'} only %}
         </a>
-        {% endfor %}
+        <a href="/cms/themes/{{ theme_slug }}/code" class="ab-item{% if '/code' in current_path and '/customize' not in current_path %} active{% endif %}" data-tooltip="Code Editor">
+            {% include '@cms/partials/sidebar-icon.twig' with {icon: 'code'} only %}
+        </a>
+        <a href="/cms/themes/{{ theme_slug }}#pages" class="ab-item" data-tooltip="Pages">
+            {% include '@cms/partials/sidebar-icon.twig' with {icon: 'layers'} only %}
+        </a>
+        <a href="/cms/themes/{{ theme_slug }}#settings" class="ab-item" data-tooltip="Settings">
+            {% include '@cms/partials/sidebar-icon.twig' with {icon: 'settings'} only %}
+        </a>
     </div>
     <div class="activity-bar-bottom">
-        <a href="/cms" class="ab-item" data-tooltip="Back to CMS">
+        <a href="/cms/themes" class="ab-item" data-tooltip="Back to Themes">
             {% include '@cms/partials/sidebar-icon.twig' with {icon: 'arrow-left'} only %}
         </a>
     </div>
