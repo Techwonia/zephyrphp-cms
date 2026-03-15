@@ -287,37 +287,8 @@
         .editor-container {
             flex: 1; position: relative; overflow: hidden;
         }
-        .editor-container .cm-editor { height: 100%; background: #1e1e1e; }
-        .editor-container .cm-editor .cm-scroller {
-            font-family: var(--font-mono); font-size: 13px; line-height: 1.6;
-        }
-        .editor-container .cm-editor .cm-content { color: #d4d4d4; caret-color: #aeafad; }
-        .editor-container .cm-editor .cm-cursor { border-left-color: #aeafad; }
-        .editor-container .cm-editor .cm-gutters {
-            background: #1e1e1e; border-right: 1px solid #333; color: #858585;
-        }
-        .editor-container .cm-editor .cm-activeLineGutter {
-            background: #2a2d2e; color: #c6c6c6;
-        }
-        .editor-container .cm-editor .cm-activeLine {
-            background: rgba(255,255,255,0.04);
-        }
+        .editor-container .cm-editor { height: 100%; }
         .editor-container .cm-editor.cm-focused { outline: none; }
-        .editor-container .cm-editor .cm-selectionBackground,
-        .editor-container .cm-editor.cm-focused .cm-selectionBackground,
-        .editor-container .cm-editor ::selection { background: #264f78 !important; }
-        .editor-container .cm-editor .cm-matchingBracket {
-            background: rgba(255,255,255,0.1); outline: 1px solid #888;
-        }
-        .editor-container .cm-editor .cm-searchMatch { background: rgba(234,184,57,0.3); }
-        .editor-container .cm-editor .cm-searchMatch.cm-searchMatch-selected { background: rgba(81,154,186,0.4); }
-        .editor-container .cm-editor .cm-foldPlaceholder { background: #3c3c3c; border: none; color: #c5c5c5; }
-        .editor-container .cm-editor .cm-tooltip { background: #252526; color: #ccc; border: 1px solid #454545; }
-        .editor-container .cm-editor .cm-tooltip-autocomplete > ul > li[aria-selected] { background: #04395e; color: #fff; }
-        .editor-container .cm-editor .cm-panels { background: #252526; color: #ccc; }
-        .editor-container .cm-editor .cm-panels.cm-panels-top { border-bottom: 1px solid #333; }
-        .editor-container .cm-editor .cm-panel input { background: #3c3c3c; color: #ccc; border: 1px solid #555; }
-        .editor-container .cm-editor .cm-panel button { background: #0e639c; color: #fff; border: none; border-radius: 3px; }
 
         /* Empty state */
         .editor-empty {
@@ -459,12 +430,7 @@
 
         /* Schema JSON tab */
         .schema-json-view { flex: 1; position: relative; }
-        .schema-json-view .cm-editor { height: 100%; background: #1e1e1e; }
-        .schema-json-view .cm-editor .cm-content { color: #d4d4d4; }
-        .schema-json-view .cm-editor .cm-gutters { background: #1e1e1e; border-right: 1px solid #333; color: #858585; }
-        .schema-json-view .cm-editor .cm-scroller {
-            font-family: var(--font-mono); font-size: 12px; line-height: 1.5;
-        }
+        .schema-json-view .cm-editor { height: 100%; }
 
         /* Split file selector */
         .split-file-picker {
@@ -851,8 +817,7 @@
             "@codemirror/state": "https://cdn.jsdelivr.net/npm/@codemirror/state@6.5.2/+esm",
             "@codemirror/commands": "https://cdn.jsdelivr.net/npm/@codemirror/commands@6.8.0/+esm",
             "@codemirror/search": "https://cdn.jsdelivr.net/npm/@codemirror/search@6.5.10/+esm",
-            "@codemirror/language": "https://cdn.jsdelivr.net/npm/@codemirror/language@6.10.8/+esm",
-            "@lezer/highlight": "https://cdn.jsdelivr.net/npm/@lezer/highlight@1.2.1/+esm"
+            "@codemirror/theme-one-dark": "https://cdn.jsdelivr.net/npm/@codemirror/theme-one-dark@6.1.2/+esm"
         }
     }
     </script>
@@ -904,7 +869,7 @@
 
     // ── Load CodeMirror ──
     let EditorView, EditorState, basicSetup, keymap, langHtml, langJson, langCss, langJs, indentWithTab;
-    let syntaxHighlighting, HighlightStyle, tags;
+    let oneDark;
 
     try {
         const cmCore = await import('codemirror');
@@ -915,8 +880,7 @@
         const cmCss = await import('@codemirror/lang-css');
         const cmJs = await import('@codemirror/lang-javascript');
         const cmCommands = await import('@codemirror/commands');
-        const cmLang = await import('@codemirror/language');
-        const lezerHL = await import('@lezer/highlight');
+        const cmTheme = await import('@codemirror/theme-one-dark');
 
         EditorView = cmCore.EditorView || cmView.EditorView;
         EditorState = cmState.EditorState;
@@ -927,9 +891,7 @@
         langCss = cmCss.css;
         langJs = cmJs.javascript;
         indentWithTab = cmCommands.indentWithTab;
-        syntaxHighlighting = cmLang.syntaxHighlighting;
-        HighlightStyle = lezerHL.HighlightStyle;
-        tags = lezerHL.tags;
+        oneDark = cmTheme.oneDark;
 
         if (!EditorView || !EditorState || !basicSetup) throw new Error('Core CodeMirror exports missing');
 
@@ -1292,66 +1254,18 @@
                 ...(indentWithTab ? [indentWithTab] : []),
             ]) : null;
 
-            // VS Code Dark+ syntax theme
-            let darkThemeExt = null;
-            if (syntaxHighlighting && HighlightStyle && tags) {
-                const darkHL = HighlightStyle.define([
-                    { tag: tags.keyword, color: '#569cd6' },
-                    { tag: tags.controlKeyword, color: '#c586c0' },
-                    { tag: tags.operatorKeyword, color: '#569cd6' },
-                    { tag: tags.definitionKeyword, color: '#569cd6' },
-                    { tag: tags.moduleKeyword, color: '#c586c0' },
-                    { tag: [tags.name, tags.variableName], color: '#9cdcfe' },
-                    { tag: tags.definition(tags.variableName), color: '#4fc1ff' },
-                    { tag: tags.function(tags.variableName), color: '#dcdcaa' },
-                    { tag: tags.definition(tags.function(tags.variableName)), color: '#dcdcaa' },
-                    { tag: tags.propertyName, color: '#9cdcfe' },
-                    { tag: tags.definition(tags.propertyName), color: '#9cdcfe' },
-                    { tag: tags.function(tags.propertyName), color: '#dcdcaa' },
-                    { tag: tags.typeName, color: '#4ec9b0' },
-                    { tag: tags.className, color: '#4ec9b0' },
-                    { tag: tags.namespace, color: '#4ec9b0' },
-                    { tag: tags.macroName, color: '#dcdcaa' },
-                    { tag: tags.labelName, color: '#9cdcfe' },
-                    { tag: tags.comment, color: '#6a9955', fontStyle: 'italic' },
-                    { tag: tags.lineComment, color: '#6a9955', fontStyle: 'italic' },
-                    { tag: tags.blockComment, color: '#6a9955', fontStyle: 'italic' },
-                    { tag: tags.docComment, color: '#6a9955', fontStyle: 'italic' },
-                    { tag: tags.string, color: '#ce9178' },
-                    { tag: tags.special(tags.string), color: '#d7ba7d' },
-                    { tag: tags.regexp, color: '#d16969' },
-                    { tag: tags.number, color: '#b5cea8' },
-                    { tag: tags.bool, color: '#569cd6' },
-                    { tag: tags.null, color: '#569cd6' },
-                    { tag: tags.atom, color: '#569cd6' },
-                    { tag: tags.operator, color: '#d4d4d4' },
-                    { tag: tags.punctuation, color: '#d4d4d4' },
-                    { tag: tags.separator, color: '#d4d4d4' },
-                    { tag: tags.bracket, color: '#ffd700' },
-                    { tag: tags.angleBracket, color: '#808080' },
-                    { tag: tags.tagName, color: '#569cd6' },
-                    { tag: tags.attributeName, color: '#9cdcfe' },
-                    { tag: tags.attributeValue, color: '#ce9178' },
-                    { tag: tags.self, color: '#569cd6' },
-                    { tag: tags.meta, color: '#d4d4d4' },
-                    { tag: tags.invalid, color: '#f44747' },
-                    { tag: tags.link, color: '#569cd6', textDecoration: 'underline' },
-                    { tag: tags.heading, color: '#569cd6', fontWeight: 'bold' },
-                    { tag: tags.emphasis, fontStyle: 'italic' },
-                    { tag: tags.strong, fontWeight: 'bold' },
-                ]);
-                darkThemeExt = syntaxHighlighting(darkHL);
-            }
-
             const extensions = [
                 basicSetup,
                 saveKeymap,
-                darkThemeExt,
+                oneDark,
                 EditorView.updateListener.of(update => {
                     if (update.docChanged && role === 'main') onEditorChange();
                     if (update.selectionSet && role === 'main') updateCursorPos(update.state);
                 }),
-                EditorView.theme({ '&': { height: '100%' }, '.cm-scroller': { overflow: 'auto' } }),
+                EditorView.theme({
+                    '&': { height: '100%' },
+                    '.cm-scroller': { overflow: 'auto', fontFamily: 'var(--font-mono)', fontSize: '13px', lineHeight: '1.6' },
+                }),
             ].filter(Boolean);
             if (state.wordWrap) {
                 extensions.push(EditorView.lineWrapping);
