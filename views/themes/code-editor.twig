@@ -102,6 +102,9 @@
         .btn-save:hover { background: var(--primary-hover); }
         .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
 
+        /* ── Page Body (activity bar + main) ── */
+        .page-body { display: flex; flex: 1; min-height: 0; }
+
         /* ── Main Layout ── */
         .main-layout { display: flex; flex: 1; min-height: 0; }
 
@@ -595,6 +598,10 @@
         </div>
     </div>
 
+    <!-- Page Body -->
+    <div class="page-body">
+    {% include '@cms/partials/activity-bar.twig' %}
+
     <!-- Main Layout -->
     <div class="main-layout">
         <!-- Sidebar -->
@@ -721,6 +728,7 @@
             <div class="quick-search-results" id="quickSearchResults"></div>
         </div>
     </div>
+    </div>{# /.page-body #}
 
     <!-- Context Menu -->
     <div class="context-menu" id="contextMenu"></div>

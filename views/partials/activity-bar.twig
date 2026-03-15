@@ -1,0 +1,106 @@
+<style nonce="{{ csp_style_nonce() }}">
+.activity-bar {
+    width: 48px;
+    min-width: 48px;
+    background: #1A1A1A;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 0;
+    height: 100%;
+    z-index: 90;
+    border-right: 1px solid rgba(255,255,255,0.08);
+}
+.activity-bar-top {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+}
+.activity-bar-bottom {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+}
+.ab-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    color: #777;
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s;
+}
+.ab-item:hover {
+    background: rgba(255,255,255,0.08);
+    color: #ccc;
+    text-decoration: none;
+}
+.ab-item.active {
+    color: #36FBA1;
+    background: rgba(54,251,161,0.08);
+}
+.ab-item svg {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.ab-item::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: #303030;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s;
+    z-index: 200;
+}
+.ab-item:hover::after {
+    opacity: 1;
+}
+</style>
+
+<nav class="activity-bar">
+    <div class="activity-bar-top">
+        {% set current_path = request().path() %}
+        {% set theme_slug = theme.getSlug() %}
+        {% set ab_items = [
+            { icon: 'home',    url: '/cms',             label: 'Dashboard',   match: 'exact:/cms' },
+            { icon: 'folder',  url: '/cms/collections', label: 'Collections', match: 'prefix:/cms/collections' },
+            { icon: 'image',   url: '/cms/media',       label: 'Media',       match: 'prefix:/cms/media' },
+            { icon: 'palette', url: '/cms/themes',      label: 'Themes',      match: 'prefix:/cms/themes' },
+            { icon: 'code',    url: '/cms/themes/' ~ theme_slug ~ '/code', label: 'Code Editor', match: 'prefix:/cms/themes/' ~ theme_slug ~ '/code' },
+            { icon: 'settings',url: '/cms/settings/system', label: 'Settings', match: 'prefix:/cms/settings' },
+        ] %}
+
+        {% for item in ab_items %}
+        <a href="{{ item.url }}" class="ab-item{% if cms_sidebar_active(current_path, item) %} active{% endif %}" data-tooltip="{{ item.label }}">
+            {% include '@cms/partials/sidebar-icon.twig' with {icon: item.icon} only %}
+        </a>
+        {% endfor %}
+    </div>
+    <div class="activity-bar-bottom">
+        <a href="/cms" class="ab-item" data-tooltip="Back to CMS">
+            {% include '@cms/partials/sidebar-icon.twig' with {icon: 'arrow-left'} only %}
+        </a>
+    </div>
+</nav>

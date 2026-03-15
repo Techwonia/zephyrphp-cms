@@ -130,10 +130,17 @@
         .topbar-btn-icon:disabled { opacity: 0.35; cursor: not-allowed; }
         .topbar-btn-icon svg { width: 16px; height: 16px; }
 
+        /* ── Page Body (activity bar + main) ── */
+        .page-body {
+            display: flex;
+            height: calc(100vh - var(--topbar-h));
+        }
+
         /* ── Main Layout ── */
         .main-layout {
             display: flex;
-            height: calc(100vh - var(--topbar-h));
+            flex: 1;
+            min-height: 0;
         }
 
         /* ── Left Panel ── */
@@ -713,6 +720,10 @@
     </div>
 </div>
 
+<!-- Page Body -->
+<div class="page-body">
+{% include '@cms/partials/activity-bar.twig' %}
+
 <!-- Main Layout -->
 <div class="main-layout">
 
@@ -763,6 +774,7 @@
         <div class="right-body" id="rightBody"><!-- Populated by JS --></div>
     </div>
 </div>
+</div>{# /.page-body #}
 
 <!-- Section Picker Dropdown (anchored near Add Section button) -->
 <div class="section-picker-overlay" id="sectionPickerOverlay"></div>
