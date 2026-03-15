@@ -703,15 +703,15 @@
     <script type="importmap" nonce="{{ csp_nonce() }}">
     {
         "imports": {
-            "codemirror": "https://esm.sh/codemirror@6.65.7",
-            "@codemirror/lang-html": "https://esm.sh/@codemirror/lang-html@6.4.9",
-            "@codemirror/lang-json": "https://esm.sh/@codemirror/lang-json@6.0.1",
-            "@codemirror/lang-css": "https://esm.sh/@codemirror/lang-css@6.3.1",
-            "@codemirror/lang-javascript": "https://esm.sh/@codemirror/lang-javascript@6.2.2",
-            "@codemirror/view": "https://esm.sh/@codemirror/view@6.36.5",
-            "@codemirror/state": "https://esm.sh/@codemirror/state@6.5.2",
-            "@codemirror/commands": "https://esm.sh/@codemirror/commands@6.8.0",
-            "@codemirror/search": "https://esm.sh/@codemirror/search@6.5.10"
+            "codemirror": "https://cdn.jsdelivr.net/npm/codemirror@6.65.7/+esm",
+            "@codemirror/lang-html": "https://cdn.jsdelivr.net/npm/@codemirror/lang-html@6.4.9/+esm",
+            "@codemirror/lang-json": "https://cdn.jsdelivr.net/npm/@codemirror/lang-json@6.0.1/+esm",
+            "@codemirror/lang-css": "https://cdn.jsdelivr.net/npm/@codemirror/lang-css@6.3.1/+esm",
+            "@codemirror/lang-javascript": "https://cdn.jsdelivr.net/npm/@codemirror/lang-javascript@6.2.2/+esm",
+            "@codemirror/view": "https://cdn.jsdelivr.net/npm/@codemirror/view@6.36.5/+esm",
+            "@codemirror/state": "https://cdn.jsdelivr.net/npm/@codemirror/state@6.5.2/+esm",
+            "@codemirror/commands": "https://cdn.jsdelivr.net/npm/@codemirror/commands@6.8.0/+esm",
+            "@codemirror/search": "https://cdn.jsdelivr.net/npm/@codemirror/search@6.5.10/+esm"
         }
     }
     </script>
@@ -776,7 +776,7 @@
 
         EditorView = cmCore.EditorView || cmView.EditorView;
         EditorState = cmState.EditorState;
-        basicSetup = cmCore.basicSetup || cmCore.minimalSetup;
+        basicSetup = cmCore.basicSetup;
         keymap = cmView.keymap;
         langHtml = cmHtml.html;
         langJson = cmJson.json;
@@ -784,11 +784,9 @@
         langJs = cmJs.javascript;
         indentWithTab = cmCommands.indentWithTab;
 
-        // Verify critical exports resolved
-        if (!EditorView || !EditorState) throw new Error('Core CodeMirror exports missing');
+        if (!EditorView || !EditorState || !basicSetup) throw new Error('Core CodeMirror exports missing');
 
         state.cmAvailable = true;
-        console.log('CodeMirror loaded:', { basicSetup: !!basicSetup, keymap: !!keymap, indentWithTab: !!indentWithTab });
     } catch (e) {
         console.warn('CodeMirror failed to load:', e);
     }
