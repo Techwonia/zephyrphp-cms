@@ -2835,7 +2835,7 @@
                 text = '<link rel="stylesheet" href="' + _expr("asset('" + assetPath + "')") + '">';
                 label = 'CSS tag copied';
             } else if (ext === 'js') {
-                text = '<script src="' + _expr("asset('" + assetPath + "')") + '"></script>';
+                text = '<script src="' + _expr("asset('" + assetPath + "')") + '"><\/script>';
                 label = 'Script tag copied';
             } else {
                 text = _expr("asset('" + assetPath + "')");
