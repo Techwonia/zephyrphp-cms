@@ -1670,28 +1670,74 @@
         let indent = 0;
         let inRaw = false;
         let rawTag = '';
+        let inSchema = false;
+        let schemaLines = [];
         const result = [];
 
-        // Normalize: put each tag on its own line
+        // Normalize: put each tag on its own line (but not inside attributes)
         src = src
             .replace(/>\s*</g, '>\n<')
             .replace(/^\s+|\s+$/g, '');
 
         const lines = src.split('\n');
-        // Twig block-level tags that decrease indent before and increase after
-        const twigOpenRe = new RegExp('^' + '\\{' + '%[-\\s]+(block|for|if|macro|embed|autoescape|apply|verbatim|set\\s+\\w+\\s*%' + '}' + '|set\\s+\\w+)');
-        const twigMidRe = new RegExp('^' + '\\{' + '%[-\\s]+(else|elseif|elif)');
-        const twigCloseRe = new RegExp('^' + '\\{' + '%[-\\s]+(end(block|for|if|macro|embed|autoescape|apply|verbatim|set))');
+
+        // Twig block tags that open/close indentation
+        const twigBlockTags = 'block|for|if|macro|embed|autoescape|apply|verbatim';
+        const twigOpenRe = new RegExp('^\\{' + '%[-\\s]+(' + twigBlockTags + ')\\b');
+        const twigMidRe = new RegExp('^\\{' + '%[-\\s]+(else|elseif|elif)\\b');
+        const twigCloseRe = new RegExp('^\\{' + '%[-\\s]+end(' + twigBlockTags + ')\\b');
+        const twigSchemaOpenRe = new RegExp('^\\{' + '%[-\\s]+schema\\b');
+        const twigSchemaCloseRe = new RegExp('^\\{' + '%[-\\s]+endschema\\b');
+        // Single-line twig tags that do NOT create blocks (set, do, include, extends, use, from, import)
+        const twigInlineRe = new RegExp('^\\{' + '%[-\\s]+(set|do|include|extends|use|from|import)\\b');
 
         for (let i = 0; i < lines.length; i++) {
             let line = lines[i].trim();
             if (!line) { result.push(''); continue; }
 
-            // Track raw tags (don't re-indent contents of script/style/pre)
+            // Collect schema JSON content between schema tags
+            if (inSchema) {
+                if (twigSchemaCloseRe.test(line)) {
+                    // Format the collected JSON
+                    const jsonStr = schemaLines.join('\n').trim();
+                    if (jsonStr) {
+                        try {
+                            const parsed = JSON.parse(jsonStr);
+                            const formatted = JSON.stringify(parsed, null, 2);
+                            formatted.split('\n').forEach(jl => {
+                                result.push('    '.repeat(indent) + jl);
+                            });
+                        } catch(e) {
+                            // If JSON parse fails, just output as-is
+                            schemaLines.forEach(sl => {
+                                result.push('    '.repeat(indent) + sl.trim());
+                            });
+                        }
+                    }
+                    indent = Math.max(0, indent - 1);
+                    result.push('    '.repeat(indent) + line);
+                    inSchema = false;
+                    schemaLines = [];
+                } else {
+                    schemaLines.push(line);
+                }
+                continue;
+            }
+
+            // Track raw HTML tags (don't re-indent contents of script/style/pre)
             if (inRaw) {
                 result.push('    '.repeat(indent) + line);
                 const closeRe = new RegExp('</' + rawTag, 'i');
                 if (closeRe.test(line)) { inRaw = false; indent = Math.max(0, indent - 1); }
+                continue;
+            }
+
+            // Twig schema open: treat like a block, collect JSON inside
+            if (twigSchemaOpenRe.test(line)) {
+                result.push('    '.repeat(indent) + line);
+                indent++;
+                inSchema = true;
+                schemaLines = [];
                 continue;
             }
 
@@ -1702,14 +1748,20 @@
                 continue;
             }
 
-            // Twig mid tag (else/elseif): dedent, print, re-indent
+            // Twig mid tag (else/elseif): dedent, print, stays at same indent
             if (twigMidRe.test(line)) {
                 result.push('    '.repeat(Math.max(0, indent - 1)) + line);
                 continue;
             }
 
-            // Twig open tag: print then indent
-            if (twigOpenRe.test(line) && !twigCloseRe.test(line)) {
+            // Twig single-line tags (set, include, extends, etc.) — NO indent change
+            if (twigInlineRe.test(line)) {
+                result.push('    '.repeat(indent) + line);
+                continue;
+            }
+
+            // Twig block-open tag: print then indent
+            if (twigOpenRe.test(line)) {
                 result.push('    '.repeat(indent) + line);
                 indent++;
                 continue;
@@ -1731,7 +1783,6 @@
                     const selfClose = /\/\s*>$/.test(line);
                     if (!selfClose && !voidTags.has(tag)) {
                         if (rawTags.has(tag)) { inRaw = true; rawTag = tag; }
-                        // Only indent if the closing tag is NOT on the same line
                         const closeOnSame = new RegExp('</' + tag + '\\s*>', 'i');
                         if (!closeOnSame.test(line)) indent++;
                     }
