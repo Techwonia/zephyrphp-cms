@@ -208,6 +208,15 @@
         .file-name {
             overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;
         }
+        .file-copy-btn {
+            display: none; align-items: center; justify-content: center;
+            width: 20px; height: 20px; border: none; background: none;
+            color: var(--text-disabled); cursor: pointer; border-radius: 3px;
+            padding: 0; flex-shrink: 0; margin-left: auto;
+        }
+        .file-copy-btn:hover { color: var(--primary); background: var(--primary-bg); }
+        .file-item:hover .file-copy-btn { display: flex; }
+        .file-copy-btn.copied { color: var(--success); }
         .file-badge {
             font-size: 9px; padding: 0 4px; border-radius: 3px;
             background: rgba(0,91,211,0.08); color: var(--primary); font-weight: 600;
@@ -1286,6 +1295,18 @@
         setTimeout(() => { el.classList.add('fadeout'); setTimeout(() => el.remove(), 300); }, 3000);
     }
 
+    // ── Copy to clipboard ──
+    window._copyToClipboard = function(btn) {
+        const text = btn.getAttribute('data-copy');
+        navigator.clipboard.writeText(text).then(() => {
+            btn.classList.add('copied');
+            showToast('Copied to clipboard');
+            setTimeout(() => btn.classList.remove('copied'), 1500);
+        }).catch(() => {
+            showToast('Copy failed', 'error');
+        });
+    };
+
     // ── Escape helpers ──
     function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
     function escAttr(s) { return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -1411,9 +1432,31 @@
     function fileItemHtml(name, path, depth = 0) {
         const indent = 28 + (depth * 14);
         const isBinary = /\.(png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|eot)$/i.test(name);
+        let copyBtn = '';
+        if (path.startsWith('snippets/') && path.endsWith('.twig')) {
+            const snippetPath = '@theme/' + path;
+            copyBtn = `<button class="file-copy-btn" title="Copy include tag" data-copy="${escAttr(_tag('include "' + snippetPath + '"'))}" onclick="event.stopPropagation();window._copyToClipboard(this)"><svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><rect x="5" y="1" width="8" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="3" y="5" width="8" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></button>`;
+        } else if (path.startsWith('public/') && !isBinary) {
+            const ext = name.split('.').pop().toLowerCase();
+            let tag = '';
+            const assetPath = path.replace(/^public\//, '');
+            if (ext === 'css') {
+                tag = '<link rel="stylesheet" href="' + _expr("theme_asset('" + assetPath + "')") + '">';
+            } else if (ext === 'js') {
+                tag = '<script src="' + _expr("theme_asset('" + assetPath + "')") + '"></script>';
+            } else {
+                tag = _expr("theme_asset('" + assetPath + "')");
+            }
+            copyBtn = `<button class="file-copy-btn" title="Copy asset tag" data-copy="${escAttr(tag)}" onclick="event.stopPropagation();window._copyToClipboard(this)"><svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><rect x="5" y="1" width="8" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="3" y="5" width="8" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></button>`;
+        } else if (path.startsWith('public/') && isBinary) {
+            const assetPath = path.replace(/^public\//, '');
+            const tag = _expr("theme_asset('" + assetPath + "')");
+            copyBtn = `<button class="file-copy-btn" title="Copy asset path" data-copy="${escAttr(tag)}" onclick="event.stopPropagation();window._copyToClipboard(this)"><svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><rect x="5" y="1" width="8" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="3" y="5" width="8" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></button>`;
+        }
         return `<div class="file-item${isBinary ? ' binary' : ''}" data-path="${escAttr(path)}" style="padding-left:${indent}px;">
             ${fileIconSvg(name)}
             <span class="file-name">${esc(name)}</span>
+            ${copyBtn}
         </div>`;
     }
 
