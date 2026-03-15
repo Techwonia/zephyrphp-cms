@@ -830,6 +830,34 @@
 </div>
 </div>{# /.page-body #}
 
+<!-- Add Page Modal -->
+<div class="modal-overlay" id="addPageModal" style="display:none">
+    <div style="background:#fff; border-radius:12px; padding:24px; width:420px; max-width:90vw; box-shadow:0 8px 30px rgba(0,0,0,0.15);">
+        <h3 style="margin:0 0 16px; font-size:16px; font-weight:600;">Add New Page</h3>
+        <div style="margin-bottom:12px;">
+            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Page Title *</label>
+            <input type="text" id="newPageTitle" placeholder="About Us" style="width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:6px; font-size:13px;">
+        </div>
+        <div style="margin-bottom:12px;">
+            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">URL Path *</label>
+            <input type="text" id="newPageSlug" placeholder="/about" style="width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:6px; font-size:13px;">
+            <small style="color:var(--text-disabled); font-size:11px;">Use <code>{slug}</code> for dynamic, e.g. <code>/blog/{slug}</code></small>
+        </div>
+        <div style="margin-bottom:12px;">
+            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Layout</label>
+            <select id="newPageLayout" style="width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:6px; font-size:13px;">
+                {% for layout in layouts %}
+                <option value="{{ layout }}">{{ layout|capitalize }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
+            <button id="cancelAddPage" style="padding:8px 16px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-size:13px;">Cancel</button>
+            <button id="confirmAddPage" style="padding:8px 16px; background:var(--primary); color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600;">Create Page</button>
+        </div>
+    </div>
+</div>
+
 <!-- Section Picker Dropdown (anchored near Add Section button) -->
 <div class="section-picker-overlay" id="sectionPickerOverlay"></div>
 <div class="section-picker-dropdown" id="sectionPickerDropdown">
@@ -2953,13 +2981,57 @@
             if (template) {
                 document.querySelectorAll('.ab-page-item').forEach(function(p) { p.classList.remove('active'); });
                 item.classList.add('active');
-                // Switch page via the page select dropdown
                 var pageSelect = document.getElementById('pageSelect');
                 if (pageSelect) {
                     pageSelect.value = template;
                     pageSelect.dispatchEvent(new Event('change'));
                 }
             }
+        });
+    });
+
+    // ── Add Page Modal ──
+    var addPageModal = document.getElementById('addPageModal');
+    document.getElementById('addPageBtn')?.addEventListener('click', function() {
+        document.getElementById('newPageTitle').value = '';
+        document.getElementById('newPageSlug').value = '';
+        addPageModal.style.display = 'flex';
+        addPageModal.style.alignItems = 'center';
+        addPageModal.style.justifyContent = 'center';
+    });
+    document.getElementById('cancelAddPage')?.addEventListener('click', function() {
+        addPageModal.style.display = 'none';
+    });
+    addPageModal?.addEventListener('click', function(e) {
+        if (e.target === addPageModal) addPageModal.style.display = 'none';
+    });
+    document.getElementById('confirmAddPage')?.addEventListener('click', function() {
+        var btn = this;
+        var title = document.getElementById('newPageTitle').value.trim();
+        var slug = document.getElementById('newPageSlug').value.trim();
+        var layout = document.getElementById('newPageLayout').value;
+        if (!title || !slug) { alert('Title and URL are required'); return; }
+        btn.disabled = true;
+        btn.textContent = 'Creating...';
+        fetch('/cms/themes/' + THEME_SLUG + '/pages/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN },
+            body: JSON.stringify({ title: title, slug: slug, layout: layout })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert(data.error || 'Failed to create page');
+                btn.disabled = false;
+                btn.textContent = 'Create Page';
+            }
+        })
+        .catch(function() {
+            alert('Network error');
+            btn.disabled = false;
+            btn.textContent = 'Create Page';
         });
     });
 

@@ -108,15 +108,6 @@
         /* ── Main Layout ── */
         .main-layout { display: flex; flex: 1; min-height: 0; }
 
-        /* ── Activity bar panels ── */
-        .ab-panel { display: none; flex-direction: column; height: 100%; }
-        .ab-panel.active { display: flex; }
-        .ab-page-item-ce {
-            padding: 10px 14px; border-bottom: 1px solid var(--border); cursor: pointer;
-            transition: background 0.1s;
-        }
-        .ab-page-item-ce:hover { background: rgba(255,255,255,0.04); }
-
         /* ── Sidebar ── */
         .sidebar {
             width: var(--sidebar-w); min-width: var(--sidebar-w);
@@ -615,8 +606,6 @@
     <div class="main-layout">
         <!-- Sidebar -->
         <div class="sidebar">
-            <!-- Files Panel (default) -->
-            <div class="ab-panel active" id="abPanelFiles">
                 <div class="sidebar-header">
                     <span class="sidebar-title">Explorer</span>
                     <div class="sidebar-actions">
@@ -634,47 +623,6 @@
                 <div class="file-tree" id="fileTree">
                     <div class="loading-spinner">Loading files...</div>
                 </div>
-            </div>
-
-            <!-- Pages Panel -->
-            <div class="ab-panel" id="abPanelPages">
-                <div class="sidebar-header">
-                    <span class="sidebar-title">Pages</span>
-                </div>
-                <div class="ab-pages-list" id="cePagesList" style="overflow-y:auto;">
-                    {% for page in pages %}
-                    <a href="/cms/themes/{{ theme.getSlug() }}/code?open=templates/{{ page.template }}.twig" class="ab-page-item-ce" style="display:block; text-decoration:none;">
-                        <div style="font-size:13px; font-weight:600; color:#ccc;">{{ page.title }}</div>
-                        <div style="font-size:11px; color:#666; margin-top:2px; font-family:monospace;">{{ page.slug }}</div>
-                    </a>
-                    {% else %}
-                    <div style="padding:16px; color:#666; font-size:13px;">No pages.</div>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <!-- Settings Panel -->
-            <div class="ab-panel" id="abPanelSettings">
-                <div class="sidebar-header">
-                    <span class="sidebar-title">Theme Settings</span>
-                </div>
-                <div style="padding:12px; overflow-y:auto;">
-                    <form method="POST" action="/cms/themes/{{ theme.getSlug() }}">
-                        {{ csrf_field() | raw }}
-                        <div style="margin-bottom:10px;">
-                            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px; color:#ccc;">Name</label>
-                            <input type="text" name="name" value="{{ theme.getName() }}" required
-                                style="width:100%; padding:6px 10px; border:1px solid var(--border-color,#333); border-radius:6px; font-size:13px; background:var(--bg-input,#1e1e1e); color:#ccc;">
-                        </div>
-                        <div style="margin-bottom:10px;">
-                            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px; color:#ccc;">Description</label>
-                            <textarea name="description" rows="3"
-                                style="width:100%; padding:6px 10px; border:1px solid var(--border-color,#333); border-radius:6px; font-size:13px; background:var(--bg-input,#1e1e1e); color:#ccc; resize:vertical;">{{ theme.getDescription() ?? '' }}</textarea>
-                        </div>
-                        <button type="submit" style="padding:6px 14px; background:#008060; color:#fff; border:none; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;">Save</button>
-                    </form>
-                </div>
-            </div>
         </div>
 
         <!-- Editor Panel -->
@@ -2505,17 +2453,6 @@
 
     await loadFileTree();
 
-    // ── Activity Bar Panel Switching ──
-    var ceAbPanelMap = { files: 'abPanelFiles', pages: 'abPanelPages', settings: 'abPanelSettings' };
-    document.querySelectorAll('[data-ab-panel]').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            document.querySelectorAll('[data-ab-panel]').forEach(function(b) { b.classList.remove('active'); });
-            btn.classList.add('active');
-            document.querySelectorAll('.ab-panel').forEach(function(p) { p.classList.remove('active'); });
-            var targetId = ceAbPanelMap[btn.dataset.abPanel];
-            if (targetId) document.getElementById(targetId).classList.add('active');
-        });
-    });
 
     </script>
 </body>

@@ -105,24 +105,19 @@
         </a>
         {% endif %}
 
-        {% if ab_context == 'code-editor' %}
-        <button class="ab-item active" data-ab-panel="files" data-tooltip="Explorer">
-            {% include '@cms/partials/sidebar-icon.twig' with {icon: 'folder'} only %}
-        </button>
-        {% else %}
-        <a href="/cms/themes/{{ theme_slug }}/code" class="ab-item" data-tooltip="Code Editor">
+        <a href="/cms/themes/{{ theme_slug }}/code" class="ab-item{% if ab_context == 'code-editor' %} active{% endif %}" data-tooltip="Code Editor">
             {% include '@cms/partials/sidebar-icon.twig' with {icon: 'code'} only %}
         </a>
-        {% endif %}
 
+        {% if ab_context == 'customizer' %}
         <div class="ab-separator"></div>
-
         <button class="ab-item" data-ab-panel="pages" data-tooltip="Pages">
             {% include '@cms/partials/sidebar-icon.twig' with {icon: 'layers'} only %}
         </button>
         <button class="ab-item" data-ab-panel="settings" data-tooltip="Settings">
             {% include '@cms/partials/sidebar-icon.twig' with {icon: 'settings'} only %}
         </button>
+        {% endif %}
     </div>
     <div class="activity-bar-bottom">
         <a href="/cms/themes" class="ab-item" data-tooltip="Back to Themes">
