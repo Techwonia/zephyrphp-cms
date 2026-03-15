@@ -876,7 +876,7 @@
                     <label>Usage</label>
                     <div class="snippet-usage-hint" id="snippetUsageHint">
                         Include in your templates with:<br>
-                        <code class="snippet-usage-code">{% raw %}{% include "@theme/snippets/<span id="snippetUsageName">name</span>.twig" %}{% endraw %}</code>
+                        <code class="snippet-usage-code" id="snippetUsageCode"></code>
                     </div>
                 </div>
             </div>
@@ -1869,7 +1869,7 @@
                     break;
                 case 'snippet':
                     $('snippetName').value = '';
-                    $('snippetUsageName').textContent = 'name';
+                    $('snippetUsageCode').textContent = '{' + '% include "@theme/snippets/name.twig" %' + '}';
                     $('snippetModal').classList.add('visible');
                     setTimeout(() => $('snippetName').focus(), 100);
                     break;
@@ -1904,7 +1904,7 @@
     // Update snippet usage hint live
     $('snippetName').addEventListener('input', () => {
         const val = $('snippetName').value.trim().replace(/[^a-z0-9_-]/gi, '-').toLowerCase() || 'name';
-        $('snippetUsageName').textContent = val;
+        $('snippetUsageCode').textContent = '{' + '% include "@theme/snippets/' + val + '.twig" %' + '}';
     });
 
     // ── Create handlers ──
