@@ -776,7 +776,7 @@
 
         EditorView = cmCore.EditorView || cmView.EditorView;
         EditorState = cmState.EditorState;
-        basicSetup = cmCore.basicSetup;
+        basicSetup = cmCore.basicSetup || cmCore.minimalSetup;
         keymap = cmView.keymap;
         langHtml = cmHtml.html;
         langJson = cmJson.json;
@@ -784,7 +784,11 @@
         langJs = cmJs.javascript;
         indentWithTab = cmCommands.indentWithTab;
 
+        // Verify critical exports resolved
+        if (!EditorView || !EditorState) throw new Error('Core CodeMirror exports missing');
+
         state.cmAvailable = true;
+        console.log('CodeMirror loaded:', { basicSetup: !!basicSetup, keymap: !!keymap, indentWithTab: !!indentWithTab });
     } catch (e) {
         console.warn('CodeMirror failed to load:', e);
     }
@@ -1136,19 +1140,20 @@
 
         if (state.cmAvailable) {
             const langExt = getLanguage(path);
+            const saveKeymap = keymap ? keymap.of([
+                { key: 'Mod-s', run: () => { window._saveFile(); return true; } },
+                ...(indentWithTab ? [indentWithTab] : []),
+            ]) : null;
             const extensions = [
                 basicSetup,
-                keymap.of([
-                    { key: 'Mod-s', run: () => { window._saveFile(); return true; } },
-                    ...(indentWithTab ? [indentWithTab] : []),
-                ]),
+                saveKeymap,
                 EditorView.updateListener.of(update => {
                     if (update.docChanged && role === 'main') onEditorChange();
                     if (update.selectionSet && role === 'main') updateCursorPos(update.state);
                 }),
                 EditorView.theme({ '&': { height: '100%' }, '.cm-scroller': { overflow: 'auto' } }),
-            ];
-            if (state.wordWrap) {
+            ].filter(Boolean);
+            if (state.wordWrap && EditorView.lineWrapping) {
                 extensions.push(EditorView.lineWrapping);
             }
             if (langExt) extensions.push(langExt);
