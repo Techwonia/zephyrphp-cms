@@ -48,8 +48,11 @@ class ThemeCodeEditorController extends Controller
             return '';
         }
 
+        $pages = $this->themeManager->getPages($slug);
+
         return $this->render('cms::themes/code-editor', [
             'theme' => $theme,
+            'pages' => $pages,
             'user' => Auth::user(),
         ]);
     }

@@ -1,3 +1,4 @@
+{# Activity bar partial. Pass context: 'customizer' or 'code-editor' #}
 <style nonce="{{ csp_style_nonce() }}">
 .activity-bar {
     width: 48px;
@@ -37,6 +38,10 @@
     color: #777;
     text-decoration: none;
     transition: background 0.15s, color 0.15s;
+    cursor: pointer;
+    border: none;
+    background: none;
+    padding: 0;
 }
 .ab-item:hover {
     background: rgba(255,255,255,0.08);
@@ -77,25 +82,47 @@
 .ab-item:hover::after {
     opacity: 1;
 }
+.ab-separator {
+    width: 24px;
+    height: 1px;
+    background: rgba(255,255,255,0.08);
+    margin: 4px 0;
+}
 </style>
 
-{% set current_path = request().path() %}
 {% set theme_slug = theme.getSlug() %}
+{% set ab_context = ab_context|default('customizer') %}
 
-<nav class="activity-bar">
+<nav class="activity-bar" id="activityBar">
     <div class="activity-bar-top">
-        <a href="/cms/themes/{{ theme_slug }}/customize" class="ab-item{% if '/customize' in current_path %} active{% endif %}" data-tooltip="Customize">
+        {% if ab_context == 'customizer' %}
+        <button class="ab-item active" data-ab-panel="sections" data-tooltip="Sections">
+            {% include '@cms/partials/sidebar-icon.twig' with {icon: 'palette'} only %}
+        </button>
+        {% else %}
+        <a href="/cms/themes/{{ theme_slug }}/customize" class="ab-item" data-tooltip="Customize">
             {% include '@cms/partials/sidebar-icon.twig' with {icon: 'palette'} only %}
         </a>
-        <a href="/cms/themes/{{ theme_slug }}/code" class="ab-item{% if '/code' in current_path and '/customize' not in current_path %} active{% endif %}" data-tooltip="Code Editor">
+        {% endif %}
+
+        {% if ab_context == 'code-editor' %}
+        <button class="ab-item active" data-ab-panel="files" data-tooltip="Explorer">
+            {% include '@cms/partials/sidebar-icon.twig' with {icon: 'folder'} only %}
+        </button>
+        {% else %}
+        <a href="/cms/themes/{{ theme_slug }}/code" class="ab-item" data-tooltip="Code Editor">
             {% include '@cms/partials/sidebar-icon.twig' with {icon: 'code'} only %}
         </a>
-        <a href="/cms/themes/{{ theme_slug }}#pages" class="ab-item" data-tooltip="Pages">
+        {% endif %}
+
+        <div class="ab-separator"></div>
+
+        <button class="ab-item" data-ab-panel="pages" data-tooltip="Pages">
             {% include '@cms/partials/sidebar-icon.twig' with {icon: 'layers'} only %}
-        </a>
-        <a href="/cms/themes/{{ theme_slug }}#settings" class="ab-item" data-tooltip="Settings">
+        </button>
+        <button class="ab-item" data-ab-panel="settings" data-tooltip="Settings">
             {% include '@cms/partials/sidebar-icon.twig' with {icon: 'settings'} only %}
-        </a>
+        </button>
     </div>
     <div class="activity-bar-bottom">
         <a href="/cms/themes" class="ab-item" data-tooltip="Back to Themes">
