@@ -362,10 +362,95 @@ class SectionManager
                 }
             }
 
-            $html .= $this->renderSingleSection($type, $settings, $orderedBlocks, $globalSettings, $slug);
+            $html .= $this->renderSingleSection($type, $settings, $orderedBlocks, $globalSettings, $slug, $sectionId);
         }
 
         return $html;
+    }
+
+    /**
+     * Render sections from provided data (for live preview without saving to disk).
+     */
+    public function renderSectionsFromData(array $settingsData, string $pageTemplate, ?string $slug = null): string
+    {
+        $slug = $slug ?? $this->themeManager->getEffectiveTheme();
+        $pageData = $settingsData['pages'][$pageTemplate] ?? null;
+        if (!$pageData) {
+            return '';
+        }
+
+        $sections = $pageData['sections'] ?? [];
+        $order = $pageData['order'] ?? [];
+        $globalSettings = $this->getGlobalSettingsFromData($settingsData, $slug);
+
+        $html = '';
+        foreach ($order as $sectionId) {
+            $sectionConfig = $sections[$sectionId] ?? null;
+            if (!$sectionConfig) continue;
+
+            $type = $sectionConfig['type'];
+            $settings = $sectionConfig['settings'] ?? [];
+            $blocks = $sectionConfig['blocks'] ?? [];
+            $blockOrder = $sectionConfig['block_order'] ?? array_keys($blocks);
+
+            $schema = $this->getSectionSchema($slug, $type);
+            if ($schema) {
+                foreach ($schema['settings'] ?? [] as $schemaSetting) {
+                    $id = $schemaSetting['id'] ?? null;
+                    if ($id && !isset($settings[$id]) && isset($schemaSetting['default'])) {
+                        $settings[$id] = $schemaSetting['default'];
+                    }
+                }
+            }
+
+            $orderedBlocks = [];
+            foreach ($blockOrder as $blockId) {
+                if (isset($blocks[$blockId])) {
+                    $block = $blocks[$blockId];
+                    $block['id'] = $blockId;
+
+                    if ($schema && isset($schema['blocks'])) {
+                        foreach ($schema['blocks'] as $blockSchema) {
+                            if (($blockSchema['type'] ?? '') === ($block['type'] ?? '')) {
+                                foreach ($blockSchema['settings'] ?? [] as $bs) {
+                                    $bsId = $bs['id'] ?? null;
+                                    if ($bsId && !isset($block['settings'][$bsId]) && isset($bs['default'])) {
+                                        $block['settings'][$bsId] = $bs['default'];
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    $orderedBlocks[] = $block;
+                }
+            }
+
+            $html .= $this->renderSingleSection($type, $settings, $orderedBlocks, $globalSettings, $slug, $sectionId);
+        }
+
+        return $html;
+    }
+
+    /**
+     * Get global theme settings from provided data (for live preview without reading from disk).
+     */
+    public function getGlobalSettingsFromData(array $settingsData, ?string $slug = null): array
+    {
+        $slug = $slug ?? $this->themeManager->getEffectiveTheme();
+        $schema = $this->getSettingsSchema($slug);
+        $current = $settingsData['current'] ?? [];
+
+        $settings = [];
+        foreach ($schema as $group) {
+            foreach ($group['settings'] ?? [] as $setting) {
+                $id = $setting['id'] ?? null;
+                if (!$id) continue;
+                $settings[$id] = $current[$id] ?? $setting['default'] ?? null;
+            }
+        }
+
+        return $settings;
     }
 
     /**
@@ -378,7 +463,7 @@ class SectionManager
      *   - section.collection_data  → paginated result from collection() helper
      *   - section.collection_fields → array of field definitions [{slug, name, type, options}, ...]
      */
-    private function renderSingleSection(string $type, array $settings, array $blocks, array $themeSettings, string $slug): string
+    private function renderSingleSection(string $type, array $settings, array $blocks, array $themeSettings, string $slug, ?string $sectionId = null): string
     {
         try {
             $templateContent = $this->getSectionTemplate($type, $slug);
@@ -421,7 +506,7 @@ class SectionManager
             $twig = $view->getEngine();
             $template = $twig->createTemplate($templateContent);
 
-            return $template->render([
+            $renderedHtml = $template->render([
                 'section' => [
                     'type' => $type,
                     'settings' => $settings,
@@ -431,8 +516,16 @@ class SectionManager
                 ],
                 'theme_settings' => $themeSettings,
             ]);
+
+            // Wrap with data attributes for inspector mode
+            if ($sectionId !== null) {
+                $safeSectionId = htmlspecialchars($sectionId, ENT_QUOTES, 'UTF-8');
+                $safeType = htmlspecialchars($type, ENT_QUOTES, 'UTF-8');
+                $renderedHtml = '<div data-section-id="' . $safeSectionId . '" data-section-type="' . $safeType . '">' . $renderedHtml . '</div>';
+            }
+
+            return $renderedHtml;
         } catch (\Exception $e) {
-            // Show a visible error so users can diagnose broken sections
             $safeType = htmlspecialchars($type);
             $safeMsg = htmlspecialchars($e->getMessage());
             return '<div style="background:#fff3cd;border:1px solid #ffc107;color:#856404;padding:16px 20px;margin:8px 0;border-radius:6px;font-family:monospace;font-size:13px;">'

@@ -119,6 +119,7 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     // Theme Customizer
     Route::get('/themes/{slug}/customize', [ThemeCustomizerController::class, 'customize']);
     Route::get('/themes/{slug}/customize/preview', [ThemeCustomizerController::class, 'preview']);
+    Route::post('/themes/{slug}/customize/preview', [ThemeCustomizerController::class, 'previewPost']);
     Route::post('/themes/{slug}/customize/save', [ThemeCustomizerController::class, 'save']);
     Route::get('/themes/{slug}/customize/sections', [ThemeCustomizerController::class, 'listSections']);
     Route::get('/themes/{slug}/customize/schema/{type}', [ThemeCustomizerController::class, 'sectionSchema']);

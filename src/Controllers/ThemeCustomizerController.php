@@ -163,6 +163,88 @@ class ThemeCustomizerController extends Controller
     }
 
     /**
+     * POST-based preview — renders from request body without saving to disk.
+     * Used by the customizer for live preview updates via srcdoc.
+     */
+    public function previewPost(string $slug): string
+    {
+        if (!$this->requireAdmin()) return '';
+
+        $theme = Theme::findOneBy(['slug' => $slug]);
+        if (!$theme) {
+            return '<p>Theme not found.</p>';
+        }
+
+        $settingsData = json_decode(file_get_contents('php://input'), true);
+        if (!$settingsData) {
+            return '<p>Invalid preview data.</p>';
+        }
+
+        $pageTemplate = $this->input('page', 'home');
+        $pages = $this->themeManager->getPages($slug);
+
+        $pageConfig = null;
+        foreach ($pages as $p) {
+            if (($p['template'] ?? '') === $pageTemplate) {
+                $pageConfig = $p;
+                break;
+            }
+        }
+
+        if (!$pageConfig) {
+            return '<p>Page not found.</p>';
+        }
+
+        $layout = $pageConfig['layout'] ?? 'base';
+        $title = $pageConfig['title'] ?? '';
+
+        $view = \ZephyrPHP\View\View::getInstance();
+
+        $themePath = $this->themeManager->getThemePath($slug);
+        if (is_dir($themePath)) {
+            $view->addNamespace('theme', $themePath);
+            $templatesPath = $themePath . '/templates';
+            if (is_dir($templatesPath)) {
+                $view->prependTemplatePath($templatesPath);
+            }
+        }
+
+        \ZephyrPHP\Asset\Asset::setPathPrefix('themes/' . $slug);
+
+        $globalSettings = $this->sectionManager->getGlobalSettingsFromData($settingsData, $slug);
+
+        // Check if page has sections in the posted data
+        $pageData = $settingsData['pages'][$pageTemplate] ?? null;
+        $hasPostedSections = $pageData && !empty($pageData['order']);
+
+        if ($hasPostedSections) {
+            $sectionsHtml = $this->sectionManager->renderSectionsFromData($settingsData, $pageTemplate, $slug);
+            $html = $view->render('@theme/layouts/' . $layout, [
+                'page' => ['title' => $title, 'template' => $pageTemplate],
+                'sections_html' => $sectionsHtml,
+                'use_sections' => true,
+                'theme_settings' => $globalSettings,
+                'is_customizer_preview' => true,
+            ]);
+        } else {
+            try {
+                $html = $view->render($pageTemplate, [
+                    'page' => ['title' => $title],
+                    'theme_settings' => $globalSettings,
+                    'is_customizer_preview' => true,
+                ]);
+            } catch (\Exception $e) {
+                return '<p>Error rendering template: ' . htmlspecialchars($e->getMessage()) . '</p>';
+            }
+        }
+
+        // Inject <base href="/"> for srcdoc compatibility (relative URLs)
+        $html = str_replace('<head>', '<head><base href="/">', $html);
+
+        return $html;
+    }
+
+    /**
      * AJAX: Save customizer state (global settings + all page sections).
      */
     public function save(string $slug): void
