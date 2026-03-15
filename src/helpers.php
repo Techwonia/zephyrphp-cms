@@ -22,7 +22,7 @@ if (!function_exists('collection')) {
             $useCache = empty($options['no_cache']);
             unset($options['no_cache']);
 
-            if ($useCache) {
+            if ($useCache && class_exists(CacheManager::class)) {
                 $cacheKey = 'cms.collection.' . $slug . '.' . md5(serialize($options));
                 try {
                     $cache = CacheManager::getInstance();
@@ -30,7 +30,7 @@ if (!function_exists('collection')) {
                     if ($cached !== null) {
                         return $cached;
                     }
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
                     // Cache unavailable, continue without it
                 }
             }
@@ -109,13 +109,13 @@ if (!function_exists('collection')) {
             if ($useCache && isset($cache, $cacheKey)) {
                 try {
                     $cache->set($cacheKey, $result, 60);
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
                     // Cache write failure is non-fatal
                 }
             }
 
             return $result;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return $emptyResult;
         }
     }
@@ -136,7 +136,7 @@ if (!function_exists('entry')) {
             $useCache = empty($options['no_cache']);
             unset($options['no_cache']);
 
-            if ($useCache) {
+            if ($useCache && class_exists(CacheManager::class)) {
                 $cacheKey = 'cms.entry.' . $slug . '.' . $identifier;
                 try {
                     $cache = CacheManager::getInstance();
@@ -144,7 +144,7 @@ if (!function_exists('entry')) {
                     if ($cached !== null) {
                         return $cached;
                     }
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
                     // Cache unavailable
                 }
             }
@@ -205,13 +205,13 @@ if (!function_exists('entry')) {
             if ($useCache && isset($cache, $cacheKey)) {
                 try {
                     $cache->set($cacheKey, $entry, 60);
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
                     // Cache write failure is non-fatal
                 }
             }
 
             return $entry;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return null;
         }
     }
@@ -490,7 +490,7 @@ if (!function_exists('cms_invalidate_cache')) {
             // For immediate invalidation, we delete known keys when possible
             $cache->delete('cms.entry.' . $collectionSlug);
             $cache->delete('cms.collection.' . $collectionSlug);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             // Cache unavailable, ignore
         }
     }
