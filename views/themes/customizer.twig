@@ -451,50 +451,90 @@
             transition: all 0.15s;
         }
 
-        /* ── Modal ── */
-        .modal-overlay {
-            display: none; position: fixed; inset: 0;
-            background: rgba(0,0,0,0.5); z-index: 200;
-            align-items: center; justify-content: center;
+        /* ── Tree Groups (Header / Template / Footer) ── */
+        .tree-group { }
+        .tree-group-label {
+            padding: 12px 16px 6px; font-size: 11px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.05em;
+            color: var(--text-secondary); border-top: 1px solid var(--border);
         }
-        .modal-overlay.open { display: flex; }
-        .modal-card {
-            background: #fff; border-radius: 12px;
-            width: 560px; max-width: 90vw; max-height: 80vh;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.25);
-            display: flex; flex-direction: column;
+        .tree-group:first-child .tree-group-label { border-top: none; }
+        .tree-page-title {
+            padding: 14px 16px 4px; font-size: 14px; font-weight: 600; color: var(--text);
         }
-        .modal-head {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 16px 20px; border-bottom: 1px solid var(--border);
+        .tree-group-add-section {
+            display: flex; align-items: center; gap: 6px;
+            padding: 6px 16px; margin: 2px 0;
+            border: none; background: transparent;
+            color: var(--primary); cursor: pointer;
+            font-size: 12px; font-weight: 500; font-family: var(--font);
+            transition: background 0.1s; width: 100%;
         }
-        .modal-head h3 { font-size: 16px; font-weight: 600; }
-        .modal-close {
-            background: none; border: none; font-size: 20px;
-            cursor: pointer; color: var(--text-secondary); line-height: 1;
+        .tree-group-add-section:hover { background: var(--bg-hover); }
+        .tree-group-add-section svg { width: 14px; height: 14px; }
+
+        /* ── Section Picker Dropdown ── */
+        .section-picker-overlay {
+            display: none; position: fixed; inset: 0; z-index: 199;
         }
-        .modal-search { padding: 12px 20px; border-bottom: 1px solid var(--border); }
-        .modal-search input {
+        .section-picker-overlay.open { display: block; }
+        .section-picker-dropdown {
+            display: none; position: fixed;
+            width: 520px; max-height: 480px;
+            background: var(--bg-surface); border: 1px solid var(--border);
+            border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+            z-index: 200; flex-direction: column; overflow: hidden;
+        }
+        .section-picker-dropdown.open { display: flex; }
+        .section-picker-search {
+            padding: 12px 16px; border-bottom: 1px solid var(--border);
+        }
+        .section-picker-search input {
             width: 100%; padding: 8px 12px;
             border: 1px solid var(--border); border-radius: 6px;
             font-size: 13px; font-family: var(--font);
+            background: var(--bg-subdued);
         }
-        .modal-search input:focus { outline: none; border-color: var(--primary); }
-        .modal-body { flex: 1; overflow-y: auto; padding: 16px 20px; }
-        .section-picker-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-        .section-picker-item {
-            border: 1px solid var(--border); border-radius: 8px;
-            padding: 16px; cursor: pointer; transition: all 0.15s; text-align: center;
+        .section-picker-search input:focus { outline: none; border-color: var(--primary); background: #fff; }
+        .section-picker-tabs {
+            display: flex; border-bottom: 1px solid var(--border); padding: 0 16px;
         }
-        .section-picker-item:hover { border-color: var(--primary); background: rgba(0,91,211,0.03); }
-        .section-picker-icon {
-            width: 40px; height: 40px; margin: 0 auto 8px;
-            background: var(--bg-subdued); border-radius: 8px;
-            display: flex; align-items: center; justify-content: center; font-size: 18px;
+        .section-picker-tab {
+            padding: 8px 12px; font-size: 12px; font-weight: 500;
+            color: var(--text-secondary); background: none; border: none;
+            border-bottom: 2px solid transparent; cursor: pointer;
+            font-family: var(--font); transition: all 0.15s;
         }
-        .section-picker-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
-        .section-picker-desc { font-size: 11px; color: var(--text-secondary); line-height: 1.4; }
-        .section-picker-create { border-style: dashed; border-color: var(--primary); }
+        .section-picker-tab:hover { color: var(--text); }
+        .section-picker-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .section-picker-inner {
+            display: flex; flex: 1; overflow: hidden; min-height: 0;
+        }
+        .section-picker-list {
+            width: 220px; overflow-y: auto; border-right: 1px solid var(--border);
+        }
+        .section-picker-list-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 9px 16px; cursor: pointer; font-size: 13px;
+            color: var(--text); transition: background 0.1s;
+            border: none; background: none; width: 100%;
+            font-family: var(--font); text-align: left;
+        }
+        .section-picker-list-item:hover { background: var(--bg-hover); }
+        .section-picker-list-item.active { background: var(--primary-bg); color: var(--primary); font-weight: 500; }
+        .section-picker-list-item-icon {
+            width: 24px; height: 24px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center; font-size: 14px;
+        }
+        .section-picker-list-item.create { color: var(--primary); font-weight: 500; border-top: 1px solid var(--border); }
+        .section-picker-preview {
+            flex: 1; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; padding: 24px; background: var(--bg-subdued);
+            text-align: center; overflow-y: auto;
+        }
+        .section-picker-preview-icon { font-size: 48px; margin-bottom: 16px; }
+        .section-picker-preview-name { font-size: 15px; font-weight: 600; margin-bottom: 8px; color: var(--text); }
+        .section-picker-preview-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.5; max-width: 220px; }
 
         /* ── Link Picker ── */
         .link-picker-trigger {
@@ -724,18 +764,22 @@
     </div>
 </div>
 
-<!-- Add Section Modal -->
-<div class="modal-overlay" id="addSectionModal">
-    <div class="modal-card">
-        <div class="modal-head">
-            <h3>Add Section</h3>
-            <button class="modal-close" id="closeSectionModal">&times;</button>
-        </div>
-        <div class="modal-search">
-            <input type="text" id="sectionSearch" placeholder="Search sections...">
-        </div>
-        <div class="modal-body">
-            <div class="section-picker-grid" id="sectionPickerGrid"><!-- Populated by JS --></div>
+<!-- Section Picker Dropdown (anchored near Add Section button) -->
+<div class="section-picker-overlay" id="sectionPickerOverlay"></div>
+<div class="section-picker-dropdown" id="sectionPickerDropdown">
+    <div class="section-picker-search">
+        <input type="text" id="sectionSearch" placeholder="Search sections...">
+    </div>
+    <div class="section-picker-tabs">
+        <button class="section-picker-tab active">Sections</button>
+        <button class="section-picker-tab" disabled style="opacity:0.4;cursor:default;">Apps</button>
+    </div>
+    <div class="section-picker-inner">
+        <div class="section-picker-list" id="sectionPickerList"><!-- Populated by JS --></div>
+        <div class="section-picker-preview" id="sectionPickerPreview">
+            <div class="section-picker-preview-icon">📦</div>
+            <div class="section-picker-preview-name">Select a section</div>
+            <div class="section-picker-preview-desc">Hover over a section type to see its details</div>
         </div>
     </div>
 </div>
@@ -918,11 +962,13 @@
 
     function getPageData() {
         if (!state.settingsData.pages[state.currentPage]) {
-            state.settingsData.pages[state.currentPage] = { sections: {}, order: [] };
+            state.settingsData.pages[state.currentPage] = { sections: {}, order: [], header_order: [], footer_order: [] };
         }
         var pd = state.settingsData.pages[state.currentPage];
         if (!pd.sections || Array.isArray(pd.sections)) pd.sections = {};
         if (!pd.order) pd.order = [];
+        if (!pd.header_order) pd.header_order = [];
+        if (!pd.footer_order) pd.footer_order = [];
         return pd;
     }
 
@@ -963,191 +1009,120 @@
         } catch(e) {}
     });
 
-    // ── Section Tree Rendering (Shopify-style flat list) ──
-    function renderSectionTree() {
-        var container = document.getElementById('sectionTree');
-        container.innerHTML = '';
-        var pageData = getPageData();
-        var order = pageData.order || [];
-        var sections = pageData.sections || {};
+    // ── Section Tree Rendering (Shopify-style grouped: Header / Template / Footer) ──
 
-        // Section list container
-        var listEl = document.createElement('div');
-        listEl.className = 'tree-section-list';
-        listEl.id = 'templateSectionList';
+    function buildSectionRow(sectionId, sec, schema) {
+        var hasBlocks = sec.block_order && sec.block_order.length > 0;
+        var isExpanded = !!state.expandedSections[sectionId];
+        var isActive = state.activeSection === sectionId && !state.activeBlock;
+        var isDisabled = !!sec.disabled;
 
-        if (order.length === 0) {
-            var empty = document.createElement('div');
-            empty.style.cssText = 'padding:24px 16px; text-align:center; color:var(--text-disabled); font-size:12px;';
-            empty.textContent = 'No sections yet. Click below to add one.';
-            listEl.appendChild(empty);
+        var wrapper = document.createElement('div');
+        wrapper.className = 'tree-section-wrapper';
+        wrapper.dataset.treeSectionId = sectionId;
+
+        var row = document.createElement('div');
+        row.className = 'tree-item' + (isActive ? ' active' : '') + (isDisabled ? ' disabled' : '');
+        row.dataset.sectionId = sectionId;
+
+        // Drag handle
+        var dragHandle = document.createElement('span');
+        dragHandle.className = 'drag-handle';
+        dragHandle.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01"/></svg>';
+        row.appendChild(dragHandle);
+
+        // Chevron on LEFT
+        if (hasBlocks || (schema.blocks && schema.blocks.length > 0)) {
+            var chevron = document.createElement('span');
+            chevron.className = 'tree-item-chevron' + (isExpanded ? ' open' : '');
+            chevron.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 18l6-6-6-6"/></svg>';
+            chevron.addEventListener('click', function(e) {
+                e.stopPropagation();
+                state.expandedSections[sectionId] = !state.expandedSections[sectionId];
+                renderSectionTree();
+            });
+            row.appendChild(chevron);
+        } else {
+            var spacer = document.createElement('span');
+            spacer.className = 'tree-item-chevron-spacer';
+            row.appendChild(spacer);
         }
 
-        order.forEach(function(sectionId) {
-            var sec = sections[sectionId];
-            if (!sec) return;
-            var schema = state.availableSections[sec.type] || {};
-            var hasBlocks = sec.block_order && sec.block_order.length > 0;
-            var isExpanded = !!state.expandedSections[sectionId];
+        // Icon
+        var icon = document.createElement('span');
+        icon.className = 'tree-item-icon';
+        icon.textContent = SECTION_ICONS[sec.type] || '📦';
+        row.appendChild(icon);
 
-            var wrapper = document.createElement('div');
-            wrapper.className = 'tree-section-wrapper';
-            wrapper.dataset.treeSectionId = sectionId;
+        // Name
+        var nameEl = document.createElement('span');
+        nameEl.className = 'tree-item-name';
+        nameEl.textContent = sec.custom_name || schema.name || sec.type;
+        row.appendChild(nameEl);
 
-            // Section row
-            var isActive = state.activeSection === sectionId && !state.activeBlock;
-            var isDisabled = !!sec.disabled;
-            var row = document.createElement('div');
-            row.className = 'tree-item' + (isActive ? ' active' : '') + (isDisabled ? ' disabled' : '');
-            row.dataset.sectionId = sectionId;
+        // Context menu
+        var menuWrap = document.createElement('span');
+        menuWrap.className = 'tree-item-menu';
+        var menuBtn = document.createElement('button');
+        menuBtn.className = 'tree-item-menu-btn';
+        menuBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>';
+        menuBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            closeAllContextMenus();
+            var cm = menuWrap.querySelector('.context-menu');
+            if (cm) cm.classList.toggle('open');
+        });
+        menuWrap.appendChild(menuBtn);
 
-            // Drag handle
-            var dragHandle = document.createElement('span');
-            dragHandle.className = 'drag-handle';
-            dragHandle.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01"/></svg>';
-            row.appendChild(dragHandle);
+        var ctxMenu = document.createElement('div');
+        ctxMenu.className = 'context-menu';
+        ctxMenu.innerHTML =
+            '<button class="context-menu-item" data-action="duplicate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Duplicate</button>' +
+            '<button class="context-menu-item" data-action="rename"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.83 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg> Rename</button>' +
+            '<button class="context-menu-item" data-action="toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' + (isDisabled
+                ? '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'
+                : '<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>'
+            ) + '</svg> ' + (isDisabled ? 'Show' : 'Hide') + '</button>' +
+            '<div class="context-menu-divider"></div>' +
+            '<button class="context-menu-item danger" data-action="remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg> Remove</button>';
 
-            // Chevron on LEFT (before icon) — or spacer if no blocks
-            if (hasBlocks) {
-                var chevron = document.createElement('span');
-                chevron.className = 'tree-item-chevron' + (isExpanded ? ' open' : '');
-                chevron.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 18l6-6-6-6"/></svg>';
-                chevron.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    state.expandedSections[sectionId] = !state.expandedSections[sectionId];
-                    renderSectionTree();
-                });
-                row.appendChild(chevron);
+        ctxMenu.addEventListener('click', function(e) {
+            var btn = e.target.closest('[data-action]');
+            if (!btn) return;
+            e.stopPropagation();
+            closeAllContextMenus();
+            handleSectionAction(btn.dataset.action, sectionId);
+        });
+
+        menuWrap.appendChild(ctxMenu);
+        row.appendChild(menuWrap);
+
+        row.addEventListener('click', function(e) {
+            if (e.target.closest('.drag-handle') || e.target.closest('.tree-item-chevron') || e.target.closest('.tree-item-menu')) return;
+            selectSection(sectionId);
+        });
+
+        wrapper.appendChild(row);
+
+        // Block sub-items
+        if (hasBlocks || (schema.blocks && schema.blocks.length > 0)) {
+            var subItems = document.createElement('div');
+            subItems.className = 'tree-subitems' + (isExpanded ? ' open' : '');
+            subItems.dataset.sectionId = sectionId;
+
+            // Add block link at top (Shopify style)
+            var blockCount = (sec.block_order || []).length;
+            var maxBlocks = schema.max_blocks || 0;
+            var addBlockBtn = document.createElement('button');
+            addBlockBtn.className = 'tree-add-block';
+            var addLabel = 'Add block';
+            if (maxBlocks > 0) addLabel += ' (' + blockCount + '/' + maxBlocks + ')';
+            addBlockBtn.innerHTML = '<span style="font-size:13px;">+</span> ' + addLabel;
+            if (maxBlocks > 0 && blockCount >= maxBlocks) {
+                addBlockBtn.disabled = true;
+                addBlockBtn.style.opacity = '0.4';
+                addBlockBtn.style.cursor = 'default';
             } else {
-                var spacer = document.createElement('span');
-                spacer.className = 'tree-item-chevron-spacer';
-                row.appendChild(spacer);
-            }
-
-            // Icon
-            var icon = document.createElement('span');
-            icon.className = 'tree-item-icon';
-            icon.textContent = SECTION_ICONS[sec.type] || '📦';
-            row.appendChild(icon);
-
-            // Name
-            var nameEl = document.createElement('span');
-            nameEl.className = 'tree-item-name';
-            nameEl.textContent = sec.custom_name || schema.name || sec.type;
-            row.appendChild(nameEl);
-
-            // Context menu (three-dot)
-            var menuWrap = document.createElement('span');
-            menuWrap.className = 'tree-item-menu';
-            var menuBtn = document.createElement('button');
-            menuBtn.className = 'tree-item-menu-btn';
-            menuBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>';
-            menuBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                closeAllContextMenus();
-                var cm = menuWrap.querySelector('.context-menu');
-                if (cm) cm.classList.toggle('open');
-            });
-            menuWrap.appendChild(menuBtn);
-
-            // Build context menu dropdown
-            var ctxMenu = document.createElement('div');
-            ctxMenu.className = 'context-menu';
-            ctxMenu.innerHTML =
-                '<button class="context-menu-item" data-action="duplicate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Duplicate</button>' +
-                '<button class="context-menu-item" data-action="rename"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.83 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg> Rename</button>' +
-                '<button class="context-menu-item" data-action="toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' + (isDisabled
-                    ? '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'
-                    : '<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>'
-                ) + '</svg> ' + (isDisabled ? 'Show' : 'Hide') + '</button>' +
-                '<div class="context-menu-divider"></div>' +
-                '<button class="context-menu-item danger" data-action="remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg> Remove</button>';
-
-            ctxMenu.addEventListener('click', function(e) {
-                var btn = e.target.closest('[data-action]');
-                if (!btn) return;
-                e.stopPropagation();
-                closeAllContextMenus();
-                var action = btn.dataset.action;
-                handleSectionAction(action, sectionId);
-            });
-
-            menuWrap.appendChild(ctxMenu);
-            row.appendChild(menuWrap);
-
-            row.addEventListener('click', function(e) {
-                if (e.target.closest('.drag-handle') || e.target.closest('.tree-item-chevron') || e.target.closest('.tree-item-menu')) return;
-                selectSection(sectionId);
-            });
-
-            wrapper.appendChild(row);
-
-            // Block sub-items (shown when expanded)
-            if (hasBlocks) {
-                var subItems = document.createElement('div');
-                subItems.className = 'tree-subitems' + (isExpanded ? ' open' : '');
-                subItems.dataset.sectionId = sectionId;
-
-                sec.block_order.forEach(function(blockId) {
-                    var block = (sec.blocks || {})[blockId];
-                    if (!block) return;
-                    var blockSchema = findBlockSchema(schema, block.type);
-                    var blockName = blockSchema ? blockSchema.name : block.type;
-
-                    // Use first text setting as subtitle
-                    var subtitle = '';
-                    if (blockSchema && block.settings) {
-                        for (var i = 0; i < (blockSchema.settings || []).length; i++) {
-                            var bs = blockSchema.settings[i];
-                            if ((bs.type === 'text' || bs.type === 'textarea') && block.settings[bs.id]) {
-                                subtitle = block.settings[bs.id];
-                                if (subtitle.length > 20) subtitle = subtitle.substring(0, 20) + '...';
-                                break;
-                            }
-                        }
-                    }
-
-                    var subRow = document.createElement('div');
-                    subRow.className = 'tree-subitem' + (state.activeBlock === blockId ? ' active' : '');
-                    subRow.dataset.blockId = blockId;
-                    subRow.dataset.sectionId = sectionId;
-
-                    var subDrag = document.createElement('span');
-                    subDrag.className = 'tree-subitem-drag';
-                    subDrag.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01"/></svg>';
-
-                    var subIcon = document.createElement('span');
-                    subIcon.className = 'tree-subitem-icon';
-                    subIcon.textContent = BLOCK_TYPE_ICONS[block.type] || '◻';
-
-                    var subNameEl = document.createElement('span');
-                    subNameEl.className = 'tree-subitem-name';
-                    subNameEl.textContent = blockName;
-
-                    subRow.appendChild(subDrag);
-                    subRow.appendChild(subIcon);
-                    subRow.appendChild(subNameEl);
-
-                    // Italic subtitle after name
-                    if (subtitle) {
-                        var subtitleEl = document.createElement('span');
-                        subtitleEl.className = 'tree-subitem-subtitle';
-                        subtitleEl.textContent = subtitle;
-                        subRow.appendChild(subtitleEl);
-                    }
-
-                    subRow.addEventListener('click', function(e) {
-                        if (e.target.closest('.tree-subitem-drag')) return;
-                        selectBlock(sectionId, blockId);
-                    });
-
-                    subItems.appendChild(subRow);
-                });
-
-                // Add block link
-                var addBlockBtn = document.createElement('button');
-                addBlockBtn.className = 'tree-add-block';
-                addBlockBtn.innerHTML = '<span style="font-size:13px;">+</span> Add block';
                 addBlockBtn.addEventListener('click', function() {
                     selectSection(sectionId);
                     setTimeout(function() {
@@ -1155,45 +1130,148 @@
                         if (btn) btn.click();
                     }, 100);
                 });
-                subItems.appendChild(addBlockBtn);
-
-                wrapper.appendChild(subItems);
             }
+            subItems.appendChild(addBlockBtn);
 
-            listEl.appendChild(wrapper);
+            (sec.block_order || []).forEach(function(blockId) {
+                var block = (sec.blocks || {})[blockId];
+                if (!block) return;
+                var blockSchema = findBlockSchema(schema, block.type);
+                var blockName = blockSchema ? blockSchema.name : block.type;
+
+                var subtitle = '';
+                if (blockSchema && block.settings) {
+                    for (var i = 0; i < (blockSchema.settings || []).length; i++) {
+                        var bs = blockSchema.settings[i];
+                        if ((bs.type === 'text' || bs.type === 'textarea') && block.settings[bs.id]) {
+                            subtitle = block.settings[bs.id];
+                            if (subtitle.length > 20) subtitle = subtitle.substring(0, 20) + '...';
+                            break;
+                        }
+                    }
+                }
+
+                var subRow = document.createElement('div');
+                subRow.className = 'tree-subitem' + (state.activeBlock === blockId ? ' active' : '');
+                subRow.dataset.blockId = blockId;
+                subRow.dataset.sectionId = sectionId;
+
+                var subDrag = document.createElement('span');
+                subDrag.className = 'tree-subitem-drag';
+                subDrag.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01"/></svg>';
+
+                var subIcon = document.createElement('span');
+                subIcon.className = 'tree-subitem-icon';
+                subIcon.textContent = BLOCK_TYPE_ICONS[block.type] || '◻';
+
+                var subNameEl = document.createElement('span');
+                subNameEl.className = 'tree-subitem-name';
+
+                if (subtitle) {
+                    subNameEl.innerHTML = blockName + ' <span class="tree-subitem-subtitle">\u2013 ' + subtitle + '</span>';
+                } else {
+                    subNameEl.textContent = blockName;
+                }
+
+                subRow.appendChild(subDrag);
+                subRow.appendChild(subIcon);
+                subRow.appendChild(subNameEl);
+
+                subRow.addEventListener('click', function(e) {
+                    if (e.target.closest('.tree-subitem-drag')) return;
+                    selectBlock(sectionId, blockId);
+                });
+
+                subItems.appendChild(subRow);
+            });
+
+            wrapper.appendChild(subItems);
+        }
+
+        return wrapper;
+    }
+
+    function buildTreeGroup(label, orderArray, sections, groupKey) {
+        var group = document.createElement('div');
+        group.className = 'tree-group';
+
+        var labelEl = document.createElement('div');
+        labelEl.className = 'tree-group-label';
+        labelEl.textContent = label;
+        group.appendChild(labelEl);
+
+        var list = document.createElement('div');
+        list.className = 'tree-section-list';
+        list.id = groupKey + 'SectionList';
+        list.dataset.group = groupKey;
+
+        orderArray.forEach(function(sectionId) {
+            var sec = sections[sectionId];
+            if (!sec) return;
+            var schema = state.availableSections[sec.type] || {};
+            list.appendChild(buildSectionRow(sectionId, sec, schema));
         });
 
-        container.appendChild(listEl);
+        group.appendChild(list);
 
-        // Add section button at bottom
-        var addSectionBtn = document.createElement('button');
-        addSectionBtn.className = 'add-section-btn';
-        addSectionBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Add section';
-        addSectionBtn.addEventListener('click', openSectionModal);
-        container.appendChild(addSectionBtn);
+        // Per-group "Add section" button
+        var addBtn = document.createElement('button');
+        addBtn.className = 'tree-group-add-section';
+        addBtn.dataset.group = groupKey;
+        addBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Add section';
+        addBtn.addEventListener('click', function(e) {
+            openSectionPicker(addBtn, groupKey);
+        });
+        group.appendChild(addBtn);
 
-        // Init drag-and-drop on section list
-        if (window.Sortable && order.length > 0) {
+        return group;
+    }
+
+    function renderSectionTree() {
+        var container = document.getElementById('sectionTree');
+        container.innerHTML = '';
+        var pageData = getPageData();
+        var sections = pageData.sections || {};
+
+        // Page title
+        var pageName = state.currentPage;
+        state.pages.forEach(function(p) { if (p.template === state.currentPage) pageName = p.title || p.template; });
+        var pageTitle = document.createElement('div');
+        pageTitle.className = 'tree-page-title';
+        pageTitle.textContent = pageName;
+        container.appendChild(pageTitle);
+
+        // Header group
+        container.appendChild(buildTreeGroup('Header', pageData.header_order, sections, 'header'));
+
+        // Template group (main sections)
+        container.appendChild(buildTreeGroup('Template', pageData.order, sections, 'template'));
+
+        // Footer group
+        container.appendChild(buildTreeGroup('Footer', pageData.footer_order, sections, 'footer'));
+
+        // Init drag-and-drop per group
+        if (window.Sortable) {
             setTimeout(function() {
-                var list = document.getElementById('templateSectionList');
-                if (list) {
+                ['header', 'template', 'footer'].forEach(function(groupKey) {
+                    var list = document.getElementById(groupKey + 'SectionList');
+                    if (!list || list.children.length === 0) return;
                     Sortable.create(list, {
                         handle: '.drag-handle',
                         animation: 150,
                         ghostClass: 'sortable-ghost',
                         onEnd: function(evt) {
                             var pageData = getPageData();
-                            var item = pageData.order.splice(evt.oldIndex, 1)[0];
-                            pageData.order.splice(evt.newIndex, 0, item);
+                            var orderKey = groupKey === 'template' ? 'order' : groupKey + '_order';
+                            var item = pageData[orderKey].splice(evt.oldIndex, 1)[0];
+                            pageData[orderKey].splice(evt.newIndex, 0, item);
                             markDirty();
                             refreshPreview();
                         }
                     });
-                }
-            }, 0);
+                });
 
-            // Init drag-and-drop on block lists within sections
-            setTimeout(function() {
+                // Block drag within sections
                 document.querySelectorAll('.tree-subitems').forEach(function(subList) {
                     Sortable.create(subList, {
                         handle: '.tree-subitem-drag',
@@ -1205,8 +1283,12 @@
                             var pageData = getPageData();
                             var sec = pageData.sections[sectionId];
                             if (!sec || !sec.block_order) return;
-                            var item = sec.block_order.splice(evt.oldIndex, 1)[0];
-                            sec.block_order.splice(evt.newIndex, 0, item);
+                            // Offset by 1 because "Add block" button is first child
+                            var oldIdx = evt.oldIndex - 1;
+                            var newIdx = evt.newIndex - 1;
+                            if (oldIdx < 0 || newIdx < 0) return;
+                            var item = sec.block_order.splice(oldIdx, 1)[0];
+                            sec.block_order.splice(newIdx, 0, item);
                             markDirty();
                             refreshPreview();
                         }
@@ -1227,6 +1309,13 @@
     }
     document.addEventListener('click', closeAllContextMenus);
 
+    // Find which order array a section belongs to
+    function findSectionOrderKey(pageData, sectionId) {
+        if (pageData.header_order.indexOf(sectionId) !== -1) return 'header_order';
+        if (pageData.footer_order.indexOf(sectionId) !== -1) return 'footer_order';
+        return 'order';
+    }
+
     function handleSectionAction(action, sectionId) {
         var pageData = getPageData();
         var sec = pageData.sections[sectionId];
@@ -1237,8 +1326,9 @@
             var clone = JSON.parse(JSON.stringify(sec));
             delete clone.custom_name;
             pageData.sections[newId] = clone;
-            var idx = pageData.order.indexOf(sectionId);
-            pageData.order.splice(idx + 1, 0, newId);
+            var orderKey = findSectionOrderKey(pageData, sectionId);
+            var idx = pageData[orderKey].indexOf(sectionId);
+            pageData[orderKey].splice(idx + 1, 0, newId);
             markDirty();
             renderSectionTree();
             selectSection(newId);
@@ -1268,7 +1358,10 @@
         if (action === 'remove') {
             if (!confirm('Remove this section?')) return;
             delete pageData.sections[sectionId];
+            // Remove from all order arrays
             pageData.order = pageData.order.filter(function(id) { return id !== sectionId; });
+            pageData.header_order = pageData.header_order.filter(function(id) { return id !== sectionId; });
+            pageData.footer_order = pageData.footer_order.filter(function(id) { return id !== sectionId; });
             if (state.activeSection === sectionId) hideRightPanel();
             markDirty();
             renderSectionTree();
@@ -1331,6 +1424,14 @@
 
         var body = document.getElementById('rightBody');
         body.innerHTML = '';
+
+        // Section description subtitle
+        if (schema.description) {
+            var descEl = document.createElement('p');
+            descEl.style.cssText = 'font-size:12px; color:var(--text-secondary); margin:0 0 16px; line-height:1.4; padding:0;';
+            descEl.textContent = schema.description;
+            body.appendChild(descEl);
+        }
 
         // Section settings
         var allSettings = schema.settings || [];
@@ -1469,12 +1570,21 @@
 
         var blocksHeader = document.createElement('div');
         blocksHeader.className = 'blocks-header';
-        blocksHeader.innerHTML = '<span class="blocks-title">Blocks (' + (sec.block_order || []).length + ')</span>';
+        var blockCount = (sec.block_order || []).length;
+        var maxBlocks = schema.max_blocks || 0;
+        var blocksLabel = 'Blocks (' + blockCount + (maxBlocks ? '/' + maxBlocks : '') + ')';
+        blocksHeader.innerHTML = '<span class="blocks-title">' + blocksLabel + '</span>';
 
         var addBlockBtn = document.createElement('button');
         addBlockBtn.className = 'add-block-btn';
         addBlockBtn.textContent = '+ Add';
+        if (maxBlocks > 0 && blockCount >= maxBlocks) {
+            addBlockBtn.disabled = true;
+            addBlockBtn.style.opacity = '0.4';
+            addBlockBtn.style.cursor = 'default';
+        }
         addBlockBtn.addEventListener('click', function() {
+            if (maxBlocks > 0 && (sec.block_order || []).length >= maxBlocks) return;
             if (schema.blocks.length === 1) {
                 addBlockOfType(sec, schema.blocks[0], sectionId);
             } else {
@@ -2076,37 +2186,56 @@
     document.getElementById('linkPickerClose').addEventListener('click', closeLinkPicker);
     document.getElementById('linkPickerOverlay').addEventListener('click', closeLinkPicker);
 
-    // ── Add Section Modal ──
-    function renderSectionPicker() {
-        var grid = document.getElementById('sectionPickerGrid');
-        grid.innerHTML = '';
+    // ── Section Picker Dropdown ──
+    var pickerTargetGroup = 'template';
+
+    function renderSectionPickerList() {
+        var list = document.getElementById('sectionPickerList');
+        list.innerHTML = '';
 
         Object.keys(state.availableSections).forEach(function(type) {
             var schema = state.availableSections[type];
-            var item = document.createElement('div');
-            item.className = 'section-picker-item';
+            var item = document.createElement('button');
+            item.className = 'section-picker-list-item';
+            item.dataset.sectionType = type;
             item.innerHTML =
-                '<div class="section-picker-icon">' + (SECTION_ICONS[type] || '📦') + '</div>' +
-                '<div class="section-picker-name">' + (schema.name || type) + '</div>' +
-                '<div class="section-picker-desc">' + (schema.description || '') + '</div>';
-            item.addEventListener('click', function() { addSection(type); closeSectionModal(); });
-            grid.appendChild(item);
+                '<span class="section-picker-list-item-icon">' + (SECTION_ICONS[type] || '📦') + '</span>' +
+                '<span>' + (schema.name || type) + '</span>';
+
+            item.addEventListener('mouseenter', function() {
+                // Update preview panel
+                document.getElementById('sectionPickerPreview').innerHTML =
+                    '<div class="section-picker-preview-icon">' + (SECTION_ICONS[type] || '📦') + '</div>' +
+                    '<div class="section-picker-preview-name">' + (schema.name || type) + '</div>' +
+                    '<div class="section-picker-preview-desc">' + (schema.description || 'Add this section to your page') + '</div>';
+                // Highlight active
+                list.querySelectorAll('.section-picker-list-item').forEach(function(i) { i.classList.remove('active'); });
+                item.classList.add('active');
+            });
+
+            item.addEventListener('click', function() {
+                addSection(type, pickerTargetGroup);
+                closeSectionPicker();
+            });
+
+            list.appendChild(item);
         });
 
-        var createItem = document.createElement('div');
-        createItem.className = 'section-picker-item section-picker-create';
+        // Create new section option
+        var createItem = document.createElement('button');
+        createItem.className = 'section-picker-list-item create';
         createItem.innerHTML =
-            '<div class="section-picker-icon" style="background:#e8f5e9;color:var(--primary);font-size:24px;">+</div>' +
-            '<div class="section-picker-name">Create New</div>' +
-            '<div class="section-picker-desc">Create a custom section type</div>';
+            '<span class="section-picker-list-item-icon" style="color:var(--primary);">+</span>' +
+            '<span>Create New</span>';
         createItem.addEventListener('click', function() { showCreateSectionForm(); });
-        grid.appendChild(createItem);
+        list.appendChild(createItem);
     }
 
     function showCreateSectionForm() {
-        var grid = document.getElementById('sectionPickerGrid');
-        grid.innerHTML =
-            '<div style="grid-column: 1/-1; padding: 12px 0;">' +
+        var list = document.getElementById('sectionPickerList');
+        var preview = document.getElementById('sectionPickerPreview');
+        preview.innerHTML =
+            '<div style="width:100%;padding:0 8px;">' +
             '<div style="margin-bottom:12px;"><label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;">Section Name</label>' +
             '<input type="text" id="newSectionNameInput" placeholder="e.g. Pricing Table" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);"></div>' +
             '<div style="display:flex;gap:8px;">' +
@@ -2133,8 +2262,8 @@
                         .then(function(r) { return r.json(); })
                         .then(function(result) {
                             state.availableSections = result.sections || result;
-                            addSection(data.type);
-                            closeSectionModal();
+                            addSection(data.type, pickerTargetGroup);
+                            closeSectionPicker();
                             showToast('Section "' + data.name + '" created', 'success');
                         });
                 } else {
@@ -2145,10 +2274,17 @@
             .catch(function() { alert('Network error'); btn.disabled = false; btn.textContent = 'Create & Add'; });
         });
 
-        document.getElementById('cancelNewSectionBtn').addEventListener('click', renderSectionPicker);
+        document.getElementById('cancelNewSectionBtn').addEventListener('click', function() {
+            renderSectionPickerList();
+            document.getElementById('sectionPickerPreview').innerHTML =
+                '<div class="section-picker-preview-icon">📦</div>' +
+                '<div class="section-picker-preview-name">Select a section</div>' +
+                '<div class="section-picker-preview-desc">Hover over a section type to see its details</div>';
+        });
     }
 
-    function addSection(type) {
+    function addSection(type, targetGroup) {
+        targetGroup = targetGroup || 'template';
         var schema = state.availableSections[type];
         var sectionId = type + '_' + Date.now().toString(36);
         var settings = {};
@@ -2166,7 +2302,10 @@
 
         var pageData = getPageData();
         pageData.sections[sectionId] = { type: type, settings: settings, blocks: blocks, block_order: blockOrder };
-        pageData.order.push(sectionId);
+
+        // Push to the correct order array based on target group
+        var orderKey = targetGroup === 'template' ? 'order' : targetGroup + '_order';
+        pageData[orderKey].push(sectionId);
 
         markDirty();
         renderSectionTree();
@@ -2174,22 +2313,46 @@
         refreshPreview();
     }
 
-    function openSectionModal() {
-        renderSectionPicker();
-        document.getElementById('addSectionModal').classList.add('open');
+    function openSectionPicker(anchorBtn, group) {
+        pickerTargetGroup = group || 'template';
+        renderSectionPickerList();
+
+        var dropdown = document.getElementById('sectionPickerDropdown');
+        var overlay = document.getElementById('sectionPickerOverlay');
+
+        // Position dropdown near the anchor button
+        var rect = anchorBtn.getBoundingClientRect();
+        var leftPanelWidth = document.querySelector('.left-panel').offsetWidth;
+
+        // Place to the right of the left panel, vertically aligned with button
+        dropdown.style.left = leftPanelWidth + 'px';
+        dropdown.style.top = Math.min(rect.top, window.innerHeight - 500) + 'px';
+
+        dropdown.classList.add('open');
+        overlay.classList.add('open');
+
         document.getElementById('sectionSearch').value = '';
         document.getElementById('sectionSearch').focus();
+
+        // Reset preview
+        document.getElementById('sectionPickerPreview').innerHTML =
+            '<div class="section-picker-preview-icon">📦</div>' +
+            '<div class="section-picker-preview-name">Select a section</div>' +
+            '<div class="section-picker-preview-desc">Hover over a section type to see its details</div>';
     }
 
-    function closeSectionModal() {
-        document.getElementById('addSectionModal').classList.remove('open');
+    function closeSectionPicker() {
+        document.getElementById('sectionPickerDropdown').classList.remove('open');
+        document.getElementById('sectionPickerOverlay').classList.remove('open');
     }
+
+    document.getElementById('sectionPickerOverlay').addEventListener('click', closeSectionPicker);
 
     document.getElementById('sectionSearch').addEventListener('input', function() {
         var q = this.value.toLowerCase();
-        document.querySelectorAll('.section-picker-item').forEach(function(item) {
-            var name = (item.querySelector('.section-picker-name')?.textContent || '').toLowerCase();
-            item.style.display = name.includes(q) ? '' : 'none';
+        document.querySelectorAll('.section-picker-list-item').forEach(function(item) {
+            var text = item.textContent.toLowerCase();
+            item.style.display = text.includes(q) ? '' : 'none';
         });
     });
 
@@ -2722,8 +2885,7 @@
     });
 
     // ── Event Bindings ──
-    document.getElementById('closeSectionModal').addEventListener('click', closeSectionModal);
-    document.getElementById('addSectionModal').addEventListener('click', function(e) { if (e.target === this) closeSectionModal(); });
+    // Section picker overlay close is already bound above
     document.getElementById('rightClose').addEventListener('click', hideRightPanel);
     document.getElementById('saveBtn').addEventListener('click', save);
     document.getElementById('discardBtn').addEventListener('click', discard);
@@ -2734,7 +2896,7 @@
         if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); if (state.dirty) save(); }
         if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
         if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo(); }
-        if (e.key === 'Escape') { closeSectionModal(); }
+        if (e.key === 'Escape') { closeSectionPicker(); }
     });
 
     window.addEventListener('beforeunload', function(e) {

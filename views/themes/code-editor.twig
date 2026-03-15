@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Code Editor — {{ theme.getName() }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style nonce="{{ csp_style_nonce() }}">
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --primary: #005bd3;
+            --primary-hover: #004cb3;
+            --primary-bg: rgba(0,91,211,0.06);
+            --danger: #D72C0D;
+            --success: #34a853;
+            --text: #303030;
+            --text-secondary: #616161;
+            --text-disabled: #B5B5B5;
+            --bg-app: #F1F1F1;
+            --bg-surface: #FFFFFF;
+            --bg-subdued: #FAFAFA;
+            --bg-hover: #F7F7F7;
+            --border: #E3E3E3;
+            --border-dark: #C9CCCF;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+            --topbar-h: 56px;
+            --sidebar-w: 260px;
+            --tabbar-h: 36px;
+            --radius: 8px;
+            --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+        }
+
+        body {
+            font-family: var(--font);
+            font-size: 13px;
+            color: var(--text);
+            background: var(--bg-surface);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── Top Bar ── */
+        .topbar {
+            height: var(--topbar-h);
+            min-height: var(--topbar-h);
+            background: #1A1A1A;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            color: #fff;
+            z-index: 100;
+        }
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .topbar-back {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #aaa;
+            text-decoration: none;
+            font-size: 13px;
+            padding: 6px 10px;
+            border-radius: 6px;
+            transition: all 0.15s;
+        }
+        .topbar-back:hover {
+            color: #fff;
+            background: rgba(255,255,255,0.1);
+        }
+        .topbar-back svg {
+            width: 16px;
+            height: 16px;
+        }
+        .topbar-label {
+            font-weight: 600;
+            font-size: 14px;
+            color: #fff;
+        }
+        .topbar-separator {
+            width: 1px;
+            height: 20px;
+            background: rgba(255,255,255,0.15);
+        }
+        .topbar-center {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 13px;
+            color: #ccc;
+            font-weight: 500;
+        }
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .unsaved-indicator {
+            font-size: 12px;
+            color: #f0c040;
+            font-weight: 500;
+            display: none;
+        }
+        .unsaved-indicator.visible {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .unsaved-indicator::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: #f0c040;
+            border-radius: 50%;
+        }
+        .btn-save {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 7px 18px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s;
+            font-family: var(--font);
+        }
+        .btn-save:hover {
+            background: var(--primary-hover);
+        }
+        .btn-save:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* ── Main Layout ── */
+        .main-layout {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+        }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            width: var(--sidebar-w);
+            min-width: var(--sidebar-w);
+            background: var(--bg-app);
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar-header {
+            padding: 14px 16px 10px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+        .file-tree {
+            flex: 1;
+            overflow-y: auto;
+            padding: 6px 0;
+        }
+
+        /* Folder */
+        .folder-item {
+            user-select: none;
+        }
+        .folder-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            cursor: pointer;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--text);
+            transition: background 0.1s;
+        }
+        .folder-header:hover {
+            background: var(--bg-hover);
+        }
+        .folder-toggle {
+            font-size: 10px;
+            width: 14px;
+            text-align: center;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+        }
+        .folder-icon {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+            color: var(--text-secondary);
+        }
+        .folder-children {
+            display: block;
+        }
+        .folder-children.collapsed {
+            display: none;
+        }
+
+        /* File */
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 14px 5px 34px;
+            cursor: pointer;
+            font-size: 12.5px;
+            color: var(--text-secondary);
+            transition: all 0.1s;
+            border-left: 2px solid transparent;
+            text-decoration: none;
+        }
+        .file-item:hover {
+            background: var(--bg-hover);
+            color: var(--text);
+        }
+        .file-item.active {
+            background: rgba(0,91,211,0.06);
+            color: var(--primary);
+            border-left-color: var(--primary);
+            font-weight: 500;
+        }
+        .file-item-icon {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+        }
+        .file-item-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* ── Editor Panel ── */
+        .editor-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        /* Tab Bar */
+        .tab-bar {
+            height: var(--tabbar-h);
+            min-height: var(--tabbar-h);
+            background: var(--bg-subdued);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: stretch;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scrollbar-width: thin;
+        }
+        .tab-bar::-webkit-scrollbar {
+            height: 2px;
+        }
+        .tab-bar::-webkit-scrollbar-thumb {
+            background: var(--border-dark);
+        }
+        .tab {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0 12px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-right: 1px solid var(--border);
+            white-space: nowrap;
+            transition: all 0.1s;
+            min-width: 0;
+            max-width: 180px;
+            position: relative;
+        }
+        .tab:hover {
+            background: var(--bg-hover);
+            color: var(--text);
+        }
+        .tab.active {
+            background: var(--bg-surface);
+            color: var(--text);
+            font-weight: 600;
+            border-bottom: 2px solid var(--primary);
+        }
+        .tab-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .tab-modified {
+            width: 6px;
+            height: 6px;
+            background: var(--primary);
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: none;
+        }
+        .tab.modified .tab-modified {
+            display: block;
+        }
+        .tab-close {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            border: none;
+            background: transparent;
+            color: var(--text-disabled);
+            cursor: pointer;
+            font-size: 14px;
+            line-height: 1;
+            flex-shrink: 0;
+            transition: all 0.1s;
+        }
+        .tab-close:hover {
+            background: rgba(0,0,0,0.08);
+            color: var(--text);
+        }
+
+        /* Editor Container */
+        .editor-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        .editor-container .cm-editor {
+            height: 100%;
+        }
+        .editor-container .cm-editor .cm-scroller {
+            font-family: var(--font-mono);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .editor-container .cm-editor .cm-gutters {
+            background: var(--bg-subdued);
+            border-right: 1px solid var(--border);
+            color: var(--text-disabled);
+        }
+        .editor-container .cm-editor .cm-activeLineGutter {
+            background: var(--bg-hover);
+            color: var(--text-secondary);
+        }
+        .editor-container .cm-editor .cm-activeLine {
+            background: rgba(0,91,211,0.03);
+        }
+        .editor-container .cm-editor.cm-focused {
+            outline: none;
+        }
+
+        /* Empty state */
+        .editor-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-disabled);
+            gap: 12px;
+        }
+        .editor-empty svg {
+            width: 48px;
+            height: 48px;
+            opacity: 0.3;
+        }
+        .editor-empty p {
+            font-size: 14px;
+        }
+
+        /* Fallback textarea (when CodeMirror fails) */
+        .editor-fallback {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            resize: none;
+            padding: 16px;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--text);
+            background: var(--bg-surface);
+            tab-size: 4;
+        }
+
+        /* ── Toast ── */
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .toast {
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            font-family: var(--font);
+            color: #fff;
+            box-shadow: var(--shadow-md);
+            animation: toastIn 0.25s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .toast.success { background: #1a7f37; }
+        .toast.error { background: #cf222e; }
+        .toast.fadeout { animation: toastOut 0.3s ease forwards; }
+        @keyframes toastIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateY(10px); } }
+
+        /* ── Quick Search Modal ── */
+        .quick-search-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 500;
+            display: none;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 120px;
+        }
+        .quick-search-overlay.visible {
+            display: flex;
+        }
+        .quick-search {
+            width: 480px;
+            background: var(--bg-surface);
+            border-radius: 12px;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        .quick-search input {
+            width: 100%;
+            padding: 14px 18px;
+            border: none;
+            border-bottom: 1px solid var(--border);
+            font-size: 15px;
+            font-family: var(--font);
+            color: var(--text);
+            outline: none;
+            background: transparent;
+        }
+        .quick-search-results {
+            max-height: 320px;
+            overflow-y: auto;
+        }
+        .quick-search-item {
+            padding: 8px 18px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .quick-search-item:hover,
+        .quick-search-item.selected {
+            background: var(--primary-bg);
+            color: var(--primary);
+        }
+        .quick-search-item-path {
+            font-size: 11px;
+            color: var(--text-disabled);
+            margin-left: auto;
+        }
+
+        /* ── Loading Spinner ── */
+        .loading-spinner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            color: var(--text-disabled);
+            gap: 10px;
+            font-size: 13px;
+        }
+        .loading-spinner::before {
+            content: '';
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Context Menu ── */
+        .context-menu {
+            position: fixed;
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: var(--shadow-md);
+            padding: 4px;
+            z-index: 600;
+            display: none;
+            min-width: 160px;
+        }
+        .context-menu.visible { display: block; }
+        .context-menu-item {
+            padding: 6px 12px;
+            font-size: 12.5px;
+            cursor: pointer;
+            border-radius: 4px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .context-menu-item:hover { background: var(--bg-hover); }
+        .context-menu-item.danger { color: var(--danger); }
+        .context-menu-item.danger:hover { background: rgba(215,44,13,0.06); }
+
+        /* Scrollbar styles */
+        .sidebar::-webkit-scrollbar,
+        .file-tree::-webkit-scrollbar {
+            width: 5px;
+        }
+        .sidebar::-webkit-scrollbar-thumb,
+        .file-tree::-webkit-scrollbar-thumb {
+            background: var(--border-dark);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Bar -->
+    <div class="topbar">
+        <div class="topbar-left">
+            <a href="/cms/themes/{{ theme.getSlug() }}" class="topbar-back">
+                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+            </a>
+            <div class="topbar-separator"></div>
+            <span class="topbar-label">Code editor</span>
+        </div>
+        <div class="topbar-center">{{ theme.getName() }}</div>
+        <div class="topbar-right">
+            <span class="unsaved-indicator" id="unsavedIndicator">Unsaved</span>
+            <button class="btn-save" id="btnSave" onclick="saveFile()" disabled>Save</button>
+        </div>
+    </div>
+
+    <!-- Main Layout -->
+    <div class="main-layout">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">Theme files</div>
+            <div class="file-tree" id="fileTree">
+                <div class="loading-spinner">Loading files...</div>
+            </div>
+        </div>
+
+        <!-- Editor Panel -->
+        <div class="editor-panel">
+            <div class="tab-bar" id="tabBar"></div>
+            <div class="editor-container" id="editorContainer">
+                <div class="editor-empty" id="editorEmpty">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.25 2.25H6.75A2.25 2.25 0 004.5 4.5v15a2.25 2.25 0 002.25 2.25h10.5a2.25 2.25 0 002.25-2.25V7.5L14.25 2.25z"/><path d="M14.25 2.25V7.5h5.25"/><path d="M9.75 12.75h4.5M9.75 15.75h4.5"/></svg>
+                    <p>Select a file to start editing</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Quick Search Overlay -->
+    <div class="quick-search-overlay" id="quickSearchOverlay">
+        <div class="quick-search">
+            <input type="text" id="quickSearchInput" placeholder="Search files..." autocomplete="off">
+            <div class="quick-search-results" id="quickSearchResults"></div>
+        </div>
+    </div>
+
+    <!-- Context Menu -->
+    <div class="context-menu" id="contextMenu"></div>
+
+    <script type="importmap" nonce="{{ csp_script_nonce() }}">
+    {
+        "imports": {
+            "codemirror": "https://esm.sh/codemirror@6.65.7",
+            "@codemirror/lang-html": "https://esm.sh/@codemirror/lang-html@6.4.9",
+            "@codemirror/lang-json": "https://esm.sh/@codemirror/lang-json@6.0.1",
+            "@codemirror/lang-css": "https://esm.sh/@codemirror/lang-css@6.3.1",
+            "@codemirror/lang-javascript": "https://esm.sh/@codemirror/lang-javascript@6.2.2",
+            "@codemirror/view": "https://esm.sh/@codemirror/view@6.36.5",
+            "@codemirror/state": "https://esm.sh/@codemirror/state@6.5.2"
+        }
+    }
+    </script>
+
+    <script type="module" nonce="{{ csp_script_nonce() }}">
+
+    // ── State ──
+    const THEME_SLUG = '{{ theme.getSlug() }}';
+    const BASE_URL = `/cms/themes/${THEME_SLUG}/code`;
+    const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+    const state = {
+        files: {},
+        allFilePaths: [],
+        openTabs: [],       // [{path, content, modified, original}]
+        activeTab: null,
+        editorView: null,
+        cmAvailable: false,
+        cmModules: null,
+    };
+
+    // ── DOM Refs ──
+    const $fileTree = document.getElementById('fileTree');
+    const $tabBar = document.getElementById('tabBar');
+    const $editorContainer = document.getElementById('editorContainer');
+    const $editorEmpty = document.getElementById('editorEmpty');
+    const $unsaved = document.getElementById('unsavedIndicator');
+    const $btnSave = document.getElementById('btnSave');
+    const $toastContainer = document.getElementById('toastContainer');
+    const $quickSearchOverlay = document.getElementById('quickSearchOverlay');
+    const $quickSearchInput = document.getElementById('quickSearchInput');
+    const $quickSearchResults = document.getElementById('quickSearchResults');
+    const $contextMenu = document.getElementById('contextMenu');
+
+    // ── Initialize CodeMirror ──
+    let EditorView, EditorState, basicSetup, keymap, langHtml, langJson, langCss, langJs;
+
+    try {
+        const cmCore = await import('codemirror');
+        const cmView = await import('@codemirror/view');
+        const cmState = await import('@codemirror/state');
+        const cmHtml = await import('@codemirror/lang-html');
+        const cmJson = await import('@codemirror/lang-json');
+        const cmCss = await import('@codemirror/lang-css');
+        const cmJs = await import('@codemirror/lang-javascript');
+
+        EditorView = cmCore.EditorView || cmView.EditorView;
+        EditorState = cmState.EditorState;
+        basicSetup = cmCore.basicSetup;
+        keymap = cmView.keymap;
+        langHtml = cmHtml.html;
+        langJson = cmJson.json;
+        langCss = cmCss.css;
+        langJs = cmJs.javascript;
+
+        state.cmAvailable = true;
+    } catch (e) {
+        console.warn('CodeMirror failed to load, falling back to textarea:', e);
+        state.cmAvailable = false;
+    }
+
+    // ── File Icons (SVG) ──
+    const FILE_ICONS = {
+        twig: `<svg class="file-item-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M4 1h6l4 4v9a1 1 0 01-1 1H4a1 1 0 01-1-1V2a1 1 0 011-1zm5.5 0v4h4"/></svg>`,
+        html: `<svg class="file-item-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M4 1h6l4 4v9a1 1 0 01-1 1H4a1 1 0 01-1-1V2a1 1 0 011-1zm5.5 0v4h4"/></svg>`,
+        json: `<svg class="file-item-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M5 4a2 2 0 00-2 2v1a1 1 0 01-1 1H1v1h1a1 1 0 011 1v1a2 2 0 002 2h1v-1H5a1 1 0 01-1-1V9.5A1.5 1.5 0 002.5 8 1.5 1.5 0 004 6.5V5a1 1 0 011-1h1V3H5zm6 0a2 2 0 012 2v1a1 1 0 001 1h1v1h-1a1 1 0 00-1 1v1a2 2 0 01-2 2h-1v-1h1a1 1 0 001-1V9.5A1.5 1.5 0 0013.5 8 1.5 1.5 0 0012 6.5V5a1 1 0 00-1-1h-1V3h1z"/></svg>`,
+        css: `<svg class="file-item-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3a1 1 0 011-1h10a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3zm4.5 2a1.5 1.5 0 100 3 1.5 1.5 0 000-3zM8 9.5a2.5 2.5 0 10-3 0V12h3V9.5z"/></svg>`,
+        js: `<svg class="file-item-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3a1 1 0 011-1h10a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3zm4.25 7V5.75h-1.5V10c0 .97.78 1.75 1.75 1.75S8.25 10.97 8.25 10h-1.5a.25.25 0 01-.5 0zm4-2.5h-1a.5.5 0 00-.5.5v.5h1.5v1H8.75V11h2.5a.75.75 0 00.75-.75V8a.75.75 0 00-.75-.75z"/></svg>`,
+        default: `<svg class="file-item-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M4 1h6l4 4v9a1 1 0 01-1 1H4a1 1 0 01-1-1V2a1 1 0 011-1zm5.5 0v4h4"/></svg>`,
+    };
+
+    const FOLDER_ICON = `<svg class="folder-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M1.75 2.5A.75.75 0 012.5 1.75h3.586a.75.75 0 01.53.22L8.03 3.386a.25.25 0 00.177.073h5.043a.75.75 0 01.75.75v8.041a.75.75 0 01-.75.75H2.5a.75.75 0 01-.75-.75V2.5z"/></svg>`;
+
+    function getFileIcon(filename) {
+        const ext = filename.split('.').pop().toLowerCase();
+        return FILE_ICONS[ext] || FILE_ICONS.default;
+    }
+
+    // ── API Helpers ──
+    async function apiFetch(url, options = {}) {
+        const headers = { 'X-CSRF-TOKEN': CSRF_TOKEN, ...options.headers };
+        if (options.body && typeof options.body === 'object') {
+            headers['Content-Type'] = 'application/json';
+            options.body = JSON.stringify(options.body);
+        }
+        const res = await fetch(url, { ...options, headers });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+    }
+
+    // ── Toast ──
+    function showToast(message, type = 'success') {
+        const el = document.createElement('div');
+        el.className = `toast ${type}`;
+        el.textContent = message;
+        $toastContainer.appendChild(el);
+        setTimeout(() => {
+            el.classList.add('fadeout');
+            setTimeout(() => el.remove(), 300);
+        }, 3000);
+    }
+
+    // ── File Tree ──
+    async function loadFileTree() {
+        try {
+            const data = await apiFetch(`${BASE_URL}/files`);
+            state.files = data.files || {};
+            state.allFilePaths = [];
+            for (const [folder, files] of Object.entries(state.files)) {
+                for (const file of files) {
+                    state.allFilePaths.push(folder === '/' ? file : `${folder}/${file}`);
+                }
+            }
+            renderFileTree(state.files);
+        } catch (e) {
+            $fileTree.innerHTML = `<div style="padding:16px;color:var(--danger);font-size:12px;">Failed to load file tree.<br><small>${escapeHtml(e.message)}</small></div>`;
+        }
+    }
+
+    function renderFileTree(files) {
+        let html = '';
+        const folderOrder = ['config', 'layouts', 'sections', 'snippets', 'templates', 'assets'];
+        const sortedFolders = Object.keys(files).sort((a, b) => {
+            if (a === '/') return 1;
+            if (b === '/') return -1;
+            const ai = folderOrder.indexOf(a);
+            const bi = folderOrder.indexOf(b);
+            if (ai !== -1 && bi !== -1) return ai - bi;
+            if (ai !== -1) return -1;
+            if (bi !== -1) return 1;
+            return a.localeCompare(b);
+        });
+
+        for (const folder of sortedFolders) {
+            const fileList = files[folder];
+            if (!fileList || fileList.length === 0) continue;
+
+            if (folder === '/') {
+                // Root-level files
+                for (const file of fileList) {
+                    html += `<div class="file-item" data-path="${escapeAttr(file)}" onclick="handleFileClick('${escapeJs(file)}')" oncontextmenu="handleFileContext(event, '${escapeJs(file)}')">
+                        ${getFileIcon(file)}
+                        <span class="file-item-name">${escapeHtml(file)}</span>
+                    </div>`;
+                }
+            } else {
+                html += `<div class="folder-item">
+                    <div class="folder-header" onclick="toggleFolder(this)">
+                        <span class="folder-toggle">&#9662;</span>
+                        ${FOLDER_ICON}
+                        <span>${escapeHtml(folder)}</span>
+                        <span style="margin-left:auto;font-size:11px;color:var(--text-disabled);font-weight:400;">${fileList.length}</span>
+                    </div>
+                    <div class="folder-children">`;
+                for (const file of fileList) {
+                    const path = `${folder}/${file}`;
+                    html += `<div class="file-item" data-path="${escapeAttr(path)}" onclick="handleFileClick('${escapeJs(path)}')" oncontextmenu="handleFileContext(event, '${escapeJs(path)}')">
+                        ${getFileIcon(file)}
+                        <span class="file-item-name">${escapeHtml(file)}</span>
+                    </div>`;
+                }
+                html += `</div></div>`;
+            }
+        }
+        $fileTree.innerHTML = html;
+        updateActiveFileHighlight();
+    }
+
+    window.toggleFolder = function(header) {
+        const children = header.nextElementSibling;
+        const toggle = header.querySelector('.folder-toggle');
+        children.classList.toggle('collapsed');
+        toggle.innerHTML = children.classList.contains('collapsed') ? '&#9656;' : '&#9662;';
+    };
+
+    function updateActiveFileHighlight() {
+        $fileTree.querySelectorAll('.file-item').forEach(el => {
+            el.classList.toggle('active', el.dataset.path === state.activeTab);
+        });
+    }
+
+    // ── File Click ──
+    window.handleFileClick = async function(path) {
+        await openFile(path);
+    };
+
+    window.handleFileContext = function(e, path) {
+        e.preventDefault();
+        showContextMenu(e.clientX, e.clientY, [
+            { label: 'Open', action: () => openFile(path) },
+            { label: 'Delete', danger: true, action: () => deleteFile(path) },
+        ]);
+    };
+
+    // ── Context Menu ──
+    function showContextMenu(x, y, items) {
+        let html = '';
+        for (const item of items) {
+            html += `<div class="context-menu-item ${item.danger ? 'danger' : ''}" data-action="${items.indexOf(item)}">
+                ${escapeHtml(item.label)}
+            </div>`;
+        }
+        $contextMenu.innerHTML = html;
+        $contextMenu.style.left = x + 'px';
+        $contextMenu.style.top = y + 'px';
+        $contextMenu.classList.add('visible');
+
+        $contextMenu.querySelectorAll('.context-menu-item').forEach((el, i) => {
+            el.addEventListener('click', () => {
+                items[i].action();
+                $contextMenu.classList.remove('visible');
+            });
+        });
+    }
+
+    document.addEventListener('click', () => $contextMenu.classList.remove('visible'));
+
+    // ── Open File ──
+    async function openFile(path) {
+        // Check if already open
+        let tab = state.openTabs.find(t => t.path === path);
+        if (!tab) {
+            try {
+                const data = await apiFetch(`${BASE_URL}/file?path=${encodeURIComponent(path)}`);
+                tab = {
+                    path: data.path || path,
+                    content: data.content || '',
+                    original: data.content || '',
+                    modified: false,
+                };
+                state.openTabs.push(tab);
+            } catch (e) {
+                showToast(`Failed to open file: ${e.message}`, 'error');
+                return;
+            }
+        }
+        switchTab(path);
+    }
+
+    // ── Switch Tab ──
+    function switchTab(path) {
+        // Save current editor content to the leaving tab
+        if (state.activeTab && state.editorView) {
+            const currentTab = state.openTabs.find(t => t.path === state.activeTab);
+            if (currentTab) {
+                currentTab.content = state.editorView.state.doc.toString();
+                currentTab.modified = currentTab.content !== currentTab.original;
+            }
+        }
+
+        state.activeTab = path;
+        const tab = state.openTabs.find(t => t.path === path);
+        if (!tab) return;
+
+        // Set editor content
+        setEditorContent(tab.content, path);
+        renderTabs();
+        updateActiveFileHighlight();
+        updateUnsavedState();
+    }
+
+    // ── Set Editor Content ──
+    function setEditorContent(content, path) {
+        $editorEmpty.style.display = 'none';
+
+        if (state.cmAvailable) {
+            if (state.editorView) {
+                state.editorView.destroy();
+            }
+
+            const langExt = getLanguage(path);
+            const extensions = [
+                basicSetup,
+                keymap.of([{
+                    key: 'Mod-s',
+                    run: () => { saveFile(); return true; },
+                }]),
+                EditorView.updateListener.of(update => {
+                    if (update.docChanged) {
+                        onEditorChange();
+                    }
+                }),
+                EditorView.theme({
+                    '&': { height: '100%' },
+                    '.cm-scroller': { overflow: 'auto' },
+                }),
+            ];
+            if (langExt) extensions.push(langExt);
+
+            state.editorView = new EditorView({
+                state: EditorState.create({
+                    doc: content,
+                    extensions,
+                }),
+                parent: $editorContainer,
+            });
+        } else {
+            // Fallback textarea
+            let textarea = $editorContainer.querySelector('.editor-fallback');
+            if (!textarea) {
+                textarea = document.createElement('textarea');
+                textarea.className = 'editor-fallback';
+                textarea.addEventListener('input', onEditorChange);
+                textarea.addEventListener('keydown', (e) => {
+                    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                        e.preventDefault();
+                        saveFile();
+                    }
+                });
+                $editorContainer.appendChild(textarea);
+            }
+            textarea.value = content;
+            textarea.style.display = 'block';
+        }
+    }
+
+    // ── Editor Change Handler ──
+    function onEditorChange() {
+        const tab = state.openTabs.find(t => t.path === state.activeTab);
+        if (!tab) return;
+
+        let currentContent;
+        if (state.cmAvailable && state.editorView) {
+            currentContent = state.editorView.state.doc.toString();
+        } else {
+            const textarea = $editorContainer.querySelector('.editor-fallback');
+            currentContent = textarea ? textarea.value : '';
+        }
+
+        tab.content = currentContent;
+        tab.modified = currentContent !== tab.original;
+        renderTabs();
+        updateUnsavedState();
+    }
+
+    // ── Get Language ──
+    function getLanguage(path) {
+        if (!state.cmAvailable) return null;
+        const ext = path.split('.').pop().toLowerCase();
+        switch (ext) {
+            case 'twig':
+            case 'html':
+            case 'htm':
+                return langHtml();
+            case 'json':
+                return langJson();
+            case 'css':
+                return langCss();
+            case 'js':
+                return langJs();
+            default:
+                return null;
+        }
+    }
+
+    // ── Update Unsaved State ──
+    function updateUnsavedState() {
+        const anyModified = state.openTabs.some(t => t.modified);
+        $unsaved.classList.toggle('visible', anyModified);
+
+        const activeTab = state.openTabs.find(t => t.path === state.activeTab);
+        $btnSave.disabled = !activeTab || !activeTab.modified;
+    }
+
+    // ── Render Tabs ──
+    function renderTabs() {
+        let html = '';
+        for (const tab of state.openTabs) {
+            const name = tab.path.split('/').pop();
+            const isActive = tab.path === state.activeTab;
+            const classes = ['tab'];
+            if (isActive) classes.push('active');
+            if (tab.modified) classes.push('modified');
+
+            html += `<div class="${classes.join(' ')}" data-path="${escapeAttr(tab.path)}" onclick="window.switchTabClick('${escapeJs(tab.path)}')">
+                <span class="tab-modified"></span>
+                <span class="tab-name" title="${escapeAttr(tab.path)}">${escapeHtml(name)}</span>
+                <button class="tab-close" onclick="event.stopPropagation(); window.closeTabClick('${escapeJs(tab.path)}')">&times;</button>
+            </div>`;
+        }
+        $tabBar.innerHTML = html;
+    }
+
+    window.switchTabClick = function(path) {
+        switchTab(path);
+    };
+
+    window.closeTabClick = function(path) {
+        closeTab(path);
+    };
+
+    // ── Close Tab ──
+    function closeTab(path) {
+        const tab = state.openTabs.find(t => t.path === path);
+        if (!tab) return;
+
+        if (tab.modified) {
+            if (!confirm(`"${path.split('/').pop()}" has unsaved changes. Close anyway?`)) {
+                return;
+            }
+        }
+
+        state.openTabs = state.openTabs.filter(t => t.path !== path);
+
+        if (state.activeTab === path) {
+            if (state.openTabs.length > 0) {
+                const lastTab = state.openTabs[state.openTabs.length - 1];
+                switchTab(lastTab.path);
+            } else {
+                state.activeTab = null;
+                if (state.editorView) {
+                    state.editorView.destroy();
+                    state.editorView = null;
+                }
+                const textarea = $editorContainer.querySelector('.editor-fallback');
+                if (textarea) textarea.style.display = 'none';
+                $editorEmpty.style.display = 'flex';
+            }
+        }
+
+        renderTabs();
+        updateActiveFileHighlight();
+        updateUnsavedState();
+    }
+
+    // ── Save File ──
+    window.saveFile = async function() {
+        const tab = state.openTabs.find(t => t.path === state.activeTab);
+        if (!tab || !tab.modified) return;
+
+        $btnSave.disabled = true;
+        $btnSave.textContent = 'Saving...';
+
+        try {
+            await apiFetch(`${BASE_URL}/file`, {
+                method: 'POST',
+                body: { path: tab.path, content: tab.content },
+            });
+            tab.original = tab.content;
+            tab.modified = false;
+            renderTabs();
+            updateUnsavedState();
+            showToast('File saved successfully');
+        } catch (e) {
+            showToast(`Save failed: ${e.message}`, 'error');
+        } finally {
+            $btnSave.textContent = 'Save';
+            $btnSave.disabled = !tab.modified;
+        }
+    };
+
+    // ── Delete File ──
+    async function deleteFile(path) {
+        const name = path.split('/').pop();
+        if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+
+        try {
+            await apiFetch(`${BASE_URL}/file/delete`, {
+                method: 'POST',
+                body: { path },
+            });
+
+            // Close tab if open
+            state.openTabs = state.openTabs.filter(t => t.path !== path);
+            if (state.activeTab === path) {
+                state.activeTab = null;
+                if (state.editorView) { state.editorView.destroy(); state.editorView = null; }
+                if (state.openTabs.length > 0) {
+                    switchTab(state.openTabs[state.openTabs.length - 1].path);
+                } else {
+                    $editorEmpty.style.display = 'flex';
+                }
+            }
+
+            renderTabs();
+            updateUnsavedState();
+            await loadFileTree();
+            showToast('File deleted');
+        } catch (e) {
+            showToast(`Delete failed: ${e.message}`, 'error');
+        }
+    }
+
+    // ── Quick Search ──
+    function openQuickSearch() {
+        $quickSearchOverlay.classList.add('visible');
+        $quickSearchInput.value = '';
+        $quickSearchInput.focus();
+        renderQuickSearchResults('');
+    }
+
+    function closeQuickSearch() {
+        $quickSearchOverlay.classList.remove('visible');
+    }
+
+    let quickSearchSelectedIndex = 0;
+
+    function renderQuickSearchResults(query) {
+        const q = query.toLowerCase().trim();
+        let matches = state.allFilePaths;
+        if (q) {
+            matches = matches.filter(p => p.toLowerCase().includes(q));
+        }
+        matches = matches.slice(0, 20);
+        quickSearchSelectedIndex = 0;
+
+        let html = '';
+        matches.forEach((path, i) => {
+            const name = path.split('/').pop();
+            const folder = path.includes('/') ? path.substring(0, path.lastIndexOf('/')) : '';
+            html += `<div class="quick-search-item ${i === 0 ? 'selected' : ''}" data-index="${i}" data-path="${escapeAttr(path)}">
+                ${getFileIcon(name)}
+                <span>${escapeHtml(name)}</span>
+                ${folder ? `<span class="quick-search-item-path">${escapeHtml(folder)}</span>` : ''}
+            </div>`;
+        });
+
+        if (matches.length === 0) {
+            html = `<div style="padding:20px;text-align:center;color:var(--text-disabled);font-size:13px;">No files found</div>`;
+        }
+
+        $quickSearchResults.innerHTML = html;
+
+        $quickSearchResults.querySelectorAll('.quick-search-item').forEach(el => {
+            el.addEventListener('click', () => {
+                openFile(el.dataset.path);
+                closeQuickSearch();
+            });
+        });
+    }
+
+    $quickSearchInput.addEventListener('input', (e) => {
+        renderQuickSearchResults(e.target.value);
+    });
+
+    $quickSearchInput.addEventListener('keydown', (e) => {
+        const items = $quickSearchResults.querySelectorAll('.quick-search-item');
+        if (e.key === 'Escape') {
+            closeQuickSearch();
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            quickSearchSelectedIndex = Math.min(quickSearchSelectedIndex + 1, items.length - 1);
+            items.forEach((el, i) => el.classList.toggle('selected', i === quickSearchSelectedIndex));
+            items[quickSearchSelectedIndex]?.scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            quickSearchSelectedIndex = Math.max(quickSearchSelectedIndex - 1, 0);
+            items.forEach((el, i) => el.classList.toggle('selected', i === quickSearchSelectedIndex));
+            items[quickSearchSelectedIndex]?.scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            const selected = items[quickSearchSelectedIndex];
+            if (selected) {
+                openFile(selected.dataset.path);
+                closeQuickSearch();
+            }
+        }
+    });
+
+    $quickSearchOverlay.addEventListener('click', (e) => {
+        if (e.target === $quickSearchOverlay) closeQuickSearch();
+    });
+
+    // ── Global Keyboard Shortcuts ──
+    document.addEventListener('keydown', (e) => {
+        // Ctrl/Cmd + S: Save
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault();
+            saveFile();
+        }
+        // Ctrl/Cmd + P: Quick search
+        if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+            e.preventDefault();
+            openQuickSearch();
+        }
+    });
+
+    // ── Warn before leaving with unsaved changes ──
+    window.addEventListener('beforeunload', (e) => {
+        if (state.openTabs.some(t => t.modified)) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+
+    // ── Utility Functions ──
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    function escapeAttr(str) {
+        return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function escapeJs(str) {
+        return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+    }
+
+    // ── Init ──
+    await loadFileTree();
+
+    </script>
+</body>
+</html>

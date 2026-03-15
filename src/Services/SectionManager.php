@@ -244,6 +244,8 @@ class SectionManager
         return [
             'sections' => $pageData['sections'] ?? [],
             'order' => $pageData['order'] ?? [],
+            'header_order' => $pageData['header_order'] ?? [],
+            'footer_order' => $pageData['footer_order'] ?? [],
         ];
     }
 
@@ -303,7 +305,7 @@ class SectionManager
     public function hasSections(?string $slug, string $pageTemplate): bool
     {
         $pageSections = $this->getPageSections($slug, $pageTemplate);
-        return !empty($pageSections['order']);
+        return !empty($pageSections['order']) || !empty($pageSections['header_order']) || !empty($pageSections['footer_order']);
     }
 
     /**
@@ -316,8 +318,14 @@ class SectionManager
         $pageSections = $this->getPageSections($slug, $pageTemplate);
         $globalSettings = $this->getGlobalSettings($slug);
 
+        $allOrder = array_merge(
+            $pageSections['header_order'] ?? [],
+            $pageSections['order'],
+            $pageSections['footer_order'] ?? []
+        );
+
         $html = '';
-        foreach ($pageSections['order'] as $sectionId) {
+        foreach ($allOrder as $sectionId) {
             $sectionConfig = $pageSections['sections'][$sectionId] ?? null;
             if (!$sectionConfig) continue;
 
@@ -383,11 +391,14 @@ class SectionManager
         }
 
         $sections = $pageData['sections'] ?? [];
+        $headerOrder = $pageData['header_order'] ?? [];
         $order = $pageData['order'] ?? [];
+        $footerOrder = $pageData['footer_order'] ?? [];
+        $allOrder = array_merge($headerOrder, $order, $footerOrder);
         $globalSettings = $this->getGlobalSettingsFromData($settingsData, $slug);
 
         $html = '';
-        foreach ($order as $sectionId) {
+        foreach ($allOrder as $sectionId) {
             $sectionConfig = $sections[$sectionId] ?? null;
             if (!$sectionConfig) continue;
 

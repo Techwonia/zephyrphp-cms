@@ -49,6 +49,7 @@ use ZephyrPHP\Cms\Controllers\ApiAnalyticsController;
 use ZephyrPHP\Cms\Controllers\QueueMonitorController;
 use ZephyrPHP\Cms\Controllers\SystemMonitorController;
 use ZephyrPHP\Cms\Controllers\ThemeAssetController;
+use ZephyrPHP\Cms\Controllers\ThemeCodeEditorController;
 
 // CMS Admin Routes (protected by auth middleware)
 Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMiddleware::class]], function () {
@@ -130,6 +131,14 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     Route::get('/themes/{slug}/assets', [ThemeAssetController::class, 'list']);
     Route::post('/themes/{slug}/assets/upload', [ThemeAssetController::class, 'upload']);
     Route::post('/themes/{slug}/assets/delete', [ThemeAssetController::class, 'delete']);
+
+    // Theme Code Editor
+    Route::get('/themes/{slug}/code', [ThemeCodeEditorController::class, 'index']);
+    Route::get('/themes/{slug}/code/files', [ThemeCodeEditorController::class, 'listFiles']);
+    Route::get('/themes/{slug}/code/file', [ThemeCodeEditorController::class, 'readFile']);
+    Route::post('/themes/{slug}/code/file', [ThemeCodeEditorController::class, 'saveFile']);
+    Route::post('/themes/{slug}/code/file/create', [ThemeCodeEditorController::class, 'createFile']);
+    Route::post('/themes/{slug}/code/file/delete', [ThemeCodeEditorController::class, 'deleteFile']);
 
     // Theme section creation
     Route::post('/themes/{slug}/sections/create', [ThemeController::class, 'createSection']);
