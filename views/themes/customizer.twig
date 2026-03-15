@@ -1022,8 +1022,9 @@
         state.activeSection = null;
         state.activeBlock = null;
         renderSectionTree();
-        // Clear highlight in iframe
+        // Clear highlight and toolbar in iframe
         notifyIframeHighlight(null);
+        removeIframeToolbar();
     }
 
     function selectSection(sectionId) {
@@ -1815,40 +1816,62 @@
             style.id = 'customizer-inspector-style';
             style.textContent =
                 /* Section-level inspector */
-                '.inspector-enabled [data-section-id] { position: relative; transition: outline 0.15s; }' +
-                '.inspector-enabled [data-section-id]:hover { outline: 2px solid #005bd3; outline-offset: -2px; z-index: 99998; }' +
+                '[data-section-id] { position: relative; }' +
+                '.inspector-enabled [data-section-id] { transition: outline 0.15s; cursor: pointer; }' +
+                '.inspector-enabled [data-section-id]:hover { outline: 2px solid rgba(0,91,211,0.4); outline-offset: -2px; z-index: 99998; }' +
                 '.inspector-enabled [data-section-id]:hover::before {' +
-                '  content: attr(data-section-type); position: absolute; top: 0; left: 0;' +
+                '  content: attr(data-section-type); position: absolute; top: -1px; left: -1px;' +
                 '  background: #005bd3; color: #fff; font-size: 11px; line-height: 1;' +
-                '  padding: 3px 8px; font-family: -apple-system, sans-serif;' +
-                '  pointer-events: none; z-index: 99999; border-radius: 0 0 4px 0;' +
+                '  padding: 4px 10px; font-family: -apple-system, sans-serif; font-weight: 500;' +
+                '  pointer-events: none; z-index: 99999; border-radius: 0 0 6px 0;' +
                 '}' +
                 '[data-section-id].inspector-active { outline: 2px solid #005bd3; outline-offset: -2px; z-index: 99998; }' +
                 '[data-section-id].inspector-active::before {' +
-                '  content: attr(data-section-type); position: absolute; top: 0; left: 0;' +
+                '  content: attr(data-section-type); position: absolute; top: -1px; left: -1px;' +
                 '  background: #005bd3; color: #fff; font-size: 11px; line-height: 1;' +
-                '  padding: 3px 8px; font-family: -apple-system, sans-serif;' +
-                '  pointer-events: none; z-index: 99999; border-radius: 0 0 4px 0;' +
+                '  padding: 4px 10px; font-family: -apple-system, sans-serif; font-weight: 500;' +
+                '  pointer-events: none; z-index: 99999; border-radius: 0 0 6px 0;' +
                 '}' +
                 /* Block-level inspector */
-                '.inspector-enabled [data-block-id] { position: relative; transition: outline 0.15s; cursor: pointer; }' +
-                '.inspector-enabled [data-block-id]:hover { outline: 2px dashed #e67700; outline-offset: -1px; z-index: 99999; }' +
+                '[data-block-id] { position: relative; }' +
+                '.inspector-enabled [data-block-id] { transition: outline 0.15s; cursor: pointer; }' +
+                '.inspector-enabled [data-block-id]:hover { outline: 2px dashed rgba(0,91,211,0.35); outline-offset: -1px; z-index: 99999; }' +
                 '.inspector-enabled [data-block-id]:hover::before {' +
-                '  content: attr(data-block-type); position: absolute; top: 0; left: 0;' +
-                '  background: #e67700; color: #fff; font-size: 10px; line-height: 1;' +
-                '  padding: 2px 6px; font-family: -apple-system, sans-serif;' +
-                '  pointer-events: none; z-index: 100000; border-radius: 0 0 3px 0;' +
+                '  content: attr(data-block-type); position: absolute; top: -1px; left: -1px;' +
+                '  background: #005bd3; color: #fff; font-size: 10px; line-height: 1;' +
+                '  padding: 3px 8px; font-family: -apple-system, sans-serif; font-weight: 500;' +
+                '  pointer-events: none; z-index: 100000; border-radius: 0 0 4px 0;' +
                 '}' +
-                '[data-block-id].inspector-block-active { outline: 2px solid #e67700; outline-offset: -1px; z-index: 99999; }' +
+                '[data-block-id].inspector-block-active { outline: 2px solid #005bd3; outline-offset: -1px; z-index: 99999; }' +
                 '[data-block-id].inspector-block-active::before {' +
-                '  content: attr(data-block-type); position: absolute; top: 0; left: 0;' +
-                '  background: #e67700; color: #fff; font-size: 10px; line-height: 1;' +
-                '  padding: 2px 6px; font-family: -apple-system, sans-serif;' +
-                '  pointer-events: none; z-index: 100000; border-radius: 0 0 3px 0;' +
+                '  content: attr(data-block-type); position: absolute; top: -1px; left: -1px;' +
+                '  background: #005bd3; color: #fff; font-size: 10px; line-height: 1;' +
+                '  padding: 3px 8px; font-family: -apple-system, sans-serif; font-weight: 500;' +
+                '  pointer-events: none; z-index: 100000; border-radius: 0 0 4px 0;' +
                 '}' +
+                /* Floating action toolbar on selected element */
+                '.inspector-toolbar {' +
+                '  position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);' +
+                '  display: flex; align-items: center; gap: 2px;' +
+                '  background: #fff; border: 1px solid #e3e3e3; border-radius: 10px;' +
+                '  box-shadow: 0 4px 16px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.08);' +
+                '  padding: 4px 6px; z-index: 100001; font-family: -apple-system, sans-serif;' +
+                '  white-space: nowrap;' +
+                '}' +
+                '.inspector-toolbar-btn {' +
+                '  display: flex; align-items: center; justify-content: center;' +
+                '  width: 30px; height: 30px; border: none; background: none;' +
+                '  cursor: pointer; border-radius: 6px; color: #616161; transition: all 0.15s;' +
+                '}' +
+                '.inspector-toolbar-btn:hover { background: #f1f1f1; color: #303030; }' +
+                '.inspector-toolbar-btn.danger:hover { background: #fef2f2; color: #d72c0d; }' +
+                '.inspector-toolbar-btn svg { width: 16px; height: 16px; }' +
+                '.inspector-toolbar-divider { width: 1px; height: 20px; background: #e3e3e3; margin: 0 2px; }' +
                 /* Disable when inspector off */
-                '.inspector-disabled [data-section-id]:hover, .inspector-disabled [data-block-id]:hover { outline: none; }' +
-                '.inspector-disabled [data-section-id]:hover::before { display: none; }';
+                '.inspector-disabled [data-section-id]:hover { outline: none; }' +
+                '.inspector-disabled [data-section-id]:hover::before { display: none; }' +
+                '.inspector-disabled [data-block-id]:hover { outline: none; }' +
+                '.inspector-disabled [data-block-id]:hover::before { display: none; }';
             doc.head.appendChild(style);
 
             // Set inspector class on body
@@ -1941,30 +1964,107 @@
         });
     }
 
+    function removeIframeToolbar() {
+        var frame = document.getElementById('previewFrame');
+        try {
+            var doc = frame.contentDocument || frame.contentWindow.document;
+            if (doc) {
+                var existing = doc.querySelector('.inspector-toolbar');
+                if (existing) existing.remove();
+            }
+        } catch(e) {}
+    }
+
+    function injectIframeToolbar(doc, targetEl, sectionId, blockId) {
+        // Remove any existing toolbar
+        var existing = doc.querySelector('.inspector-toolbar');
+        if (existing) existing.remove();
+
+        var toolbar = doc.createElement('div');
+        toolbar.className = 'inspector-toolbar';
+
+        // Duplicate button
+        var dupBtn = doc.createElement('button');
+        dupBtn.className = 'inspector-toolbar-btn';
+        dupBtn.title = 'Duplicate';
+        dupBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';
+        dupBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            if (blockId) {
+                window.parent.postMessage({ type: 'toolbar:action', action: 'duplicate-block', sectionId: sectionId, blockId: blockId }, '*');
+            } else {
+                window.parent.postMessage({ type: 'toolbar:action', action: 'duplicate', sectionId: sectionId }, '*');
+            }
+        });
+        toolbar.appendChild(dupBtn);
+
+        // Hide/Show button
+        if (!blockId) {
+            var hideBtn = doc.createElement('button');
+            hideBtn.className = 'inspector-toolbar-btn';
+            hideBtn.title = 'Hide';
+            hideBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+            hideBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                window.parent.postMessage({ type: 'toolbar:action', action: 'toggle', sectionId: sectionId }, '*');
+            });
+            toolbar.appendChild(hideBtn);
+        }
+
+        // Divider
+        var divider = doc.createElement('span');
+        divider.className = 'inspector-toolbar-divider';
+        toolbar.appendChild(divider);
+
+        // Delete button
+        var delBtn = doc.createElement('button');
+        delBtn.className = 'inspector-toolbar-btn danger';
+        delBtn.title = 'Remove';
+        delBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>';
+        delBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            if (blockId) {
+                window.parent.postMessage({ type: 'toolbar:action', action: 'remove-block', sectionId: sectionId, blockId: blockId }, '*');
+            } else {
+                window.parent.postMessage({ type: 'toolbar:action', action: 'remove', sectionId: sectionId }, '*');
+            }
+        });
+        toolbar.appendChild(delBtn);
+
+        targetEl.appendChild(toolbar);
+    }
+
     function notifyIframeHighlight(sectionId, blockId) {
         var frame = document.getElementById('previewFrame');
         try {
             // Direct DOM manipulation (same-origin srcdoc iframe)
             var doc = frame.contentDocument || frame.contentWindow.document;
             if (doc) {
-                // Clear all active highlights
+                // Clear all active highlights and remove toolbar
                 doc.querySelectorAll('[data-section-id]').forEach(function(el) {
                     el.classList.remove('inspector-active');
                 });
                 doc.querySelectorAll('[data-block-id]').forEach(function(el) {
                     el.classList.remove('inspector-block-active');
                 });
+                var existingToolbar = doc.querySelector('.inspector-toolbar');
+                if (existingToolbar) existingToolbar.remove();
 
                 if (blockId) {
                     var blockEl = doc.querySelector('[data-block-id="' + blockId + '"]');
                     if (blockEl) {
                         blockEl.classList.add('inspector-block-active');
+                        injectIframeToolbar(doc, blockEl, sectionId, blockId);
                         blockEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
                 } else if (sectionId) {
                     var sectionEl = doc.querySelector('[data-section-id="' + sectionId + '"]');
                     if (sectionEl) {
                         sectionEl.classList.add('inspector-active');
+                        injectIframeToolbar(doc, sectionEl, sectionId, null);
                         sectionEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
                 }
@@ -1992,7 +2092,7 @@
         } catch(e) {}
     }
 
-    // Listen for inspector clicks from iframe
+    // Listen for inspector clicks and toolbar actions from iframe
     window.addEventListener('message', function(e) {
         if (!e.data) return;
         if (e.data.type === 'inspector:select') {
@@ -2005,6 +2105,40 @@
                 selectBlock(e.data.sectionId, e.data.blockId);
                 var treeEl = document.querySelector('[data-block-id="' + e.data.blockId + '"]');
                 if (treeEl) treeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+        // Toolbar actions from iframe
+        if (e.data.type === 'toolbar:action') {
+            var action = e.data.action;
+            var sid = e.data.sectionId;
+            var bid = e.data.blockId;
+
+            if (action === 'duplicate-block' && sid && bid) {
+                var pageData = getPageData();
+                var sec = pageData.sections[sid];
+                if (sec && sec.blocks && sec.blocks[bid]) {
+                    var newBlockId = 'block_' + Date.now().toString(36);
+                    sec.blocks[newBlockId] = JSON.parse(JSON.stringify(sec.blocks[bid]));
+                    var idx = (sec.block_order || []).indexOf(bid);
+                    sec.block_order.splice(idx + 1, 0, newBlockId);
+                    markDirty();
+                    renderSectionTree();
+                    selectBlock(sid, newBlockId);
+                    refreshPreview();
+                    showToast('Block duplicated', 'success');
+                }
+            } else if (action === 'remove-block' && sid && bid) {
+                var pageData = getPageData();
+                var sec = pageData.sections[sid];
+                if (sec && sec.blocks) {
+                    delete sec.blocks[bid];
+                    sec.block_order = (sec.block_order || []).filter(function(id) { return id !== bid; });
+                    selectSection(sid);
+                    markDirty();
+                    refreshPreview();
+                }
+            } else if (action === 'duplicate' || action === 'toggle' || action === 'remove') {
+                handleSectionAction(action, sid);
             }
         }
     });
