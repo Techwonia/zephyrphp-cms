@@ -508,6 +508,13 @@ class SectionManager
                 }
             }
 
+            // In customizer mode, auto-inject data-block-id/data-block-type into template
+            // if not already present. This ensures block-level inspector works even when
+            // theme templates don't include these attributes.
+            if ($sectionId !== null && !str_contains($templateContent, 'data-block-id')) {
+                $templateContent = $this->injectBlockDataAttributes($templateContent);
+            }
+
             $view = \ZephyrPHP\View\View::getInstance();
             $twig = $view->getEngine();
             $template = $twig->createTemplate($templateContent);
@@ -523,7 +530,7 @@ class SectionManager
                 'theme_settings' => $themeSettings,
             ]);
 
-            // Wrap with data attributes for inspector mode
+            // Wrap with data attributes for inspector/customizer mode
             if ($sectionId !== null) {
                 $safeSectionId = htmlspecialchars($sectionId, ENT_QUOTES, 'UTF-8');
                 $safeType = htmlspecialchars($type, ENT_QUOTES, 'UTF-8');
@@ -538,6 +545,33 @@ class SectionManager
                 . '<strong>Section &ldquo;' . $safeType . '&rdquo; render error:</strong><br>' . $safeMsg
                 . '</div>';
         }
+    }
+
+    /**
+     * Auto-inject data-block-id and data-block-type attributes into block elements
+     * in a Twig template that doesn't already include them.
+     *
+     * Looks for patterns like:
+     *   {% if block.type == 'feature' %}
+     *       <div ...>
+     * and transforms the first HTML opening tag after the block type check to include
+     *   data-block-id="{{ block.id }}" data-block-type="{{ block.type }}"
+     */
+    private function injectBlockDataAttributes(string $template): string
+    {
+        // Match: {% if block.type == '...' %} followed by whitespace then an opening HTML tag
+        // Inject data-block-id="{{ block.id }}" data-block-type="{{ block.type }}" into that tag
+        return preg_replace_callback(
+            '/(\{%[-\s]*if\s+block\.type\s*==\s*[\'"][^\'"]+[\'"]\s*[-\s]*%\}\s*)(<(\w+)\b)/s',
+            function ($matches) {
+                $before = $matches[1];   // The {% if block.type == '...' %} + whitespace
+                $tagStart = $matches[2]; // e.g. <div or <details
+                $tagName = $matches[3];  // e.g. div or details
+
+                return $before . '<' . $tagName . ' data-block-id="{{ block.id }}" data-block-type="{{ block.type }}"';
+            },
+            $template
+        );
     }
 
     /**
