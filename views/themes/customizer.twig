@@ -738,7 +738,19 @@
             dragHandle.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01"/></svg>';
             row.appendChild(dragHandle);
 
-            // Chevron for expand/collapse (only if has blocks)
+            // Icon (always first after drag)
+            var icon = document.createElement('span');
+            icon.className = 'tree-item-icon';
+            icon.textContent = SECTION_ICONS[sec.type] || '📦';
+            row.appendChild(icon);
+
+            // Name
+            var name = document.createElement('span');
+            name.className = 'tree-item-name';
+            name.textContent = schema.name || sec.type;
+            row.appendChild(name);
+
+            // Chevron at the right end (only if has blocks)
             if (hasBlocks) {
                 var chevron = document.createElement('span');
                 chevron.className = 'tree-item-chevron' + (isExpanded ? ' open' : '');
@@ -750,18 +762,6 @@
                 });
                 row.appendChild(chevron);
             }
-
-            // Icon
-            var icon = document.createElement('span');
-            icon.className = 'tree-item-icon';
-            icon.textContent = SECTION_ICONS[sec.type] || '📦';
-            row.appendChild(icon);
-
-            // Name
-            var name = document.createElement('span');
-            name.className = 'tree-item-name';
-            name.textContent = schema.name || sec.type;
-            row.appendChild(name);
 
             row.addEventListener('click', function(e) {
                 if (e.target.closest('.drag-handle') || e.target.closest('.tree-item-chevron')) return;
