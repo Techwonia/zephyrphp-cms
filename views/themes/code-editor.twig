@@ -2834,11 +2834,11 @@
             const assetPath = path.replace(/^public\//, '');
             const ext = path.split('.').pop().toLowerCase();
             if (ext === 'css') {
-                text = '<link rel="stylesheet" href="' + _expr("asset('" + assetPath + "')") + '">';
+                text = _expr("css('" + assetPath + "')");
                 label = 'CSS tag copied';
             } else if (ext === 'js') {
-                text = '<script src="' + _expr("asset('" + assetPath + "')") + '"><\/script>';
-                label = 'Script tag copied';
+                text = _expr("js('" + assetPath + "')");
+                label = 'JS tag copied';
             } else {
                 text = _expr("asset('" + assetPath + "')");
                 label = 'Asset tag copied';
