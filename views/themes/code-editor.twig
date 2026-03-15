@@ -350,47 +350,35 @@
             line-height: 1.6; color: #d4d4d4; background: #1e1e1e; tab-size: 4;
         }
 
-        /* ── Schema Panel (right side for sections) ── */
+        /* ── Schema Panel (full-width view inside editor-panel) ── */
         .schema-panel {
-            width: 360px; min-width: 360px; display: none;
-            flex-direction: column; border-left: 1px solid var(--border);
-            background: var(--bg-surface);
+            display: none; flex: 1; flex-direction: column;
+            background: var(--bg-surface); min-height: 0; overflow: hidden;
         }
         .schema-panel.visible { display: flex; }
-        .schema-panel-header {
-            padding: 10px 14px; display: flex; align-items: center;
-            justify-content: space-between; border-bottom: 1px solid var(--border);
-            background: var(--bg-surface);
-        }
-        .schema-panel-title {
-            font-size: 12px; font-weight: 600; color: var(--text);
-            display: flex; align-items: center; gap: 6px;
-        }
-        .schema-panel-title svg { width: 14px; height: 14px; color: var(--primary); }
-        .schema-panel-close {
-            width: 24px; height: 24px; border: none; background: transparent;
-            cursor: pointer; border-radius: 4px; color: var(--text-secondary);
-            display: flex; align-items: center; justify-content: center;
-        }
-        .schema-panel-close:hover { background: var(--bg-hover); color: var(--text); }
-        .schema-panel-tabs {
-            display: flex; border-bottom: 1px solid var(--border); background: var(--bg-subdued);
-        }
-        .schema-panel-tab {
-            flex: 1; padding: 8px; text-align: center; font-size: 11px; font-weight: 600;
-            color: var(--text-secondary); cursor: pointer; border: none; background: none;
-            border-bottom: 2px solid transparent; transition: all 0.15s; font-family: var(--font);
-        }
-        .schema-panel-tab:hover { color: var(--text); }
-        .schema-panel-tab.active { color: var(--primary); border-bottom-color: var(--primary); background: var(--bg-surface); }
         .schema-panel-body {
             flex: 1; overflow-y: auto; padding: 0;
         }
         .schema-panel-view { display: none; height: 100%; }
         .schema-panel-view.active { display: flex; flex-direction: column; }
 
-        /* Schema visual designer */
-        .schema-designer { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+        /* Schema view mode tabs in toolbar */
+        .schema-view-tabs {
+            display: none; align-items: center; gap: 0; margin-left: 8px;
+            border: 1px solid var(--border); border-radius: 6px; overflow: hidden;
+        }
+        .schema-view-tabs.visible { display: inline-flex; }
+        .schema-view-tab {
+            padding: 4px 12px; font-size: 11px; font-weight: 600; font-family: var(--font);
+            color: var(--text-secondary); cursor: pointer; border: none; background: transparent;
+            transition: all 0.15s; white-space: nowrap;
+        }
+        .schema-view-tab:hover { color: var(--text); background: var(--bg-hover); }
+        .schema-view-tab.active { color: var(--primary); background: var(--primary-bg); }
+        .schema-view-tab + .schema-view-tab { border-left: 1px solid var(--border); }
+
+        /* Schema visual designer — full-width layout */
+        .schema-designer { padding: 20px 24px; display: flex; flex-direction: column; gap: 12px; max-width: 960px; margin: 0 auto; width: 100%; }
         .schema-field { background: var(--bg-subdued); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
         .schema-field-header {
             display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
@@ -405,8 +393,11 @@
         }
         .schema-field-label { font-size: 11px; color: var(--text-secondary); }
         .schema-field-row {
-            display: grid; grid-template-columns: 80px 1fr; gap: 4px; align-items: center;
+            display: grid; grid-template-columns: 70px 1fr; gap: 4px; align-items: center;
             margin-top: 4px;
+        }
+        .schema-field-rows-2col {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px;
         }
         .schema-field-row label {
             font-size: 10px; font-weight: 600; color: var(--text-disabled); text-transform: uppercase;
@@ -553,6 +544,24 @@
         .schema-preset-json textarea:focus {
             border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px rgba(0,91,211,0.1);
         }
+
+        /* Collection reference banner */
+        .schema-collection-ref {
+            background: linear-gradient(135deg, rgba(0,128,96,0.08), rgba(0,91,211,0.08));
+            border: 1px solid rgba(0,128,96,0.2); border-radius: 8px;
+            padding: 12px 16px; font-size: 12px; line-height: 1.5;
+        }
+        .schema-collection-ref-title {
+            font-weight: 700; color: var(--text); margin-bottom: 6px;
+            display: flex; align-items: center; gap: 6px; font-size: 11px;
+            text-transform: uppercase; letter-spacing: 0.03em;
+        }
+        .schema-collection-ref-title svg { width: 14px; height: 14px; color: #008060; }
+        .schema-collection-ref code {
+            background: var(--bg-subdued); padding: 1px 5px; border-radius: 3px;
+            font-family: var(--font-mono); font-size: 11px; color: var(--primary);
+        }
+        .schema-collection-ref p { margin: 4px 0; color: var(--text-secondary); font-size: 11px; }
 
         /* Schema JSON tab */
         .schema-json-view { flex: 1; position: relative; }
@@ -804,6 +813,11 @@
                     <svg viewBox="0 0 16 16" fill="currentColor"><path d="M5 4a2 2 0 00-2 2v1a1 1 0 01-1 1H1v1h1a1 1 0 011 1v1a2 2 0 002 2h1v-1H5a1 1 0 01-1-1V9.5A1.5 1.5 0 002.5 8 1.5 1.5 0 004 6.5V5a1 1 0 011-1h1V3H5zm6 0a2 2 0 012 2v1a1 1 0 001 1h1v1h-1a1 1 0 00-1 1v1a2 2 0 01-2 2h-1v-1h1a1 1 0 001-1V9.5A1.5 1.5 0 0013.5 8 1.5 1.5 0 0012 6.5V5a1 1 0 00-1-1h-1V3h1z"/></svg>
                     Schema
                 </button>
+                <div class="schema-view-tabs" id="schemaViewTabs">
+                    <button class="schema-view-tab active" data-view="code">Code</button>
+                    <button class="schema-view-tab" data-view="designer">Designer</button>
+                    <button class="schema-view-tab" data-view="json">JSON</button>
+                </div>
                 <div class="toolbar-separator"></div>
                 <button class="toolbar-btn" id="btnCopyPath" title="Copy file path" style="display:none;">
                     <svg viewBox="0 0 16 16" fill="currentColor" width="13" height="13"><rect x="5" y="1" width="8" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="3" y="5" width="8" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>
@@ -857,27 +871,16 @@
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Schema Panel (for section files) -->
-        <div class="schema-panel" id="schemaPanel">
-            <div class="schema-panel-header">
-                <span class="schema-panel-title">
-                    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M5 4a2 2 0 00-2 2v1a1 1 0 01-1 1H1v1h1a1 1 0 011 1v1a2 2 0 002 2h1v-1H5a1 1 0 01-1-1V9.5A1.5 1.5 0 002.5 8 1.5 1.5 0 004 6.5V5a1 1 0 011-1h1V3H5zm6 0a2 2 0 012 2v1a1 1 0 001 1h1v1h-1a1 1 0 00-1 1v1a2 2 0 01-2 2h-1v-1h1a1 1 0 001-1V9.5A1.5 1.5 0 0013.5 8 1.5 1.5 0 0012 6.5V5a1 1 0 00-1-1h-1V3h1z"/></svg>
-                    Section Schema
-                </span>
-                <button class="schema-panel-close" id="btnSchemaClose">&times;</button>
-            </div>
-            <div class="schema-panel-tabs">
-                <button class="schema-panel-tab active" data-schema-tab="designer">Designer</button>
-                <button class="schema-panel-tab" data-schema-tab="json">JSON</button>
-            </div>
-            <div class="schema-panel-body">
-                <div class="schema-panel-view active" id="schemaDesignerView">
-                    <div class="schema-designer" id="schemaDesigner"></div>
-                </div>
-                <div class="schema-panel-view" id="schemaJsonView">
-                    <div class="schema-json-view" id="schemaJsonEditor"></div>
+            <!-- Schema Panel (full-width, toggled via Code/Designer/JSON tabs) -->
+            <div class="schema-panel" id="schemaPanel">
+                <div class="schema-panel-body">
+                    <div class="schema-panel-view active" id="schemaDesignerView">
+                        <div class="schema-designer" id="schemaDesigner"></div>
+                    </div>
+                    <div class="schema-panel-view" id="schemaJsonView">
+                        <div class="schema-json-view" id="schemaJsonEditor"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1117,6 +1120,7 @@
     const $quickSearchResults = $('quickSearchResults');
     const $contextMenu = $('contextMenu');
     const $schemaPanel = $('schemaPanel');
+    const $schemaViewTabs = $('schemaViewTabs');
     const $toolbarLineCol = $('toolbarLineCol');
     const $toolbarLang = $('toolbarLang');
     const $btnSchema = $('btnSchema');
@@ -1811,9 +1815,15 @@
     }
 
     function updateToolbarActions(path) {
-        $btnSchema.style.display = path.startsWith('sections/') && path.endsWith('.twig') ? '' : 'none';
+        const isSection = path.startsWith('sections/') && path.endsWith('.twig');
+        $btnSchema.style.display = isSection ? '' : 'none';
+        $schemaViewTabs.classList.toggle('visible', isSection);
         $btnCopyPath.style.display = path && (path.startsWith('snippets/') || path.startsWith('public/')) ? '' : 'none';
         $btnDeleteFile.style.display = path && isDeletablePath(path) ? '' : 'none';
+        // When switching away from a section file, reset to code view
+        if (!isSection && state.schemaPanelOpen) {
+            _switchSchemaView('code');
+        }
     }
 
     function updateUnsavedState() {
@@ -2568,33 +2578,56 @@
 
     let currentSchema = null;
 
-    window._toggleSchemaPanel = function() {
-        state.schemaPanelOpen = !state.schemaPanelOpen;
-        $schemaPanel.classList.toggle('visible', state.schemaPanelOpen);
-        $btnSchema.classList.toggle('active', state.schemaPanelOpen);
+    function _switchSchemaView(view) {
+        // view: 'code', 'designer', 'json'
+        state.schemaActiveView = view;
 
-        if (state.schemaPanelOpen && state.activeTab) {
-            const tab = state.openTabs.find(t => t.path === state.activeTab);
-            if (tab) {
-                currentSchema = parseSchema(tab.content);
-                renderSchemaDesigner();
-                renderSchemaJson();
-            }
-        } else {
-            if (state.schemaView) { state.schemaView.destroy(); state.schemaView = null; }
+        // Update tab highlights
+        $schemaViewTabs.querySelectorAll('.schema-view-tab').forEach(t =>
+            t.classList.toggle('active', t.dataset.view === view)
+        );
+
+        if (view === 'code') {
+            state.schemaPanelOpen = false;
+            $editorArea.style.display = '';
+            $schemaPanel.classList.remove('visible');
+            $btnSchema.classList.remove('active');
             currentSchema = null;
+        } else {
+            state.schemaPanelOpen = true;
+            $editorArea.style.display = 'none';
+            $schemaPanel.classList.add('visible');
+            $btnSchema.classList.add('active');
+
+            // Parse schema from active tab
+            if (state.activeTab) {
+                const tab = state.openTabs.find(t => t.path === state.activeTab);
+                if (tab) {
+                    currentSchema = parseSchema(tab.content);
+                }
+            }
+
+            $('schemaDesignerView').classList.toggle('active', view === 'designer');
+            $('schemaJsonView').classList.toggle('active', view === 'json');
+
+            if (view === 'designer') renderSchemaDesigner();
+            if (view === 'json') renderSchemaJson();
+        }
+    }
+
+    window._toggleSchemaPanel = function() {
+        if (state.schemaPanelOpen) {
+            _switchSchemaView('code');
+        } else {
+            _switchSchemaView('designer');
         }
     };
 
-    // Schema panel tab switching
-    $schemaPanel.addEventListener('click', (e) => {
-        const tabBtn = e.target.closest('[data-schema-tab]');
+    // View tab switching
+    $schemaViewTabs.addEventListener('click', (e) => {
+        const tabBtn = e.target.closest('[data-view]');
         if (!tabBtn) return;
-        const tabName = tabBtn.dataset.schemaTab;
-        $schemaPanel.querySelectorAll('.schema-panel-tab').forEach(t => t.classList.toggle('active', t.dataset.schemaTab === tabName));
-        $('schemaDesignerView').classList.toggle('active', tabName === 'designer');
-        $('schemaJsonView').classList.toggle('active', tabName === 'json');
-        if (tabName === 'json') renderSchemaJson();
+        _switchSchemaView(tabBtn.dataset.view);
     });
 
     function extractSchemaRaw(twigContent) {
@@ -2674,12 +2707,14 @@
                     <button class="schema-field-action-btn danger" ${delAttr} title="Remove">&#10005;</button>
                 </div>
             </div>
-            <div class="schema-field-row"><label>ID</label><input type="text" ${dataAttr} data-prop="id" value="${escAttr(setting.id || '')}"></div>
-            <div class="schema-field-row"><label>Type</label><select ${dataAttr} data-prop="type">${typeOpts}</select></div>
-            <div class="schema-field-row"><label>Label</label><input type="text" ${dataAttr} data-prop="label" value="${escAttr(setting.label || '')}"></div>
-            <div class="schema-field-row"><label>Default</label><input type="text" ${dataAttr} data-prop="default" value="${escAttr(setting.default != null ? String(setting.default) : '')}"></div>
-            <div class="schema-field-row"><label>Group</label><input type="text" ${dataAttr} data-prop="group" value="${escAttr(setting.group || '')}" placeholder="e.g. Layout, Colors"></div>
-            <div class="schema-field-row"><label>Info</label><input type="text" ${dataAttr} data-prop="info" value="${escAttr(setting.info || '')}" placeholder="Help text"></div>`;
+            <div class="schema-field-rows-2col">
+                <div class="schema-field-row"><label>ID</label><input type="text" ${dataAttr} data-prop="id" value="${escAttr(setting.id || '')}"></div>
+                <div class="schema-field-row"><label>Type</label><select ${dataAttr} data-prop="type">${typeOpts}</select></div>
+                <div class="schema-field-row"><label>Label</label><input type="text" ${dataAttr} data-prop="label" value="${escAttr(setting.label || '')}"></div>
+                <div class="schema-field-row"><label>Default</label><input type="text" ${dataAttr} data-prop="default" value="${escAttr(setting.default != null ? String(setting.default) : '')}"></div>
+                <div class="schema-field-row"><label>Group</label><input type="text" ${dataAttr} data-prop="group" value="${escAttr(setting.group || '')}" placeholder="e.g. Layout, Colors"></div>
+                <div class="schema-field-row"><label>Info</label><input type="text" ${dataAttr} data-prop="info" value="${escAttr(setting.info || '')}" placeholder="Help text"></div>
+            </div>`;
 
         // Type-specific fields
         if (setting.type === 'range') {
@@ -2715,16 +2750,34 @@
         const s = currentSchema;
         let html = '';
 
+        // ── Collection Reference Banner ──
+        const hasCollection = s.settings.some(st => st.type === 'collection');
+        const hasFieldSelect = s.settings.some(st => st.type === 'field_select');
+        if (hasCollection || hasFieldSelect) {
+            html += `<div class="schema-collection-ref">
+                <div class="schema-collection-ref-title">
+                    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 3a1 1 0 011-1h10a1 1 0 011 1v2a1 1 0 01-1 1H3a1 1 0 01-1-1V3zm0 4a1 1 0 011-1h10a1 1 0 011 1v2a1 1 0 01-1 1H3a1 1 0 01-1-1V7zm0 4a1 1 0 011-1h10a1 1 0 011 1v2a1 1 0 01-1 1H3a1 1 0 01-1-1v-2z"/></svg>
+                    Dynamic Collection Section
+                </div>
+                <p>This section pulls live data from a CMS collection. Use these Twig helpers in your template:</p>
+                <p><code>{{ '{%' }} set items = collection(section.settings.collection, {{ '{' }}per_page: 10{{ '}' }}) {{ '%}' }}</code> &mdash; fetch entries</p>
+                <p><code>{{ '{%' }} for item in items.data {{ '%}' }}</code> &mdash; loop through entries</p>
+                <p><code>{{ '{{' }} item[section.settings.title_field] {{ '}}' }}</code> &mdash; access mapped fields</p>
+            </div>`;
+        }
+
         // ── Section Info ──
         html += `<div class="schema-section-info">
-            <div class="field-group"><label>Section Name</label>
-                <input type="text" data-schema-field="name" value="${escAttr(s.name)}">
+            <div class="field-row-2col">
+                <div class="field-group"><label>Section Name</label>
+                    <input type="text" data-schema-field="name" value="${escAttr(s.name)}">
+                </div>
+                <div class="field-group"><label>Icon</label>
+                    <input type="text" data-schema-field="icon" value="${escAttr(s.icon || '')}" placeholder="e.g. hero, grid, list">
+                </div>
             </div>
             <div class="field-group"><label>Description</label>
                 <input type="text" data-schema-field="description" value="${escAttr(s.description || '')}" placeholder="Section description">
-            </div>
-            <div class="field-group"><label>Icon</label>
-                <input type="text" data-schema-field="icon" value="${escAttr(s.icon || '')}" placeholder="e.g. hero, grid, list">
             </div>
             <div class="field-row-2col">
                 <div class="field-group"><label>Tag</label>
@@ -2735,7 +2788,7 @@
                 </div>
             </div>
             <div class="field-group"><label>Max Blocks</label>
-                <input type="number" data-schema-field="max_blocks" value="${s.max_blocks || ''}" placeholder="unlimited">
+                <input type="number" data-schema-field="max_blocks" value="${s.max_blocks || ''}" placeholder="unlimited" style="max-width:200px;">
             </div>
         </div>`;
 
@@ -3284,7 +3337,7 @@
         if (state.activeTab) deleteFile(state.activeTab);
     });
     $('btnCloseSplit').addEventListener('click', () => window._closeSplitPane());
-    $('btnSchemaClose').addEventListener('click', () => window._toggleSchemaPanel());
+    // Schema close button removed — view tabs handle switching
 
     // ── Modal button bindings ──
     $('btnRenameCancel').addEventListener('click', () => window._closeModal('renameModal'));
