@@ -321,6 +321,9 @@ class SectionManager
             $sectionConfig = $pageSections['sections'][$sectionId] ?? null;
             if (!$sectionConfig) continue;
 
+            // Skip disabled/hidden sections
+            if (!empty($sectionConfig['disabled'])) continue;
+
             $type = $sectionConfig['type'];
             $settings = $sectionConfig['settings'] ?? [];
             $blocks = $sectionConfig['blocks'] ?? [];
@@ -387,6 +390,9 @@ class SectionManager
         foreach ($order as $sectionId) {
             $sectionConfig = $sections[$sectionId] ?? null;
             if (!$sectionConfig) continue;
+
+            // Skip disabled/hidden sections
+            if (!empty($sectionConfig['disabled'])) continue;
 
             $type = $sectionConfig['type'];
             $settings = $sectionConfig['settings'] ?? [];

@@ -15,7 +15,7 @@
             <div style="display:grid; grid-template-columns:repeat({{ section.settings.columns|default(3) }}, 1fr); gap:32px;">
                 {% for block in section.blocks %}
                     {% if block.type == 'feature' %}
-                        <div data-block-id="{{ block.id }}" style="text-align:{{ section.settings.text_align|default('center') }};">
+                        <div data-block-id="{{ block.id }}" data-block-type="{{ block.type }}" style="text-align:{{ section.settings.text_align|default('center') }};">
                             {% if block.settings.icon %}
                                 <div style="font-size:36px; margin-bottom:12px;">{{ block.settings.icon }}</div>
                             {% endif %}

@@ -239,6 +239,40 @@
         }
         .tree-subitem:hover .tree-subitem-drag { opacity: 1; }
 
+        /* Context menu */
+        .tree-item-menu {
+            flex-shrink: 0; display: flex; align-items: center;
+            opacity: 0; transition: opacity 0.15s;
+        }
+        .tree-item:hover .tree-item-menu { opacity: 1; }
+        .tree-item-menu-btn {
+            background: none; border: none; cursor: pointer; color: var(--text-disabled);
+            padding: 2px 4px; border-radius: 4px; display: flex; align-items: center;
+        }
+        .tree-item-menu-btn:hover { color: var(--text); background: var(--bg-hover); }
+        .context-menu {
+            position: absolute; right: 8px; top: 100%;
+            background: var(--bg-surface); border: 1px solid var(--border);
+            border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            min-width: 160px; z-index: 50; padding: 4px;
+            display: none;
+        }
+        .context-menu.open { display: block; }
+        .context-menu-item {
+            display: flex; align-items: center; gap: 8px;
+            padding: 7px 12px; border-radius: 6px; cursor: pointer;
+            font-size: 12px; color: var(--text); border: none;
+            background: none; width: 100%; text-align: left;
+            font-family: var(--font); transition: background 0.1s;
+        }
+        .context-menu-item:hover { background: var(--bg-hover); }
+        .context-menu-item.danger { color: var(--danger); }
+        .context-menu-item.danger:hover { background: rgba(215,44,13,0.06); }
+        .context-menu-item svg { width: 14px; height: 14px; flex-shrink: 0; }
+        .context-menu-divider { height: 1px; background: var(--border); margin: 4px 0; }
+        .tree-item.disabled { opacity: 0.45; }
+        .tree-item.disabled .tree-item-name { text-decoration: line-through; }
+
         /* Add section button */
         .add-section-btn {
             display: flex; align-items: center; justify-content: center; gap: 6px;
@@ -603,6 +637,15 @@
         'custom-code': '🧩', 'header': '🔲', 'footer': '🔲'
     };
 
+    var BLOCK_TYPE_ICONS = {
+        'heading': 'H', 'text': 'T', 'paragraph': 'Aa', 'richtext': 'Aa',
+        'image': '🖼', 'button': '▣', 'link': '🔗',
+        'spacer': '↕', 'divider': '—',
+        'feature': '⚡', 'question': '❓', 'testimonial': '💬',
+        'slide': '🖼', 'nav_link': '🔗', 'social_link': '🌐',
+        'column': '▥', 'card': '▢', 'item': '•'
+    };
+
     // ── State ──
     var state = {
         currentPage: '{{ currentPage }}',
@@ -728,8 +771,10 @@
             wrapper.dataset.treeSectionId = sectionId;
 
             // Section row
+            var isActive = state.activeSection === sectionId && !state.activeBlock;
+            var isDisabled = !!sec.disabled;
             var row = document.createElement('div');
-            row.className = 'tree-item' + (state.activeSection === sectionId && !state.activeBlock ? ' active' : '');
+            row.className = 'tree-item' + (isActive ? ' active' : '') + (isDisabled ? ' disabled' : '');
             row.dataset.sectionId = sectionId;
 
             // Drag handle
@@ -738,17 +783,56 @@
             dragHandle.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01"/></svg>';
             row.appendChild(dragHandle);
 
-            // Icon (always first after drag)
+            // Icon
             var icon = document.createElement('span');
             icon.className = 'tree-item-icon';
             icon.textContent = SECTION_ICONS[sec.type] || '📦';
             row.appendChild(icon);
 
             // Name
-            var name = document.createElement('span');
-            name.className = 'tree-item-name';
-            name.textContent = schema.name || sec.type;
-            row.appendChild(name);
+            var nameEl = document.createElement('span');
+            nameEl.className = 'tree-item-name';
+            nameEl.textContent = sec.custom_name || schema.name || sec.type;
+            row.appendChild(nameEl);
+
+            // Context menu (three-dot)
+            var menuWrap = document.createElement('span');
+            menuWrap.className = 'tree-item-menu';
+            var menuBtn = document.createElement('button');
+            menuBtn.className = 'tree-item-menu-btn';
+            menuBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>';
+            menuBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                closeAllContextMenus();
+                var cm = menuWrap.querySelector('.context-menu');
+                if (cm) cm.classList.toggle('open');
+            });
+            menuWrap.appendChild(menuBtn);
+
+            // Build context menu dropdown
+            var ctxMenu = document.createElement('div');
+            ctxMenu.className = 'context-menu';
+            ctxMenu.innerHTML =
+                '<button class="context-menu-item" data-action="duplicate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Duplicate</button>' +
+                '<button class="context-menu-item" data-action="rename"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.83 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg> Rename</button>' +
+                '<button class="context-menu-item" data-action="toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' + (isDisabled
+                    ? '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'
+                    : '<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>'
+                ) + '</svg> ' + (isDisabled ? 'Show' : 'Hide') + '</button>' +
+                '<div class="context-menu-divider"></div>' +
+                '<button class="context-menu-item danger" data-action="remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg> Remove</button>';
+
+            ctxMenu.addEventListener('click', function(e) {
+                var btn = e.target.closest('[data-action]');
+                if (!btn) return;
+                e.stopPropagation();
+                closeAllContextMenus();
+                var action = btn.dataset.action;
+                handleSectionAction(action, sectionId);
+            });
+
+            menuWrap.appendChild(ctxMenu);
+            row.appendChild(menuWrap);
 
             // Chevron at the right end (only if has blocks)
             if (hasBlocks) {
@@ -764,7 +848,7 @@
             }
 
             row.addEventListener('click', function(e) {
-                if (e.target.closest('.drag-handle') || e.target.closest('.tree-item-chevron')) return;
+                if (e.target.closest('.drag-handle') || e.target.closest('.tree-item-chevron') || e.target.closest('.tree-item-menu')) return;
                 selectSection(sectionId);
             });
 
@@ -805,7 +889,7 @@
 
                     var subIcon = document.createElement('span');
                     subIcon.className = 'tree-subitem-icon';
-                    subIcon.textContent = '◻';
+                    subIcon.textContent = BLOCK_TYPE_ICONS[block.type] || '◻';
 
                     var subName = document.createElement('span');
                     subName.className = 'tree-subitem-name';
@@ -889,6 +973,61 @@
     function findBlockSchema(sectionSchema, blockType) {
         if (!sectionSchema || !sectionSchema.blocks) return null;
         return sectionSchema.blocks.find(function(b) { return b.type === blockType; }) || null;
+    }
+
+    // ── Context Menu Actions ──
+    function closeAllContextMenus() {
+        document.querySelectorAll('.context-menu.open').forEach(function(m) { m.classList.remove('open'); });
+    }
+    document.addEventListener('click', closeAllContextMenus);
+
+    function handleSectionAction(action, sectionId) {
+        var pageData = getPageData();
+        var sec = pageData.sections[sectionId];
+        if (!sec) return;
+
+        if (action === 'duplicate') {
+            var newId = sec.type + '_' + Date.now().toString(36);
+            var clone = JSON.parse(JSON.stringify(sec));
+            delete clone.custom_name;
+            pageData.sections[newId] = clone;
+            var idx = pageData.order.indexOf(sectionId);
+            pageData.order.splice(idx + 1, 0, newId);
+            markDirty();
+            renderSectionTree();
+            selectSection(newId);
+            refreshPreview();
+            showToast('Section duplicated', 'success');
+        }
+
+        if (action === 'rename') {
+            var schema = state.availableSections[sec.type] || {};
+            var currentName = sec.custom_name || schema.name || sec.type;
+            var newName = prompt('Rename section:', currentName);
+            if (newName && newName.trim()) {
+                sec.custom_name = newName.trim();
+                markDirty();
+                renderSectionTree();
+            }
+        }
+
+        if (action === 'toggle') {
+            sec.disabled = !sec.disabled;
+            markDirty();
+            renderSectionTree();
+            refreshPreview();
+            showToast(sec.disabled ? 'Section hidden' : 'Section visible', 'success');
+        }
+
+        if (action === 'remove') {
+            if (!confirm('Remove this section?')) return;
+            delete pageData.sections[sectionId];
+            pageData.order = pageData.order.filter(function(id) { return id !== sectionId; });
+            if (state.activeSection === sectionId) hideRightPanel();
+            markDirty();
+            renderSectionTree();
+            refreshPreview();
+        }
     }
 
     // ── Right Panel ──
@@ -1089,7 +1228,29 @@
         addBlockBtn.className = 'add-block-btn';
         addBlockBtn.textContent = '+ Add';
         addBlockBtn.addEventListener('click', function() {
-            var blockType = schema.blocks[0];
+            if (schema.blocks.length === 1) {
+                addBlockOfType(sec, schema.blocks[0], sectionId);
+            } else {
+                // Show block type picker
+                var picker = blocksSection.querySelector('.block-type-picker');
+                if (picker) { picker.remove(); return; }
+                picker = document.createElement('div');
+                picker.className = 'block-type-picker';
+                picker.style.cssText = 'border:1px solid var(--border);border-radius:8px;padding:8px;margin-top:8px;background:var(--bg-subdued);';
+                schema.blocks.forEach(function(bt) {
+                    var item = document.createElement('button');
+                    item.style.cssText = 'display:flex;align-items:center;gap:8px;width:100%;padding:6px 10px;border:none;background:none;cursor:pointer;border-radius:6px;font-size:12px;font-family:var(--font);color:var(--text);transition:background 0.1s;';
+                    item.innerHTML = '<span style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;background:var(--bg-surface);border-radius:4px;font-size:11px;border:1px solid var(--border);">' + (BLOCK_TYPE_ICONS[bt.type] || '•') + '</span> ' + (bt.name || bt.type);
+                    item.addEventListener('mouseenter', function() { this.style.background = 'var(--bg-hover)'; });
+                    item.addEventListener('mouseleave', function() { this.style.background = 'none'; });
+                    item.addEventListener('click', function() { picker.remove(); addBlockOfType(sec, bt, sectionId); });
+                    picker.appendChild(item);
+                });
+                blocksSection.appendChild(picker);
+            }
+        });
+
+        function addBlockOfType(sec, blockType, sectionId) {
             var blockId = 'block_' + Date.now().toString(36);
             var blockSettings = {};
             (blockType.settings || []).forEach(function(s) {
@@ -1104,7 +1265,7 @@
             renderSectionSettings(sectionId);
             renderSectionTree();
             refreshPreview();
-        });
+        }
         blocksHeader.appendChild(addBlockBtn);
         blocksSection.appendChild(blocksHeader);
 
@@ -1626,7 +1787,10 @@
                 // Replace only the changed section's innerHTML
                 sectionEl.innerHTML = newSectionEl.innerHTML;
                 // Re-inject inspector on the updated section
-                injectInspectorOnElement(doc, sectionEl);
+                injectInspectorOnSection(doc, sectionEl);
+                sectionEl.querySelectorAll('[data-block-id]').forEach(function(blockEl) {
+                    injectInspectorOnBlock(doc, blockEl);
+                });
                 // Scroll to the updated section
                 sectionEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             } else {
@@ -1687,6 +1851,12 @@
                 /* Block-level inspector */
                 '.inspector-enabled [data-block-id] { position: relative; transition: outline 0.15s; cursor: pointer; }' +
                 '.inspector-enabled [data-block-id]:hover { outline: 2px dashed #e67700; outline-offset: -1px; z-index: 99999; }' +
+                '.inspector-enabled [data-block-id]:hover::before {' +
+                '  content: attr(data-block-type); position: absolute; top: 0; left: 0;' +
+                '  background: #e67700; color: #fff; font-size: 10px; line-height: 1;' +
+                '  padding: 2px 6px; font-family: -apple-system, sans-serif;' +
+                '  pointer-events: none; z-index: 100000; border-radius: 0 0 3px 0;' +
+                '}' +
                 '[data-block-id].inspector-block-active { outline: 2px solid #e67700; outline-offset: -1px; z-index: 99999; }' +
                 /* Disable when inspector off */
                 '.inspector-disabled [data-section-id]:hover, .inspector-disabled [data-block-id]:hover { outline: none; }' +

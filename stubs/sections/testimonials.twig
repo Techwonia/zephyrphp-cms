@@ -10,7 +10,7 @@
             <div style="display:grid; grid-template-columns:repeat({{ section.settings.columns|default(3) }}, 1fr); gap:24px;">
                 {% for block in section.blocks %}
                     {% if block.type == 'testimonial' %}
-                        <div data-block-id="{{ block.id }}" style="background:{{ section.settings.card_bg|default('#ffffff') }}; border-radius:12px; padding:24px; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+                        <div data-block-id="{{ block.id }}" data-block-type="{{ block.type }}" style="background:{{ section.settings.card_bg|default('#ffffff') }}; border-radius:12px; padding:24px; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
                             {% if block.settings.rating %}
                                 <div style="color:#FFB800; font-size:16px; margin-bottom:12px;">
                                     {% for i in 1..block.settings.rating|default(5) %}★{% endfor %}

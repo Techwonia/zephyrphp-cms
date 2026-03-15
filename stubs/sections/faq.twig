@@ -10,7 +10,7 @@
             <div style="display:flex; flex-direction:column; gap:{{ section.settings.gap|default(8) }}px;">
                 {% for block in section.blocks %}
                     {% if block.type == 'question' %}
-                        <details data-block-id="{{ block.id }}" style="border:1px solid {{ section.settings.border_color|default('#e3e3e3') }}; border-radius:8px; overflow:hidden;">
+                        <details data-block-id="{{ block.id }}" data-block-type="{{ block.type }}" style="border:1px solid {{ section.settings.border_color|default('#e3e3e3') }}; border-radius:8px; overflow:hidden;">
                             <summary style="padding:16px 20px; cursor:pointer; font-weight:600; color:{{ section.settings.heading_color|default('#303030') }}; background:{{ section.settings.item_bg|default('#fafafa') }}; list-style:none; display:flex; justify-content:space-between; align-items:center;">
                                 {{ block.settings.question }}
                                 <span style="font-size:18px; transition:transform 0.2s;">+</span>
