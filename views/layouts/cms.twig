@@ -104,6 +104,11 @@
     a { color: var(--text-link); text-decoration: none; }
     a:hover { text-decoration: underline; }
 
+    /* Subtle pattern for dark surfaces */
+    .dark-pattern {
+        background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='1' cy='1' r='0.6' fill='rgba(255,255,255,0.03)'/%3E%3C/svg%3E");
+    }
+
     /* ============================================
        Layout: Topbar + Activity Bar + Sidebar Panel + Main
        ============================================ */
@@ -1116,7 +1121,7 @@
 </head>
 <body>
     {# ========== TOPBAR ========== #}
-    <header class="cms-topbar">
+    <header class="cms-topbar dark-pattern">
         <div class="topbar-left">
             <button class="mobile-toggle" id="mobileToggle">
                 <svg viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
@@ -1165,7 +1170,7 @@
         {% set current_path = request().path() %}
         {% set sidebar_sections = cms_sidebar() %}
 
-        <nav class="cms-activity-bar" id="activityBar">
+        <nav class="cms-activity-bar dark-pattern" id="activityBar">
             <div class="ab-top">
                 {% for section in sidebar_sections %}
                     {% if section.items|length == 1 and section.id != 'footer' %}
@@ -1216,7 +1221,7 @@
         </nav>
 
         {# ========== SIDEBAR PANEL ========== #}
-        <aside class="cms-sidebar-panel" id="sidebarPanel">
+        <aside class="cms-sidebar-panel dark-pattern" id="sidebarPanel">
             <div class="sidebar-panel-header">
                 <span class="sidebar-panel-title" id="panelTitle"></span>
                 <button class="sidebar-panel-close" id="panelClose">
