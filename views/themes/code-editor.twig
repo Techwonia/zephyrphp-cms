@@ -821,7 +821,6 @@
             "@codemirror/search":      "https://esm.sh/@codemirror/search@6.5.10?external=@codemirror/state,@codemirror/view,crelt",
             "@codemirror/autocomplete":"https://esm.sh/@codemirror/autocomplete@6.18.6?external=@codemirror/state,@codemirror/view,@codemirror/language,@lezer/common",
             "@codemirror/lint":        "https://esm.sh/@codemirror/lint@6.8.4?external=@codemirror/state,@codemirror/view,crelt",
-            "codemirror":              "https://esm.sh/codemirror@6.65.7?external=@codemirror/state,@codemirror/view,@codemirror/language,@codemirror/commands,@codemirror/search,@codemirror/autocomplete,@codemirror/lint",
             "@codemirror/theme-one-dark":"https://esm.sh/@codemirror/theme-one-dark@6.1.2?external=@codemirror/view,@codemirror/language,@lezer/highlight",
             "@lezer/html":             "https://esm.sh/@lezer/html@1.3.10?external=@lezer/common,@lezer/lr,@lezer/highlight",
             "@lezer/css":              "https://esm.sh/@lezer/css@1.1.9?external=@lezer/common,@lezer/lr,@lezer/highlight",
@@ -885,19 +884,21 @@
     let oneDark;
 
     try {
-        const cmCore = await import('codemirror');
         const cmView = await import('@codemirror/view');
         const cmState = await import('@codemirror/state');
+        const cmLang = await import('@codemirror/language');
+        const cmCommands = await import('@codemirror/commands');
+        const cmSearch = await import('@codemirror/search');
+        const cmAutocomplete = await import('@codemirror/autocomplete');
+        const cmLint = await import('@codemirror/lint');
         const cmHtml = await import('@codemirror/lang-html');
         const cmJson = await import('@codemirror/lang-json');
         const cmCss = await import('@codemirror/lang-css');
         const cmJs = await import('@codemirror/lang-javascript');
-        const cmCommands = await import('@codemirror/commands');
         const cmTheme = await import('@codemirror/theme-one-dark');
 
-        EditorView = cmCore.EditorView || cmView.EditorView;
+        EditorView = cmView.EditorView;
         EditorState = cmState.EditorState;
-        basicSetup = cmCore.basicSetup;
         keymap = cmView.keymap;
         langHtml = cmHtml.html;
         langJson = cmJson.json;
@@ -906,14 +907,39 @@
         indentWithTab = cmCommands.indentWithTab;
         oneDark = cmTheme.oneDark;
 
-        if (!EditorView || !EditorState || !basicSetup) throw new Error('Core CodeMirror exports missing');
+        // Build basicSetup from individual packages (replaces codemirror meta-package)
+        basicSetup = [
+            cmView.lineNumbers(),
+            cmView.highlightActiveLineGutter(),
+            cmView.highlightSpecialChars(),
+            cmCommands.history(),
+            cmLang.foldGutter(),
+            cmView.drawSelection(),
+            cmView.dropCursor(),
+            EditorState.allowMultipleSelections.of(true),
+            cmLang.indentOnInput(),
+            cmLang.syntaxHighlighting(cmLang.defaultHighlightStyle, { fallback: true }),
+            cmLang.bracketMatching(),
+            cmAutocomplete.closeBrackets(),
+            cmAutocomplete.autocompletion(),
+            cmView.rectangularSelection(),
+            cmView.crosshairCursor(),
+            cmView.highlightActiveLine(),
+            cmSearch.highlightSelectionMatches(),
+            keymap.of([
+                ...cmAutocomplete.closeBracketsKeymap,
+                ...cmCommands.defaultKeymap,
+                ...cmSearch.searchKeymap,
+                ...cmCommands.historyKeymap,
+                ...cmLang.foldKeymap,
+                ...cmAutocomplete.completionKeymap,
+                ...cmLint.lintKeymap,
+            ]),
+        ];
+
+        if (!EditorView || !EditorState || !basicSetup.length) throw new Error('Core CodeMirror exports missing');
 
         state.cmAvailable = true;
-        console.log('[CM Debug]', {
-            basicSetup: typeof basicSetup, oneDark: typeof oneDark,
-            langHtml: typeof langHtml, keymap: typeof keymap,
-            oneDarkKeys: oneDark ? (Array.isArray(oneDark) ? 'array[' + oneDark.length + ']' : Object.keys(oneDark)) : 'falsy',
-        });
     } catch (e) {
         console.warn('CodeMirror failed to load:', e);
     }
@@ -1285,7 +1311,6 @@
                     '.cm-scroller': { overflow: 'auto', fontFamily: 'var(--font-mono)', fontSize: '13px', lineHeight: '1.6' },
                 }),
             ].filter(Boolean);
-            console.log('[CM createEditor]', { role, path, extCount: extensions.length, hasOneDark: !!oneDark, hasLang: !!langExt, langExt });
             if (state.wordWrap) {
                 extensions.push(EditorView.lineWrapping);
             }
