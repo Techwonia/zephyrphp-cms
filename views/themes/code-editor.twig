@@ -882,6 +882,7 @@
     // ── Load CodeMirror ──
     let EditorView, EditorState, basicSetup, keymap, langHtml, langJson, langCss, langJs, indentWithTab;
     let oneDark;
+    let twigTheme, twigHighlighter;
 
     try {
         const cmView = await import('@codemirror/view');
@@ -910,7 +911,7 @@
         // ── Twig syntax overlay highlighting ──
         // CodeMirror's HTML parser doesn't know Twig, so we overlay decorations
         // for twig delimiters, keywords, filters, variables
-        const twigTheme = EditorView.baseTheme({
+        twigTheme = EditorView.baseTheme({
             '.tw-delim': { color: '#c678dd' },           // purple — twig delimiters
             '.tw-keyword': { color: '#c678dd', fontWeight: 'bold' },  // purple bold — if/for/block/set
             '.tw-comment': { color: '#5c6370', fontStyle: 'italic' }, // gray italic — twig comments
@@ -1053,7 +1054,7 @@
             return builder.finish();
         }
 
-        const twigHighlighter = ViewPlugin.fromClass(class {
+        twigHighlighter = ViewPlugin.fromClass(class {
             constructor(view) { this.decorations = buildTwigDecorations(view); }
             update(update) {
                 if (update.docChanged || update.viewportChanged) {
