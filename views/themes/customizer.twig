@@ -1052,6 +1052,26 @@
     if (!state.settingsData.current || Array.isArray(state.settingsData.current)) state.settingsData.current = {};
     if (!state.settingsData.pages || Array.isArray(state.settingsData.pages)) state.settingsData.pages = {};
 
+    // Normalize block/section settings: PHP json_encode may produce [] instead of {} for empty settings
+    function normalizeSettings(data) {
+        if (!data || !data.pages) return;
+        Object.keys(data.pages).forEach(function(page) {
+            var pd = data.pages[page];
+            if (!pd.sections) return;
+            if (Array.isArray(pd.sections)) { pd.sections = {}; return; }
+            Object.keys(pd.sections).forEach(function(sid) {
+                var sec = pd.sections[sid];
+                if (!sec.settings || Array.isArray(sec.settings)) sec.settings = {};
+                if (!sec.blocks || Array.isArray(sec.blocks)) sec.blocks = {};
+                Object.keys(sec.blocks).forEach(function(bid) {
+                    var block = sec.blocks[bid];
+                    if (!block.settings || Array.isArray(block.settings)) block.settings = {};
+                });
+            });
+        });
+    }
+    normalizeSettings(state.settingsData);
+
     // Deep clone initial state for discard
     var initialState = JSON.parse(JSON.stringify(state.settingsData));
 
@@ -1082,6 +1102,7 @@
         state.settingsData = snapshot;
         if (!state.settingsData.current || Array.isArray(state.settingsData.current)) state.settingsData.current = {};
         if (!state.settingsData.pages || Array.isArray(state.settingsData.pages)) state.settingsData.pages = {};
+        normalizeSettings(state.settingsData);
         previousSnapshot = JSON.parse(JSON.stringify(state.settingsData));
         state.activeSection = null;
         state.activeBlock = null;

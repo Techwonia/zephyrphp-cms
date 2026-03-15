@@ -216,11 +216,19 @@ class SectionManager
                         $pageData['sections'] = new \stdClass();
                     } elseif (is_array($pageData['sections'])) {
                         foreach ($pageData['sections'] as &$section) {
-                            if (is_array($section) && isset($section['blocks']) && empty($section['blocks'])) {
-                                $section['blocks'] = new \stdClass();
-                            }
-                            if (is_array($section) && isset($section['settings']) && empty($section['settings'])) {
+                            if (!is_array($section)) continue;
+                            if (isset($section['settings']) && empty($section['settings'])) {
                                 $section['settings'] = new \stdClass();
+                            }
+                            if (isset($section['blocks']) && empty($section['blocks'])) {
+                                $section['blocks'] = new \stdClass();
+                            } elseif (isset($section['blocks']) && is_array($section['blocks'])) {
+                                foreach ($section['blocks'] as &$block) {
+                                    if (is_array($block) && isset($block['settings']) && empty($block['settings'])) {
+                                        $block['settings'] = new \stdClass();
+                                    }
+                                }
+                                unset($block);
                             }
                         }
                         unset($section);
@@ -424,8 +432,8 @@ class SectionManager
             if ($schema) {
                 foreach ($schema['settings'] ?? [] as $schemaSetting) {
                     $id = $schemaSetting['id'] ?? null;
-                    if ($id && !isset($settings[$id]) && isset($schemaSetting['default'])) {
-                        $settings[$id] = $schemaSetting['default'];
+                    if ($id && !isset($settings[$id])) {
+                        $settings[$id] = $schemaSetting['default'] ?? '';
                     }
                 }
             }
@@ -441,8 +449,8 @@ class SectionManager
                             if (($blockSchema['type'] ?? '') === ($block['type'] ?? '')) {
                                 foreach ($blockSchema['settings'] ?? [] as $bs) {
                                     $bsId = $bs['id'] ?? null;
-                                    if ($bsId && !isset($block['settings'][$bsId]) && isset($bs['default'])) {
-                                        $block['settings'][$bsId] = $bs['default'];
+                                    if ($bsId && !isset($block['settings'][$bsId])) {
+                                        $block['settings'][$bsId] = $bs['default'] ?? '';
                                     }
                                 }
                             }
