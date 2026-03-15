@@ -909,11 +909,11 @@
 
         // ── Twig syntax overlay highlighting ──
         // CodeMirror's HTML parser doesn't know Twig, so we overlay decorations
-        // for {% %}, {{ }}, {# #}, keywords, filters, variables
+        // for twig delimiters, keywords, filters, variables
         const twigTheme = EditorView.baseTheme({
-            '.tw-delim': { color: '#c678dd' },           // purple — {% %} {{ }} delimiters
+            '.tw-delim': { color: '#c678dd' },           // purple — twig delimiters
             '.tw-keyword': { color: '#c678dd', fontWeight: 'bold' },  // purple bold — if/for/block/set
-            '.tw-comment': { color: '#5c6370', fontStyle: 'italic' }, // gray italic — {# #}
+            '.tw-comment': { color: '#5c6370', fontStyle: 'italic' }, // gray italic — twig comments
             '.tw-string': { color: '#98c379' },           // green — strings
             '.tw-number': { color: '#d19a66' },           // orange — numbers
             '.tw-operator': { color: '#56b6c2' },         // cyan — operators, |
@@ -962,15 +962,15 @@
 
             const decos = [];
 
-            // Process Twig comments: {# ... #}
-            const commentRe = /\{#[\s\S]*?#\}/g;
+            // Process Twig comments
+            const commentRe = new RegExp('\\{' + '#[\\s\\S]*?#' + '\\}', 'g');
             let cm;
             while ((cm = commentRe.exec(text)) !== null) {
                 decos.push({ from: cm.index, to: cm.index + cm[0].length, cls: 'tw-comment' });
             }
 
-            // Process Twig blocks: {% ... %} and {{ ... }}
-            const blockRe = /(\{[%{])-?\s*([\s\S]*?)\s*-?([%}]\})/g;
+            // Process Twig statement and expression blocks
+            const blockRe = new RegExp('(\\{' + '[%{])-?\\s*([\\s\\S]*?)\\s*-?([%' + '}]\\})', 'g');
             let m;
             while ((m = blockRe.exec(text)) !== null) {
                 const start = m.index;
