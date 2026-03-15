@@ -417,7 +417,7 @@
             border: 1px dashed var(--border-dark); border-radius: 6px;
             display: flex; align-items: center; justify-content: center;
             background: var(--bg-subdued); color: var(--text-disabled);
-            font-size: 12px; cursor: pointer; overflow: hidden; position: relative;
+            font-size: 12px; overflow: hidden; position: relative;
         }
         .image-field-preview img { width: 100%; height: 100%; object-fit: cover; }
         .image-field-preview .remove-image {
@@ -425,6 +425,76 @@
             background: rgba(0,0,0,0.6); color: #fff;
             border: none; border-radius: 4px; padding: 2px 6px;
             cursor: pointer; font-size: 11px;
+        }
+        .image-field-actions {
+            display: flex; gap: 4px; margin-top: 6px;
+        }
+        .image-field-actions button {
+            flex: 1; padding: 5px 0; font-size: 11px;
+            border: 1px solid var(--border-dark); border-radius: 4px;
+            background: var(--bg); color: var(--text); cursor: pointer;
+        }
+        .image-field-actions button:hover { background: var(--bg-subdued); }
+        /* Media browser modal */
+        .media-browser-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.55); z-index: 100000;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .media-browser-modal {
+            background: var(--bg, #fff); border-radius: 10px;
+            width: 680px; max-width: 92vw; max-height: 80vh;
+            display: flex; flex-direction: column; box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+        }
+        .media-browser-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 14px 18px; border-bottom: 1px solid var(--border, #e8e8e8);
+        }
+        .media-browser-header h3 { margin: 0; font-size: 15px; }
+        .media-browser-close {
+            background: none; border: none; font-size: 20px; cursor: pointer;
+            color: var(--text, #333); padding: 0 4px;
+        }
+        .media-browser-toolbar {
+            display: flex; gap: 8px; padding: 12px 18px; border-bottom: 1px solid var(--border, #e8e8e8);
+        }
+        .media-browser-toolbar input[type="text"] {
+            flex: 1; padding: 6px 10px; border: 1px solid var(--border-dark, #ccc);
+            border-radius: 5px; font-size: 12px; background: var(--bg, #fff); color: var(--text, #333);
+        }
+        .media-browser-toolbar .mb-upload-btn {
+            padding: 6px 12px; font-size: 12px; border: 1px solid var(--primary, #008060);
+            border-radius: 5px; background: var(--primary, #008060); color: #fff; cursor: pointer;
+        }
+        .media-browser-body { padding: 16px 18px; overflow-y: auto; flex: 1; }
+        .media-browser-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px;
+        }
+        .media-browser-item {
+            border: 2px solid var(--border, #e8e8e8); border-radius: 6px;
+            cursor: pointer; overflow: hidden; transition: border-color 0.15s;
+        }
+        .media-browser-item:hover { border-color: var(--primary, #008060); }
+        .media-browser-item-thumb {
+            height: 80px; display: flex; align-items: center; justify-content: center;
+            background: var(--bg-subdued, #f8f9fa); overflow: hidden;
+        }
+        .media-browser-item-thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .media-browser-item-name {
+            padding: 4px 6px; font-size: 10px; white-space: nowrap;
+            overflow: hidden; text-overflow: ellipsis; text-align: center;
+        }
+        .media-browser-empty { text-align: center; padding: 30px; color: var(--text-disabled); font-size: 13px; }
+        .media-browser-pagination {
+            display: flex; justify-content: center; gap: 6px; padding: 12px 0 0;
+        }
+        .media-browser-pagination button {
+            padding: 4px 10px; font-size: 11px; border: 1px solid var(--border-dark);
+            border-radius: 4px; background: var(--bg); color: var(--text); cursor: pointer;
+        }
+        .media-browser-pagination button:disabled { opacity: 0.4; cursor: default; }
+        .media-browser-uploading {
+            text-align: center; padding: 20px; color: var(--text-disabled); font-size: 12px;
         }
 
         /* Settings groups */
@@ -1853,6 +1923,118 @@
         });
     }
 
+    // ── Media Browser Modal ──
+    function openMediaBrowserModal(filter, onSelect) {
+        var overlay = document.createElement('div');
+        overlay.className = 'media-browser-overlay';
+        var currentPage = 1;
+        var searchTerm = '';
+
+        overlay.innerHTML = '<div class="media-browser-modal">'
+            + '<div class="media-browser-header"><h3>Media Library</h3><button class="media-browser-close">&times;</button></div>'
+            + '<div class="media-browser-toolbar">'
+            + '<input type="text" placeholder="Search media..." class="mb-search">'
+            + '<button class="mb-upload-btn">Upload</button>'
+            + '<input type="file" accept="image/*" class="mb-file-input" style="display:none">'
+            + '</div>'
+            + '<div class="media-browser-body"><div class="media-browser-empty">Loading...</div></div>'
+            + '</div>';
+        document.body.appendChild(overlay);
+
+        var modal = overlay.querySelector('.media-browser-modal');
+        var body = overlay.querySelector('.media-browser-body');
+        var searchInput = overlay.querySelector('.mb-search');
+        var uploadFileInput = overlay.querySelector('.mb-file-input');
+
+        function close() { overlay.remove(); }
+        overlay.querySelector('.media-browser-close').addEventListener('click', close);
+        overlay.addEventListener('click', function(e) { if (e.target === overlay) close(); });
+
+        function loadMedia(page) {
+            currentPage = page || 1;
+            body.innerHTML = '<div class="media-browser-empty">Loading...</div>';
+            var url = '/cms/media/browse?filter=' + encodeURIComponent(filter) + '&per_page=24&page=' + currentPage;
+            if (searchTerm) url += '&search=' + encodeURIComponent(searchTerm);
+            fetch(url)
+            .then(function(r) { return r.json(); })
+            .then(function(resp) {
+                if (!resp.data || resp.data.length === 0) {
+                    body.innerHTML = '<div class="media-browser-empty">No media found.</div>';
+                    return;
+                }
+                var html = '<div class="media-browser-grid">';
+                resp.data.forEach(function(item) {
+                    var thumb = item.is_image && item.thumbnail
+                        ? '<img src="' + item.thumbnail + '" alt="">'
+                        : (item.is_image ? '<img src="' + item.url + '" alt="">' : '<span style="font-size:28px;">&#128196;</span>');
+                    html += '<div class="media-browser-item" data-path="' + (item.url || '').replace(/^\//, '') + '">'
+                        + '<div class="media-browser-item-thumb">' + thumb + '</div>'
+                        + '<div class="media-browser-item-name">' + (item.name || '') + '</div></div>';
+                });
+                html += '</div>';
+                // Pagination
+                if (resp.last_page > 1) {
+                    html += '<div class="media-browser-pagination">';
+                    html += '<button class="mb-prev"' + (currentPage <= 1 ? ' disabled' : '') + '>&laquo; Prev</button>';
+                    html += '<span style="padding:4px 8px;font-size:11px;">Page ' + currentPage + ' / ' + resp.last_page + '</span>';
+                    html += '<button class="mb-next"' + (currentPage >= resp.last_page ? ' disabled' : '') + '>Next &raquo;</button>';
+                    html += '</div>';
+                }
+                body.innerHTML = html;
+                // Item click
+                body.querySelectorAll('.media-browser-item').forEach(function(el) {
+                    el.addEventListener('click', function() {
+                        onSelect(el.dataset.path);
+                        close();
+                    });
+                });
+                // Pagination clicks
+                var prevBtn = body.querySelector('.mb-prev');
+                var nextBtn = body.querySelector('.mb-next');
+                if (prevBtn) prevBtn.addEventListener('click', function() { loadMedia(currentPage - 1); });
+                if (nextBtn) nextBtn.addEventListener('click', function() { loadMedia(currentPage + 1); });
+            })
+            .catch(function() { body.innerHTML = '<div class="media-browser-empty">Failed to load media.</div>'; });
+        }
+
+        // Search
+        var searchTimer;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(function() {
+                searchTerm = searchInput.value.trim();
+                loadMedia(1);
+            }, 300);
+        });
+
+        // Upload from modal
+        overlay.querySelector('.mb-upload-btn').addEventListener('click', function() { uploadFileInput.click(); });
+        uploadFileInput.addEventListener('change', function() {
+            if (!this.files[0]) return;
+            var fd = new FormData();
+            fd.append('file', this.files[0]);
+            body.innerHTML = '<div class="media-browser-uploading">Uploading...</div>';
+            fetch('/cms/media/upload', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': CSRF_TOKEN },
+                body: fd
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.path) {
+                    onSelect(data.path);
+                    close();
+                } else {
+                    loadMedia(1);
+                }
+            })
+            .catch(function() { loadMedia(1); });
+            uploadFileInput.value = '';
+        });
+
+        loadMedia(1);
+    }
+
     // ── Create Setting Field ──
     function createSettingField(setting, value, onChange) {
         var wrapper = document.createElement('div');
@@ -2017,43 +2199,71 @@
         } else if (setting.type === 'image') {
             var previewDiv = document.createElement('div');
             previewDiv.className = 'image-field-preview';
-            if (value) {
-                previewDiv.innerHTML = '<img src="/' + value + '" alt=""><button class="remove-image" type="button">Remove</button>';
-                previewDiv.querySelector('.remove-image').addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    onChange('');
-                    previewDiv.innerHTML = 'Click to upload';
-                });
-            } else {
-                previewDiv.textContent = 'Click to upload';
+
+            function setImagePreview(path) {
+                if (path) {
+                    previewDiv.innerHTML = '<img src="/' + path + '" alt=""><button class="remove-image" type="button">&times;</button>';
+                    previewDiv.querySelector('.remove-image').addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        onChange('');
+                        setImagePreview('');
+                    });
+                } else {
+                    previewDiv.innerHTML = '<span>No image selected</span>';
+                }
             }
-            var fileInput = document.createElement('input');
-            fileInput.type = 'file';
-            fileInput.accept = 'image/*';
-            fileInput.style.display = 'none';
-            fileInput.addEventListener('change', function() {
+            setImagePreview(value);
+
+            var actionsDiv = document.createElement('div');
+            actionsDiv.className = 'image-field-actions';
+
+            var browseBtn = document.createElement('button');
+            browseBtn.type = 'button';
+            browseBtn.textContent = 'Browse Media';
+            browseBtn.addEventListener('click', function() {
+                openMediaBrowserModal('images', function(path) {
+                    onChange(path);
+                    setImagePreview(path);
+                });
+            });
+
+            var uploadBtn = document.createElement('button');
+            uploadBtn.type = 'button';
+            uploadBtn.textContent = 'Upload New';
+            var hiddenInput = document.createElement('input');
+            hiddenInput.type = 'file';
+            hiddenInput.accept = 'image/*';
+            hiddenInput.style.display = 'none';
+            hiddenInput.addEventListener('change', function() {
                 if (!this.files[0]) return;
-                var formData = new FormData();
-                formData.append('file', this.files[0]);
+                var fd = new FormData();
+                fd.append('file', this.files[0]);
+                uploadBtn.textContent = 'Uploading...';
+                uploadBtn.disabled = true;
                 fetch('/cms/media/upload', {
                     method: 'POST',
                     headers: { 'X-CSRF-TOKEN': CSRF_TOKEN },
-                    body: formData
+                    body: fd
                 })
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
+                    uploadBtn.textContent = 'Upload New';
+                    uploadBtn.disabled = false;
                     if (data.path) {
                         onChange(data.path);
-                        previewDiv.innerHTML = '<img src="/' + data.path + '" alt=""><button class="remove-image" type="button">Remove</button>';
-                        previewDiv.querySelector('.remove-image').addEventListener('click', function(e) {
-                            e.stopPropagation(); onChange(''); previewDiv.innerHTML = 'Click to upload';
-                        });
+                        setImagePreview(data.path);
                     }
-                });
+                })
+                .catch(function() { uploadBtn.textContent = 'Upload New'; uploadBtn.disabled = false; });
+                hiddenInput.value = '';
             });
-            previewDiv.addEventListener('click', function() { fileInput.click(); });
+            uploadBtn.addEventListener('click', function() { hiddenInput.click(); });
+
+            actionsDiv.appendChild(browseBtn);
+            actionsDiv.appendChild(uploadBtn);
             wrapper.appendChild(previewDiv);
-            wrapper.appendChild(fileInput);
+            wrapper.appendChild(actionsDiv);
+            wrapper.appendChild(hiddenInput);
         } else if (setting.type === 'number') {
             var numInput = document.createElement('input');
             numInput.type = 'number';
