@@ -208,16 +208,7 @@
         .file-name {
             overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;
         }
-        .file-copy-btn {
-            display: none; align-items: center; justify-content: center;
-            width: 20px; height: 20px; border: none; background: none;
-            color: var(--text-disabled); cursor: pointer; border-radius: 3px;
-            padding: 0; flex-shrink: 0; margin-left: auto;
-        }
-        .file-copy-btn:hover { color: var(--primary); background: var(--primary-bg); }
-        .file-item:hover .file-copy-btn { display: flex; }
-        .file-copy-btn.copied { color: var(--success); }
-        .file-badge {
+.file-badge {
             font-size: 9px; padding: 0 4px; border-radius: 3px;
             background: rgba(0,91,211,0.08); color: var(--primary); font-weight: 600;
         }
@@ -725,6 +716,15 @@
                     <svg viewBox="0 0 16 16" fill="currentColor"><path d="M5 4a2 2 0 00-2 2v1a1 1 0 01-1 1H1v1h1a1 1 0 011 1v1a2 2 0 002 2h1v-1H5a1 1 0 01-1-1V9.5A1.5 1.5 0 002.5 8 1.5 1.5 0 004 6.5V5a1 1 0 011-1h1V3H5zm6 0a2 2 0 012 2v1a1 1 0 001 1h1v1h-1a1 1 0 00-1 1v1a2 2 0 01-2 2h-1v-1h1a1 1 0 001-1V9.5A1.5 1.5 0 0013.5 8 1.5 1.5 0 0012 6.5V5a1 1 0 00-1-1h-1V3h1z"/></svg>
                     Schema
                 </button>
+                <div class="toolbar-separator"></div>
+                <button class="toolbar-btn" id="btnCopyPath" title="Copy file path" style="display:none;">
+                    <svg viewBox="0 0 16 16" fill="currentColor" width="13" height="13"><rect x="5" y="1" width="8" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="3" y="5" width="8" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>
+                    Copy
+                </button>
+                <button class="toolbar-btn" id="btnDeleteFile" title="Delete file" style="display:none;">
+                    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 1a.5.5 0 00-.5.5V2H2v1h1v10.5A1.5 1.5 0 004.5 15h7a1.5 1.5 0 001.5-1.5V3h1V2h-3v-.5a.5.5 0 00-.5-.5h-5zM5 13.5V3h6v10.5a.5.5 0 01-.5.5h-5a.5.5 0 01-.5-.5z"/></svg>
+                    Delete
+                </button>
                 <div class="toolbar-spacer"></div>
                 <span class="toolbar-info" id="toolbarLineCol"></span>
                 <span class="toolbar-lang" id="toolbarLang"></span>
@@ -1021,6 +1021,8 @@
     const $editorEmpty = $('editorEmpty');
     const $unsaved = $('unsavedIndicator');
     const $btnSave = $('btnSave');
+    const $btnCopyPath = $('btnCopyPath');
+    const $btnDeleteFile = $('btnDeleteFile');
     const $toastContainer = $('toastContainer');
     const $quickSearchOverlay = $('quickSearchOverlay');
     const $quickSearchInput = $('quickSearchInput');
@@ -1432,31 +1434,9 @@
     function fileItemHtml(name, path, depth = 0) {
         const indent = 28 + (depth * 14);
         const isBinary = /\.(png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|eot)$/i.test(name);
-        let copyBtn = '';
-        if (path.startsWith('snippets/') && path.endsWith('.twig')) {
-            const snippetPath = '@theme/' + path;
-            copyBtn = `<button class="file-copy-btn" title="Copy include tag" data-copy="${escAttr(_tag('include "' + snippetPath + '"'))}" onclick="event.stopPropagation();window._copyToClipboard(this)"><svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><rect x="5" y="1" width="8" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="3" y="5" width="8" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></button>`;
-        } else if (path.startsWith('public/') && !isBinary) {
-            const ext = name.split('.').pop().toLowerCase();
-            let tag = '';
-            const assetPath = path.replace(/^public\//, '');
-            if (ext === 'css') {
-                tag = '<link rel="stylesheet" href="' + _expr("asset('" + assetPath + "')") + '">';
-            } else if (ext === 'js') {
-                tag = '<script src="' + _expr("asset('" + assetPath + "')") + '"><\/script>';
-            } else {
-                tag = _expr("asset('" + assetPath + "')");
-            }
-            copyBtn = `<button class="file-copy-btn" title="Copy asset tag" data-copy="${escAttr(tag)}" onclick="event.stopPropagation();window._copyToClipboard(this)"><svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><rect x="5" y="1" width="8" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="3" y="5" width="8" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></button>`;
-        } else if (path.startsWith('public/') && isBinary) {
-            const assetPath = path.replace(/^public\//, '');
-            const tag = _expr("asset('" + assetPath + "')");
-            copyBtn = `<button class="file-copy-btn" title="Copy asset path" data-copy="${escAttr(tag)}" onclick="event.stopPropagation();window._copyToClipboard(this)"><svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><rect x="5" y="1" width="8" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="3" y="5" width="8" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></button>`;
-        }
         return `<div class="file-item${isBinary ? ' binary' : ''}" data-path="${escAttr(path)}" style="padding-left:${indent}px;">
             ${fileIconSvg(name)}
             <span class="file-name">${esc(name)}</span>
-            ${copyBtn}
         </div>`;
     }
 
@@ -1504,7 +1484,9 @@
 
         items.push({ sep: true });
         items.push({ icon: '&#9998;', label: 'Rename', action: () => showRenameModal(path) });
-        items.push({ icon: '&#128465;', label: 'Delete', danger: true, action: () => deleteFile(path) });
+        if (isDeletablePath(path)) {
+            items.push({ icon: '&#128465;', label: 'Delete', danger: true, action: () => deleteFile(path) });
+        }
 
         showContextMenu(e.clientX, e.clientY, items);
     };
@@ -1616,7 +1598,7 @@
         updateActiveFileHighlight();
         updateUnsavedState();
         updateToolbarInfo(path);
-        updateSchemaButton(path);
+        updateToolbarActions(path);
     }
 
     function createEditor(container, content, path, role) {
@@ -1736,8 +1718,14 @@
         $toolbarLineCol.textContent = 'Ln 1, Col 1';
     }
 
-    function updateSchemaButton(path) {
+    function isDeletablePath(path) {
+        return /^(layouts|snippets|sections|public)\//.test(path);
+    }
+
+    function updateToolbarActions(path) {
         $btnSchema.style.display = path.startsWith('sections/') && path.endsWith('.twig') ? '' : 'none';
+        $btnCopyPath.style.display = path ? '' : 'none';
+        $btnDeleteFile.style.display = path && isDeletablePath(path) ? '' : 'none';
     }
 
     function updateUnsavedState() {
@@ -2832,6 +2820,35 @@
     $('btnWrap').addEventListener('click', () => window._toggleWordWrap());
     $('btnSplit').addEventListener('click', () => window._toggleSplitView());
     $btnSchema.addEventListener('click', () => window._toggleSchemaPanel());
+    $btnCopyPath.addEventListener('click', () => {
+        const path = state.activeTab;
+        if (!path) return;
+        let text = path;
+        let label = 'Path copied';
+        if (path.startsWith('snippets/') && path.endsWith('.twig')) {
+            text = _tag('include "@theme/' + path + '"');
+            label = 'Include tag copied';
+        } else if (path.startsWith('public/')) {
+            const assetPath = path.replace(/^public\//, '');
+            const ext = path.split('.').pop().toLowerCase();
+            if (ext === 'css') {
+                text = '<link rel="stylesheet" href="' + _expr("asset('" + assetPath + "')") + '">';
+                label = 'CSS tag copied';
+            } else if (ext === 'js') {
+                text = '<script src="' + _expr("asset('" + assetPath + "')") + '"></script>';
+                label = 'Script tag copied';
+            } else {
+                text = _expr("asset('" + assetPath + "')");
+                label = 'Asset tag copied';
+            }
+        }
+        navigator.clipboard.writeText(text).then(() => {
+            showToast(label);
+        }).catch(() => showToast('Copy failed', 'error'));
+    });
+    $btnDeleteFile.addEventListener('click', () => {
+        if (state.activeTab) deleteFile(state.activeTab);
+    });
     $('btnCloseSplit').addEventListener('click', () => window._closeSplitPane());
     $('btnSchemaClose').addEventListener('click', () => window._toggleSchemaPanel());
 
@@ -2841,8 +2858,6 @@
 
     // ── File tree event delegation ──
     $fileTree.addEventListener('click', (e) => {
-        // Copy button click — let the inline onclick handle it
-        if (e.target.closest('.file-copy-btn')) return;
         // File item click
         const fileItem = e.target.closest('.file-item');
         if (fileItem) {
