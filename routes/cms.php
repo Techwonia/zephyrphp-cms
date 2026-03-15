@@ -139,6 +139,8 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     Route::post('/themes/{slug}/code/file', [ThemeCodeEditorController::class, 'saveFile']);
     Route::post('/themes/{slug}/code/file/create', [ThemeCodeEditorController::class, 'createFile']);
     Route::post('/themes/{slug}/code/file/delete', [ThemeCodeEditorController::class, 'deleteFile']);
+    Route::post('/themes/{slug}/code/folder', [ThemeCodeEditorController::class, 'createFolder']);
+    Route::post('/themes/{slug}/code/file/rename', [ThemeCodeEditorController::class, 'renameFile']);
 
     // Theme section creation
     Route::post('/themes/{slug}/sections/create', [ThemeController::class, 'createSection']);
