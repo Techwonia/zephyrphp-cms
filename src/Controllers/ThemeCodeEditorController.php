@@ -89,6 +89,11 @@ class ThemeCodeEditorController extends Controller
                 if ($file->isFile()) {
                     $ext = strtolower($file->getExtension());
                     if (in_array($ext, ['css', 'js', 'svg', 'json', 'txt', 'html'], true)) {
+                        $name = $file->getBasename();
+                        // Hide auto-generated minified files
+                        if (str_ends_with($name, '.min.css') || str_ends_with($name, '.min.js')) {
+                            continue;
+                        }
                         $relative = 'assets/' . str_replace('\\', '/', $iterator->getSubPathName());
                         $files['assets'][] = $relative;
                     }
@@ -111,6 +116,11 @@ class ThemeCodeEditorController extends Controller
 
                 foreach ($iterator as $file) {
                     if ($file->isFile()) {
+                        $name = $file->getBasename();
+                        // Hide auto-generated minified files
+                        if (str_ends_with($name, '.min.css') || str_ends_with($name, '.min.js')) {
+                            continue;
+                        }
                         $relative = 'public/' . $subdir . '/' . str_replace('\\', '/', $iterator->getSubPathName());
                         $files['public'][] = $relative;
                     }

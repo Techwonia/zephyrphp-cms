@@ -12,66 +12,6 @@
     <button class="btn btn-primary" id="saveBtn">Save Changes</button>
 </div>
 
-{# Asset Files (public/assets/) #}
-<div class="card" style="margin-bottom: var(--space-500);">
-    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
-        <h3 style="margin:0; font-size:1rem;">Asset Files</h3>
-    </div>
-    <div class="card-body">
-        <p style="color:var(--text-secondary); font-size:0.8125rem; margin:0 0 16px;">
-            Upload CSS, JavaScript, and font files to <code>/public/assets/</code>. Use directly with <code>{{ '{{ css(\'css/file.css\') }}' }}</code>.
-        </p>
-
-        {# Upload Form #}
-        <div style="background: var(--bg-subdued, #fafafa); border: 2px dashed var(--border-default, #e3e3e3); border-radius: 8px; padding: 24px; margin-bottom: 20px; text-align: center;" id="assetDropZone">
-            <form id="assetUploadForm" enctype="multipart/form-data" style="display: inline-flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center;">
-                <select id="assetCategory" name="category" class="form-control" style="width: auto;">
-                    <option value="css" selected>CSS</option>
-                    <option value="js">JavaScript</option>
-                    <option value="fonts">Fonts</option>
-                </select>
-                <label class="btn btn-primary btn-sm" style="cursor: pointer; margin: 0;">
-                    Choose File
-                    <input type="file" id="assetFileInput" name="asset_file" style="display: none;"
-                           accept=".css,.js,.woff,.woff2,.ttf,.otf,.eot,.map">
-                </label>
-                <span id="assetFileName" style="color: var(--text-secondary); font-size: 0.8125rem;">or drag &amp; drop files here</span>
-                <button type="button" class="btn btn-sm btn-outline" id="assetUploadBtn" style="display: none;">Upload</button>
-            </form>
-            <div id="assetUploadProgress" style="display: none; margin-top: 12px;">
-                <div style="background: var(--border-default); border-radius: 4px; height: 4px; overflow: hidden;">
-                    <div id="assetProgressBar" style="background: var(--color-primary, #008060); height: 100%; width: 0%; transition: width 0.3s;"></div>
-                </div>
-            </div>
-        </div>
-
-        {# Existing Files #}
-        <div id="assetFilesList">
-            {% set hasAssets = publicAssets.css|length > 0 or publicAssets.js|length > 0 or publicAssets.fonts|length > 0 %}
-            {% if hasAssets %}
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">
-                {% for cat, files in publicAssets %}
-                    {% if files|length > 0 %}
-                    <div>
-                        <h4 style="font-size:0.8125rem; margin:0 0 6px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.05em;">{{ cat }} ({{ files|length }})</h4>
-                        {% for f in files %}
-                        <div style="display:flex; align-items:center; gap:6px; padding:6px 8px; font-size:0.8125rem; font-family:monospace; background:var(--bg-subdued); border-radius:4px; margin-bottom:3px;">
-                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">{{ f.name }}</span>
-                            <code style="color:var(--text-secondary); font-size:0.6875rem; flex-shrink:0;">{{ f.size }}</code>
-                            <button class="btn btn-xs btn-danger delete-file-btn" data-path="{{ f.path }}" data-name="{{ f.name }}" title="Delete">&times;</button>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-                {% endfor %}
-            </div>
-            {% else %}
-            <p style="color:var(--text-secondary); font-size:0.8125rem; margin:0; text-align:center; padding:20px;">No asset files yet. Upload CSS, JS, or font files above.</p>
-            {% endif %}
-        </div>
-    </div>
-</div>
-
 {# General Asset Settings #}
 <div class="card" style="margin-bottom: var(--space-500);">
     <div class="card-header">
@@ -111,7 +51,7 @@
                     <option value="0" {% if not minify %}selected{% endif %}>Disabled</option>
                     <option value="1" {% if minify %}selected{% endif %}>Enabled</option>
                 </select>
-                <small style="color:var(--text-secondary);">Serve .min.css/.min.js versions in production automatically.</small>
+                <small style="color:var(--text-secondary);">When enabled, <code>.min.css</code>/<code>.min.js</code> versions are auto-served <strong>in production</strong> (<code>ENV=production</code>). Has no effect in development.</small>
             </div>
             <div class="form-group" style="display:flex; flex-direction:column; justify-content:center;">
                 <label>Minify Assets</label>
@@ -221,104 +161,6 @@
         });
     });
 
-    // ===== File Upload =====
-    var fileInput = document.getElementById('assetFileInput');
-    var uploadBtn = document.getElementById('assetUploadBtn');
-    var fileNameDisplay = document.getElementById('assetFileName');
-    var csrfMeta = document.querySelector('meta[name="csrf-token"]');
-
-    if (fileInput) {
-        fileInput.addEventListener('change', function() {
-            if (this.files.length > 0) {
-                fileNameDisplay.textContent = this.files[0].name;
-                uploadBtn.style.display = '';
-                var ext = this.files[0].name.split('.').pop().toLowerCase();
-                var catMap = { css: 'css', js: 'js', map: 'js', woff: 'fonts', woff2: 'fonts', ttf: 'fonts', otf: 'fonts', eot: 'fonts' };
-                if (catMap[ext]) document.getElementById('assetCategory').value = catMap[ext];
-            } else {
-                fileNameDisplay.textContent = 'or drag & drop files here';
-                uploadBtn.style.display = 'none';
-            }
-        });
-    }
-
-    if (uploadBtn) {
-        uploadBtn.addEventListener('click', function() {
-            if (!fileInput.files.length) return;
-            var formData = new FormData();
-            formData.append('asset_file', fileInput.files[0]);
-            formData.append('category', document.getElementById('assetCategory').value);
-
-            var progressWrap = document.getElementById('assetUploadProgress');
-            var progressBar = document.getElementById('assetProgressBar');
-            progressWrap.style.display = '';
-            uploadBtn.disabled = true;
-            uploadBtn.textContent = 'Uploading...';
-
-            var xhr = new XMLHttpRequest();
-            xhr.open('POST', '/cms/settings/assets/upload');
-            if (csrfMeta) xhr.setRequestHeader('X-CSRF-TOKEN', csrfMeta.content);
-
-            xhr.upload.addEventListener('progress', function(e) {
-                if (e.lengthComputable) progressBar.style.width = Math.round(e.loaded / e.total * 100) + '%';
-            });
-
-            xhr.addEventListener('load', function() {
-                progressWrap.style.display = 'none';
-                progressBar.style.width = '0%';
-                uploadBtn.disabled = false;
-                uploadBtn.textContent = 'Upload';
-                try {
-                    var data = JSON.parse(xhr.responseText);
-                    if (data.success) { window.location.reload(); }
-                    else { alert(data.error || 'Upload failed'); }
-                } catch (e) { alert('Upload failed'); }
-            });
-
-            xhr.addEventListener('error', function() {
-                progressWrap.style.display = 'none';
-                uploadBtn.disabled = false;
-                uploadBtn.textContent = 'Upload';
-                alert('Network error');
-            });
-
-            xhr.send(formData);
-        });
-    }
-
-    // Drag and drop
-    var dropZone = document.getElementById('assetDropZone');
-    if (dropZone) {
-        ['dragenter', 'dragover'].forEach(function(evt) {
-            dropZone.addEventListener(evt, function(e) { e.preventDefault(); dropZone.style.borderColor = 'var(--color-primary, #008060)'; dropZone.style.background = 'rgba(0,128,96,0.04)'; });
-        });
-        ['dragleave', 'drop'].forEach(function(evt) {
-            dropZone.addEventListener(evt, function(e) { e.preventDefault(); dropZone.style.borderColor = ''; dropZone.style.background = ''; });
-        });
-        dropZone.addEventListener('drop', function(e) {
-            if (e.dataTransfer.files.length > 0) { fileInput.files = e.dataTransfer.files; fileInput.dispatchEvent(new Event('change')); }
-        });
-    }
-
-    // ===== File Deletion =====
-    document.querySelectorAll('.delete-file-btn').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            var path = this.dataset.path;
-            var name = this.dataset.name;
-            if (!confirm('Delete "' + name + '"? This cannot be undone.')) return;
-            fetch('/cms/settings/assets/delete', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfMeta ? csrfMeta.content : '' },
-                body: JSON.stringify({ path: path })
-            })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                if (data.success) { window.location.reload(); }
-                else { alert(data.error || 'Delete failed'); }
-            })
-            .catch(function() { alert('Network error'); });
-        });
-    });
 })();
 </script>
 {% endblock %}
