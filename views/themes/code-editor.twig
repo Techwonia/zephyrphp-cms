@@ -1443,7 +1443,7 @@
             if (ext === 'css') {
                 tag = '<link rel="stylesheet" href="' + _expr("theme_asset('" + assetPath + "')") + '">';
             } else if (ext === 'js') {
-                tag = '<script src="' + _expr("theme_asset('" + assetPath + "')") + '"></script>';
+                tag = '<script src="' + _expr("theme_asset('" + assetPath + "')") + '"><\/script>';
             } else {
                 tag = _expr("theme_asset('" + assetPath + "')");
             }
