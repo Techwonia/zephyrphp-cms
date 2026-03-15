@@ -1809,21 +1809,59 @@
     })();
 
     // ── Boilerplate generators ──
+    // Twig-safe helpers: build delimiters from char codes so Twig lexer never sees them
+    var _O = String.fromCharCode(123); // {
+    var _C = String.fromCharCode(125); // }
+    var _P = String.fromCharCode(37);  // %
+    function _tag(s) { return _O + _P + ' ' + s + ' ' + _P + _C; }
+    function _expr(s) { return _O + _O + ' ' + s + ' ' + _C + _C; }
+    function _cmt(s) { return _O + '#' + ' ' + s + ' #' + _C; }
+
     function layoutBoilerplate(name) {
-        return `<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>` + '{% block title %}' + `${name}` + '{% endblock %}' + `</title>\n    ` + '{{ assets_head()|raw }}' + `\n    ` + '{% block styles %}{% endblock %}' + `\n</head>\n<body>\n    ` + '{% include "@theme/snippets/header.twig" %}' + `\n\n    <main>\n        ` + '{% block body %}' + `\n        <div class="container">\n            ` + '{% block content %}{% endblock %}' + `\n        </div>\n        ` + '{% endblock %}' + `\n    </main>\n\n    ` + '{% include "@theme/snippets/footer.twig" %}' + `\n    ` + '{{ assets_footer()|raw }}' + `\n    ` + '{% block scripts %}{% endblock %}' + `\n</body>\n</html>\n`;
+        return '<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>'
+            + _tag('block title') + name + _tag('endblock')
+            + '</title>\n    ' + _expr('assets_head()|raw')
+            + '\n    ' + _tag('block styles') + _tag('endblock')
+            + '\n</head>\n<body>\n    ' + _tag('include "@theme/snippets/header.twig"')
+            + '\n\n    <main>\n        ' + _tag('block body')
+            + '\n        <div class="container">\n            ' + _tag('block content') + _tag('endblock')
+            + '\n        </div>\n        ' + _tag('endblock')
+            + '\n    </main>\n\n    ' + _tag('include "@theme/snippets/footer.twig"')
+            + '\n    ' + _expr('assets_footer()|raw')
+            + '\n    ' + _tag('block scripts') + _tag('endblock')
+            + '\n</body>\n</html>\n';
     }
 
     function sectionBoilerplate(name) {
-        const label = name.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-        return `<section class="section-${name}">\n    <div class="container">\n        <h2>` + '{{ section.settings.heading }}' + `</h2>\n        <div>` + '{{ section.settings.content }}' + `</div>\n    </div>\n</section>\n\n` + '{% schema %}' + `\n{\n    "name": "${label}",\n    "settings": [\n        {\n            "type": "text",\n            "id": "heading",\n            "label": "Heading",\n            "default": "${label}"\n        },\n        {\n            "type": "richtext",\n            "id": "content",\n            "label": "Content",\n            "default": ""\n        }\n    ]\n}\n` + '{% endschema %}' + `\n`;
+        var label = name.replace(/[-_]/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+        return '<section class="section-' + name + '">\n    <div class="container">\n        <h2>'
+            + _expr('section.settings.heading') + '</h2>\n        <div>'
+            + _expr('section.settings.content') + '</div>\n    </div>\n</section>\n\n'
+            + _tag('schema') + '\n'
+            + JSON.stringify({
+                name: label,
+                settings: [
+                    { type: 'text', id: 'heading', label: 'Heading', 'default': label },
+                    { type: 'richtext', id: 'content', label: 'Content', 'default': '' }
+                ]
+            }, null, 4)
+            + '\n' + _tag('endschema') + '\n';
     }
 
     function templateBoilerplate(name) {
-        return '{% extends "@theme/layouts/base.twig" %}' + `\n\n` + '{% block content %}' + `\n<div class="page-${name}">\n    <h1>` + '{{ page.title }}' + `</h1>\n    <div class="page-content">\n        ` + '{{ content|raw }}' + `\n    </div>\n</div>\n` + '{% endblock %}' + `\n`;
+        return _tag('extends "@theme/layouts/base.twig"') + '\n\n'
+            + _tag('block content')
+            + '\n<div class="page-' + name + '">\n    <h1>' + _expr('page.title')
+            + '</h1>\n    <div class="page-content">\n        ' + _expr('content|raw')
+            + '\n    </div>\n</div>\n' + _tag('endblock') + '\n';
     }
 
     function snippetBoilerplate(name) {
-        return `{# Snippet: ${name} #}\n{# Usage: ` + '{% include "@theme/snippets/' + name + '.twig" %}' + ` #}\n\n<div class="snippet-${name}">\n    {# Add your snippet content here #}\n</div>\n`;
+        return _cmt('Snippet: ' + name) + '\n'
+            + _cmt('Usage: ' + _tag('include "@theme/snippets/' + name + '.twig"')) + '\n\n'
+            + '<div class="snippet-' + name + '">\n    '
+            + _cmt('Add your snippet content here')
+            + '\n</div>\n';
     }
 
     // ── Populate layout copy-from select ──
