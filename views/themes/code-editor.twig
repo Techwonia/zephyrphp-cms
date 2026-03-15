@@ -2400,20 +2400,6 @@
         return result.join('\n').trim();
     }
 
-    // ── Word Wrap ──
-    window._toggleWordWrap = function() {
-        state.wordWrap = !state.wordWrap;
-        $('btnWrap').classList.toggle('active', state.wordWrap);
-        // Recreate editor to apply wrap
-        if (state.activeTab) {
-            const tab = state.openTabs.find(t => t.path === state.activeTab);
-            if (tab && state.editorView) {
-                tab.content = state.editorView.state.doc.toString();
-                createEditor($container1, tab.content, tab.path, 'main');
-            }
-        }
-    };
-
     // ── Split View ──
     const $splitFilePicker = $('splitFilePicker');
     const $splitFileSelect = $('splitFileSelect');
@@ -2816,7 +2802,6 @@
     $btnSave.addEventListener('click', () => window._saveFile());
     $('btnSearch').addEventListener('click', () => window._openQuickSearch());
     $('btnFormat').addEventListener('click', () => window._formatCode());
-    $('btnWrap').addEventListener('click', () => window._toggleWordWrap());
     $('btnSplit').addEventListener('click', () => window._toggleSplitView());
     $btnSchema.addEventListener('click', () => window._toggleSchemaPanel());
     $btnCopyPath.addEventListener('click', () => {
