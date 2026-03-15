@@ -35,7 +35,7 @@ class ThemeManager
             // DB not ready yet
         }
 
-        return $_ENV['CMS_THEME'] ?? 'default';
+        return $_ENV['CMS_THEME'] ?? 'starter';
     }
 
     /**
