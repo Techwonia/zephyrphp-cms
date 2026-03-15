@@ -35,7 +35,7 @@
     <div class="tab-nav">
         <button class="tab-btn active" data-tab="tab-settings">Settings</button>
         <button class="tab-btn" data-tab="tab-pages">Pages</button>
-        <button class="tab-btn" data-tab="tab-editor">File Editor</button>
+        <a href="/cms/themes/{{ theme.getSlug() }}/code" class="tab-btn" style="text-decoration:none;">Code Editor &rarr;</a>
     </div>
 
     {# Settings Tab #}
@@ -209,110 +209,13 @@
         </div>
     </div>
 
-    {# File Editor Tab #}
+    {# File Editor — redirects to standalone code editor #}
     <div class="tab-panel" id="tab-editor">
-        <div class="editor-layout">
-            <div class="editor-sidebar">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                    <h4 style="margin:0;">Files</h4>
-                    <button class="btn btn-xs btn-primary" id="newSectionBtn" title="Create new section">+ Section</button>
-                </div>
-                {% for folder, fileList in files %}
-                <div class="file-folder">
-                    <div class="folder-name">{{ folder }}/</div>
-                    {% for file in fileList %}
-                    <a href="#" class="file-item {% if activeFile == file %}active{% endif %}" data-file="{{ file }}">
-                        {{ file|split('/')|last }}
-                    </a>
-                    {% endfor %}
-                </div>
-                {% endfor %}
-            </div>
-            <div class="editor-main">
-                <div class="editor-toolbar">
-                    <span class="editor-file-name" id="editorFileName">{{ activeFile ?: 'Select a file to edit' }}</span>
-                    <div class="editor-toolbar-right">
-                        <div class="designer-toggle" id="designerToggle" style="display:none;">
-                            <button class="toggle-btn active" id="btnDesigner">Designer</button>
-                            <button class="toggle-btn" id="btnSource">Source</button>
-                        </div>
-                        <button class="btn btn-sm btn-outline" id="editorRefToggleBtn" style="display:none;">Reference</button>
-                        <button class="btn btn-sm btn-primary" id="saveFileBtn" {% if not activeFile %}disabled{% endif %}>Save</button>
-                    </div>
-                </div>
-                <div id="sourceEditorPane" style="display:flex;">
-                    <div style="flex:1;display:flex;flex-direction:column;min-width:0;">
-                        <textarea id="codeEditor" class="code-editor">{{ fileContent }}</textarea>
-                    </div>
-                    <div class="editor-ref-panel hidden" id="editorRefPanel">
-                        <div class="ref-side-header">Controller Reference</div>
-                        <div id="editorRefPanelBody"></div>
-                    </div>
-                </div>
-                <div id="designerPane" style="display:none;">
-                    <div class="designer-tabs">
-                        <button class="designer-tab active" data-dtab="dtab-content">Content</button>
-                        <button class="designer-tab" data-dtab="dtab-style">Style</button>
-                        <button class="designer-tab" data-dtab="dtab-js">JavaScript</button>
-                        <button class="designer-tab" data-dtab="dtab-schema">Schema</button>
-                        <button class="designer-tab-ref" id="refToggleBtn" title="Toggle reference panel">Reference</button>
-                    </div>
-                    <div class="designer-panel-split active" id="dtab-content">
-                        <div class="editor-side">
-                            <textarea id="designerContentEditor"></textarea>
-                        </div>
-                        <div class="ref-side" id="refPanel">
-                            <div class="ref-side-header">Reference</div>
-                            <div id="refPanelBody"></div>
-                        </div>
-                    </div>
-                    <div class="designer-panel" id="dtab-style">
-                        <textarea id="designerStyleEditor"></textarea>
-                    </div>
-                    <div class="designer-panel" id="dtab-js">
-                        <textarea id="designerJsEditor"></textarea>
-                    </div>
-                    <div class="designer-panel" id="dtab-schema">
-                        <div class="schema-builder" id="schemaBuilder">
-                            <div class="schema-section">
-                                <h4 class="schema-section-title">Section Info</h4>
-                                <div class="schema-form-row">
-                                    <div class="schema-field"><label>Name</label><input type="text" class="form-control" id="schemaName"></div>
-                                    <div class="schema-field"><label>Icon</label><input type="text" class="form-control" id="schemaIcon" placeholder="layout"></div>
-                                </div>
-                                <div class="schema-field"><label>Description</label><input type="text" class="form-control" id="schemaDescription"></div>
-                                <div class="schema-field">
-                                    <label>Collection <small style="font-weight:normal;color:var(--text-secondary,#616161);">(auto-loads data into section.collection_data)</small></label>
-                                    <select class="form-control" id="schemaCollection">
-                                        <option value="">— None —</option>
-                                        {% if collections is defined %}
-                                        {% for col in collections %}
-                                        <option value="{{ col.slug }}">{{ col.name }} ({{ col.slug }})</option>
-                                        {% endfor %}
-                                        {% endif %}
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="schema-section">
-                                <div class="schema-section-header"><h4 class="schema-section-title">Settings</h4><button class="btn btn-xs btn-primary" id="addSettingBtn">+ Add</button></div>
-                                <div id="settingsList"></div>
-                            </div>
-                            <div class="schema-section">
-                                <div class="schema-section-header"><h4 class="schema-section-title">Block Types</h4><button class="btn btn-xs btn-primary" id="addBlockTypeBtn">+ Add</button></div>
-                                <div id="blockTypesList"></div>
-                            </div>
-                            <div class="schema-section">
-                                <div class="schema-section-header"><h4 class="schema-section-title">Presets</h4><button class="btn btn-xs btn-primary" id="addPresetBtn">+ Add</button></div>
-                                <div id="presetsList"></div>
-                            </div>
-                            <div class="schema-section">
-                                <div class="schema-section-header schema-json-toggle" id="jsonPreviewToggle"><h4 class="schema-section-title">JSON Preview</h4><span class="chevron">&#9654;</span></div>
-                                <div id="jsonPreviewBody" style="display:none;"><pre id="jsonPreviewContent" class="json-preview"></pre></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div style="padding:60px 40px; text-align:center;">
+            <p style="font-size:16px; margin-bottom:16px; color:var(--text-secondary, #616161);">The file editor has moved to a dedicated full-screen experience.</p>
+            <a href="/cms/themes/{{ theme.getSlug() }}/code" class="btn btn-primary" style="font-size:14px; padding:10px 24px;">
+                Open Code Editor &rarr;
+            </a>
         </div>
     </div>
 </div>
