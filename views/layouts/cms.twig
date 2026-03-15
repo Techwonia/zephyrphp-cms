@@ -25,7 +25,7 @@
         --text: #303030;
         --text-secondary: #616161;
         --text-disabled: #B5B5B5;
-        --text-link: #005BD3;
+        --text-link: #2BA3D4;
         --text-inverse: #FFFFFF;
         --text-sidebar: #A3A3A3;
         --text-sidebar-active: #FFFFFF;
@@ -33,13 +33,14 @@
         /* Borders */
         --border: #E3E3E3;
         --border-hover: #CCCCCC;
-        --border-focus: #005BD3;
+        --border-focus: #2BA3D4;
 
-        /* Primary */
-        --color-primary: #008060;
-        --color-primary-hover: #006e52;
-        --color-primary-pressed: #005c45;
+        /* Primary (ZephyrPHP Blue) */
+        --color-primary: #2BA3D4;
+        --color-primary-hover: #2592BE;
+        --color-primary-pressed: #1F7FA6;
         --color-primary-text: #FFFFFF;
+        --color-accent: #38BDF8;
 
         /* Status */
         --color-success: #047B5D;
@@ -144,6 +145,7 @@
         color: white;
         font-weight: 700;
         font-size: var(--font-xs);
+        box-shadow: 0 0 8px rgba(43,163,212,0.3);
     }
     .topbar-brand-text {
         font-weight: 600;
@@ -193,26 +195,99 @@
         font-size: var(--font-sm);
         font-weight: 500;
     }
-    .topbar-divider {
-        width: 1px;
-        height: 20px;
-        background: rgba(255,255,255,0.12);
+    /* Profile Dropdown */
+    .profile-dropdown {
+        position: relative;
     }
-    .btn-logout-topbar {
+    .profile-trigger {
+        display: flex;
+        align-items: center;
+        gap: var(--space-200);
         background: none;
         border: none;
-        color: rgba(255,255,255,0.5);
         cursor: pointer;
-        font-size: var(--font-xs);
-        font-family: var(--font);
         padding: 4px 8px;
-        border-radius: var(--radius-100);
-        transition: background 0.15s, color 0.15s;
+        border-radius: var(--radius-200);
+        transition: background 0.15s;
+        color: rgba(255,255,255,0.85);
+        font-family: var(--font);
     }
-    .btn-logout-topbar:hover {
-        background: rgba(215, 44, 13, 0.15);
-        color: #FF6B6B;
+    .profile-trigger:hover { background: rgba(255,255,255,0.08); }
+    .profile-trigger svg {
+        width: 14px;
+        height: 14px;
+        stroke: rgba(255,255,255,0.5);
+        stroke-width: 2;
+        fill: none;
+        transition: transform 0.15s;
     }
+    .profile-dropdown.open .profile-trigger svg { transform: rotate(180deg); }
+    .profile-menu {
+        display: none;
+        position: absolute;
+        top: calc(100% + 6px);
+        right: 0;
+        min-width: 180px;
+        background: var(--bg-surface);
+        border-radius: var(--radius-200);
+        box-shadow: var(--shadow-dropdown);
+        border: 1px solid var(--border);
+        overflow: hidden;
+        z-index: 300;
+    }
+    .profile-dropdown.open .profile-menu { display: block; }
+    .profile-menu-header {
+        padding: var(--space-300) var(--space-400);
+        border-bottom: 1px solid var(--border);
+    }
+    .profile-menu-name {
+        font-size: var(--font-sm);
+        font-weight: 600;
+        color: var(--text);
+    }
+    .profile-menu-email {
+        font-size: var(--font-xs);
+        color: var(--text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .profile-menu-item {
+        display: flex;
+        align-items: center;
+        gap: var(--space-200);
+        padding: 8px var(--space-400);
+        color: var(--text);
+        text-decoration: none;
+        font-size: var(--font-sm);
+        transition: background 0.12s;
+        border: none;
+        background: none;
+        width: 100%;
+        cursor: pointer;
+        font-family: var(--font);
+        text-align: left;
+    }
+    .profile-menu-item:hover {
+        background: var(--bg-surface-hover);
+        text-decoration: none;
+    }
+    .profile-menu-item svg {
+        width: 16px;
+        height: 16px;
+        stroke: var(--text-secondary);
+        stroke-width: 1.5;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+    .profile-menu-divider {
+        height: 1px;
+        background: var(--border);
+    }
+    .profile-menu-item.danger { color: var(--color-critical); }
+    .profile-menu-item.danger svg { stroke: var(--color-critical); }
+    .profile-menu-item.danger:hover { background: var(--color-critical-bg); }
 
     .cms-body {
         display: flex;
@@ -273,8 +348,8 @@
         text-decoration: none;
     }
     .ab-item.active {
-        color: #36FBA1;
-        background: rgba(54,251,161,0.08);
+        color: #38BDF8;
+        background: rgba(56,189,248,0.08);
     }
     .ab-item svg {
         width: 20px;
@@ -390,7 +465,7 @@
         background: rgba(255,255,255,0.1);
         color: var(--text-sidebar-active);
     }
-    .sp-nav-item a.active .sp-nav-icon svg { stroke: #36FBA1; }
+    .sp-nav-item a.active .sp-nav-icon svg { stroke: #38BDF8; }
     .sp-nav-icon {
         width: 18px;
         height: 18px;
@@ -427,7 +502,9 @@
     }
     .cms-content {
         padding: var(--space-600);
-        max-width: 1200px;
+        max-width: 1100px;
+        margin: 0 auto;
+        width: 100%;
         flex: 1;
     }
 
@@ -1051,15 +1128,35 @@
         </div>
         <div class="topbar-right">
             {% include "@cms/partials/notification-bell.twig" %}
-            <div class="topbar-user-info">
-                <div class="topbar-avatar">{{ auth().user().getName()|first|upper }}</div>
-                <span class="topbar-user-name">{{ auth().user().getName() }}</span>
+            <div class="profile-dropdown" id="profileDropdown">
+                <button class="profile-trigger" id="profileTrigger">
+                    <div class="topbar-avatar">{{ auth().user().getName()|first|upper }}</div>
+                    <span class="topbar-user-name">{{ auth().user().getName() }}</span>
+                    <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="profile-menu">
+                    <div class="profile-menu-header">
+                        <div class="profile-menu-name">{{ auth().user().getName() }}</div>
+                        <div class="profile-menu-email">{{ auth().user().getEmail() }}</div>
+                    </div>
+                    <a href="/cms/settings/profile" class="profile-menu-item">
+                        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        Profile
+                    </a>
+                    <a href="/cms/settings/system" class="profile-menu-item">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                        Settings
+                    </a>
+                    <div class="profile-menu-divider"></div>
+                    <form method="POST" action="/logout" style="margin:0;">
+                        {{ csrf_field() | raw }}
+                        <button type="submit" class="profile-menu-item danger">
+                            <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                            Sign Out
+                        </button>
+                    </form>
+                </div>
             </div>
-            <div class="topbar-divider"></div>
-            <form method="POST" action="/logout" style="margin:0;">
-                {{ csrf_field() | raw }}
-                <button type="submit" class="btn-logout-topbar">Sign Out</button>
-            </form>
         </div>
     </header>
 
@@ -1282,6 +1379,21 @@
                 activePanel = null;
             });
         }
+
+        // Profile dropdown
+        var profileDropdown = document.getElementById('profileDropdown');
+        var profileTrigger = document.getElementById('profileTrigger');
+        if (profileTrigger) {
+            profileTrigger.addEventListener('click', function(e) {
+                e.stopPropagation();
+                profileDropdown.classList.toggle('open');
+            });
+        }
+        document.addEventListener('click', function(e) {
+            if (profileDropdown && !profileDropdown.contains(e.target)) {
+                profileDropdown.classList.remove('open');
+            }
+        });
 
         // Auto-open panel for current section on page load
         var currentSectionBtn = activityBar.querySelector('[data-panel].active');
