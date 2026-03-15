@@ -2,11 +2,14 @@
     {
         "name": "Colors",
         "settings": [
-            {"type": "color", "id": "primary_color", "label": "Primary Color", "default": "#008060"},
-            {"type": "color", "id": "secondary_color", "label": "Accent Color", "default": "#00d9ff"},
-            {"type": "color", "id": "bg_color", "label": "Body Background", "default": "#0a0e27"},
-            {"type": "color", "id": "text_color", "label": "Body Text Color", "default": "#ffffff"},
-            {"type": "color", "id": "text_secondary_color", "label": "Secondary Text", "default": "#8892b0"}
+            {"type": "color", "id": "primary_color", "label": "Primary Color", "default": "#005bd3"},
+            {"type": "color", "id": "secondary_color", "label": "Secondary Color", "default": "#00a67e"},
+            {"type": "color", "id": "accent_color", "label": "Accent Color", "default": "#e67700"},
+            {"type": "color", "id": "bg_color", "label": "Body Background", "default": "#ffffff"},
+            {"type": "color", "id": "surface_color", "label": "Surface Color", "info": "Cards, panels, and elevated surfaces", "default": "#f6f6f7"},
+            {"type": "color", "id": "text_color", "label": "Body Text Color", "default": "#1a1a1a"},
+            {"type": "color", "id": "text_secondary_color", "label": "Secondary Text", "default": "#616161"},
+            {"type": "color", "id": "border_color", "label": "Border Color", "default": "#e3e3e3"}
         ]
     },
     {
@@ -21,8 +24,10 @@
                     {"value": "Inter", "label": "Inter"},
                     {"value": "Poppins", "label": "Poppins"},
                     {"value": "Roboto", "label": "Roboto"},
-                    {"value": "Open Sans", "label": "Open Sans"},
                     {"value": "Playfair Display", "label": "Playfair Display"},
+                    {"value": "Merriweather", "label": "Merriweather"},
+                    {"value": "Lato", "label": "Lato"},
+                    {"value": "Open Sans", "label": "Open Sans"},
                     {"value": "Montserrat", "label": "Montserrat"}
                 ]
             },
@@ -33,13 +38,58 @@
                 "default": "Inter",
                 "options": [
                     {"value": "Inter", "label": "Inter"},
+                    {"value": "Poppins", "label": "Poppins"},
                     {"value": "Roboto", "label": "Roboto"},
-                    {"value": "Open Sans", "label": "Open Sans"},
+                    {"value": "Playfair Display", "label": "Playfair Display"},
+                    {"value": "Merriweather", "label": "Merriweather"},
                     {"value": "Lato", "label": "Lato"},
-                    {"value": "Source Sans Pro", "label": "Source Sans Pro"}
+                    {"value": "Open Sans", "label": "Open Sans"},
+                    {"value": "Montserrat", "label": "Montserrat"}
                 ]
             },
-            {"type": "range", "id": "base_font_size", "label": "Base Font Size (px)", "min": 14, "max": 20, "step": 1, "default": 16}
+            {"type": "range", "id": "base_font_size", "label": "Base Font Size (px)", "min": 14, "max": 20, "step": 1, "default": 16},
+            {
+                "type": "select",
+                "id": "heading_weight",
+                "label": "Heading Font Weight",
+                "default": "700",
+                "options": [
+                    {"value": "400", "label": "Regular (400)"},
+                    {"value": "500", "label": "Medium (500)"},
+                    {"value": "600", "label": "Semi-bold (600)"},
+                    {"value": "700", "label": "Bold (700)"},
+                    {"value": "800", "label": "Extra Bold (800)"}
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Layout",
+        "settings": [
+            {"type": "range", "id": "container_width", "label": "Container Width (px)", "min": 960, "max": 1440, "step": 40, "default": 1200},
+            {
+                "type": "select",
+                "id": "section_spacing",
+                "label": "Section Spacing",
+                "default": "default",
+                "options": [
+                    {"value": "compact", "label": "Compact (40px)"},
+                    {"value": "default", "label": "Default (60px)"},
+                    {"value": "spacious", "label": "Spacious (80px)"}
+                ]
+            },
+            {
+                "type": "select",
+                "id": "border_radius",
+                "label": "Border Radius",
+                "default": "medium",
+                "options": [
+                    {"value": "none", "label": "None (0px)"},
+                    {"value": "small", "label": "Small (4px)"},
+                    {"value": "medium", "label": "Medium (8px)"},
+                    {"value": "large", "label": "Large (16px)"}
+                ]
+            }
         ]
     },
     {

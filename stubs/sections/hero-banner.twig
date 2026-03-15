@@ -1,4 +1,22 @@
-<section class="section-hero" style="background:{{ section.settings.bg_color|default('#0a0e27') }}; padding:{{ section.settings.padding|default(80) }}px 0; text-align:{{ section.settings.text_align|default('center') }};">
+{% set scheme = section.settings.color_scheme|default('custom') %}
+{% if scheme == 'light' %}
+    {% set _bg = '#ffffff' %}
+    {% set _text = theme_settings.text_color|default('#1a1a1a') %}
+    {% set _heading = theme_settings.text_color|default('#1a1a1a') %}
+{% elseif scheme == 'dark' %}
+    {% set _bg = '#1a1a1a' %}
+    {% set _text = '#e0e0e0' %}
+    {% set _heading = '#ffffff' %}
+{% elseif scheme == 'brand' %}
+    {% set _bg = theme_settings.primary_color|default('#005bd3') %}
+    {% set _text = '#ffffff' %}
+    {% set _heading = '#ffffff' %}
+{% else %}
+    {% set _bg = section.settings.bg_color|default('#0a0e27') %}
+    {% set _text = '#8892b0' %}
+    {% set _heading = '#ffffff' %}
+{% endif %}
+<section class="section-hero" style="background:{{ _bg }}; padding:{{ section.settings.padding|default(80) }}px 0; text-align:{{ section.settings.text_align|default('center') }};">
     <div class="container" style="max-width:{{ section.settings.max_width|default(800) }}px; margin:0 auto;">
         {% for block in section.blocks %}
             {% if block.type == 'heading' %}
@@ -55,6 +73,13 @@
     "description": "A full-width hero section built from blocks — heading, text, buttons, images",
     "icon": "hero",
     "settings": [
+        {"type": "select", "id": "color_scheme", "label": "Color Scheme", "default": "custom",
+         "options": [
+            {"value": "light", "label": "Light"},
+            {"value": "dark", "label": "Dark"},
+            {"value": "brand", "label": "Brand"},
+            {"value": "custom", "label": "Custom"}
+         ]},
         {"type": "color", "id": "bg_color", "label": "Background Color", "default": "#0a0e27"},
         {"type": "select", "id": "text_align", "label": "Text Alignment", "default": "center",
          "options": [{"value": "left", "label": "Left"}, {"value": "center", "label": "Center"}, {"value": "right", "label": "Right"}]},

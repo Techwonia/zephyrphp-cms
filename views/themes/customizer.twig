@@ -115,10 +115,20 @@
             cursor: pointer; border: none; transition: all 0.15s; font-family: var(--font);
         }
         .topbar-btn-outline { background: transparent; color: #aaa; border: 1px solid #444; }
-        .topbar-btn-outline:hover { color: #fff; border-color: #666; }
+        .topbar-btn-outline:hover:not(:disabled) { color: #fff; border-color: #666; }
+        .topbar-btn-outline:disabled { opacity: 0.35; cursor: not-allowed; }
         .topbar-btn-primary { background: var(--primary); color: #fff; }
         .topbar-btn-primary:hover { background: var(--primary-hover); }
         .topbar-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .topbar-btn-icon {
+            display: flex; align-items: center; justify-content: center;
+            width: 36px; height: 36px; padding: 0;
+            background: transparent; border: 1px solid #444; color: #888;
+            cursor: pointer; border-radius: 6px; transition: all 0.15s;
+        }
+        .topbar-btn-icon:hover:not(:disabled) { color: #fff; border-color: #666; }
+        .topbar-btn-icon:disabled { opacity: 0.35; cursor: not-allowed; }
+        .topbar-btn-icon svg { width: 16px; height: 16px; }
 
         /* ── Main Layout ── */
         .main-layout {
@@ -486,6 +496,112 @@
         .section-picker-desc { font-size: 11px; color: var(--text-secondary); line-height: 1.4; }
         .section-picker-create { border-style: dashed; border-color: var(--primary); }
 
+        /* ── Link Picker ── */
+        .link-picker-trigger {
+            display: flex; align-items: center; gap: 8px;
+            width: 100%; padding: 8px 12px;
+            border: 1px solid var(--border); border-radius: 6px;
+            background: var(--bg-surface); cursor: pointer;
+            font-size: 13px; font-family: var(--font); color: var(--text);
+            transition: border-color 0.15s;
+        }
+        .link-picker-trigger:hover { border-color: var(--primary); }
+        .link-picker-trigger-icon { flex-shrink: 0; width: 16px; color: var(--text-disabled); }
+        .link-picker-trigger-url { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--primary); text-align: left; }
+        .link-picker-trigger-placeholder { flex: 1; color: var(--text-disabled); text-align: left; }
+        .link-picker-trigger-clear {
+            flex-shrink: 0; width: 20px; height: 20px; border: none; background: none;
+            cursor: pointer; color: var(--text-disabled); display: flex; align-items: center; justify-content: center;
+            border-radius: 4px; padding: 0;
+        }
+        .link-picker-trigger-clear:hover { color: var(--danger); background: rgba(215,44,13,0.06); }
+        .link-picker-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.3); z-index: 1000;
+        }
+        .link-picker-overlay.open { display: block; }
+        .link-picker-panel {
+            position: fixed; top: 0; right: 0; width: 360px; height: 100vh;
+            background: var(--bg-surface); box-shadow: -4px 0 24px rgba(0,0,0,0.15);
+            z-index: 1001; display: flex; flex-direction: column;
+            transform: translateX(100%); transition: transform 0.2s;
+        }
+        .link-picker-panel.open { transform: translateX(0); }
+        .link-picker-header {
+            padding: 16px; border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .link-picker-header h3 { font-size: 15px; font-weight: 600; }
+        .link-picker-header-close {
+            background: none; border: none; font-size: 20px;
+            cursor: pointer; color: var(--text-secondary); line-height: 1;
+        }
+        .link-picker-body { flex: 1; overflow-y: auto; padding: 0; }
+        .link-picker-tabs { display: flex; border-bottom: 1px solid var(--border); }
+        .link-picker-tab {
+            flex: 1; padding: 10px; text-align: center; border: none; background: none;
+            cursor: pointer; font-size: 12px; font-weight: 500; font-family: var(--font);
+            color: var(--text-secondary); border-bottom: 2px solid transparent; transition: all 0.15s;
+        }
+        .link-picker-tab:hover { color: var(--text); }
+        .link-picker-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .link-picker-tab-content { display: none; padding: 16px; }
+        .link-picker-tab-content.active { display: block; }
+        .link-picker-list { padding: 0; }
+        .link-picker-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 12px; cursor: pointer; border-radius: 6px;
+            font-size: 13px; transition: background 0.1s;
+        }
+        .link-picker-item:hover { background: var(--bg-hover); }
+        .link-picker-item.selected { background: var(--primary-bg); color: var(--primary); }
+        .link-picker-item-icon { width: 20px; color: var(--text-disabled); text-align: center; flex-shrink: 0; }
+        .link-picker-item-label { flex: 1; }
+        .link-picker-section-label {
+            font-size: 11px; font-weight: 600; text-transform: uppercase;
+            color: var(--text-secondary); padding: 12px 12px 6px; letter-spacing: 0.5px;
+        }
+        .link-picker-input-group { margin-bottom: 12px; }
+        .link-picker-input-group label {
+            display: block; font-size: 12px; font-weight: 500;
+            color: var(--text-secondary); margin-bottom: 4px;
+        }
+        .link-picker-input-group input[type="url"],
+        .link-picker-input-group input[type="email"],
+        .link-picker-input-group input[type="text"] {
+            width: 100%; padding: 8px 12px; border: 1px solid var(--border);
+            border-radius: 6px; font-size: 13px; font-family: var(--font);
+        }
+        .link-picker-input-group input:focus { outline: none; border-color: var(--primary); }
+        .link-picker-checkbox {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 13px; cursor: pointer; padding: 4px 0;
+        }
+        .link-picker-footer {
+            padding: 12px 16px; border-top: 1px solid var(--border);
+            display: flex; gap: 8px; justify-content: flex-end;
+        }
+        .link-picker-footer .btn-apply {
+            padding: 8px 20px; border: none; border-radius: 6px;
+            background: var(--primary); color: #fff; font-size: 13px;
+            font-weight: 500; font-family: var(--font); cursor: pointer;
+            transition: background 0.15s;
+        }
+        .link-picker-footer .btn-apply:hover { background: var(--primary-hover); }
+        .link-picker-footer .btn-cancel {
+            padding: 8px 16px; border: 1px solid var(--border); border-radius: 6px;
+            background: var(--bg-surface); color: var(--text); font-size: 13px;
+            font-weight: 500; font-family: var(--font); cursor: pointer;
+            transition: all 0.15s;
+        }
+        .link-picker-footer .btn-cancel:hover { background: var(--bg-hover); }
+        .link-picker-back-btn {
+            background: none; border: none; cursor: pointer; color: var(--text-secondary);
+            font-size: 13px; font-family: var(--font); display: flex; align-items: center; gap: 4px;
+            padding: 8px 12px; border-radius: 6px; margin-bottom: 8px;
+        }
+        .link-picker-back-btn:hover { background: var(--bg-hover); color: var(--text); }
+
         /* ── Toast ── */
         .toast {
             position: fixed; bottom: 24px; right: 24px;
@@ -538,6 +654,14 @@
             <svg width="6" height="6"><circle cx="3" cy="3" r="3" fill="#FFB800"/></svg>
             Unsaved
         </span>
+
+        <!-- Undo / Redo -->
+        <button class="topbar-btn-icon" id="undoBtn" disabled title="Undo (Ctrl+Z)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+        </button>
+        <button class="topbar-btn-icon" id="redoBtn" disabled title="Redo (Ctrl+Y)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"/></svg>
+        </button>
 
         <!-- Inspector toggle -->
         <button class="inspector-toggle active" id="inspectorToggle" title="Toggle inspector">
@@ -616,6 +740,54 @@
     </div>
 </div>
 
+<!-- Link Picker Panel -->
+<div class="link-picker-overlay" id="linkPickerOverlay"></div>
+<div class="link-picker-panel" id="linkPickerPanel">
+    <div class="link-picker-header">
+        <h3>Select link</h3>
+        <button class="link-picker-header-close" id="linkPickerClose">&times;</button>
+    </div>
+    <div class="link-picker-tabs">
+        <button class="link-picker-tab active" data-lp-tab="pages">Pages</button>
+        <button class="link-picker-tab" data-lp-tab="collections">Collections</button>
+        <button class="link-picker-tab" data-lp-tab="external">External</button>
+        <button class="link-picker-tab" data-lp-tab="email">Email</button>
+    </div>
+    <div class="link-picker-body">
+        <div class="link-picker-tab-content active" id="lpTabPages">
+            <div class="link-picker-list" id="lpPagesList"></div>
+        </div>
+        <div class="link-picker-tab-content" id="lpTabCollections">
+            <div id="lpCollectionsContent">
+                <div class="link-picker-list" id="lpCollectionsList"></div>
+            </div>
+        </div>
+        <div class="link-picker-tab-content" id="lpTabExternal">
+            <div class="link-picker-input-group">
+                <label>URL</label>
+                <input type="url" id="lpExternalUrl" placeholder="https://example.com">
+            </div>
+            <label class="link-picker-checkbox">
+                <input type="checkbox" id="lpExternalNewTab"> Open in new tab
+            </label>
+        </div>
+        <div class="link-picker-tab-content" id="lpTabEmail">
+            <div class="link-picker-input-group">
+                <label>Email address</label>
+                <input type="email" id="lpEmailAddress" placeholder="hello@example.com">
+            </div>
+            <div class="link-picker-input-group">
+                <label>Subject (optional)</label>
+                <input type="text" id="lpEmailSubject" placeholder="Email subject">
+            </div>
+        </div>
+    </div>
+    <div class="link-picker-footer">
+        <button class="btn-cancel" id="linkPickerCancel">Cancel</button>
+        <button class="btn-apply" id="linkPickerApply">Apply</button>
+    </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
@@ -631,7 +803,8 @@
         'dynamic-content': '📊', 'feature-columns': '⚡',
         'testimonials': '💬', 'faq': '❓', 'newsletter': '📧',
         'cta-banner': '📢', 'gallery': '🖼', 'spacer': '↕',
-        'custom-code': '🧩', 'header': '🔲', 'footer': '🔲'
+        'custom-code': '🧩', 'header': '🔲', 'footer': '🔲',
+        'pricing-table': '💰', 'logo-cloud': '🏢', 'stats': '📊', 'team': '👥', 'contact': '📬'
     };
 
     var BLOCK_TYPE_ICONS = {
@@ -640,7 +813,8 @@
         'spacer': '↕', 'divider': '—',
         'feature': '⚡', 'question': '❓', 'testimonial': '💬',
         'slide': '🖼', 'nav_link': '🔗', 'social_link': '🌐',
-        'column': '▥', 'card': '▢', 'item': '•'
+        'column': '▥', 'card': '▢', 'item': '•',
+        'plan': '💳', 'logo': '🏷', 'stat': '📈', 'member': '👤', 'field': '📝'
     };
 
     // ── State ──
@@ -665,6 +839,72 @@
     // Deep clone initial state for discard
     var initialState = JSON.parse(JSON.stringify(state.settingsData));
 
+    // ── Undo / Redo ──
+    var undoStack = [];
+    var redoStack = [];
+    var MAX_UNDO = 50;
+    var lastSnapshotTime = 0;
+    var previousSnapshot = JSON.parse(JSON.stringify(state.settingsData));
+
+    function updateUndoRedoButtons() {
+        document.getElementById('undoBtn').disabled = undoStack.length === 0;
+        document.getElementById('redoBtn').disabled = redoStack.length === 0;
+    }
+
+    function snapshotForUndo() {
+        var now = Date.now();
+        if (now - lastSnapshotTime < 500) return;
+        lastSnapshotTime = now;
+        undoStack.push(previousSnapshot);
+        if (undoStack.length > MAX_UNDO) undoStack.shift();
+        redoStack.length = 0;
+        previousSnapshot = JSON.parse(JSON.stringify(state.settingsData));
+        updateUndoRedoButtons();
+    }
+
+    function applyStateSnapshot(snapshot) {
+        state.settingsData = snapshot;
+        if (!state.settingsData.current || Array.isArray(state.settingsData.current)) state.settingsData.current = {};
+        if (!state.settingsData.pages || Array.isArray(state.settingsData.pages)) state.settingsData.pages = {};
+        previousSnapshot = JSON.parse(JSON.stringify(state.settingsData));
+        state.activeSection = null;
+        state.activeBlock = null;
+        hideRightPanel();
+        renderSectionTree();
+        renderThemeSettingsGroups();
+        refreshPreview();
+    }
+
+    function undo() {
+        if (undoStack.length === 0) return;
+        redoStack.push(JSON.parse(JSON.stringify(state.settingsData)));
+        var snapshot = undoStack.pop();
+        applyStateSnapshot(snapshot);
+        if (undoStack.length === 0 && JSON.stringify(state.settingsData) === JSON.stringify(initialState)) {
+            markClean();
+        } else {
+            state.dirty = true;
+            document.getElementById('unsavedBadge').classList.add('visible');
+            document.getElementById('saveBtn').disabled = false;
+        }
+        updateUndoRedoButtons();
+    }
+
+    function redo() {
+        if (redoStack.length === 0) return;
+        undoStack.push(JSON.parse(JSON.stringify(state.settingsData)));
+        var snapshot = redoStack.pop();
+        applyStateSnapshot(snapshot);
+        markDirtyNoSnapshot();
+        updateUndoRedoButtons();
+    }
+
+    function markDirtyNoSnapshot() {
+        state.dirty = true;
+        document.getElementById('unsavedBadge').classList.add('visible');
+        document.getElementById('saveBtn').disabled = false;
+    }
+
     var collectionFieldsCache = {};
 
     function fetchCollectionFields(collectionSlug) {
@@ -687,6 +927,7 @@
     }
 
     function markDirty() {
+        snapshotForUndo();
         state.dirty = true;
         document.getElementById('unsavedBadge').classList.add('visible');
         document.getElementById('saveBtn').disabled = false;
@@ -845,6 +1086,7 @@
             if (hasBlocks) {
                 var subItems = document.createElement('div');
                 subItems.className = 'tree-subitems' + (isExpanded ? ' open' : '');
+                subItems.dataset.sectionId = sectionId;
 
                 sec.block_order.forEach(function(blockId) {
                     var block = (sec.blocks || {})[blockId];
@@ -948,6 +1190,28 @@
                         }
                     });
                 }
+            }, 0);
+
+            // Init drag-and-drop on block lists within sections
+            setTimeout(function() {
+                document.querySelectorAll('.tree-subitems').forEach(function(subList) {
+                    Sortable.create(subList, {
+                        handle: '.tree-subitem-drag',
+                        animation: 150,
+                        ghostClass: 'sortable-ghost',
+                        filter: '.tree-add-block',
+                        onEnd: function(evt) {
+                            var sectionId = subList.dataset.sectionId;
+                            var pageData = getPageData();
+                            var sec = pageData.sections[sectionId];
+                            if (!sec || !sec.block_order) return;
+                            var item = sec.block_order.splice(evt.oldIndex, 1)[0];
+                            sec.block_order.splice(evt.newIndex, 0, item);
+                            markDirty();
+                            refreshPreview();
+                        }
+                    });
+                });
             }, 0);
         }
     }
@@ -1558,9 +1822,48 @@
             if (setting.max !== undefined) numInput.max = setting.max;
             numInput.addEventListener('change', function() { onChange(parseInt(this.value) || 0); });
             wrapper.appendChild(numInput);
+        } else if (setting.type === 'url') {
+            var hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.value = value || '';
+
+            var trigger = document.createElement('button');
+            trigger.type = 'button';
+            trigger.className = 'link-picker-trigger';
+
+            function renderTriggerContent(url) {
+                var iconSvg = '<svg class="link-picker-trigger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+                if (url) {
+                    var displayUrl = url.length > 35 ? url.substring(0, 35) + '...' : url;
+                    trigger.innerHTML = iconSvg +
+                        '<span class="link-picker-trigger-url">' + displayUrl + '</span>' +
+                        '<button type="button" class="link-picker-trigger-clear" title="Clear">&times;</button>';
+                    var clearBtn = trigger.querySelector('.link-picker-trigger-clear');
+                    clearBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        hiddenInput.value = '';
+                        onChange('');
+                        renderTriggerContent('');
+                    });
+                } else {
+                    trigger.innerHTML = iconSvg + '<span class="link-picker-trigger-placeholder">Select link...</span>';
+                }
+            }
+            renderTriggerContent(value || '');
+
+            trigger.addEventListener('click', function() {
+                openLinkPicker(hiddenInput.value, function(newUrl) {
+                    hiddenInput.value = newUrl;
+                    onChange(newUrl);
+                    renderTriggerContent(newUrl);
+                });
+            });
+
+            wrapper.appendChild(trigger);
+            wrapper.appendChild(hiddenInput);
         } else {
             var input = document.createElement('input');
-            input.type = setting.type === 'url' ? 'url' : 'text';
+            input.type = 'text';
             input.className = 'setting-input';
             input.value = value || '';
             if (setting.placeholder) input.placeholder = setting.placeholder;
@@ -1570,6 +1873,208 @@
 
         return wrapper;
     }
+
+    // ── Link Picker ──
+    var linkPickerCallback = null;
+    var linkPickerSelectedUrl = '';
+
+    function openLinkPicker(currentValue, onApply) {
+        linkPickerCallback = onApply;
+        linkPickerSelectedUrl = currentValue || '';
+
+        // Reset tabs
+        document.querySelectorAll('.link-picker-tab').forEach(function(t) { t.classList.remove('active'); });
+        document.querySelectorAll('.link-picker-tab-content').forEach(function(c) { c.classList.remove('active'); });
+
+        // Reset inputs
+        document.getElementById('lpExternalUrl').value = '';
+        document.getElementById('lpExternalNewTab').checked = false;
+        document.getElementById('lpEmailAddress').value = '';
+        document.getElementById('lpEmailSubject').value = '';
+
+        // Determine which tab to activate based on current value
+        if (currentValue && currentValue.indexOf('mailto:') === 0) {
+            activateLpTab('email');
+            var mailParts = currentValue.replace('mailto:', '').split('?subject=');
+            document.getElementById('lpEmailAddress').value = mailParts[0] || '';
+            document.getElementById('lpEmailSubject').value = decodeURIComponent(mailParts[1] || '');
+        } else if (currentValue && (currentValue.indexOf('http://') === 0 || currentValue.indexOf('https://') === 0)) {
+            activateLpTab('external');
+            document.getElementById('lpExternalUrl').value = currentValue;
+        } else {
+            activateLpTab('pages');
+        }
+
+        // Populate pages
+        populateLpPages();
+        // Populate collections
+        populateLpCollections();
+
+        // Show panel
+        document.getElementById('linkPickerOverlay').classList.add('open');
+        setTimeout(function() {
+            document.getElementById('linkPickerPanel').classList.add('open');
+        }, 10);
+    }
+
+    function closeLinkPicker() {
+        document.getElementById('linkPickerPanel').classList.remove('open');
+        setTimeout(function() {
+            document.getElementById('linkPickerOverlay').classList.remove('open');
+        }, 200);
+        linkPickerCallback = null;
+    }
+
+    function activateLpTab(tabName) {
+        document.querySelectorAll('.link-picker-tab').forEach(function(t) {
+            t.classList.toggle('active', t.dataset.lpTab === tabName);
+        });
+        document.querySelectorAll('.link-picker-tab-content').forEach(function(c) { c.classList.remove('active'); });
+        var tabId = 'lpTab' + tabName.charAt(0).toUpperCase() + tabName.slice(1);
+        var el = document.getElementById(tabId);
+        if (el) el.classList.add('active');
+    }
+
+    function populateLpPages() {
+        var list = document.getElementById('lpPagesList');
+        list.innerHTML = '';
+        state.pages.forEach(function(page) {
+            var url = '/' + (page.template === 'index' ? '' : page.template);
+            var item = document.createElement('div');
+            item.className = 'link-picker-item' + (linkPickerSelectedUrl === url ? ' selected' : '');
+            item.innerHTML = '<span class="link-picker-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>' +
+                '<span class="link-picker-item-label">' + (page.title || page.template) + '</span>';
+            item.addEventListener('click', function() {
+                linkPickerSelectedUrl = url;
+                list.querySelectorAll('.link-picker-item').forEach(function(i) { i.classList.remove('selected'); });
+                item.classList.add('selected');
+            });
+            list.appendChild(item);
+        });
+    }
+
+    function populateLpCollections() {
+        var list = document.getElementById('lpCollectionsList');
+        var content = document.getElementById('lpCollectionsContent');
+        list.innerHTML = '';
+
+        if (!state.collections || state.collections.length === 0) {
+            list.innerHTML = '<div style="padding:12px;color:var(--text-disabled);font-size:13px;">No collections available</div>';
+            return;
+        }
+
+        function showCollectionTypes() {
+            list.innerHTML = '';
+            content.innerHTML = '';
+            content.appendChild(list);
+            state.collections.forEach(function(col) {
+                var item = document.createElement('div');
+                item.className = 'link-picker-item';
+                item.innerHTML = '<span class="link-picker-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span>' +
+                    '<span class="link-picker-item-label">' + col.name + '</span>' +
+                    '<span style="color:var(--text-disabled);font-size:11px;">&#9654;</span>';
+                item.addEventListener('click', function() {
+                    loadCollectionEntries(col);
+                });
+                list.appendChild(item);
+            });
+        }
+
+        function loadCollectionEntries(col) {
+            content.innerHTML = '<div style="padding:16px;color:var(--text-disabled);font-size:13px;">Loading...</div>';
+            fetch('/cms/themes/' + THEME_SLUG + '/customize/collections/' + encodeURIComponent(col.slug), {
+                headers: { 'X-CSRF-TOKEN': CSRF_TOKEN }
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                content.innerHTML = '';
+                var backBtn = document.createElement('button');
+                backBtn.type = 'button';
+                backBtn.className = 'link-picker-back-btn';
+                backBtn.innerHTML = '&#9664; Back to collections';
+                backBtn.addEventListener('click', function() { showCollectionTypes(); });
+                content.appendChild(backBtn);
+
+                var sectionLabel = document.createElement('div');
+                sectionLabel.className = 'link-picker-section-label';
+                sectionLabel.textContent = col.name;
+                content.appendChild(sectionLabel);
+
+                var entries = data.entries || data.items || data || [];
+                if (!Array.isArray(entries)) entries = [];
+                if (entries.length === 0) {
+                    var empty = document.createElement('div');
+                    empty.style.cssText = 'padding:12px;color:var(--text-disabled);font-size:13px;';
+                    empty.textContent = 'No entries found';
+                    content.appendChild(empty);
+                    return;
+                }
+                entries.forEach(function(entry) {
+                    var url = '/' + col.slug + '/' + (entry.slug || entry.id);
+                    var item = document.createElement('div');
+                    item.className = 'link-picker-item' + (linkPickerSelectedUrl === url ? ' selected' : '');
+                    item.innerHTML = '<span class="link-picker-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>' +
+                        '<span class="link-picker-item-label">' + (entry.title || entry.name || entry.slug) + '</span>';
+                    item.addEventListener('click', function() {
+                        linkPickerSelectedUrl = url;
+                        content.querySelectorAll('.link-picker-item').forEach(function(i) { i.classList.remove('selected'); });
+                        item.classList.add('selected');
+                    });
+                    content.appendChild(item);
+                });
+            })
+            .catch(function() {
+                content.innerHTML = '';
+                var backBtn = document.createElement('button');
+                backBtn.type = 'button';
+                backBtn.className = 'link-picker-back-btn';
+                backBtn.innerHTML = '&#9664; Back to collections';
+                backBtn.addEventListener('click', function() { showCollectionTypes(); });
+                content.appendChild(backBtn);
+                var err = document.createElement('div');
+                err.style.cssText = 'padding:12px;color:var(--danger);font-size:13px;';
+                err.textContent = 'Failed to load entries';
+                content.appendChild(err);
+            });
+        }
+
+        showCollectionTypes();
+    }
+
+    // Link Picker tab switching
+    document.querySelectorAll('.link-picker-tab').forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            activateLpTab(tab.dataset.lpTab);
+        });
+    });
+
+    // Link Picker apply
+    document.getElementById('linkPickerApply').addEventListener('click', function() {
+        var activeTab = document.querySelector('.link-picker-tab.active');
+        var tabName = activeTab ? activeTab.dataset.lpTab : 'pages';
+        var resultUrl = '';
+
+        if (tabName === 'external') {
+            resultUrl = document.getElementById('lpExternalUrl').value.trim();
+        } else if (tabName === 'email') {
+            var email = document.getElementById('lpEmailAddress').value.trim();
+            var subject = document.getElementById('lpEmailSubject').value.trim();
+            if (email) {
+                resultUrl = 'mailto:' + email;
+                if (subject) resultUrl += '?subject=' + encodeURIComponent(subject);
+            }
+        } else {
+            resultUrl = linkPickerSelectedUrl;
+        }
+
+        if (linkPickerCallback) linkPickerCallback(resultUrl);
+        closeLinkPicker();
+    });
+
+    // Link Picker cancel/close
+    document.getElementById('linkPickerCancel').addEventListener('click', closeLinkPicker);
+    document.getElementById('linkPickerClose').addEventListener('click', closeLinkPicker);
+    document.getElementById('linkPickerOverlay').addEventListener('click', closeLinkPicker);
 
     // ── Add Section Modal ──
     function renderSectionPicker() {
@@ -2222,9 +2727,13 @@
     document.getElementById('rightClose').addEventListener('click', hideRightPanel);
     document.getElementById('saveBtn').addEventListener('click', save);
     document.getElementById('discardBtn').addEventListener('click', discard);
+    document.getElementById('undoBtn').addEventListener('click', undo);
+    document.getElementById('redoBtn').addEventListener('click', redo);
 
     document.addEventListener('keydown', function(e) {
         if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); if (state.dirty) save(); }
+        if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo(); }
         if (e.key === 'Escape') { closeSectionModal(); }
     });
 

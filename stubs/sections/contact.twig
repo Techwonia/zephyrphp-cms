@@ -1,0 +1,100 @@
+<section class="section-contact" style="background:{{ section.settings.bg_color|default('#f9fafb') }}; padding:{{ section.settings.padding|default(60) }}px 0;">
+    <div class="container">
+        {% set layout = section.settings.layout|default('stacked') %}
+        <div style="{{ layout == 'side-by-side' ? 'display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:start;' : 'max-width:640px; margin:0 auto;' }}">
+            <div>
+                {% if section.settings.heading %}
+                    <h2 style="color:{{ section.settings.heading_color|default('#303030') }}; margin-bottom:12px;{{ layout == 'stacked' ? ' text-align:center;' : '' }}">
+                        {{ section.settings.heading }}
+                    </h2>
+                {% endif %}
+                {% if section.settings.subheading %}
+                    <p style="color:{{ section.settings.text_color|default('#616161') }}; line-height:1.6;{{ layout == 'stacked' ? ' text-align:center; max-width:480px; margin:0 auto 32px;' : ' margin-bottom:24px;' }}">
+                        {{ section.settings.subheading }}
+                    </p>
+                {% endif %}
+                {% if layout == 'stacked' %}
+                    </div>
+                    <div>
+                {% endif %}
+            </div>
+
+            <form style="display:flex; flex-direction:column; gap:20px;{{ layout == 'stacked' ? ' max-width:640px; margin:0 auto;' : '' }}">
+                {% if section.blocks|length > 0 %}
+                    {% for block in section.blocks %}
+                        {% if block.type == 'field' %}
+                            <div data-block-id="{{ block.id }}" data-block-type="{{ block.type }}">
+                                {% if block.settings.label %}
+                                    <label style="display:block; margin-bottom:6px; font-size:14px; font-weight:500; color:{{ section.settings.heading_color|default('#303030') }};">
+                                        {{ block.settings.label }}{% if block.settings.required %} <span style="color:#ef4444;">*</span>{% endif %}
+                                    </label>
+                                {% endif %}
+                                {% set field_style = 'width:100%; padding:10px 14px; border:1px solid #d1d5db; border-radius:8px; font-size:15px; font-family:inherit; background:#fff; color:#303030; box-sizing:border-box;' %}
+                                {% set field_type = block.settings.type|default('text') %}
+                                {% if field_type == 'textarea' %}
+                                    <textarea placeholder="{{ block.settings.placeholder }}" {{ block.settings.required ? 'required' : '' }} style="{{ field_style }} min-height:120px; resize:vertical;"></textarea>
+                                {% elseif field_type == 'email' %}
+                                    <input type="email" placeholder="{{ block.settings.placeholder }}" {{ block.settings.required ? 'required' : '' }} style="{{ field_style }}">
+                                {% elseif field_type == 'phone' %}
+                                    <input type="tel" placeholder="{{ block.settings.placeholder }}" {{ block.settings.required ? 'required' : '' }} style="{{ field_style }}">
+                                {% else %}
+                                    <input type="text" placeholder="{{ block.settings.placeholder }}" {{ block.settings.required ? 'required' : '' }} style="{{ field_style }}">
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <p style="text-align:center; color:#999;">Add field blocks to populate this form.</p>
+                {% endif %}
+                <div style="{{ layout == 'stacked' ? 'text-align:center;' : '' }}">
+                    <button type="submit" style="display:inline-block; padding:12px 32px; background:{{ section.settings.button_color|default('#3b82f6') }}; color:#fff; border:none; border-radius:8px; font-size:16px; font-weight:600; cursor:pointer; font-family:inherit;">
+                        Send Message
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
+{% schema %}
+{
+    "name": "Contact",
+    "description": "Contact form section with customizable fields",
+    "icon": "contact",
+    "settings": [
+        {"type": "text", "id": "heading", "label": "Heading", "default": "Get in Touch"},
+        {"type": "text", "id": "subheading", "label": "Subheading", "default": "We'd love to hear from you. Fill out the form below."},
+        {"type": "select", "id": "layout", "label": "Layout", "default": "stacked",
+         "options": [{"value": "stacked", "label": "Stacked"}, {"value": "side-by-side", "label": "Side by Side"}]},
+        {"type": "color", "id": "bg_color", "label": "Background Color", "default": "#f9fafb"},
+        {"type": "color", "id": "heading_color", "label": "Heading Color", "default": "#303030"},
+        {"type": "color", "id": "text_color", "label": "Text Color", "default": "#616161"},
+        {"type": "color", "id": "button_color", "label": "Button Color", "default": "#3b82f6"},
+        {"type": "range", "id": "padding", "label": "Section Padding (px)", "min": 0, "max": 120, "step": 4, "default": 60}
+    ],
+    "blocks": [
+        {
+            "type": "field",
+            "name": "Form Field",
+            "settings": [
+                {"type": "text", "id": "label", "label": "Label", "default": "Your Name"},
+                {"type": "select", "id": "type", "label": "Field Type", "default": "text",
+                 "options": [{"value": "text", "label": "Text"}, {"value": "email", "label": "Email"}, {"value": "textarea", "label": "Textarea"}, {"value": "phone", "label": "Phone"}]},
+                {"type": "text", "id": "placeholder", "label": "Placeholder"},
+                {"type": "checkbox", "id": "required", "label": "Required", "default": true}
+            ]
+        }
+    ],
+    "presets": [
+        {
+            "name": "Contact",
+            "settings": {"heading": "Get in Touch", "subheading": "We'd love to hear from you. Fill out the form below.", "layout": "stacked"},
+            "blocks": [
+                {"type": "field", "settings": {"label": "Your Name", "type": "text", "placeholder": "John Doe", "required": true}},
+                {"type": "field", "settings": {"label": "Email Address", "type": "email", "placeholder": "john@example.com", "required": true}},
+                {"type": "field", "settings": {"label": "Message", "type": "textarea", "placeholder": "How can we help you?", "required": true}}
+            ]
+        }
+    ]
+}
+{% endschema %}

@@ -1,7 +1,25 @@
-<section class="section-testimonials" style="background:{{ section.settings.bg_color|default('#f8f9fa') }}; padding:{{ section.settings.padding|default(60) }}px 0;">
+{% set scheme = section.settings.color_scheme|default('custom') %}
+{% if scheme == 'light' %}
+    {% set _bg = '#ffffff' %}
+    {% set _text = theme_settings.text_color|default('#1a1a1a') %}
+    {% set _heading = theme_settings.text_color|default('#1a1a1a') %}
+{% elseif scheme == 'dark' %}
+    {% set _bg = '#1a1a1a' %}
+    {% set _text = '#e0e0e0' %}
+    {% set _heading = '#ffffff' %}
+{% elseif scheme == 'brand' %}
+    {% set _bg = theme_settings.primary_color|default('#005bd3') %}
+    {% set _text = '#ffffff' %}
+    {% set _heading = '#ffffff' %}
+{% else %}
+    {% set _bg = section.settings.bg_color|default('#f8f9fa') %}
+    {% set _text = section.settings.text_color|default('#616161') %}
+    {% set _heading = section.settings.heading_color|default('#303030') %}
+{% endif %}
+<section class="section-testimonials" style="background:{{ _bg }}; padding:{{ section.settings.padding|default(60) }}px 0;">
     <div class="container">
         {% if section.settings.heading %}
-            <h2 style="text-align:center; color:{{ section.settings.heading_color|default('#303030') }}; margin-bottom:40px;">
+            <h2 style="text-align:center; color:{{ _heading }}; margin-bottom:40px;">
                 {{ section.settings.heading }}
             </h2>
         {% endif %}
@@ -17,7 +35,7 @@
                                 </div>
                             {% endif %}
                             {% if block.settings.quote %}
-                                <p style="color:{{ section.settings.text_color|default('#616161') }}; line-height:1.7; margin:0 0 16px; font-style:italic;">
+                                <p style="color:{{ _text }}; line-height:1.7; margin:0 0 16px; font-style:italic;">
                                     "{{ block.settings.quote }}"
                                 </p>
                             {% endif %}
@@ -31,7 +49,7 @@
                                 {% endif %}
                                 <div>
                                     {% if block.settings.name %}
-                                        <div style="font-weight:600; color:{{ section.settings.heading_color|default('#303030') }}; font-size:14px;">{{ block.settings.name }}</div>
+                                        <div style="font-weight:600; color:{{ _heading }}; font-size:14px;">{{ block.settings.name }}</div>
                                     {% endif %}
                                     {% if block.settings.role %}
                                         <div style="color:#999; font-size:12px;">{{ block.settings.role }}</div>
@@ -54,6 +72,13 @@
     "description": "Customer testimonials and reviews in a card layout",
     "icon": "quote",
     "settings": [
+        {"type": "select", "id": "color_scheme", "label": "Color Scheme", "default": "custom",
+         "options": [
+            {"value": "light", "label": "Light"},
+            {"value": "dark", "label": "Dark"},
+            {"value": "brand", "label": "Brand"},
+            {"value": "custom", "label": "Custom"}
+         ]},
         {"type": "text", "id": "heading", "label": "Heading", "default": "What Our Customers Say"},
         {"type": "select", "id": "columns", "label": "Columns", "default": "3",
          "options": [{"value": "1", "label": "1 Column"}, {"value": "2", "label": "2 Columns"}, {"value": "3", "label": "3 Columns"}]},

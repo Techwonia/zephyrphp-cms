@@ -1,12 +1,30 @@
-<section class="section-features" style="background:{{ section.settings.bg_color|default('#ffffff') }}; padding:{{ section.settings.padding|default(60) }}px 0;">
+{% set scheme = section.settings.color_scheme|default('custom') %}
+{% if scheme == 'light' %}
+    {% set _bg = '#ffffff' %}
+    {% set _text = theme_settings.text_color|default('#1a1a1a') %}
+    {% set _heading = theme_settings.text_color|default('#1a1a1a') %}
+{% elseif scheme == 'dark' %}
+    {% set _bg = '#1a1a1a' %}
+    {% set _text = '#e0e0e0' %}
+    {% set _heading = '#ffffff' %}
+{% elseif scheme == 'brand' %}
+    {% set _bg = theme_settings.primary_color|default('#005bd3') %}
+    {% set _text = '#ffffff' %}
+    {% set _heading = '#ffffff' %}
+{% else %}
+    {% set _bg = section.settings.bg_color|default('#ffffff') %}
+    {% set _text = section.settings.text_color|default('#616161') %}
+    {% set _heading = section.settings.heading_color|default('#303030') %}
+{% endif %}
+<section class="section-features" style="background:{{ _bg }}; padding:{{ section.settings.padding|default(60) }}px 0;">
     <div class="container">
         {% if section.settings.heading %}
-            <h2 style="text-align:{{ section.settings.text_align|default('center') }}; color:{{ section.settings.heading_color|default('#303030') }}; margin-bottom:12px;">
+            <h2 style="text-align:{{ section.settings.text_align|default('center') }}; color:{{ _heading }}; margin-bottom:12px;">
                 {{ section.settings.heading }}
             </h2>
         {% endif %}
         {% if section.settings.subheading %}
-            <p style="text-align:{{ section.settings.text_align|default('center') }}; color:{{ section.settings.text_color|default('#616161') }}; max-width:600px; margin:0 auto 40px;">
+            <p style="text-align:{{ section.settings.text_align|default('center') }}; color:{{ _text }}; max-width:600px; margin:0 auto 40px;">
                 {{ section.settings.subheading }}
             </p>
         {% endif %}
@@ -20,12 +38,12 @@
                                 <div style="font-size:36px; margin-bottom:12px;">{{ block.settings.icon }}</div>
                             {% endif %}
                             {% if block.settings.title %}
-                                <h3 style="color:{{ section.settings.heading_color|default('#303030') }}; margin-bottom:8px; font-size:18px;">
+                                <h3 style="color:{{ _heading }}; margin-bottom:8px; font-size:18px;">
                                     {{ block.settings.title }}
                                 </h3>
                             {% endif %}
                             {% if block.settings.description %}
-                                <p style="color:{{ section.settings.text_color|default('#616161') }}; line-height:1.6; font-size:14px;">
+                                <p style="color:{{ _text }}; line-height:1.6; font-size:14px;">
                                     {{ block.settings.description }}
                                 </p>
                             {% endif %}
@@ -45,6 +63,13 @@
     "description": "Highlight features or benefits in a multi-column layout",
     "icon": "columns",
     "settings": [
+        {"type": "select", "id": "color_scheme", "label": "Color Scheme", "default": "custom",
+         "options": [
+            {"value": "light", "label": "Light"},
+            {"value": "dark", "label": "Dark"},
+            {"value": "brand", "label": "Brand"},
+            {"value": "custom", "label": "Custom"}
+         ]},
         {"type": "text", "id": "heading", "label": "Heading", "default": "Our Features"},
         {"type": "text", "id": "subheading", "label": "Subheading"},
         {"type": "select", "id": "columns", "label": "Columns", "default": "3",
