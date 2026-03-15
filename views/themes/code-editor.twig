@@ -1724,7 +1724,7 @@
 
     function updateToolbarActions(path) {
         $btnSchema.style.display = path.startsWith('sections/') && path.endsWith('.twig') ? '' : 'none';
-        $btnCopyPath.style.display = path ? '' : 'none';
+        $btnCopyPath.style.display = path && (path.startsWith('snippets/') || path.startsWith('public/')) ? '' : 'none';
         $btnDeleteFile.style.display = path && isDeletablePath(path) ? '' : 'none';
     }
 
