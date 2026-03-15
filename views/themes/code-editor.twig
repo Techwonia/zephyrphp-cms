@@ -1441,16 +1441,16 @@
             let tag = '';
             const assetPath = path.replace(/^public\//, '');
             if (ext === 'css') {
-                tag = '<link rel="stylesheet" href="' + _expr("theme_asset('" + assetPath + "')") + '">';
+                tag = '<link rel="stylesheet" href="' + _expr("asset('" + assetPath + "')") + '">';
             } else if (ext === 'js') {
-                tag = '<script src="' + _expr("theme_asset('" + assetPath + "')") + '"><\/script>';
+                tag = '<script src="' + _expr("asset('" + assetPath + "')") + '"><\/script>';
             } else {
-                tag = _expr("theme_asset('" + assetPath + "')");
+                tag = _expr("asset('" + assetPath + "')");
             }
             copyBtn = `<button class="file-copy-btn" title="Copy asset tag" data-copy="${escAttr(tag)}" onclick="event.stopPropagation();window._copyToClipboard(this)"><svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><rect x="5" y="1" width="8" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="3" y="5" width="8" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></button>`;
         } else if (path.startsWith('public/') && isBinary) {
             const assetPath = path.replace(/^public\//, '');
-            const tag = _expr("theme_asset('" + assetPath + "')");
+            const tag = _expr("asset('" + assetPath + "')");
             copyBtn = `<button class="file-copy-btn" title="Copy asset path" data-copy="${escAttr(tag)}" onclick="event.stopPropagation();window._copyToClipboard(this)"><svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><rect x="5" y="1" width="8" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="3" y="5" width="8" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></button>`;
         }
         return `<div class="file-item${isBinary ? ' binary' : ''}" data-path="${escAttr(path)}" style="padding-left:${indent}px;">
