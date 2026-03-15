@@ -65,6 +65,9 @@ class NotificationService
         array $emailVariables = []
     ): void {
         try {
+            if (!class_exists(\ZephyrPHP\Auth\Models\User::class)) {
+                return;
+            }
             $users = \ZephyrPHP\Auth\Models\User::findAll();
             foreach ($users as $user) {
                 $email = method_exists($user, 'getEmail') ? $user->getEmail() : null;
@@ -79,7 +82,7 @@ class NotificationService
                     $emailVariables
                 );
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             // Silently fail — notification is non-critical
         }
     }
