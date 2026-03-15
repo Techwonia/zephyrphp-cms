@@ -51,7 +51,7 @@
                     <option value="0" {% if not minify %}selected{% endif %}>Disabled</option>
                     <option value="1" {% if minify %}selected{% endif %}>Enabled</option>
                 </select>
-                <small style="color:var(--text-secondary);">When enabled, <code>.min.css</code>/<code>.min.js</code> versions are auto-served <strong>in production</strong> (<code>ENV=production</code>). Has no effect in development.</small>
+                <small style="color:var(--text-secondary);">When enabled, <code>.min.css</code>/<code>.min.js</code> versions are auto-served. If a minified file doesn't exist, it is generated automatically.</small>
             </div>
             <div class="form-group" style="display:flex; flex-direction:column; justify-content:center;">
                 <label>Minify Assets</label>
