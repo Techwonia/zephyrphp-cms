@@ -160,20 +160,19 @@ class SectionManager
         $path = $this->themeManager->getThemePath($slug) . '/config/settings_data.json';
 
         if (!file_exists($path)) {
-            return ['current' => new \stdClass(), 'pages' => new \stdClass()];
+            return ['current' => [], 'pages' => []];
         }
 
         $data = json_decode(file_get_contents($path), true);
         if (!is_array($data)) {
-            return ['current' => new \stdClass(), 'pages' => new \stdClass()];
+            return ['current' => [], 'pages' => []];
         }
 
-        // Ensure current and pages are associative (objects in JSON, not arrays)
-        if (!isset($data['current']) || (is_array($data['current']) && empty($data['current']))) {
-            $data['current'] = new \stdClass();
+        if (!isset($data['current']) || !is_array($data['current'])) {
+            $data['current'] = [];
         }
-        if (!isset($data['pages']) || (is_array($data['pages']) && empty($data['pages']))) {
-            $data['pages'] = new \stdClass();
+        if (!isset($data['pages']) || !is_array($data['pages'])) {
+            $data['pages'] = [];
         }
 
         return $data;
