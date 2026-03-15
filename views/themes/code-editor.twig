@@ -269,21 +269,23 @@
             height: var(--toolbar-h); min-height: var(--toolbar-h);
             background: var(--bg-subdued); border-bottom: 1px solid var(--border);
             display: flex; align-items: center; padding: 0 8px; gap: 2px;
+            overflow-x: auto; overflow-y: hidden;
         }
+        .editor-toolbar::-webkit-scrollbar { height: 0; }
         .toolbar-btn {
             height: 24px; display: flex; align-items: center; gap: 4px;
             padding: 0 8px; border: none; background: transparent;
             color: var(--text-secondary); cursor: pointer; border-radius: 4px;
             font-size: 11px; font-family: var(--font); font-weight: 500;
-            transition: all 0.1s; white-space: nowrap;
+            transition: all 0.1s; white-space: nowrap; flex-shrink: 0;
         }
         .toolbar-btn:hover { background: var(--bg-hover); color: var(--text); }
         .toolbar-btn.active { background: var(--primary-bg); color: var(--primary); }
         .toolbar-btn svg { width: 13px; height: 13px; }
         .toolbar-separator {
-            width: 1px; height: 16px; background: var(--border); margin: 0 4px;
+            width: 1px; height: 16px; background: var(--border); margin: 0 4px; flex-shrink: 0;
         }
-        .toolbar-spacer { flex: 1; }
+        .toolbar-spacer { flex: 1; min-width: 4px; }
         .toolbar-info {
             font-size: 11px; color: var(--text-disabled); font-family: var(--font-mono);
             padding: 0 8px;
