@@ -851,6 +851,14 @@
                 {% endfor %}
             </select>
         </div>
+        <div style="margin-bottom:12px;">
+            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Collection <span style="color:var(--text-disabled);font-weight:400;">(optional)</span></label>
+            <select id="newPageCollection" style="width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:6px; font-size:13px;">
+                <option value="">— No collection —</option>
+            </select>
+            <small style="color:var(--text-disabled); font-size:11px;">Link this page to a CMS collection. A controller will be auto-generated.</small>
+            <div id="collectionPageHint" style="display:none; margin-top:6px; padding:8px 10px; background:#e8f5e9; border-radius:6px; font-size:11px; color:#2e7d32; line-height:1.5;"></div>
+        </div>
         <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
             <button id="cancelAddPage" style="padding:8px 16px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-size:13px;">Cancel</button>
             <button id="confirmAddPage" style="padding:8px 16px; background:var(--primary); color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600;">Create Page</button>
@@ -1634,6 +1642,20 @@
             groupBody.style.display = idx === 0 ? 'block' : 'none';
             groupBody.style.padding = '0 16px 12px';
 
+            // Info banners for special groups
+            if (groupName === 'Data Source') {
+                var hint = document.createElement('div');
+                hint.style.cssText = 'padding:8px 10px;background:#e8f5e9;border-radius:6px;font-size:11px;color:#2e7d32;margin-bottom:10px;line-height:1.5;';
+                hint.innerHTML = '🔗 <strong>Dynamic Collection</strong> — This section pulls live data from a CMS collection. Select a collection below, then map its fields.';
+                groupBody.appendChild(hint);
+            }
+            if (groupName === 'Field Mapping') {
+                var hint = document.createElement('div');
+                hint.style.cssText = 'padding:8px 10px;background:#e3f2fd;border-radius:6px;font-size:11px;color:#1565c0;margin-bottom:10px;line-height:1.5;';
+                hint.innerHTML = '🗺️ Map your collection fields to the display slots below. Select a collection first in Data Source.';
+                groupBody.appendChild(hint);
+            }
+
             groupMap[groupName].forEach(function(setting) {
                 var val = settingsValues[setting.id];
                 if (val === undefined || val === null) val = setting.default;
@@ -1948,6 +1970,21 @@
                 if (state.activeSection) setTimeout(function() { renderSectionSettings(state.activeSection); }, 50);
             });
             wrapper.appendChild(colSel);
+
+            // Help tooltip for collection setting
+            if (value) {
+                var helpBox = document.createElement('details');
+                helpBox.style.cssText = 'margin-top:6px;font-size:11px;color:var(--text-secondary, #666);line-height:1.6;';
+                helpBox.innerHTML = '<summary style="cursor:pointer;font-weight:600;color:var(--text, #333);font-size:11px;">How this works</summary>' +
+                    '<div style="padding:8px 0;">' +
+                    '<p style="margin:0 0 6px;">This section fetches entries from the <strong>' + value + '</strong> collection using the <code>collection()</code> Twig helper.</p>' +
+                    '<p style="margin:0 0 6px;">Use <strong>Field Mapping</strong> below to control which fields display as title, image, excerpt, etc.</p>' +
+                    '<p style="margin:0 0 6px;">For custom templates, use in Twig:</p>' +
+                    '<code style="display:block;background:#f5f5f5;padding:6px 8px;border-radius:4px;font-size:10px;margin-bottom:4px;">{% set items = collection(\'' + value + '\', {per_page: 6}) %}</code>' +
+                    '<code style="display:block;background:#f5f5f5;padding:6px 8px;border-radius:4px;font-size:10px;">{% set item = entry(\'' + value + '\', slug) %}</code>' +
+                    '</div>';
+                wrapper.appendChild(helpBox);
+            }
         } else if (setting.type === 'field_select') {
             var fieldSelect = document.createElement('select');
             fieldSelect.className = 'setting-input';
@@ -2289,18 +2326,26 @@
 
         Object.keys(state.availableSections).forEach(function(type) {
             var schema = state.availableSections[type];
+            var hasDynamic = (schema.settings || []).some(function(s) { return s.type === 'collection'; });
+            var hasBlocks = (schema.blocks || []).length > 0;
             var item = document.createElement('button');
             item.className = 'section-picker-list-item';
             item.dataset.sectionType = type;
+            var badges = '';
+            if (hasDynamic) badges += '<span style="margin-left:auto;font-size:9px;background:#e8f5e9;color:#2e7d32;padding:2px 6px;border-radius:4px;font-weight:600;">Dynamic</span>';
+            if (hasBlocks) badges += '<span style="font-size:9px;background:#e3f2fd;color:#1565c0;padding:2px 6px;border-radius:4px;font-weight:600;' + (hasDynamic ? 'margin-left:4px;' : 'margin-left:auto;') + '">Blocks</span>';
             item.innerHTML =
                 '<span class="section-picker-list-item-icon">' + (SECTION_ICONS[type] || '📦') + '</span>' +
-                '<span>' + (schema.name || type) + '</span>';
+                '<span>' + (schema.name || type) + '</span>' + badges;
 
             item.addEventListener('mouseenter', function() {
                 // Update preview panel
+                var tagLine = hasDynamic ? '<div style="font-size:11px;color:#2e7d32;margin-bottom:6px;font-weight:600;">🔗 Dynamic Collection</div>' : '';
+                tagLine += hasBlocks ? '<div style="font-size:11px;color:#1565c0;margin-bottom:6px;font-weight:600;">🧩 Block Collection</div>' : '';
                 document.getElementById('sectionPickerPreview').innerHTML =
                     '<div class="section-picker-preview-icon">' + (SECTION_ICONS[type] || '📦') + '</div>' +
                     '<div class="section-picker-preview-name">' + (schema.name || type) + '</div>' +
+                    tagLine +
                     '<div class="section-picker-preview-desc">' + (schema.description || 'Add this section to your page') + '</div>';
                 // Highlight active
                 list.querySelectorAll('.section-picker-list-item').forEach(function(i) { i.classList.remove('active'); });
@@ -2995,6 +3040,16 @@
     document.getElementById('addPageBtn')?.addEventListener('click', function() {
         document.getElementById('newPageTitle').value = '';
         document.getElementById('newPageSlug').value = '';
+        // Populate collection dropdown
+        var colSelect = document.getElementById('newPageCollection');
+        colSelect.innerHTML = '<option value="">— No collection —</option>';
+        (state.collections || []).forEach(function(col) {
+            var opt = document.createElement('option');
+            opt.value = col.slug;
+            opt.textContent = col.name;
+            colSelect.appendChild(opt);
+        });
+        document.getElementById('collectionPageHint').style.display = 'none';
         addPageModal.style.display = 'flex';
         addPageModal.style.alignItems = 'center';
         addPageModal.style.justifyContent = 'center';
@@ -3005,18 +3060,37 @@
     addPageModal?.addEventListener('click', function(e) {
         if (e.target === addPageModal) addPageModal.style.display = 'none';
     });
+    // Collection hint in add-page modal
+    document.getElementById('newPageCollection')?.addEventListener('change', function() {
+        var hint = document.getElementById('collectionPageHint');
+        if (this.value) {
+            var hasSlug = document.getElementById('newPageSlug').value.includes('{');
+            hint.style.display = 'block';
+            hint.innerHTML = hasSlug
+                ? '📄 A controller will be generated that calls <code>entry(\'' + this.value + '\', $slug)</code> to fetch the detail page data.'
+                : '📋 A controller will be generated that calls <code>collection(\'' + this.value + '\')</code> to fetch listing data with pagination.';
+        } else {
+            hint.style.display = 'none';
+        }
+    });
+    document.getElementById('newPageSlug')?.addEventListener('input', function() {
+        var colSelect = document.getElementById('newPageCollection');
+        if (colSelect.value) colSelect.dispatchEvent(new Event('change'));
+    });
+
     document.getElementById('confirmAddPage')?.addEventListener('click', function() {
         var btn = this;
         var title = document.getElementById('newPageTitle').value.trim();
         var slug = document.getElementById('newPageSlug').value.trim();
         var layout = document.getElementById('newPageLayout').value;
+        var collection = document.getElementById('newPageCollection').value;
         if (!title || !slug) { alert('Title and URL are required'); return; }
         btn.disabled = true;
         btn.textContent = 'Creating...';
         fetch('/cms/themes/' + THEME_SLUG + '/pages/add', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN },
-            body: JSON.stringify({ title: title, slug: slug, layout: layout })
+            body: JSON.stringify({ title: title, slug: slug, layout: layout, collection: collection })
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {

@@ -366,20 +366,24 @@ class ThemeController extends Controller
             return;
         }
 
-        // Create a minimal template file
-        $templateContent = "{% extends \"@theme/layouts/{$layout}.twig\" %}\n\n";
-        $templateContent .= "{% block title %}{{ page.title }}{% endblock %}\n\n";
-        $templateContent .= "{% block content %}\n";
-        $templateContent .= "<div class=\"container\" style=\"padding: 60px 24px;\">\n";
-        $templateContent .= "    <h1>{{ page.title }}</h1>\n";
-        $templateContent .= "</div>\n";
-        $templateContent .= "{% endblock %}\n";
-
-        $this->themeManager->writeTemplate($templateName . '.twig', $templateContent, $slug);
-
         // Check if this is a dynamic route (has {param} patterns)
         $hasDynamicParams = (bool) preg_match('/\{(\w+)\}/', $pageSlug);
         $collection = trim($input['collection'] ?? '');
+
+        // Create template file — rich template for collection pages, minimal for others
+        if (!empty($collection)) {
+            $templateContent = $this->generateCollectionTemplate($layout, $title, $pageSlug, $collection, $hasDynamicParams);
+        } else {
+            $templateContent = "{% extends \"@theme/layouts/{$layout}.twig\" %}\n\n";
+            $templateContent .= "{% block title %}{{ page.title }}{% endblock %}\n\n";
+            $templateContent .= "{% block content %}\n";
+            $templateContent .= "<div class=\"container\" style=\"padding: 60px 24px;\">\n";
+            $templateContent .= "    <h1>{{ page.title }}</h1>\n";
+            $templateContent .= "</div>\n";
+            $templateContent .= "{% endblock %}\n";
+        }
+
+        $this->themeManager->writeTemplate($templateName . '.twig', $templateContent, $slug);
         $controllerName = null;
 
         if ($hasDynamicParams || !empty($collection)) {
@@ -712,6 +716,100 @@ class ThemeController extends Controller
         $slug = preg_replace('/[^a-z0-9-]/', '-', $slug);
         $slug = preg_replace('/-+/', '-', $slug);
         return trim($slug, '-');
+    }
+
+    private function generateCollectionTemplate(string $layout, string $title, string $route, string $collection, bool $isDetail): string
+    {
+        if ($isDetail) {
+            // Detail page template (e.g. /blog/{slug})
+            return <<<TWIG
+{% extends "@theme/layouts/{$layout}.twig" %}
+
+{% block title %}{{ item.title|default(page.title) }}{% endblock %}
+
+{% block meta %}
+{% if seo is defined and seo.description is defined %}
+<meta name="description" content="{{ seo.description }}">
+{% endif %}
+{% if seo is defined and seo.image is defined and seo.image %}
+<meta property="og:image" content="/{{ seo.image }}">
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<article style="max-width:800px; margin:0 auto; padding:60px 24px;">
+    <a href="{{ page.slug|split('/{')[0]|default('/') }}" style="color:var(--color-primary, #008060); text-decoration:none; font-size:14px;">&larr; Back to {$title}</a>
+
+    {% if item.image is defined and item.image %}
+        <img src="/{{ item.image }}" alt="{{ item.title|default('') }}" style="width:100%; border-radius:12px; margin:24px 0; max-height:480px; object-fit:cover;">
+    {% endif %}
+
+    <h1 style="font-size:36px; margin:24px 0 12px; line-height:1.2;">{{ item.title|default('Untitled') }}</h1>
+
+    {% if item.created_at is defined %}
+        <time style="color:var(--color-muted, #666); font-size:14px;">{{ item.created_at }}</time>
+    {% endif %}
+
+    <div style="line-height:1.8; margin-top:24px; font-size:17px;">
+        {{ item.content|default(item.body|default(''))|raw }}
+    </div>
+</article>
+{% endblock %}
+TWIG;
+        }
+
+        // Listing page template (e.g. /blogs)
+        return <<<TWIG
+{% extends "@theme/layouts/{$layout}.twig" %}
+
+{% block title %}{{ page.title }}{% endblock %}
+
+{% block content %}
+<div style="max-width:1200px; margin:0 auto; padding:60px 24px;">
+    <h1 style="font-size:32px; margin:0 0 8px;">{{ page.title }}</h1>
+
+    {% if items.data is defined and items.data|length > 0 %}
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:24px; margin-top:32px;">
+        {% for item in items.data %}
+            <div style="border:1px solid #eee; border-radius:8px; overflow:hidden; background:#fafafa;">
+                {% if item.image is defined and item.image %}
+                    <div style="height:200px; overflow:hidden;">
+                        <img src="/{{ item.image }}" alt="" style="width:100%; height:100%; object-fit:cover;">
+                    </div>
+                {% endif %}
+                <div style="padding:20px;">
+                    {% if item.created_at is defined %}
+                        <time style="font-size:12px; color:#999;">{{ item.created_at }}</time>
+                    {% endif %}
+                    <h3 style="margin:6px 0 8px; font-size:18px;">{{ item.title|default('Untitled') }}</h3>
+                    {% if item.excerpt is defined %}
+                        <p style="color:#666; font-size:14px; line-height:1.5; margin:0 0 12px;">{{ item.excerpt|striptags|slice(0, 120) }}{% if item.excerpt|length > 120 %}...{% endif %}</p>
+                    {% endif %}
+                    {% if item.slug is defined %}
+                        <a href="{{ page.slug }}/{{ item.slug }}" style="color:var(--color-primary, #008060); text-decoration:none; font-weight:500; font-size:14px;">Read More &rarr;</a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+        </div>
+
+        {% if items.last_page > 1 %}
+        <div style="display:flex; justify-content:center; gap:8px; margin-top:40px;">
+            {% if items.current_page > 1 %}
+                <a href="?page={{ items.current_page - 1 }}" style="padding:8px 16px; border:1px solid #ddd; border-radius:6px; text-decoration:none; color:#333;">&larr; Previous</a>
+            {% endif %}
+            <span style="padding:8px 16px; color:#666;">Page {{ items.current_page }} of {{ items.last_page }}</span>
+            {% if items.current_page < items.last_page %}
+                <a href="?page={{ items.current_page + 1 }}" style="padding:8px 16px; border:1px solid #ddd; border-radius:6px; text-decoration:none; color:#333;">Next &rarr;</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    {% else %}
+        <p style="color:#999; padding:40px 0; text-align:center;">No entries found.</p>
+    {% endif %}
+</div>
+{% endblock %}
+TWIG;
     }
 
     private function generateControllerContent(string $title, string $route, string $collection): string
