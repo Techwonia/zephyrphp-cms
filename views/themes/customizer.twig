@@ -53,7 +53,7 @@
             color: #fff;
             z-index: 100;
         }
-        .topbar-left { display: flex; align-items: center; gap: 16px; }
+        .topbar-left { display: flex; align-items: center; gap: 12px; }
         .topbar-back {
             display: flex; align-items: center; gap: 6px;
             color: #aaa; text-decoration: none; font-size: 13px;
@@ -66,17 +66,40 @@
             display: inline-block; background: #34a853; color: #fff; font-size: 11px;
             padding: 2px 8px; border-radius: 999px; font-weight: 500; margin-left: 6px;
         }
+
+        /* Center: responsive device buttons */
         .topbar-center {
-            display: flex; align-items: center; gap: 12px;
+            display: flex; align-items: center; gap: 2px;
             position: absolute; left: 50%; transform: translateX(-50%);
+            background: rgba(255,255,255,0.08); border-radius: 8px; padding: 3px;
         }
-        .topbar-page-label { font-size: 12px; color: #aaa; }
-        .topbar-page-name { font-size: 13px; font-weight: 500; }
+        .device-btn {
+            display: flex; align-items: center; justify-content: center;
+            width: 36px; height: 32px;
+            background: transparent; border: none; color: #888;
+            cursor: pointer; border-radius: 6px; transition: all 0.15s;
+        }
+        .device-btn:hover { color: #ccc; background: rgba(255,255,255,0.06); }
+        .device-btn.active { color: #fff; background: rgba(255,255,255,0.15); }
+        .device-btn svg { width: 18px; height: 18px; }
+
         .topbar-right { display: flex; align-items: center; gap: 8px; }
         .topbar-unsaved {
-            display: none; font-size: 12px; color: #FFB800; font-weight: 500; margin-right: 8px;
+            display: none; font-size: 12px; color: #FFB800; font-weight: 500; margin-right: 4px;
         }
-        .topbar-unsaved.visible { display: inline; }
+        .topbar-unsaved.visible { display: inline-flex; align-items: center; gap: 4px; }
+
+        /* Inspector toggle */
+        .inspector-toggle {
+            display: flex; align-items: center; justify-content: center;
+            width: 36px; height: 36px;
+            background: transparent; border: 1px solid #444; color: #888;
+            cursor: pointer; border-radius: 6px; transition: all 0.15s;
+        }
+        .inspector-toggle:hover { color: #fff; border-color: #666; }
+        .inspector-toggle.active { color: #4dabf7; border-color: #4dabf7; background: rgba(77,171,247,0.1); }
+        .inspector-toggle svg { width: 16px; height: 16px; }
+
         .topbar-btn {
             padding: 7px 16px; border-radius: 6px; font-size: 13px; font-weight: 500;
             cursor: pointer; border: none; transition: all 0.15s; font-family: var(--font);
@@ -86,12 +109,6 @@
         .topbar-btn-primary { background: var(--primary); color: #fff; }
         .topbar-btn-primary:hover { background: var(--primary-hover); }
         .topbar-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-        .topbar-device-btns { display: flex; gap: 4px; }
-        .topbar-device-btns button {
-            background: transparent; border: none; color: #666; cursor: pointer;
-            padding: 4px 6px; border-radius: 4px; transition: all 0.15s;
-        }
-        .topbar-device-btns button:hover, .topbar-device-btns button.active { color: #fff; background: rgba(255,255,255,0.1); }
 
         /* ── Main Layout ── */
         .main-layout {
@@ -112,9 +129,9 @@
         .left-header {
             padding: 12px 16px;
             border-bottom: 1px solid var(--border);
-            font-size: 14px;
-            font-weight: 600;
+            display: flex; align-items: center; justify-content: space-between;
         }
+        .left-header-title { font-size: 14px; font-weight: 600; }
         .page-selector {
             padding: 8px 12px;
             border-bottom: 1px solid var(--border);
@@ -123,6 +140,11 @@
             width: 100%; padding: 7px 10px;
             border: 1px solid var(--border); border-radius: 6px;
             font-size: 13px; font-family: var(--font); background: var(--bg-surface);
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23616161' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 28px;
         }
         .page-select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(0,91,211,0.15); }
 
@@ -146,80 +168,109 @@
         .left-tab-content { display: none; }
         .left-tab-content.active { display: block; }
 
-        /* ── Section Tree ── */
+        /* ── Section Tree (grouped: Header / Template / Footer) ── */
         .tree-group { border-bottom: 1px solid var(--border); }
         .tree-group-header {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 10px 16px; font-size: 12px; font-weight: 700;
-            text-transform: uppercase; letter-spacing: 0.04em;
-            color: var(--text-secondary);
+            padding: 10px 16px; font-size: 11px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.05em;
+            color: var(--text-disabled);
         }
-        .tree-items { padding: 0 8px 8px; }
+        .tree-group-items { padding: 0 8px 8px; }
+        .tree-static-item {
+            display: flex; align-items: center; gap: 6px;
+            padding: 8px 10px; margin: 1px 0; border-radius: 6px;
+            font-size: 13px; color: var(--text-secondary);
+            cursor: default;
+        }
+        .tree-static-icon {
+            width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+            background: var(--bg-subdued); border-radius: 6px; font-size: 14px;
+        }
+        .tree-section-list { padding: 0 8px 4px; }
+
         .tree-item {
             display: flex; align-items: center; gap: 6px;
-            padding: 7px 10px; margin: 1px 0; border-radius: 6px;
+            padding: 8px 10px; margin: 1px 0; border-radius: 6px;
             cursor: pointer; font-size: 13px; font-weight: 500;
-            transition: background 0.1s; border: 1px solid transparent;
+            transition: all 0.1s; border: 1px solid transparent;
             position: relative;
         }
         .tree-item:hover { background: var(--bg-hover); }
         .tree-item.active { background: var(--primary-bg); border-color: rgba(0,91,211,0.2); color: var(--primary); }
         .tree-item .drag-handle {
             cursor: grab; color: var(--text-disabled); flex-shrink: 0;
-            display: flex; padding: 2px;
+            display: flex; padding: 2px; opacity: 0; transition: opacity 0.15s;
         }
+        .tree-item:hover .drag-handle { opacity: 1; }
         .tree-item .drag-handle:active { cursor: grabbing; }
-        .tree-item-icon { flex-shrink: 0; font-size: 14px; width: 20px; text-align: center; }
+        .tree-item-icon {
+            flex-shrink: 0; width: 28px; height: 28px;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--bg-subdued); border-radius: 6px; font-size: 14px;
+        }
+        .tree-item.active .tree-item-icon { background: rgba(0,91,211,0.1); }
         .tree-item-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .tree-item-chevron {
             flex-shrink: 0; color: var(--text-disabled);
             transition: transform 0.2s; cursor: pointer; padding: 2px;
+            display: flex; align-items: center;
         }
         .tree-item-chevron.open { transform: rotate(90deg); }
 
-        /* Sub-items (blocks) */
-        .tree-subitems { padding-left: 28px; display: none; }
+        /* Sub-items (blocks) — indented under parent section */
+        .tree-subitems { padding-left: 20px; display: none; }
         .tree-subitems.open { display: block; }
         .tree-subitem {
             display: flex; align-items: center; gap: 6px;
-            padding: 5px 10px; margin: 1px 0; border-radius: 4px;
+            padding: 6px 10px; margin: 1px 0; border-radius: 5px;
             cursor: pointer; font-size: 12px; color: var(--text-secondary);
-            transition: background 0.1s; border: 1px solid transparent;
+            transition: all 0.1s; border: 1px solid transparent;
         }
-        .tree-subitem:hover { background: var(--bg-hover); }
+        .tree-subitem:hover { background: var(--bg-hover); color: var(--text); }
         .tree-subitem.active { background: var(--primary-bg); border-color: rgba(0,91,211,0.2); color: var(--primary); }
-        .tree-subitem-icon { flex-shrink: 0; font-size: 12px; }
-        .tree-subitem-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-        .tree-static-item {
-            display: flex; align-items: center; gap: 6px;
-            padding: 7px 10px; margin: 1px 0; border-radius: 6px;
-            font-size: 13px; color: var(--text-secondary);
-            cursor: default;
+        .tree-subitem-icon {
+            flex-shrink: 0; width: 22px; height: 22px;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--bg-subdued); border-radius: 4px; font-size: 11px;
         }
-        .tree-static-icon { font-size: 14px; }
+        .tree-subitem.active .tree-subitem-icon { background: rgba(0,91,211,0.1); }
+        .tree-subitem-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .tree-subitem-drag {
+            cursor: grab; color: var(--text-disabled); display: flex; padding: 1px;
+            opacity: 0; transition: opacity 0.15s;
+        }
+        .tree-subitem:hover .tree-subitem-drag { opacity: 1; }
 
         /* Add section button */
         .add-section-btn {
             display: flex; align-items: center; justify-content: center; gap: 6px;
-            width: calc(100% - 16px); margin: 4px 8px 8px;
-            padding: 8px; border: 1px dashed var(--border-dark); border-radius: 6px;
+            width: calc(100% - 16px); margin: 8px 8px;
+            padding: 10px; border: 1px dashed var(--border-dark); border-radius: 8px;
             background: transparent; color: var(--text-secondary);
-            cursor: pointer; font-size: 12px; font-family: var(--font); transition: all 0.15s;
+            cursor: pointer; font-size: 13px; font-weight: 500;
+            font-family: var(--font); transition: all 0.15s;
         }
         .add-section-btn:hover { border-color: var(--primary); color: var(--primary); background: rgba(0,91,211,0.02); }
 
         /* ── Preview ── */
         .preview-panel {
             flex: 1; background: var(--bg-app);
-            display: flex; align-items: stretch; justify-content: center;
+            display: flex; align-items: center; justify-content: center;
             padding: 16px; overflow: hidden;
         }
+        .preview-wrapper {
+            width: 100%; height: 100%;
+            display: flex; justify-content: center;
+            transition: max-width 0.3s ease;
+        }
+        .preview-wrapper.desktop { max-width: 100%; }
+        .preview-wrapper.tablet { max-width: 768px; }
+        .preview-wrapper.mobile { max-width: 375px; }
         .preview-frame {
             width: 100%; height: 100%;
             border: none; border-radius: var(--radius);
             background: #fff; box-shadow: var(--shadow-md);
-            transition: max-width 0.3s ease;
         }
 
         /* ── Right Panel ── */
@@ -237,6 +288,11 @@
             padding: 12px 16px; border-bottom: 1px solid var(--border);
             min-height: 48px;
         }
+        .right-header-back {
+            background: none; border: none; cursor: pointer; color: var(--text-secondary);
+            padding: 4px; border-radius: 4px; transition: all 0.15s; display: flex;
+        }
+        .right-header-back:hover { background: var(--bg-hover); color: var(--text); }
         .right-header-title { flex: 1; font-size: 14px; font-weight: 600; }
         .right-header-close {
             background: none; border: none; cursor: pointer; color: var(--text-secondary);
@@ -348,6 +404,15 @@
         }
         .remove-section-btn:hover { background: var(--danger); color: #fff; }
 
+        /* Layout select buttons */
+        .layout-select-btns { display: flex; gap: 8px; }
+        .layout-select-btn {
+            flex: 1; padding: 12px 8px; border-radius: 6px; cursor: pointer;
+            font-size: 12px; font-weight: 500; font-family: var(--font);
+            display: flex; flex-direction: column; align-items: center; gap: 6px;
+            transition: all 0.15s;
+        }
+
         /* ── Modal ── */
         .modal-overlay {
             display: none; position: fixed; inset: 0;
@@ -405,15 +470,6 @@
         .toast.visible { transform: translateY(0); opacity: 1; }
         .toast-success { background: #047B5D; color: #fff; }
         .toast-error { background: #D72C0D; color: #fff; }
-
-        /* Layout select buttons */
-        .layout-select-btns { display: flex; gap: 8px; }
-        .layout-select-btn {
-            flex: 1; padding: 12px 8px; border-radius: 6px; cursor: pointer;
-            font-size: 12px; font-weight: 500; font-family: var(--font);
-            display: flex; flex-direction: column; align-items: center; gap: 6px;
-            transition: all 0.15s;
-        }
     </style>
 </head>
 <body>
@@ -427,12 +483,31 @@
         <span class="topbar-title">{{ theme.getName() }}</span>
         {% if theme.isLive() %}<span class="topbar-badge">Live</span>{% endif %}
     </div>
+
+    <!-- Responsive device buttons -->
     <div class="topbar-center">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
-        <span class="topbar-page-name" id="topbarPageName">{{ currentPage }}</span>
+        <button class="device-btn active" data-device="desktop" title="Desktop">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </button>
+        <button class="device-btn" data-device="tablet" title="Tablet">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+        </button>
+        <button class="device-btn" data-device="mobile" title="Mobile">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+        </button>
     </div>
+
     <div class="topbar-right">
-        <span class="topbar-unsaved" id="unsavedBadge">Unsaved changes</span>
+        <span class="topbar-unsaved" id="unsavedBadge">
+            <svg width="6" height="6"><circle cx="3" cy="3" r="3" fill="#FFB800"/></svg>
+            Unsaved
+        </span>
+
+        <!-- Inspector toggle -->
+        <button class="inspector-toggle active" id="inspectorToggle" title="Toggle inspector">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+
         <button class="topbar-btn topbar-btn-outline" id="discardBtn">Discard</button>
         <button class="topbar-btn topbar-btn-primary" id="saveBtn" disabled>Save</button>
     </div>
@@ -447,7 +522,7 @@
             <select class="page-select" id="pageSelect">
                 {% for page in pages %}
                 <option value="{{ page.template }}" {% if page.template == currentPage %}selected{% endif %}>
-                    {{ page.title }} ({{ page.slug }})
+                    {{ page.title }}
                 </option>
                 {% endfor %}
             </select>
@@ -479,12 +554,17 @@
 
     <!-- Preview -->
     <div class="preview-panel">
-        <iframe class="preview-frame" id="previewFrame" src="/cms/themes/{{ theme.getSlug() }}/customize/preview?page={{ currentPage }}"></iframe>
+        <div class="preview-wrapper desktop" id="previewWrapper">
+            <iframe class="preview-frame" id="previewFrame" src="/cms/themes/{{ theme.getSlug() }}/customize/preview?page={{ currentPage }}"></iframe>
+        </div>
     </div>
 
     <!-- Right Panel -->
     <div class="right-panel" id="rightPanel">
         <div class="right-header">
+            <button class="right-header-back" id="rightBack" style="display:none;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
             <span class="right-header-title" id="rightTitle">Settings</span>
             <button class="right-header-close" id="rightClose">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -521,11 +601,11 @@
     var CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content || '';
 
     var SECTION_ICONS = {
-        'hero-banner': '🖼️', 'rich-text': '📝', 'image-with-text': '🖼️',
+        'hero-banner': '🖼', 'rich-text': '📝', 'image-with-text': '🖼',
         'dynamic-content': '📊', 'feature-columns': '⚡',
         'testimonials': '💬', 'faq': '❓', 'newsletter': '📧',
-        'cta-banner': '📢', 'gallery': '🖼️', 'spacer': '↕️',
-        'custom-code': '🧩'
+        'cta-banner': '📢', 'gallery': '🖼', 'spacer': '↕',
+        'custom-code': '🧩', 'header': '🔲', 'footer': '🔲'
     };
 
     // ── State ──
@@ -539,7 +619,9 @@
         dirty: false,
         activeSection: null,
         activeBlock: null,
-        expandedSections: {}
+        expandedSections: {},
+        inspectorEnabled: true,
+        device: 'desktop'
     };
 
     if (!state.settingsData.current || Array.isArray(state.settingsData.current)) state.settingsData.current = {};
@@ -581,7 +663,31 @@
         document.getElementById('saveBtn').disabled = true;
     }
 
-    // ── Section Tree Rendering ──
+    // ── Responsive Device Buttons ──
+    document.querySelectorAll('.device-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.device-btn').forEach(function(b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            state.device = btn.dataset.device;
+            var wrapper = document.getElementById('previewWrapper');
+            wrapper.className = 'preview-wrapper ' + state.device;
+        });
+    });
+
+    // ── Inspector Toggle ──
+    document.getElementById('inspectorToggle').addEventListener('click', function() {
+        state.inspectorEnabled = !state.inspectorEnabled;
+        this.classList.toggle('active', state.inspectorEnabled);
+        var frame = document.getElementById('previewFrame');
+        try {
+            frame.contentWindow.postMessage({
+                type: 'inspector:toggle',
+                enabled: state.inspectorEnabled
+            }, '*');
+        } catch(e) {}
+    });
+
+    // ── Section Tree Rendering (Header / Template / Footer groups) ──
     function renderSectionTree() {
         var container = document.getElementById('sectionTree');
         container.innerHTML = '';
@@ -589,130 +695,81 @@
         var order = pageData.order || [];
         var sections = pageData.sections || {};
 
-        // Header group (static)
-        var headerGroup = createTreeGroup('Header', [
-            { static: true, name: 'Header', icon: '🔲' }
-        ]);
+        // ── Header Group (static) ──
+        var headerGroup = document.createElement('div');
+        headerGroup.className = 'tree-group';
+        headerGroup.innerHTML = '<div class="tree-group-header">Header</div>';
+        var headerItems = document.createElement('div');
+        headerItems.className = 'tree-group-items';
+        headerItems.innerHTML = '<div class="tree-static-item"><span class="tree-static-icon">🔲</span><span>Header</span></div>';
+        headerGroup.appendChild(headerItems);
         container.appendChild(headerGroup);
 
-        // Template group (dynamic sections)
-        var templateItems = order.map(function(sectionId) {
-            var sec = sections[sectionId];
-            if (!sec) return null;
-            var schema = state.availableSections[sec.type] || {};
-            var blockItems = (sec.block_order || []).map(function(blockId) {
-                var block = (sec.blocks || {})[blockId];
-                if (!block) return null;
-                var blockSchema = findBlockSchema(schema, block.type);
-                var blockName = blockSchema ? blockSchema.name : block.type;
-                // Use first text setting value as subtitle
-                var subtitle = '';
-                if (blockSchema && block.settings) {
-                    for (var i = 0; i < (blockSchema.settings || []).length; i++) {
-                        var bs = blockSchema.settings[i];
-                        if ((bs.type === 'text' || bs.type === 'textarea') && block.settings[bs.id]) {
-                            subtitle = block.settings[bs.id];
-                            if (subtitle.length > 25) subtitle = subtitle.substring(0, 25) + '...';
-                            break;
-                        }
-                    }
-                }
-                return { id: blockId, sectionId: sectionId, name: blockName, subtitle: subtitle };
-            }).filter(Boolean);
+        // ── Template Group (dynamic sections) ──
+        var templateGroup = document.createElement('div');
+        templateGroup.className = 'tree-group';
+        templateGroup.innerHTML = '<div class="tree-group-header">Template</div>';
 
-            return {
-                id: sectionId,
-                name: schema.name || sec.type,
-                type: sec.type,
-                icon: SECTION_ICONS[sec.type] || '📦',
-                blocks: blockItems
-            };
-        }).filter(Boolean);
+        var listEl = document.createElement('div');
+        listEl.className = 'tree-section-list';
+        listEl.id = 'templateSectionList';
 
-        var templateGroup = createTemplateGroup(templateItems);
-        container.appendChild(templateGroup);
-
-        // Footer group (static)
-        var footerGroup = createTreeGroup('Footer', [
-            { static: true, name: 'Footer', icon: '🔲' }
-        ]);
-        container.appendChild(footerGroup);
-    }
-
-    function createTreeGroup(label, items) {
-        var group = document.createElement('div');
-        group.className = 'tree-group';
-
-        var header = document.createElement('div');
-        header.className = 'tree-group-header';
-        header.textContent = label;
-        group.appendChild(header);
-
-        var itemsContainer = document.createElement('div');
-        itemsContainer.className = 'tree-items';
-
-        items.forEach(function(item) {
-            var el = document.createElement('div');
-            el.className = 'tree-static-item';
-            el.innerHTML = '<span class="tree-static-icon">' + (item.icon || '') + '</span>' +
-                '<span>' + item.name + '</span>';
-            itemsContainer.appendChild(el);
-        });
-
-        group.appendChild(itemsContainer);
-        return group;
-    }
-
-    function createTemplateGroup(sectionItems) {
-        var group = document.createElement('div');
-        group.className = 'tree-group';
-
-        var header = document.createElement('div');
-        header.className = 'tree-group-header';
-        header.textContent = 'Template';
-        group.appendChild(header);
-
-        var itemsContainer = document.createElement('div');
-        itemsContainer.className = 'tree-items';
-        itemsContainer.id = 'templateSectionList';
-
-        if (sectionItems.length === 0) {
+        if (order.length === 0) {
             var empty = document.createElement('div');
             empty.style.cssText = 'padding:16px; text-align:center; color:var(--text-disabled); font-size:12px;';
             empty.textContent = 'No sections yet.';
-            itemsContainer.appendChild(empty);
+            listEl.appendChild(empty);
         }
 
-        sectionItems.forEach(function(item) {
-            var hasBlocks = item.blocks && item.blocks.length > 0;
-            var isExpanded = !!state.expandedSections[item.id];
+        order.forEach(function(sectionId) {
+            var sec = sections[sectionId];
+            if (!sec) return;
+            var schema = state.availableSections[sec.type] || {};
+            var hasBlocks = sec.block_order && sec.block_order.length > 0;
+            var isExpanded = !!state.expandedSections[sectionId];
 
             var wrapper = document.createElement('div');
-            wrapper.dataset.treeSectionId = item.id;
+            wrapper.dataset.treeSectionId = sectionId;
 
             // Section row
             var row = document.createElement('div');
-            row.className = 'tree-item' + (state.activeSection === item.id && !state.activeBlock ? ' active' : '');
-            row.dataset.sectionId = item.id;
+            row.className = 'tree-item' + (state.activeSection === sectionId && !state.activeBlock ? ' active' : '');
+            row.dataset.sectionId = sectionId;
 
-            var dragHtml = '<span class="drag-handle"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01"/></svg></span>';
-            var chevronHtml = hasBlocks
-                ? '<span class="tree-item-chevron' + (isExpanded ? ' open' : '') + '" data-toggle-section="' + item.id + '"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 18l6-6-6-6"/></svg></span>'
-                : '';
+            // Drag handle
+            var dragHandle = document.createElement('span');
+            dragHandle.className = 'drag-handle';
+            dragHandle.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01"/></svg>';
+            row.appendChild(dragHandle);
 
-            row.innerHTML = dragHtml +
-                chevronHtml +
-                '<span class="tree-item-icon">' + item.icon + '</span>' +
-                '<span class="tree-item-name">' + item.name + '</span>';
+            // Chevron for expand/collapse (only if has blocks)
+            if (hasBlocks) {
+                var chevron = document.createElement('span');
+                chevron.className = 'tree-item-chevron' + (isExpanded ? ' open' : '');
+                chevron.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 18l6-6-6-6"/></svg>';
+                chevron.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    state.expandedSections[sectionId] = !state.expandedSections[sectionId];
+                    renderSectionTree();
+                });
+                row.appendChild(chevron);
+            }
+
+            // Icon
+            var icon = document.createElement('span');
+            icon.className = 'tree-item-icon';
+            icon.textContent = SECTION_ICONS[sec.type] || '📦';
+            row.appendChild(icon);
+
+            // Name
+            var name = document.createElement('span');
+            name.className = 'tree-item-name';
+            name.textContent = schema.name || sec.type;
+            row.appendChild(name);
 
             row.addEventListener('click', function(e) {
-                if (e.target.closest('.drag-handle')) return;
-                if (e.target.closest('.tree-item-chevron')) {
-                    state.expandedSections[item.id] = !state.expandedSections[item.id];
-                    renderSectionTree();
-                    return;
-                }
-                selectSection(item.id);
+                if (e.target.closest('.drag-handle') || e.target.closest('.tree-item-chevron')) return;
+                selectSection(sectionId);
             });
 
             wrapper.appendChild(row);
@@ -722,57 +779,104 @@
                 var subItems = document.createElement('div');
                 subItems.className = 'tree-subitems' + (isExpanded ? ' open' : '');
 
-                // Add block button
+                sec.block_order.forEach(function(blockId) {
+                    var block = (sec.blocks || {})[blockId];
+                    if (!block) return;
+                    var blockSchema = findBlockSchema(schema, block.type);
+                    var blockName = blockSchema ? blockSchema.name : block.type;
+
+                    // Use first text setting as subtitle
+                    var subtitle = '';
+                    if (blockSchema && block.settings) {
+                        for (var i = 0; i < (blockSchema.settings || []).length; i++) {
+                            var bs = blockSchema.settings[i];
+                            if ((bs.type === 'text' || bs.type === 'textarea') && block.settings[bs.id]) {
+                                subtitle = block.settings[bs.id];
+                                if (subtitle.length > 20) subtitle = subtitle.substring(0, 20) + '...';
+                                break;
+                            }
+                        }
+                    }
+
+                    var subRow = document.createElement('div');
+                    subRow.className = 'tree-subitem' + (state.activeBlock === blockId ? ' active' : '');
+                    subRow.dataset.blockId = blockId;
+                    subRow.dataset.sectionId = sectionId;
+
+                    var subDrag = document.createElement('span');
+                    subDrag.className = 'tree-subitem-drag';
+                    subDrag.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01"/></svg>';
+
+                    var subIcon = document.createElement('span');
+                    subIcon.className = 'tree-subitem-icon';
+                    subIcon.textContent = '◻';
+
+                    var subName = document.createElement('span');
+                    subName.className = 'tree-subitem-name';
+                    subName.textContent = subtitle ? blockName + ' — ' + subtitle : blockName;
+
+                    subRow.appendChild(subDrag);
+                    subRow.appendChild(subIcon);
+                    subRow.appendChild(subName);
+
+                    subRow.addEventListener('click', function(e) {
+                        if (e.target.closest('.tree-subitem-drag')) return;
+                        selectBlock(sectionId, blockId);
+                    });
+
+                    subItems.appendChild(subRow);
+                });
+
+                // Add block link
                 var addBlockRow = document.createElement('div');
                 addBlockRow.className = 'tree-subitem';
                 addBlockRow.style.color = 'var(--primary)';
-                addBlockRow.innerHTML = '<span class="tree-subitem-icon">+</span><span class="tree-subitem-name">Add block</span>';
+                addBlockRow.innerHTML = '<span class="tree-subitem-icon" style="background:rgba(0,91,211,0.06);color:var(--primary);">+</span><span class="tree-subitem-name">Add block</span>';
                 addBlockRow.addEventListener('click', function() {
-                    selectSection(item.id);
-                    // Trigger add block in right panel
+                    selectSection(sectionId);
                     setTimeout(function() {
                         var addBtn = document.querySelector('.add-block-btn');
                         if (addBtn) addBtn.click();
                     }, 100);
                 });
-
-                item.blocks.forEach(function(block) {
-                    var subRow = document.createElement('div');
-                    subRow.className = 'tree-subitem' + (state.activeBlock === block.id ? ' active' : '');
-                    var displayName = block.name;
-                    if (block.subtitle) displayName += ' – ' + block.subtitle;
-                    subRow.innerHTML = '<span class="tree-subitem-icon">◻</span>' +
-                        '<span class="tree-subitem-name">' + displayName + '</span>';
-                    subRow.addEventListener('click', function() {
-                        selectBlock(block.sectionId, block.id);
-                    });
-                    subItems.appendChild(subRow);
-                });
-
                 subItems.appendChild(addBlockRow);
+
                 wrapper.appendChild(subItems);
             }
 
-            itemsContainer.appendChild(wrapper);
+            listEl.appendChild(wrapper);
         });
 
-        group.appendChild(itemsContainer);
+        templateGroup.appendChild(listEl);
 
-        // Add section button
+        // Add section button inside template group
         var addBtn = document.createElement('button');
         addBtn.className = 'add-section-btn';
         addBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Add section';
         addBtn.addEventListener('click', openSectionModal);
-        group.appendChild(addBtn);
+        templateGroup.appendChild(addBtn);
+
+        container.appendChild(templateGroup);
+
+        // ── Footer Group (static) ──
+        var footerGroup = document.createElement('div');
+        footerGroup.className = 'tree-group';
+        footerGroup.innerHTML = '<div class="tree-group-header">Footer</div>';
+        var footerItems = document.createElement('div');
+        footerItems.className = 'tree-group-items';
+        footerItems.innerHTML = '<div class="tree-static-item"><span class="tree-static-icon">🔲</span><span>Footer</span></div>';
+        footerGroup.appendChild(footerItems);
+        container.appendChild(footerGroup);
 
         // Init drag-and-drop on section list
-        if (window.Sortable && sectionItems.length > 0) {
+        if (window.Sortable && order.length > 0) {
             setTimeout(function() {
                 var list = document.getElementById('templateSectionList');
                 if (list) {
                     Sortable.create(list, {
                         handle: '.drag-handle',
                         animation: 150,
+                        ghostClass: 'sortable-ghost',
                         onEnd: function(evt) {
                             var pageData = getPageData();
                             var item = pageData.order.splice(evt.oldIndex, 1)[0];
@@ -784,8 +888,6 @@
                 }
             }, 0);
         }
-
-        return group;
     }
 
     function findBlockSchema(sectionSchema, blockType) {
@@ -803,25 +905,39 @@
         state.activeSection = null;
         state.activeBlock = null;
         renderSectionTree();
+        // Clear highlight in iframe
+        notifyIframeHighlight(null);
     }
 
     function selectSection(sectionId) {
         state.activeSection = sectionId;
         state.activeBlock = null;
+        document.getElementById('rightBack').style.display = 'none';
         showRightPanel();
         renderSectionSettings(sectionId);
         renderSectionTree();
-        notifyIframeSelection(sectionId);
+        notifyIframeHighlight(sectionId);
+        scrollIframeToSection(sectionId);
     }
 
     function selectBlock(sectionId, blockId) {
         state.activeSection = sectionId;
         state.activeBlock = blockId;
         state.expandedSections[sectionId] = true;
+        document.getElementById('rightBack').style.display = 'flex';
         showRightPanel();
         renderBlockSettings(sectionId, blockId);
         renderSectionTree();
+        notifyIframeHighlight(sectionId, blockId);
+        scrollIframeToSection(sectionId);
     }
+
+    // Back button in right panel header
+    document.getElementById('rightBack').addEventListener('click', function() {
+        if (state.activeBlock && state.activeSection) {
+            selectSection(state.activeSection);
+        }
+    });
 
     function renderSectionSettings(sectionId) {
         var pageData = getPageData();
@@ -842,7 +958,7 @@
             renderGroupedSettings(body, allSettings, sec.settings, function(id, val) {
                 sec.settings[id] = val;
                 markDirty();
-                refreshPreview();
+                debouncedSectionUpdate(sectionId);
             });
         } else {
             allSettings.forEach(function(setting) {
@@ -852,7 +968,7 @@
                 body.appendChild(createSettingField(setting, val, function(newVal) {
                     sec.settings[setting.id] = newVal;
                     markDirty();
-                    refreshPreview();
+                    debouncedSectionUpdate(sectionId);
                 }));
             });
         }
@@ -894,13 +1010,6 @@
         var body = document.getElementById('rightBody');
         body.innerHTML = '';
 
-        // Back to section link
-        var backLink = document.createElement('button');
-        backLink.style.cssText = 'background:none;border:none;color:var(--primary);font-size:12px;cursor:pointer;margin-bottom:12px;font-family:var(--font);display:flex;align-items:center;gap:4px;';
-        backLink.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg> Back to ' + (sectionSchema.name || sec.type);
-        backLink.addEventListener('click', function() { selectSection(sectionId); });
-        body.appendChild(backLink);
-
         // Block settings
         (blockSchema?.settings || []).forEach(function(setting) {
             var val = block.settings[setting.id];
@@ -908,7 +1017,7 @@
             body.appendChild(createSettingField(setting, val, function(newVal) {
                 block.settings[setting.id] = newVal;
                 markDirty();
-                refreshPreview();
+                debouncedSectionUpdate(sectionId);
             }));
         });
 
@@ -1043,7 +1152,7 @@
                 blockBody.appendChild(createSettingField(setting, val, function(newVal) {
                     block.settings[setting.id] = newVal;
                     markDirty();
-                    refreshPreview();
+                    debouncedSectionUpdate(sectionId);
                 }));
             });
 
@@ -1075,7 +1184,7 @@
         var container = document.getElementById('themeSettingsGroups');
         container.innerHTML = '';
 
-        state.settingsSchema.forEach(function(group, groupIdx) {
+        state.settingsSchema.forEach(function(group) {
             var div = document.createElement('div');
             div.className = 'settings-group';
             div.style.margin = '0';
@@ -1439,12 +1548,19 @@
         });
     });
 
-    // ── Preview (POST + srcdoc with scroll preservation) ──
+    // ── Preview — Smart targeted section updates ──
     var previewDebounce = null;
+    var sectionUpdateDebounce = null;
     var isFirstLoad = true;
+    var lastRenderedSections = {}; // Cache of rendered section HTML by ID
 
+    /**
+     * Full preview refresh — used for structural changes (add/remove/reorder sections, page switch).
+     * POSTs full state, receives full HTML, replaces srcdoc.
+     */
     function refreshPreview() {
         clearTimeout(previewDebounce);
+        clearTimeout(sectionUpdateDebounce);
         previewDebounce = setTimeout(function() {
             var frame = document.getElementById('previewFrame');
             var scrollY = 0;
@@ -1461,57 +1577,134 @@
                 frame.addEventListener('load', function onLoad() {
                     frame.removeEventListener('load', onLoad);
                     try { frame.contentWindow.scrollTo(0, scrollY); } catch(e) {}
-                    injectInspectorScript(frame);
+                    injectInspector(frame);
+                    cacheRenderedSections(frame);
                 });
             })
             .catch(function(err) {
                 console.error('Preview refresh failed:', err);
             });
-        }, 500);
+        }, 300);
+    }
+
+    /**
+     * Targeted section update — used when editing a single section's settings/blocks.
+     * POSTs full state, receives full HTML, but only replaces the changed section's DOM.
+     * This preserves scroll position naturally since we only touch one DOM node.
+     */
+    function debouncedSectionUpdate(sectionId) {
+        clearTimeout(sectionUpdateDebounce);
+        sectionUpdateDebounce = setTimeout(function() {
+            targetedSectionUpdate(sectionId);
+        }, 400);
+    }
+
+    function targetedSectionUpdate(sectionId) {
+        var frame = document.getElementById('previewFrame');
+        var doc;
+        try { doc = frame.contentDocument || frame.contentWindow.document; } catch(e) { refreshPreview(); return; }
+        if (!doc) { refreshPreview(); return; }
+
+        // Find the section element in the iframe
+        var sectionEl = doc.querySelector('[data-section-id="' + sectionId + '"]');
+        if (!sectionEl) {
+            // Section not in DOM yet (new section), do full refresh
+            refreshPreview();
+            return;
+        }
+
+        // POST state and get full HTML
+        fetch('/cms/themes/' + THEME_SLUG + '/customize/preview?page=' + state.currentPage, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN },
+            body: JSON.stringify(state.settingsData)
+        })
+        .then(function(r) { return r.text(); })
+        .then(function(html) {
+            // Parse the response to extract the updated section
+            var parser = new DOMParser();
+            var newDoc = parser.parseFromString(html, 'text/html');
+            var newSectionEl = newDoc.querySelector('[data-section-id="' + sectionId + '"]');
+
+            if (newSectionEl && sectionEl) {
+                // Replace only the changed section's innerHTML
+                sectionEl.innerHTML = newSectionEl.innerHTML;
+                // Re-inject inspector on the updated section
+                injectInspectorOnElement(doc, sectionEl);
+                // Scroll to the updated section
+                sectionEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            } else {
+                // Fallback to full refresh
+                frame.srcdoc = html;
+                frame.addEventListener('load', function onLoad() {
+                    frame.removeEventListener('load', onLoad);
+                    injectInspector(frame);
+                });
+            }
+        })
+        .catch(function() {
+            refreshPreview();
+        });
+    }
+
+    /**
+     * Cache currently rendered section HTML for diffing.
+     */
+    function cacheRenderedSections(frame) {
+        try {
+            var doc = frame.contentDocument || frame.contentWindow.document;
+            doc.querySelectorAll('[data-section-id]').forEach(function(el) {
+                lastRenderedSections[el.dataset.sectionId] = el.innerHTML;
+            });
+        } catch(e) {}
     }
 
     // ── Inspector Mode ──
-    function injectInspectorScript(frame) {
+    function injectInspector(frame) {
         try {
             var doc = frame.contentDocument || frame.contentWindow.document;
             if (!doc) return;
 
+            // Inject styles
+            var existingStyle = doc.getElementById('customizer-inspector-style');
+            if (existingStyle) existingStyle.remove();
+
             var style = doc.createElement('style');
+            style.id = 'customizer-inspector-style';
             style.textContent =
-                '[data-section-id] { position: relative; cursor: pointer; }' +
-                '[data-section-id]:hover::after {' +
-                '  content: ""; position: absolute; inset: 0; pointer-events: none;' +
-                '  border: 2px solid #005bd3; z-index: 99998;' +
-                '  background: rgba(0,91,211,0.03);' +
+                '.inspector-enabled [data-section-id] { position: relative; transition: outline 0.15s, box-shadow 0.15s; }' +
+                '.inspector-enabled [data-section-id]:hover { outline: 2px solid #005bd3; outline-offset: -2px; z-index: 99998; }' +
+                '.inspector-enabled [data-section-id]:hover::before {' +
+                '  content: attr(data-section-type); position: absolute; top: 0; left: 0;' +
+                '  background: #005bd3; color: #fff; font-size: 11px; line-height: 1;' +
+                '  padding: 3px 8px; font-family: -apple-system, sans-serif;' +
+                '  pointer-events: none; z-index: 99999; border-radius: 0 0 4px 0;' +
                 '}' +
-                '[data-section-id].inspector-active::after {' +
-                '  content: ""; position: absolute; inset: 0; pointer-events: none;' +
-                '  border: 2px solid #005bd3; z-index: 99998;' +
-                '  background: rgba(0,91,211,0.05);' +
+                '[data-section-id].inspector-active { outline: 2px solid #005bd3; outline-offset: -2px; z-index: 99998; }' +
+                '[data-section-id].inspector-active::before {' +
+                '  content: attr(data-section-type); position: absolute; top: 0; left: 0;' +
+                '  background: #005bd3; color: #fff; font-size: 11px; line-height: 1;' +
+                '  padding: 3px 8px; font-family: -apple-system, sans-serif;' +
+                '  pointer-events: none; z-index: 99999; border-radius: 0 0 4px 0;' +
                 '}' +
-                '.inspector-label {' +
-                '  position: absolute; top: 0; left: 0;' +
-                '  background: #005bd3; color: #fff; font-size: 11px;' +
-                '  padding: 2px 8px; font-family: -apple-system, sans-serif;' +
-                '  pointer-events: none; z-index: 99999;' +
-                '}';
+                '.inspector-disabled [data-section-id]:hover { outline: none; }' +
+                '.inspector-disabled [data-section-id]:hover::before { display: none; }';
             doc.head.appendChild(style);
 
+            // Set inspector class on body
+            doc.body.classList.toggle('inspector-enabled', state.inspectorEnabled);
+            doc.body.classList.toggle('inspector-disabled', !state.inspectorEnabled);
+
+            // Attach click handlers to all sections
             doc.querySelectorAll('[data-section-id]').forEach(function(el) {
-                el.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    window.parent.postMessage({
-                        type: 'inspector:select',
-                        sectionId: el.dataset.sectionId,
-                        sectionType: el.dataset.sectionType
-                    }, '*');
-                });
+                injectInspectorOnElement(doc, el);
             });
 
-            // Listen for highlight messages from parent
+            // Listen for messages from parent
             frame.contentWindow.addEventListener('message', function(e) {
-                if (e.data && e.data.type === 'inspector:highlight') {
+                if (!e.data) return;
+
+                if (e.data.type === 'inspector:highlight') {
                     doc.querySelectorAll('[data-section-id]').forEach(function(el) {
                         el.classList.remove('inspector-active');
                     });
@@ -1523,16 +1716,59 @@
                         }
                     }
                 }
+
+                if (e.data.type === 'inspector:toggle') {
+                    doc.body.classList.toggle('inspector-enabled', e.data.enabled);
+                    doc.body.classList.toggle('inspector-disabled', !e.data.enabled);
+                }
             });
+
+            // Highlight active section if any
+            if (state.activeSection) {
+                var activeEl = doc.querySelector('[data-section-id="' + state.activeSection + '"]');
+                if (activeEl) activeEl.classList.add('inspector-active');
+            }
         } catch(e) {
             // Cross-origin fallback
         }
     }
 
-    function notifyIframeSelection(sectionId) {
+    function injectInspectorOnElement(doc, el) {
+        // Remove existing listener by cloning
+        var newEl = el.cloneNode(true);
+        el.parentNode.replaceChild(newEl, el);
+
+        newEl.addEventListener('click', function(e) {
+            if (!state.inspectorEnabled) return;
+            e.preventDefault();
+            e.stopPropagation();
+            window.parent.postMessage({
+                type: 'inspector:select',
+                sectionId: newEl.dataset.sectionId,
+                sectionType: newEl.dataset.sectionType
+            }, '*');
+        });
+    }
+
+    function notifyIframeHighlight(sectionId, blockId) {
         var frame = document.getElementById('previewFrame');
         try {
-            frame.contentWindow.postMessage({ type: 'inspector:highlight', sectionId: sectionId }, '*');
+            frame.contentWindow.postMessage({
+                type: 'inspector:highlight',
+                sectionId: sectionId || null,
+                blockId: blockId || null
+            }, '*');
+        } catch(e) {}
+    }
+
+    function scrollIframeToSection(sectionId) {
+        var frame = document.getElementById('previewFrame');
+        try {
+            var doc = frame.contentDocument || frame.contentWindow.document;
+            var el = doc.querySelector('[data-section-id="' + sectionId + '"]');
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
         } catch(e) {}
     }
 
@@ -1612,9 +1848,10 @@
         state.activeBlock = null;
         hideRightPanel();
         renderSectionTree();
-        document.getElementById('topbarPageName').textContent = this.value;
-        // Initial page load uses GET
-        document.getElementById('previewFrame').src = '/cms/themes/' + THEME_SLUG + '/customize/preview?page=' + state.currentPage;
+        // Full page switch uses GET for initial load
+        var frame = document.getElementById('previewFrame');
+        frame.removeAttribute('srcdoc');
+        frame.src = '/cms/themes/' + THEME_SLUG + '/customize/preview?page=' + state.currentPage;
     });
 
     // ── Event Bindings ──
@@ -1635,7 +1872,11 @@
 
     // Inject inspector on initial iframe load
     document.getElementById('previewFrame').addEventListener('load', function() {
-        if (isFirstLoad) { isFirstLoad = false; injectInspectorScript(this); }
+        if (isFirstLoad) {
+            isFirstLoad = false;
+            injectInspector(this);
+            cacheRenderedSections(this);
+        }
     });
 
     // ── Init ──
