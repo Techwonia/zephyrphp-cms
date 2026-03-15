@@ -110,9 +110,9 @@
 
         /* ── Add Dropdown ── */
         .add-dropdown {
-            position: absolute; top: 100%; left: 0; z-index: 100;
+            position: fixed; z-index: 200;
             background: #252526; border: 1px solid #3c3c3c;
-            border-radius: 6px; min-width: 180px; padding: 4px 0;
+            border-radius: 6px; min-width: 200px; padding: 4px 0;
             box-shadow: 0 4px 16px rgba(0,0,0,0.5); display: none;
         }
         .add-dropdown.visible { display: block; }
@@ -1802,7 +1802,14 @@
         const dd = $('addDropdown');
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
-            dd.classList.toggle('visible');
+            if (dd.classList.contains('visible')) {
+                dd.classList.remove('visible');
+            } else {
+                const r = btn.getBoundingClientRect();
+                dd.style.top = (r.bottom + 4) + 'px';
+                dd.style.left = r.left + 'px';
+                dd.classList.add('visible');
+            }
         });
         document.addEventListener('click', () => dd.classList.remove('visible'));
         dd.addEventListener('click', (e) => e.stopPropagation());
