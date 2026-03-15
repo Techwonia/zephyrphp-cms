@@ -465,6 +465,95 @@
         }
         .schema-apply-btn:hover { background: var(--primary-hover); }
 
+        /* Section dividers */
+        .schema-section-divider {
+            display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 6px 0;
+            font-size: 11px; font-weight: 700; color: var(--text-secondary);
+            text-transform: uppercase; letter-spacing: 0.05em;
+            border-top: 1px solid var(--border);
+        }
+        .schema-count {
+            font-size: 10px; font-weight: 600; background: var(--bg-hover); color: var(--text-secondary);
+            padding: 1px 6px; border-radius: 10px; min-width: 18px; text-align: center;
+        }
+
+        /* 2-column layout for section info */
+        .field-row-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+        /* Block cards */
+        .schema-block {
+            background: var(--bg-subdued); border: 1px solid var(--border); border-radius: 8px;
+            overflow: hidden;
+        }
+        .schema-block-header {
+            display: flex; align-items: center; gap: 6px; padding: 8px 12px;
+            cursor: pointer;
+        }
+        .schema-block-toggle {
+            width: 20px; height: 20px; border: none; background: transparent; cursor: pointer;
+            color: var(--text-secondary); font-size: 12px; padding: 0;
+            display: flex; align-items: center; justify-content: center;
+            transition: transform 0.15s;
+        }
+        .schema-block-toggle.expanded { transform: rotate(90deg); }
+        .schema-block-body {
+            padding: 8px 12px 12px; border-top: 1px solid var(--border);
+        }
+        .schema-block-settings-label {
+            font-size: 10px; font-weight: 600; color: var(--text-disabled);
+            text-transform: uppercase; margin: 8px 0 4px;
+        }
+
+        /* Options editor (select/radio) */
+        .schema-options-list {
+            margin-top: 6px; padding: 8px; background: var(--bg-surface);
+            border: 1px solid var(--border); border-radius: 6px;
+        }
+        .schema-options-label {
+            font-size: 10px; font-weight: 600; color: var(--text-disabled);
+            text-transform: uppercase; margin-bottom: 4px; display: block;
+        }
+        .schema-option-row {
+            display: flex; gap: 4px; align-items: center; margin-bottom: 4px;
+        }
+        .schema-option-row input {
+            flex: 1; padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px;
+            font-size: 11px; font-family: var(--font); color: var(--text); background: var(--bg-surface);
+        }
+        .schema-option-row input:focus {
+            border-color: var(--primary); outline: none;
+        }
+        .schema-add-option {
+            width: 100%; padding: 4px; border: 1px dashed var(--border); border-radius: 4px;
+            background: transparent; cursor: pointer; color: var(--text-disabled);
+            font-size: 10px; font-family: var(--font); margin-top: 4px;
+        }
+        .schema-add-option:hover { border-color: var(--primary); color: var(--primary); }
+
+        /* Small add-setting variant (inside blocks) */
+        .schema-add-setting.small {
+            padding: 5px; font-size: 11px; margin-top: 6px; border-width: 1px;
+        }
+
+        /* Preset cards */
+        .schema-preset {
+            background: var(--bg-subdued); border: 1px solid var(--border); border-radius: 8px;
+            padding: 12px;
+        }
+        .schema-preset-json { margin-top: 6px; }
+        .schema-preset-json label {
+            font-size: 10px; font-weight: 600; color: var(--text-disabled);
+            text-transform: uppercase; display: block; margin-bottom: 4px;
+        }
+        .schema-preset-json textarea {
+            width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;
+            font-size: 11px; font-family: var(--font-mono); color: var(--text);
+            background: var(--bg-surface); resize: vertical; line-height: 1.4;
+        }
+        .schema-preset-json textarea:focus {
+            border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px rgba(0,91,211,0.1);
+        }
+
         /* Schema JSON tab */
         .schema-json-view { flex: 1; position: relative; }
         .schema-json-view .cm-editor { height: 100%; }
@@ -2467,8 +2556,13 @@
         { value: 'select', label: 'Select' },
         { value: 'radio', label: 'Radio' },
         { value: 'color', label: 'Color' },
-        { value: 'image_picker', label: 'Image Picker' },
+        { value: 'image', label: 'Image' },
         { value: 'url', label: 'URL' },
+        { value: 'email', label: 'Email' },
+        { value: 'phone', label: 'Phone' },
+        { value: 'collection', label: 'Collection' },
+        { value: 'field_select', label: 'Field Select' },
+        { value: 'layout_select', label: 'Layout Select' },
         { value: 'html', label: 'HTML' },
     ];
 
@@ -2510,11 +2604,14 @@
 
     function parseSchema(twigContent) {
         const match = extractSchemaRaw(twigContent);
-        if (!match) return { name: 'Section Name', tag: null, class: null, max_blocks: null, settings: [], blocks: [], presets: [] };
+        const empty = { name: 'Section Name', description: '', icon: '', tag: null, class: null, max_blocks: null, settings: [], blocks: [], presets: [] };
+        if (!match) return empty;
         try {
             const obj = JSON.parse(match[1].trim());
             return {
                 name: obj.name || 'Section Name',
+                description: obj.description || '',
+                icon: obj.icon || '',
                 tag: obj.tag || null,
                 class: obj.class || null,
                 max_blocks: obj.max_blocks || null,
@@ -2523,20 +2620,94 @@
                 presets: Array.isArray(obj.presets) ? obj.presets : [],
             };
         } catch {
-            return { name: 'Section Name', tag: null, class: null, max_blocks: null, settings: [], blocks: [], presets: [] };
+            return empty;
         }
+    }
+
+    function cleanSetting(s) {
+        const out = {};
+        for (const [k, v] of Object.entries(s)) {
+            if (v !== undefined && v !== '') out[k] = v;
+        }
+        return out;
     }
 
     function schemaToJson() {
         if (!currentSchema) return '{}';
         const obj = { name: currentSchema.name };
+        if (currentSchema.description) obj.description = currentSchema.description;
+        if (currentSchema.icon) obj.icon = currentSchema.icon;
         if (currentSchema.tag) obj.tag = currentSchema.tag;
         if (currentSchema.class) obj.class = currentSchema.class;
         if (currentSchema.max_blocks) obj.max_blocks = currentSchema.max_blocks;
-        obj.settings = currentSchema.settings;
-        if (currentSchema.blocks.length > 0) obj.blocks = currentSchema.blocks;
+        obj.settings = currentSchema.settings.map(cleanSetting);
+        if (currentSchema.blocks.length > 0) {
+            obj.blocks = currentSchema.blocks.map(b => {
+                const block = { type: b.type, name: b.name };
+                if (Array.isArray(b.settings) && b.settings.length > 0) {
+                    block.settings = b.settings.map(cleanSetting);
+                }
+                return block;
+            });
+        }
         if (currentSchema.presets.length > 0) obj.presets = currentSchema.presets;
         return JSON.stringify(obj, null, 2);
+    }
+
+    function renderSettingCard(setting, idx, prefix) {
+        // prefix: 'setting' for section settings, 'bs-{blockIdx}' for block settings
+        const dataAttr = prefix === 'setting' ? `data-setting="${idx}"` : `data-block-setting="${prefix.split('-')[1]}-${idx}"`;
+        const moveAttr = prefix === 'setting' ? `data-move-setting="${idx}"` : `data-move-bs="${prefix.split('-')[1]}-${idx}"`;
+        const delAttr = prefix === 'setting' ? `data-delete-setting="${idx}"` : `data-delete-bs="${prefix.split('-')[1]}-${idx}"`;
+
+        const typeOpts = SETTING_TYPES.map(t =>
+            `<option value="${t.value}"${t.value === setting.type ? ' selected' : ''}>${t.label}</option>`
+        ).join('');
+
+        let html = `<div class="schema-field" data-sidx="${prefix}-${idx}">
+            <div class="schema-field-header">
+                <span class="schema-field-type">${esc(setting.type || 'text')}</span>
+                <span class="schema-field-id">${esc(setting.id || '')}</span>
+                <div class="schema-field-actions">
+                    <button class="schema-field-action-btn" ${moveAttr} data-dir="up" title="Move up">&#9650;</button>
+                    <button class="schema-field-action-btn" ${moveAttr} data-dir="down" title="Move down">&#9660;</button>
+                    <button class="schema-field-action-btn danger" ${delAttr} title="Remove">&#10005;</button>
+                </div>
+            </div>
+            <div class="schema-field-row"><label>ID</label><input type="text" ${dataAttr} data-prop="id" value="${escAttr(setting.id || '')}"></div>
+            <div class="schema-field-row"><label>Type</label><select ${dataAttr} data-prop="type">${typeOpts}</select></div>
+            <div class="schema-field-row"><label>Label</label><input type="text" ${dataAttr} data-prop="label" value="${escAttr(setting.label || '')}"></div>
+            <div class="schema-field-row"><label>Default</label><input type="text" ${dataAttr} data-prop="default" value="${escAttr(setting.default != null ? String(setting.default) : '')}"></div>
+            <div class="schema-field-row"><label>Group</label><input type="text" ${dataAttr} data-prop="group" value="${escAttr(setting.group || '')}" placeholder="e.g. Layout, Colors"></div>
+            <div class="schema-field-row"><label>Info</label><input type="text" ${dataAttr} data-prop="info" value="${escAttr(setting.info || '')}" placeholder="Help text"></div>`;
+
+        // Type-specific fields
+        if (setting.type === 'range') {
+            html += `<div class="schema-field-row"><label>Min</label><input type="number" ${dataAttr} data-prop="min" value="${setting.min != null ? setting.min : ''}"></div>`;
+            html += `<div class="schema-field-row"><label>Max</label><input type="number" ${dataAttr} data-prop="max" value="${setting.max != null ? setting.max : ''}"></div>`;
+            html += `<div class="schema-field-row"><label>Step</label><input type="number" ${dataAttr} data-prop="step" value="${setting.step != null ? setting.step : ''}"></div>`;
+        }
+
+        if (setting.type === 'select' || setting.type === 'radio' || setting.type === 'layout_select') {
+            const opts = Array.isArray(setting.options) ? setting.options : [];
+            html += `<div class="schema-options-list">
+                <label class="schema-options-label">Options</label>`;
+            for (let j = 0; j < opts.length; j++) {
+                html += `<div class="schema-option-row">
+                    <input type="text" ${dataAttr} data-opt="${j}" data-optprop="value" value="${escAttr(opts[j].value || '')}" placeholder="value">
+                    <input type="text" ${dataAttr} data-opt="${j}" data-optprop="label" value="${escAttr(opts[j].label || '')}" placeholder="label">
+                    <button class="schema-field-action-btn danger" data-del-opt="${prefix}-${idx}-${j}" title="Remove">&#10005;</button>
+                </div>`;
+            }
+            html += `<button class="schema-add-option" data-add-opt="${prefix}-${idx}">+ Add option</button></div>`;
+        }
+
+        if (setting.type === 'field_select') {
+            html += `<div class="schema-field-row"><label>Collection</label><input type="text" ${dataAttr} data-prop="collection_setting" value="${escAttr(setting.collection_setting || '')}" placeholder="setting id that holds collection"></div>`;
+        }
+
+        html += `</div>`;
+        return html;
     }
 
     function renderSchemaDesigner() {
@@ -2544,47 +2715,104 @@
         const s = currentSchema;
         let html = '';
 
-        // Section info
+        // ── Section Info ──
         html += `<div class="schema-section-info">
             <div class="field-group"><label>Section Name</label>
                 <input type="text" data-schema-field="name" value="${escAttr(s.name)}">
             </div>
-            <div class="field-group"><label>Tag</label>
-                <input type="text" data-schema-field="tag" value="${escAttr(s.tag || '')}" placeholder="section">
+            <div class="field-group"><label>Description</label>
+                <input type="text" data-schema-field="description" value="${escAttr(s.description || '')}" placeholder="Section description">
             </div>
-            <div class="field-group"><label>CSS Class</label>
-                <input type="text" data-schema-field="class" value="${escAttr(s.class || '')}" placeholder="optional">
+            <div class="field-group"><label>Icon</label>
+                <input type="text" data-schema-field="icon" value="${escAttr(s.icon || '')}" placeholder="e.g. hero, grid, list">
+            </div>
+            <div class="field-row-2col">
+                <div class="field-group"><label>Tag</label>
+                    <input type="text" data-schema-field="tag" value="${escAttr(s.tag || '')}" placeholder="section">
+                </div>
+                <div class="field-group"><label>CSS Class</label>
+                    <input type="text" data-schema-field="class" value="${escAttr(s.class || '')}" placeholder="optional">
+                </div>
+            </div>
+            <div class="field-group"><label>Max Blocks</label>
+                <input type="number" data-schema-field="max_blocks" value="${s.max_blocks || ''}" placeholder="unlimited">
             </div>
         </div>`;
 
-        // Settings
-        html += `<div style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.05em;margin-top:4px;">Settings (${s.settings.length})</div>`;
+        // ── Settings ──
+        html += `<div class="schema-section-divider">
+            <span>Settings</span><span class="schema-count">${s.settings.length}</span>
+        </div>`;
 
         for (let i = 0; i < s.settings.length; i++) {
-            const setting = s.settings[i];
-            const typeOpts = SETTING_TYPES.map(t =>
-                `<option value="${t.value}"${t.value === setting.type ? ' selected' : ''}>${t.label}</option>`
-            ).join('');
-
-            html += `<div class="schema-field" data-setting-index="${i}">
-                <div class="schema-field-header">
-                    <span class="schema-field-type">${esc(setting.type || 'text')}</span>
-                    <span class="schema-field-id">${esc(setting.id || '')}</span>
-                    <div class="schema-field-actions">
-                        <button class="schema-field-action-btn" data-move-setting="${i}" data-dir="up" title="Move up">&#9650;</button>
-                        <button class="schema-field-action-btn" data-move-setting="${i}" data-dir="down" title="Move down">&#9660;</button>
-                        <button class="schema-field-action-btn danger" data-delete-setting="${i}" title="Remove">&#10005;</button>
-                    </div>
-                </div>
-                <div class="schema-field-row"><label>ID</label><input type="text" data-setting="${i}" data-prop="id" value="${escAttr(setting.id || '')}"></div>
-                <div class="schema-field-row"><label>Type</label><select data-setting="${i}" data-prop="type">${typeOpts}</select></div>
-                <div class="schema-field-row"><label>Label</label><input type="text" data-setting="${i}" data-prop="label" value="${escAttr(setting.label || '')}"></div>
-                <div class="schema-field-row"><label>Default</label><input type="text" data-setting="${i}" data-prop="default" value="${escAttr(setting.default != null ? String(setting.default) : '')}"></div>
-                ${setting.info ? `<div class="schema-field-row"><label>Info</label><input type="text" data-setting="${i}" data-prop="info" value="${escAttr(setting.info)}"></div>` : ''}
-            </div>`;
+            html += renderSettingCard(s.settings[i], i, 'setting');
         }
 
         html += `<button class="schema-add-setting" id="btnAddSetting">+ Add setting</button>`;
+
+        // ── Blocks ──
+        html += `<div class="schema-section-divider">
+            <span>Blocks</span><span class="schema-count">${s.blocks.length}</span>
+        </div>`;
+
+        for (let b = 0; b < s.blocks.length; b++) {
+            const block = s.blocks[b];
+            const blockSettings = Array.isArray(block.settings) ? block.settings : [];
+            const isExpanded = block._expanded;
+
+            html += `<div class="schema-block" data-block-index="${b}">
+                <div class="schema-block-header">
+                    <button class="schema-block-toggle${isExpanded ? ' expanded' : ''}" data-toggle-block="${b}">&#9656;</button>
+                    <span class="schema-field-type">${esc(block.type || 'block')}</span>
+                    <span class="schema-field-id">${esc(block.name || block.type || '')}</span>
+                    <div class="schema-field-actions">
+                        <button class="schema-field-action-btn" data-move-block="${b}" data-dir="up" title="Move up">&#9650;</button>
+                        <button class="schema-field-action-btn" data-move-block="${b}" data-dir="down" title="Move down">&#9660;</button>
+                        <button class="schema-field-action-btn danger" data-delete-block="${b}" title="Remove">&#10005;</button>
+                    </div>
+                </div>
+                <div class="schema-block-body" style="display:${isExpanded ? 'block' : 'none'};">
+                    <div class="schema-field-row"><label>Type</label><input type="text" data-block="${b}" data-bprop="type" value="${escAttr(block.type || '')}"></div>
+                    <div class="schema-field-row"><label>Name</label><input type="text" data-block="${b}" data-bprop="name" value="${escAttr(block.name || '')}"></div>
+                    <div class="schema-block-settings-label">Block Settings (${blockSettings.length})</div>`;
+
+            for (let bs = 0; bs < blockSettings.length; bs++) {
+                html += renderSettingCard(blockSettings[bs], bs, `bs-${b}`);
+            }
+
+            html += `<button class="schema-add-setting small" data-add-block-setting="${b}">+ Add block setting</button>
+                </div>
+            </div>`;
+        }
+
+        html += `<button class="schema-add-setting" id="btnAddBlock">+ Add block</button>`;
+
+        // ── Presets ──
+        html += `<div class="schema-section-divider">
+            <span>Presets</span><span class="schema-count">${s.presets.length}</span>
+        </div>`;
+
+        for (let p = 0; p < s.presets.length; p++) {
+            const preset = s.presets[p];
+            const presetJson = JSON.stringify({ settings: preset.settings || {}, blocks: preset.blocks || [] }, null, 2);
+            html += `<div class="schema-preset">
+                <div class="schema-field-header">
+                    <span class="schema-field-type">preset</span>
+                    <span class="schema-field-id">${esc(preset.name || 'Preset ' + (p + 1))}</span>
+                    <div class="schema-field-actions">
+                        <button class="schema-field-action-btn danger" data-delete-preset="${p}" title="Remove">&#10005;</button>
+                    </div>
+                </div>
+                <div class="schema-field-row"><label>Name</label><input type="text" data-preset="${p}" data-pprop="name" value="${escAttr(preset.name || '')}"></div>
+                <div class="schema-preset-json">
+                    <label>Settings & Blocks (JSON)</label>
+                    <textarea data-preset="${p}" data-pprop="json" rows="5">${esc(presetJson)}</textarea>
+                </div>
+            </div>`;
+        }
+
+        html += `<button class="schema-add-setting" id="btnAddPreset">+ Add preset</button>`;
+        html += `<button class="schema-add-setting" id="btnPresetFromCurrent" style="border-style:solid;margin-top:4px;">Create preset from defaults</button>`;
         html += `<button class="schema-apply-btn" id="btnApplySchema">Apply to file</button>`;
 
         $('schemaDesigner').innerHTML = html;
@@ -2596,77 +2824,299 @@
         createEditor($('schemaJsonEditor'), jsonStr, 'schema.json', 'schema');
     }
 
-    // Schema designer event delegation
+    // Helper: parse "bs-{blockIdx}-{settingIdx}" or "setting-{idx}" from data attributes
+    function _parseSettingRef(el) {
+        // Check for block-setting (data-block-setting="blockIdx-settingIdx")
+        if (el.dataset.blockSetting !== undefined) {
+            const parts = el.dataset.blockSetting.split('-');
+            return { type: 'block', blockIdx: parseInt(parts[0]), settingIdx: parseInt(parts[1]), prop: el.dataset.prop };
+        }
+        // Section setting
+        if (el.dataset.setting !== undefined) {
+            return { type: 'section', settingIdx: parseInt(el.dataset.setting), prop: el.dataset.prop };
+        }
+        return null;
+    }
+
+    function _getSettingObj(ref) {
+        if (ref.type === 'section') return currentSchema.settings[ref.settingIdx];
+        if (ref.type === 'block') {
+            const block = currentSchema.blocks[ref.blockIdx];
+            return block && Array.isArray(block.settings) ? block.settings[ref.settingIdx] : null;
+        }
+        return null;
+    }
+
+    // Schema designer event delegation — INPUT
     $('schemaDesigner').addEventListener('input', (e) => {
         if (!currentSchema) return;
         const el = e.target;
 
         // Section-level fields
         if (el.dataset.schemaField) {
-            currentSchema[el.dataset.schemaField] = el.value || null;
+            const field = el.dataset.schemaField;
+            if (field === 'max_blocks') {
+                currentSchema[field] = el.value ? parseInt(el.value) : null;
+            } else {
+                currentSchema[field] = el.value || null;
+            }
             return;
         }
 
-        // Setting fields
-        if (el.dataset.setting !== undefined) {
-            const idx = parseInt(el.dataset.setting);
-            const prop = el.dataset.prop;
-            if (currentSchema.settings[idx]) {
-                currentSchema.settings[idx][prop] = el.value;
+        // Setting fields (section or block)
+        const ref = _parseSettingRef(el);
+        if (ref && ref.prop) {
+            const setting = _getSettingObj(ref);
+            if (setting) {
+                // Handle numeric props
+                if (['min', 'max', 'step'].includes(ref.prop)) {
+                    setting[ref.prop] = el.value !== '' ? Number(el.value) : undefined;
+                } else {
+                    setting[ref.prop] = el.value;
+                }
+            }
+            return;
+        }
+
+        // Option value/label editing
+        if (el.dataset.opt !== undefined) {
+            const optIdx = parseInt(el.dataset.opt);
+            const optProp = el.dataset.optprop;
+            const settingRef = _parseSettingRef(el);
+            if (settingRef) {
+                const setting = _getSettingObj(settingRef);
+                if (setting && Array.isArray(setting.options) && setting.options[optIdx]) {
+                    setting.options[optIdx][optProp] = el.value;
+                }
+            }
+            return;
+        }
+
+        // Block type/name
+        if (el.dataset.block !== undefined && el.dataset.bprop) {
+            const bIdx = parseInt(el.dataset.block);
+            if (currentSchema.blocks[bIdx]) {
+                currentSchema.blocks[bIdx][el.dataset.bprop] = el.value;
+            }
+            return;
+        }
+
+        // Preset fields
+        if (el.dataset.preset !== undefined && el.dataset.pprop) {
+            const pIdx = parseInt(el.dataset.preset);
+            const preset = currentSchema.presets[pIdx];
+            if (!preset) return;
+            if (el.dataset.pprop === 'name') {
+                preset.name = el.value;
+            } else if (el.dataset.pprop === 'json') {
+                try {
+                    const parsed = JSON.parse(el.value);
+                    preset.settings = parsed.settings || {};
+                    preset.blocks = parsed.blocks || [];
+                } catch { /* ignore invalid JSON while typing */ }
             }
         }
     });
 
+    // Schema designer — CHANGE (select dropdowns)
     $('schemaDesigner').addEventListener('change', (e) => {
         if (!currentSchema) return;
         const el = e.target;
-        if (el.dataset.setting !== undefined) {
-            const idx = parseInt(el.dataset.setting);
-            const prop = el.dataset.prop;
-            if (currentSchema.settings[idx]) {
-                currentSchema.settings[idx][prop] = el.value;
-                if (prop === 'type') renderSchemaDesigner(); // re-render on type change
+        const ref = _parseSettingRef(el);
+        if (ref && ref.prop) {
+            const setting = _getSettingObj(ref);
+            if (setting) {
+                setting[ref.prop] = el.value;
+                if (ref.prop === 'type') renderSchemaDesigner();
             }
         }
     });
 
+    // Schema designer — CLICK
     $('schemaDesigner').addEventListener('click', (e) => {
         if (!currentSchema) return;
 
-        // Add setting
+        // ── Add section setting ──
         if (e.target.closest('#btnAddSetting')) {
             currentSchema.settings.push({ type: 'text', id: 'new_setting', label: 'New Setting', default: '' });
             renderSchemaDesigner();
             return;
         }
 
-        // Apply schema to file
+        // ── Apply schema to file ──
         if (e.target.closest('#btnApplySchema')) {
             applySchemaToFile();
             return;
         }
 
-        // Delete setting
+        // ── Delete section setting ──
         const delBtn = e.target.closest('[data-delete-setting]');
         if (delBtn) {
-            const idx = parseInt(delBtn.dataset.deleteSetting);
-            currentSchema.settings.splice(idx, 1);
+            currentSchema.settings.splice(parseInt(delBtn.dataset.deleteSetting), 1);
             renderSchemaDesigner();
             return;
         }
 
-        // Move setting
+        // ── Move section setting ──
         const moveBtn = e.target.closest('[data-move-setting]');
         if (moveBtn) {
             const idx = parseInt(moveBtn.dataset.moveSetting);
-            const dir = moveBtn.dataset.dir;
-            const newIdx = dir === 'up' ? idx - 1 : idx + 1;
+            const newIdx = moveBtn.dataset.dir === 'up' ? idx - 1 : idx + 1;
             if (newIdx >= 0 && newIdx < currentSchema.settings.length) {
-                const tmp = currentSchema.settings[idx];
-                currentSchema.settings[idx] = currentSchema.settings[newIdx];
-                currentSchema.settings[newIdx] = tmp;
+                [currentSchema.settings[idx], currentSchema.settings[newIdx]] = [currentSchema.settings[newIdx], currentSchema.settings[idx]];
                 renderSchemaDesigner();
             }
+            return;
+        }
+
+        // ── Toggle block expand/collapse ──
+        const toggleBtn = e.target.closest('[data-toggle-block]');
+        if (toggleBtn) {
+            const bIdx = parseInt(toggleBtn.dataset.toggleBlock);
+            if (currentSchema.blocks[bIdx]) {
+                currentSchema.blocks[bIdx]._expanded = !currentSchema.blocks[bIdx]._expanded;
+                renderSchemaDesigner();
+            }
+            return;
+        }
+
+        // ── Add block ──
+        if (e.target.closest('#btnAddBlock')) {
+            currentSchema.blocks.push({ type: 'new_block', name: 'New Block', settings: [], _expanded: true });
+            renderSchemaDesigner();
+            return;
+        }
+
+        // ── Delete block ──
+        const delBlock = e.target.closest('[data-delete-block]');
+        if (delBlock) {
+            currentSchema.blocks.splice(parseInt(delBlock.dataset.deleteBlock), 1);
+            renderSchemaDesigner();
+            return;
+        }
+
+        // ── Move block ──
+        const moveBlock = e.target.closest('[data-move-block]');
+        if (moveBlock) {
+            const idx = parseInt(moveBlock.dataset.moveBlock);
+            const newIdx = moveBlock.dataset.dir === 'up' ? idx - 1 : idx + 1;
+            if (newIdx >= 0 && newIdx < currentSchema.blocks.length) {
+                [currentSchema.blocks[idx], currentSchema.blocks[newIdx]] = [currentSchema.blocks[newIdx], currentSchema.blocks[idx]];
+                renderSchemaDesigner();
+            }
+            return;
+        }
+
+        // ── Add block setting ──
+        const addBs = e.target.closest('[data-add-block-setting]');
+        if (addBs) {
+            const bIdx = parseInt(addBs.dataset.addBlockSetting);
+            if (currentSchema.blocks[bIdx]) {
+                if (!Array.isArray(currentSchema.blocks[bIdx].settings)) currentSchema.blocks[bIdx].settings = [];
+                currentSchema.blocks[bIdx].settings.push({ type: 'text', id: 'new_field', label: 'New Field', default: '' });
+                currentSchema.blocks[bIdx]._expanded = true;
+                renderSchemaDesigner();
+            }
+            return;
+        }
+
+        // ── Delete block setting ──
+        const delBs = e.target.closest('[data-delete-bs]');
+        if (delBs) {
+            const parts = delBs.dataset.deleteBs.split('-');
+            const bIdx = parseInt(parts[0]), sIdx = parseInt(parts[1]);
+            if (currentSchema.blocks[bIdx] && Array.isArray(currentSchema.blocks[bIdx].settings)) {
+                currentSchema.blocks[bIdx].settings.splice(sIdx, 1);
+                renderSchemaDesigner();
+            }
+            return;
+        }
+
+        // ── Move block setting ──
+        const moveBs = e.target.closest('[data-move-bs]');
+        if (moveBs) {
+            const parts = moveBs.dataset.moveBs.split('-');
+            const bIdx = parseInt(parts[0]), sIdx = parseInt(parts[1]);
+            const arr = currentSchema.blocks[bIdx]?.settings;
+            if (arr) {
+                const newIdx = moveBs.dataset.dir === 'up' ? sIdx - 1 : sIdx + 1;
+                if (newIdx >= 0 && newIdx < arr.length) {
+                    [arr[sIdx], arr[newIdx]] = [arr[newIdx], arr[sIdx]];
+                    renderSchemaDesigner();
+                }
+            }
+            return;
+        }
+
+        // ── Add select option ──
+        const addOpt = e.target.closest('[data-add-opt]');
+        if (addOpt) {
+            const parts = addOpt.dataset.addOpt.split('-');
+            let setting;
+            if (parts[0] === 'setting') {
+                setting = currentSchema.settings[parseInt(parts[1])];
+            } else if (parts[0] === 'bs') {
+                const block = currentSchema.blocks[parseInt(parts[1])];
+                setting = block?.settings?.[parseInt(parts[2])];
+            }
+            if (setting) {
+                if (!Array.isArray(setting.options)) setting.options = [];
+                setting.options.push({ value: '', label: '' });
+                renderSchemaDesigner();
+            }
+            return;
+        }
+
+        // ── Delete select option ──
+        const delOpt = e.target.closest('[data-del-opt]');
+        if (delOpt) {
+            const parts = delOpt.dataset.delOpt.split('-');
+            let setting, optIdx;
+            if (parts[0] === 'setting') {
+                setting = currentSchema.settings[parseInt(parts[1])];
+                optIdx = parseInt(parts[2]);
+            } else if (parts[0] === 'bs') {
+                const block = currentSchema.blocks[parseInt(parts[1])];
+                setting = block?.settings?.[parseInt(parts[2])];
+                optIdx = parseInt(parts[3]);
+            }
+            if (setting && Array.isArray(setting.options)) {
+                setting.options.splice(optIdx, 1);
+                renderSchemaDesigner();
+            }
+            return;
+        }
+
+        // ── Add preset ──
+        if (e.target.closest('#btnAddPreset')) {
+            currentSchema.presets.push({ name: 'New Preset', settings: {}, blocks: [] });
+            renderSchemaDesigner();
+            return;
+        }
+
+        // ── Create preset from current defaults ──
+        if (e.target.closest('#btnPresetFromCurrent')) {
+            const settings = {};
+            currentSchema.settings.forEach(s => {
+                if (s.id && s.default != null && s.default !== '') settings[s.id] = s.default;
+            });
+            const blocks = currentSchema.blocks.map(b => {
+                const bs = {};
+                (b.settings || []).forEach(s => {
+                    if (s.id && s.default != null && s.default !== '') bs[s.id] = s.default;
+                });
+                return { type: b.type, settings: bs };
+            });
+            currentSchema.presets.push({ name: currentSchema.name || 'Default', settings, blocks });
+            renderSchemaDesigner();
+            return;
+        }
+
+        // ── Delete preset ──
+        const delPreset = e.target.closest('[data-delete-preset]');
+        if (delPreset) {
+            currentSchema.presets.splice(parseInt(delPreset.dataset.deletePreset), 1);
+            renderSchemaDesigner();
             return;
         }
     });
