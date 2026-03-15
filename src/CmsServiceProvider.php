@@ -12,6 +12,7 @@ use ZephyrPHP\Cms\Services\SidebarManager;
 use ZephyrPHP\Cms\Services\DashboardManager;
 use ZephyrPHP\Cms\Services\SettingsManager;
 use ZephyrPHP\Cms\Services\ThemeInstaller;
+use ZephyrPHP\Cms\Services\AssetBundler;
 use ZephyrPHP\Cms\Extensions\ThemeAssetExtension;
 use ZephyrPHP\Database\EntityManager;
 
@@ -663,19 +664,38 @@ class CmsServiceProvider
             $html = $view->render('@theme/templates/' . $template, $pageData);
         }
 
-        // Auto-inject companion CSS/JS for this template into the rendered HTML
-        $themePath = $themeManager->getActiveThemePath();
+        // Bundle companion CSS/JS into single minified files per page
         $themeSlug = $themeManager->getEffectiveTheme();
+        $assetsPath = $themeManager->getThemeAssetsPath($themeSlug);
+        $basePath = defined('BASE_PATH') ? BASE_PATH : dirname(__DIR__, 3);
+        $bundler = new AssetBundler($basePath . '/public', $themeSlug);
 
-        $pageCssFile = $themePath . '/public/css/' . $template . '.css';
+        // Collect all CSS files: section companions + page companion
+        $cssFiles = $sectionManager->getCollectedCssPaths();
+        $pageCssFile = $assetsPath . '/css/' . $template . '.css';
         if (file_exists($pageCssFile)) {
-            $cssTag = '<link rel="stylesheet" href="/themes/' . htmlspecialchars($themeSlug) . '/css/' . htmlspecialchars($template) . '.css?v=' . filemtime($pageCssFile) . '">';
+            $cssFiles[] = $pageCssFile;
+        }
+
+        // Collect JS files: page companion
+        $jsFiles = [];
+        $pageJsFile = $assetsPath . '/js/' . $template . '.js';
+        if (file_exists($pageJsFile)) {
+            $jsFiles[] = $pageJsFile;
+        }
+
+        // Bundle and inject CSS
+        $bundleName = 'page-' . preg_replace('/[^a-z0-9_-]/i', '-', $template);
+        $cssBundleUrl = $bundler->bundleCss($cssFiles, $bundleName);
+        if ($cssBundleUrl) {
+            $cssTag = '<link rel="stylesheet" href="' . htmlspecialchars($cssBundleUrl) . '">';
             $html = str_replace('</head>', $cssTag . "\n</head>", $html);
         }
 
-        $pageJsFile = $themePath . '/public/js/' . $template . '.js';
-        if (file_exists($pageJsFile)) {
-            $jsTag = '<script src="/themes/' . htmlspecialchars($themeSlug) . '/js/' . htmlspecialchars($template) . '.js?v=' . filemtime($pageJsFile) . '" defer></script>';
+        // Bundle and inject JS
+        $jsBundleUrl = $bundler->bundleJs($jsFiles, $bundleName);
+        if ($jsBundleUrl) {
+            $jsTag = '<script src="' . htmlspecialchars($jsBundleUrl) . '" defer></script>';
             $html = str_replace('</body>', $jsTag . "\n</body>", $html);
         }
 

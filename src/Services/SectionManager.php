@@ -7,10 +7,20 @@ namespace ZephyrPHP\Cms\Services;
 class SectionManager
 {
     private ThemeManager $themeManager;
+    private array $collectedCssPaths = [];
 
     public function __construct(ThemeManager $themeManager)
     {
         $this->themeManager = $themeManager;
+    }
+
+    /**
+     * Get companion CSS file paths collected during section rendering.
+     * @return string[] Absolute file paths (deduplicated)
+     */
+    public function getCollectedCssPaths(): array
+    {
+        return array_keys($this->collectedCssPaths);
     }
 
     /**
@@ -541,14 +551,12 @@ class SectionManager
                 'theme_settings' => $themeSettings,
             ]);
 
-            // Auto-inject companion CSS if it exists
-            $themePath = $this->themeManager->getActiveThemePath();
-            $cssRelative = 'css/sections/' . $type . '.css';
-            $cssFile = $themePath . '/public/' . $cssRelative;
+            // Collect companion CSS path for bundling
+            $themeSlug = $slug ?? $this->themeManager->getEffectiveTheme();
+            $assetsPath = $this->themeManager->getThemeAssetsPath($themeSlug);
+            $cssFile = $assetsPath . '/css/sections/' . $type . '.css';
             if (file_exists($cssFile)) {
-                $themeSlug = $this->themeManager->getEffectiveTheme();
-                $cssUrl = '/themes/' . $themeSlug . '/' . $cssRelative . '?v=' . filemtime($cssFile);
-                $renderedHtml = '<link rel="stylesheet" href="' . htmlspecialchars($cssUrl) . '">' . "\n" . $renderedHtml;
+                $this->collectedCssPaths[$cssFile] = true;
             }
 
             // Wrap with data attributes for inspector/customizer mode
