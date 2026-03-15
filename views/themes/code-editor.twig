@@ -907,6 +907,161 @@
         indentWithTab = cmCommands.indentWithTab;
         oneDark = cmTheme.oneDark;
 
+        // ── Twig syntax overlay highlighting ──
+        // CodeMirror's HTML parser doesn't know Twig, so we overlay decorations
+        // for {% %}, {{ }}, {# #}, keywords, filters, variables
+        const twigTheme = EditorView.baseTheme({
+            '.tw-delim': { color: '#c678dd' },           // purple — {% %} {{ }} delimiters
+            '.tw-keyword': { color: '#c678dd', fontWeight: 'bold' },  // purple bold — if/for/block/set
+            '.tw-comment': { color: '#5c6370', fontStyle: 'italic' }, // gray italic — {# #}
+            '.tw-string': { color: '#98c379' },           // green — strings
+            '.tw-number': { color: '#d19a66' },           // orange — numbers
+            '.tw-operator': { color: '#56b6c2' },         // cyan — operators, |
+            '.tw-filter': { color: '#61afef' },           // blue — filter names
+            '.tw-variable': { color: '#e06c75' },         // red — variable names
+            '.tw-property': { color: '#e5c07b' },         // yellow — .property
+            '.tw-function': { color: '#61afef' },         // blue — function calls
+            '.tw-tag-name': { color: '#e06c75' },         // red — HTML tag names
+            '.tw-attr-name': { color: '#d19a66' },        // orange — HTML attributes
+            '.tw-attr-value': { color: '#98c379' },       // green — HTML attribute values
+        });
+
+        const Decoration = cmView.Decoration;
+        const ViewPlugin = cmView.ViewPlugin;
+        const RangeSetBuilder = cmState.RangeSetBuilder;
+
+        function buildTwigDecorations(view) {
+            const builder = new RangeSetBuilder();
+            const doc = view.state.doc;
+            const text = doc.toString();
+
+            // Twig keywords
+            const twigKeywords = new Set([
+                'autoescape','endautoescape','block','endblock','embed','endembed',
+                'filter','endfilter','for','endfor','if','endif','macro','endmacro',
+                'raw','endraw','sandbox','endsandbox','set','endset','spaceless',
+                'endspaceless','trans','endtrans','verbatim','endverbatim',
+                'as','do','else','elseif','extends','flush','from','ignore',
+                'missing','import','include','only','use','with','schema','endschema',
+                'apply','endapply','deprecated','pluralize','in','is','not','and','or',
+                'true','false','null','none','defined','empty','even','odd','iterable',
+            ]);
+
+            // Twig built-in filters
+            const twigFilters = new Set([
+                'abs','batch','capitalize','column','convert_encoding','country_name',
+                'currency_name','currency_symbol','date','date_modify','default','e',
+                'escape','filter','first','format','format_currency','format_date',
+                'format_datetime','format_number','format_time','html_to_markdown',
+                'inline_css','join','json_encode','keys','language_name','last',
+                'length','locale_name','lower','map','markdown_to_html','merge',
+                'nl2br','number_format','raw','reduce','replace','reverse','round',
+                'slice','slug','sort','spaceless','split','striptags','timezone_name',
+                'title','trim','u','upper','url_encode',
+            ]);
+
+            const decos = [];
+
+            // Process Twig comments: {# ... #}
+            const commentRe = /\{#[\s\S]*?#\}/g;
+            let cm;
+            while ((cm = commentRe.exec(text)) !== null) {
+                decos.push({ from: cm.index, to: cm.index + cm[0].length, cls: 'tw-comment' });
+            }
+
+            // Process Twig blocks: {% ... %} and {{ ... }}
+            const blockRe = /(\{[%{])-?\s*([\s\S]*?)\s*-?([%}]\})/g;
+            let m;
+            while ((m = blockRe.exec(text)) !== null) {
+                const start = m.index;
+                const delimOpen = m[1];
+                const inner = m[2];
+                const delimClose = m[3];
+                const openEnd = start + delimOpen.length;
+                const closeStart = start + m[0].length - delimClose.length;
+
+                // Opening delimiter
+                decos.push({ from: start, to: openEnd, cls: 'tw-delim' });
+                // Closing delimiter
+                decos.push({ from: closeStart, to: start + m[0].length, cls: 'tw-delim' });
+
+                // Tokenize inner content
+                const innerStart = openEnd;
+                // Skip leading whitespace/dash
+                const innerText = m[0].substring(delimOpen.length, m[0].length - delimClose.length);
+                const tokenRe = /('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")|(\b\d+(?:\.\d+)?\b)|(\|)\s*([a-zA-Z_]\w*)|(\b[a-zA-Z_]\w*)\s*\(|\.([a-zA-Z_]\w*)|(==|!=|<=|>=|<|>|\+|-|\*|\/|~|\?|:|\.\.|and\b|or\b|not\b|in\b|is\b)|(\b[a-zA-Z_]\w*\b)/g;
+                let t;
+                const base = innerStart;
+                // We need to find positions within the inner part
+                const rawInner = m[0].substring(delimOpen.length, m[0].length - delimClose.length);
+                const innerOffset = start + delimOpen.length;
+
+                while ((t = tokenRe.exec(rawInner)) !== null) {
+                    const tStart = innerOffset + t.index;
+                    const tEnd = tStart + t[0].length;
+
+                    if (t[1]) {
+                        // String
+                        decos.push({ from: tStart, to: tEnd, cls: 'tw-string' });
+                    } else if (t[2]) {
+                        // Number
+                        decos.push({ from: tStart, to: tEnd, cls: 'tw-number' });
+                    } else if (t[3] && t[4]) {
+                        // Filter: | + name
+                        decos.push({ from: tStart, to: tStart + 1, cls: 'tw-operator' });
+                        const nameStart = tStart + t[0].indexOf(t[4]);
+                        const nameEnd = nameStart + t[4].length;
+                        if (twigFilters.has(t[4])) {
+                            decos.push({ from: nameStart, to: nameEnd, cls: 'tw-filter' });
+                        } else {
+                            decos.push({ from: nameStart, to: nameEnd, cls: 'tw-filter' });
+                        }
+                    } else if (t[5]) {
+                        // Function call: name(
+                        const fnEnd = tStart + t[5].length;
+                        decos.push({ from: tStart, to: fnEnd, cls: 'tw-function' });
+                    } else if (t[6]) {
+                        // Property access: .name
+                        const dotPos = tStart;
+                        const propStart = tStart + t[0].indexOf(t[6]);
+                        decos.push({ from: dotPos, to: dotPos + 1, cls: 'tw-operator' });
+                        decos.push({ from: propStart, to: propStart + t[6].length, cls: 'tw-property' });
+                    } else if (t[7]) {
+                        // Operator
+                        decos.push({ from: tStart, to: tEnd, cls: 'tw-operator' });
+                    } else if (t[8]) {
+                        // Identifier / keyword
+                        if (twigKeywords.has(t[8])) {
+                            decos.push({ from: tStart, to: tEnd, cls: 'tw-keyword' });
+                        } else {
+                            decos.push({ from: tStart, to: tEnd, cls: 'tw-variable' });
+                        }
+                    }
+                }
+            }
+
+            // Sort by position and add to builder (RangeSetBuilder requires sorted order)
+            decos.sort((a, b) => a.from - b.from || a.to - b.to);
+            for (const d of decos) {
+                if (d.from < d.to && d.from >= 0 && d.to <= text.length) {
+                    try {
+                        builder.add(d.from, d.to, Decoration.mark({ class: d.cls }));
+                    } catch(e) { /* skip overlapping */ }
+                }
+            }
+
+            return builder.finish();
+        }
+
+        const twigHighlighter = ViewPlugin.fromClass(class {
+            constructor(view) { this.decorations = buildTwigDecorations(view); }
+            update(update) {
+                if (update.docChanged || update.viewportChanged) {
+                    this.decorations = buildTwigDecorations(update.view);
+                }
+            }
+        }, { decorations: v => v.decorations });
+
         // Build basicSetup from individual packages (replaces codemirror meta-package)
         basicSetup = [
             cmView.lineNumbers(),
@@ -1315,6 +1470,13 @@
                 extensions.push(EditorView.lineWrapping);
             }
             if (langExt) extensions.push(langExt);
+
+            // Add Twig overlay highlighting for .twig files
+            const fileExt = (path || '').split('.').pop().toLowerCase();
+            if (fileExt === 'twig' || fileExt === 'html') {
+                extensions.push(twigTheme);
+                extensions.push(twigHighlighter);
+            }
 
             const view = new EditorView({
                 state: EditorState.create({ doc: content, extensions }),
