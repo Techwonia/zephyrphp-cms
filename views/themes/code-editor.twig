@@ -2841,6 +2841,8 @@
 
     // ── File tree event delegation ──
     $fileTree.addEventListener('click', (e) => {
+        // Copy button click — let the inline onclick handle it
+        if (e.target.closest('.file-copy-btn')) return;
         // File item click
         const fileItem = e.target.closest('.file-item');
         if (fileItem) {
