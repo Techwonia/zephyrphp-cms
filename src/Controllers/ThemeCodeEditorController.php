@@ -906,6 +906,6 @@ class ThemeCodeEditorController extends Controller
     private function isAllowedExtension(string $path): bool
     {
         $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-        return in_array($ext, ['twig', 'json', 'css', 'js', 'html', 'txt', 'svg', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'ico', 'woff', 'woff2', 'ttf', 'eot'], true);
+        return in_array($ext, ['twig', 'json', 'css', 'js', 'html', 'txt', 'svg', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'ico', 'woff', 'woff2', 'ttf', 'eot', 'php'], true);
     }
 }

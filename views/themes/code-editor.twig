@@ -269,7 +269,7 @@
             height: var(--toolbar-h); min-height: var(--toolbar-h);
             background: var(--bg-subdued); border-bottom: 1px solid var(--border);
             display: flex; align-items: center; padding: 0 8px; gap: 2px;
-            overflow-x: auto; overflow-y: hidden;
+            overflow-x: auto; overflow-y: hidden; position: relative;
         }
         .editor-toolbar::-webkit-scrollbar { height: 0; }
         .toolbar-btn {
@@ -362,10 +362,11 @@
         .schema-panel-view { display: none; height: 100%; }
         .schema-panel-view.active { display: flex; flex-direction: column; }
 
-        /* Schema view mode tabs in toolbar */
+        /* Schema view mode tabs in toolbar — centered */
         .schema-view-tabs {
-            display: none; align-items: center; gap: 0; margin-left: 8px;
+            display: none; align-items: center; gap: 0;
             border: 1px solid var(--border); border-radius: 6px; overflow: hidden;
+            position: absolute; left: 50%; transform: translateX(-50%);
         }
         .schema-view-tabs.visible { display: inline-flex; }
         .schema-view-tab {
@@ -809,10 +810,6 @@
                     <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 2.5A1.5 1.5 0 012.5 1h11A1.5 1.5 0 0115 2.5v11a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 011 13.5v-11zM7.5 2v12h6a.5.5 0 00.5-.5v-11a.5.5 0 00-.5-.5h-6zM2 2.5v11a.5.5 0 00.5.5H6.5V2H2.5a.5.5 0 00-.5.5z"/></svg>
                     Split
                 </button>
-                <button class="toolbar-btn" id="btnSchema" title="Section schema" style="display:none;">
-                    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M5 4a2 2 0 00-2 2v1a1 1 0 01-1 1H1v1h1a1 1 0 011 1v1a2 2 0 002 2h1v-1H5a1 1 0 01-1-1V9.5A1.5 1.5 0 002.5 8 1.5 1.5 0 004 6.5V5a1 1 0 011-1h1V3H5zm6 0a2 2 0 012 2v1a1 1 0 001 1h1v1h-1a1 1 0 00-1 1v1a2 2 0 01-2 2h-1v-1h1a1 1 0 001-1V9.5A1.5 1.5 0 0013.5 8 1.5 1.5 0 0012 6.5V5a1 1 0 00-1-1h-1V3h1z"/></svg>
-                    Schema
-                </button>
                 <div class="schema-view-tabs" id="schemaViewTabs">
                     <button class="schema-view-tab active" data-view="code">Code</button>
                     <button class="schema-view-tab" data-view="designer">Designer</button>
@@ -1123,7 +1120,7 @@
     const $schemaViewTabs = $('schemaViewTabs');
     const $toolbarLineCol = $('toolbarLineCol');
     const $toolbarLang = $('toolbarLang');
-    const $btnSchema = $('btnSchema');
+    // Schema button removed — view tabs handle switching
 
     // ── Load CodeMirror ──
     let EditorView, EditorState, basicSetup, keymap, langHtml, langJson, langCss, langJs, indentWithTab;
@@ -1816,7 +1813,6 @@
 
     function updateToolbarActions(path) {
         const isSection = path.startsWith('sections/') && path.endsWith('.twig');
-        $btnSchema.style.display = isSection ? '' : 'none';
         $schemaViewTabs.classList.toggle('visible', isSection);
         $btnCopyPath.style.display = path && (path.startsWith('snippets/') || path.startsWith('public/')) ? '' : 'none';
         $btnDeleteFile.style.display = path && isDeletablePath(path) ? '' : 'none';
@@ -2591,14 +2587,11 @@
             state.schemaPanelOpen = false;
             $editorArea.style.display = '';
             $schemaPanel.classList.remove('visible');
-            $btnSchema.classList.remove('active');
             currentSchema = null;
         } else {
             state.schemaPanelOpen = true;
             $editorArea.style.display = 'none';
             $schemaPanel.classList.add('visible');
-            $btnSchema.classList.add('active');
-
             // Parse schema from active tab
             if (state.activeTab) {
                 const tab = state.openTabs.find(t => t.path === state.activeTab);
@@ -3306,7 +3299,7 @@
     $('btnSearch').addEventListener('click', () => window._openQuickSearch());
     $('btnFormat').addEventListener('click', () => window._formatCode());
     $('btnSplit').addEventListener('click', () => window._toggleSplitView());
-    $btnSchema.addEventListener('click', () => window._toggleSchemaPanel());
+    // Schema button removed — view tabs handle switching
     $btnCopyPath.addEventListener('click', () => {
         const path = state.activeTab;
         if (!path) return;
