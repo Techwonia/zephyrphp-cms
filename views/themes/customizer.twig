@@ -1980,8 +1980,8 @@
                     '<p style="margin:0 0 6px;">This section fetches entries from the <strong>' + value + '</strong> collection using the <code>collection()</code> Twig helper.</p>' +
                     '<p style="margin:0 0 6px;">Use <strong>Field Mapping</strong> below to control which fields display as title, image, excerpt, etc.</p>' +
                     '<p style="margin:0 0 6px;">For custom templates, use in Twig:</p>' +
-                    '<code style="display:block;background:#f5f5f5;padding:6px 8px;border-radius:4px;font-size:10px;margin-bottom:4px;">{% set items = collection(\'' + value + '\', {per_page: 6}) %}</code>' +
-                    '<code style="display:block;background:#f5f5f5;padding:6px 8px;border-radius:4px;font-size:10px;">{% set item = entry(\'' + value + '\', slug) %}</code>' +
+                    '<code style="display:block;background:#f5f5f5;padding:6px 8px;border-radius:4px;font-size:10px;margin-bottom:4px;">{{ '{%' }} set items = collection(\'' + value + '\', {{ '{' }}per_page: 6{{ '}' }}) {{ '%}' }}</code>' +
+                    '<code style="display:block;background:#f5f5f5;padding:6px 8px;border-radius:4px;font-size:10px;">{{ '{%' }} set item = entry(\'' + value + '\', slug) {{ '%}' }}</code>' +
                     '</div>';
                 wrapper.appendChild(helpBox);
             }
