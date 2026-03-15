@@ -108,6 +108,37 @@
         /* ── Main Layout ── */
         .main-layout { display: flex; flex: 1; min-height: 0; }
 
+        /* ── Add Dropdown ── */
+        .add-dropdown {
+            position: absolute; top: 100%; left: 0; z-index: 100;
+            background: var(--bg-hover, #252526); border: 1px solid var(--border);
+            border-radius: 6px; min-width: 180px; padding: 4px 0;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4); display: none;
+        }
+        .add-dropdown.visible { display: block; }
+        .add-dropdown-item {
+            display: flex; align-items: center; gap: 8px;
+            padding: 7px 14px; font-size: 13px; color: #ccc;
+            cursor: pointer; border: none; background: none; width: 100%;
+            text-align: left; font-family: inherit;
+        }
+        .add-dropdown-item:hover { background: rgba(255,255,255,0.06); color: #fff; }
+        .add-dropdown-item svg { width: 14px; height: 14px; opacity: 0.6; }
+        .add-dropdown-sep { height: 1px; background: var(--border); margin: 4px 0; }
+        .add-dropdown-label {
+            padding: 4px 14px; font-size: 10px; text-transform: uppercase;
+            letter-spacing: 0.05em; color: #666; font-weight: 600;
+        }
+        .snippet-usage-hint {
+            background: var(--bg-subdued); border: 1px solid var(--border);
+            border-radius: 6px; padding: 10px 12px; font-size: 12px; color: var(--text-secondary);
+        }
+        .snippet-usage-code {
+            display: block; margin-top: 6px; padding: 6px 8px;
+            background: #1e1e1e; color: #ce9178; border-radius: 4px;
+            font-family: var(--font-mono); font-size: 12px; word-break: break-all;
+        }
+
         /* ── Sidebar ── */
         .sidebar {
             width: var(--sidebar-w); min-width: var(--sidebar-w);
@@ -609,12 +640,49 @@
                 <div class="sidebar-header">
                     <span class="sidebar-title">Explorer</span>
                     <div class="sidebar-actions">
-                        <button class="sidebar-btn" id="btnNewFile" title="New file (Ctrl+N)">
-                            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a.5.5 0 01.5.5V7h5.5a.5.5 0 010 1H8.5v5.5a.5.5 0 01-1 0V8H2a.5.5 0 010-1h5.5V1.5A.5.5 0 018 1z"/></svg>
-                        </button>
-                        <button class="sidebar-btn" id="btnNewFolder" title="New folder">
-                            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 3.5A1.5 1.5 0 012.5 2h3.172a1.5 1.5 0 011.06.44l.658.658A.5.5 0 007.744 3.25H13.5A1.5 1.5 0 0115 4.75v7.75a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 011 12.5v-9zM7.5 8a.5.5 0 01.5.5V10h1.5a.5.5 0 010 1H8v1.5a.5.5 0 01-1 0V11H5.5a.5.5 0 010-1H7V8.5a.5.5 0 01.5-.5z"/></svg>
-                        </button>
+                        <div style="position:relative;">
+                            <button class="sidebar-btn" id="btnAddDropdown" title="Add new...">
+                                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a.5.5 0 01.5.5V7h5.5a.5.5 0 010 1H8.5v5.5a.5.5 0 01-1 0V8H2a.5.5 0 010-1h5.5V1.5A.5.5 0 018 1z"/></svg>
+                            </button>
+                            <div class="add-dropdown" id="addDropdown">
+                                <div class="add-dropdown-label">Theme files</div>
+                                <button class="add-dropdown-item" data-add-type="layout">
+                                    <svg viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="14" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.2"/><line x1="1" y1="5" x2="15" y2="5" stroke="currentColor" stroke-width="1.2"/></svg>
+                                    Layout
+                                </button>
+                                <button class="add-dropdown-item" data-add-type="section">
+                                    <svg viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="3" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+                                    Section
+                                </button>
+                                <button class="add-dropdown-item" data-add-type="template">
+                                    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 1h8a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V3a2 2 0 012-2z" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+                                    Template
+                                </button>
+                                <button class="add-dropdown-item" data-add-type="snippet">
+                                    <svg viewBox="0 0 16 16" fill="currentColor"><polyline points="4 6 1 8 4 10" fill="none" stroke="currentColor" stroke-width="1.2"/><polyline points="12 6 15 8 12 10" fill="none" stroke="currentColor" stroke-width="1.2"/><line x1="10" y1="3" x2="6" y2="13" stroke="currentColor" stroke-width="1.2"/></svg>
+                                    Snippet
+                                </button>
+                                <div class="add-dropdown-sep"></div>
+                                <div class="add-dropdown-label">Assets</div>
+                                <button class="add-dropdown-item" data-add-type="css">
+                                    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 3h12v1H2V3zm2 3h8v1H4V6zm-1 3h10v1H3V9z" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+                                    CSS File
+                                </button>
+                                <button class="add-dropdown-item" data-add-type="js">
+                                    <svg viewBox="0 0 16 16" fill="currentColor"><text x="3" y="12" font-size="10" font-weight="bold" fill="currentColor">JS</text></svg>
+                                    JS File
+                                </button>
+                                <button class="add-dropdown-item" data-add-type="asset-folder">
+                                    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 3.5A1.5 1.5 0 012.5 2h3.172a1.5 1.5 0 011.06.44l.658.658H13.5A1.5 1.5 0 0115 4.75v7.75a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 011 12.5v-9z" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+                                    Asset Folder
+                                </button>
+                                <div class="add-dropdown-sep"></div>
+                                <button class="add-dropdown-item" data-add-type="upload">
+                                    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1v10M4 5l4-4 4 4" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 11v2a2 2 0 002 2h8a2 2 0 002-2v-2" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                                    Upload Files
+                                </button>
+                            </div>
+                        </div>
                         <button class="sidebar-btn" id="btnSearch" title="Search files (Ctrl+P)">
                             <svg viewBox="0 0 16 16" fill="currentColor"><path d="M11.742 10.344a6.5 6.5 0 10-1.397 1.398h-.001l3.85 3.85a1 1 0 001.415-1.414l-3.85-3.85zm-5.242.156a5 5 0 110-10 5 5 0 010 10z"/></svg>
                         </button>
@@ -733,64 +801,131 @@
     <!-- Context Menu -->
     <div class="context-menu" id="contextMenu"></div>
 
-    <!-- New File Modal -->
-    <div class="modal-overlay" id="newFileModal">
+    <!-- Layout Modal (name + copy from) -->
+    <div class="modal-overlay" id="layoutModal">
         <div class="modal-card">
-            <div class="modal-header">New File</div>
+            <div class="modal-header">New Layout</div>
             <div class="modal-body">
                 <div class="field-group">
-                    <label>Directory</label>
-                    <select id="newFileDir">
-                        <option value="sections/">sections/</option>
-                        <option value="layouts/">layouts/</option>
-                        <option value="templates/">templates/</option>
-                        <option value="config/">config/</option>
-                        <option value="public/css/">public / css/</option>
-                        <option value="public/js/">public / js/</option>
-                        <option value="">Root</option>
-                    </select>
+                    <label>Layout name</label>
+                    <input type="text" id="layoutName" placeholder="e.g. product-page">
+                    <div class="field-hint">Will be saved as layouts/<em>name</em>.twig</div>
                 </div>
                 <div class="field-group">
-                    <label>Filename</label>
-                    <input type="text" id="newFileName" placeholder="e.g. my-section.twig">
-                    <div class="field-hint">Allowed: .twig, .json, .css, .js, .html, .svg, .txt</div>
+                    <label>Copy from (optional)</label>
+                    <select id="layoutCopyFrom">
+                        <option value="">— Start blank —</option>
+                    </select>
+                    <div class="field-hint">Select an existing layout to use as a starting point</div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="modal-btn modal-btn-cancel" id="btnNewFileCancel">Cancel</button>
-                <button class="modal-btn modal-btn-primary" id="btnNewFileCreate">Create</button>
+                <button class="modal-btn modal-btn-cancel" onclick="window._closeModal('layoutModal')">Cancel</button>
+                <button class="modal-btn modal-btn-primary" id="btnLayoutCreate">Create Layout</button>
             </div>
         </div>
     </div>
 
-    <!-- New Folder Modal -->
-    <div class="modal-overlay" id="newFolderModal">
+    <!-- Section Modal -->
+    <div class="modal-overlay" id="sectionModal">
         <div class="modal-card">
-            <div class="modal-header">New Folder</div>
+            <div class="modal-header">New Section</div>
             <div class="modal-body">
                 <div class="field-group">
-                    <label>Parent directory</label>
-                    <select id="newFolderParent">
-                        <option value="">Theme root</option>
-                        <option value="sections/">sections/</option>
-                        <option value="templates/">templates/</option>
-                        <option value="public/">public/</option>
-                        <option value="public/css/">public / css/</option>
-                        <option value="public/js/">public / js/</option>
-                    </select>
-                </div>
-                <div class="field-group">
-                    <label>Folder name</label>
-                    <input type="text" id="newFolderName" placeholder="e.g. partials">
-                    <div class="field-hint">Lowercase, no spaces. Use hyphens to separate words.</div>
+                    <label>Section name</label>
+                    <input type="text" id="sectionName" placeholder="e.g. featured-products">
+                    <div class="field-hint">Will be saved as sections/<em>name</em>.twig</div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="modal-btn modal-btn-cancel" id="btnNewFolderCancel">Cancel</button>
-                <button class="modal-btn modal-btn-primary" id="btnNewFolderCreate">Create</button>
+                <button class="modal-btn modal-btn-cancel" onclick="window._closeModal('sectionModal')">Cancel</button>
+                <button class="modal-btn modal-btn-primary" id="btnSectionCreate">Create Section</button>
             </div>
         </div>
     </div>
+
+    <!-- Template Modal -->
+    <div class="modal-overlay" id="templateModal">
+        <div class="modal-card">
+            <div class="modal-header">New Template</div>
+            <div class="modal-body">
+                <div class="field-group">
+                    <label>Template name</label>
+                    <input type="text" id="templateName" placeholder="e.g. blog-post">
+                    <div class="field-hint">Will be saved as templates/<em>name</em>.twig</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-cancel" onclick="window._closeModal('templateModal')">Cancel</button>
+                <button class="modal-btn modal-btn-primary" id="btnTemplateCreate">Create Template</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Snippet Modal -->
+    <div class="modal-overlay" id="snippetModal">
+        <div class="modal-card">
+            <div class="modal-header">New Snippet</div>
+            <div class="modal-body">
+                <div class="field-group">
+                    <label>Snippet name</label>
+                    <input type="text" id="snippetName" placeholder="e.g. newsletter-form">
+                    <div class="field-hint">Will be saved as snippets/<em>name</em>.twig</div>
+                </div>
+                <div class="field-group">
+                    <label>Usage</label>
+                    <div class="snippet-usage-hint" id="snippetUsageHint">
+                        Include in your templates with:<br>
+                        <code class="snippet-usage-code">{% raw %}{% include "@theme/snippets/<span id="snippetUsageName">name</span>.twig" %}{% endraw %}</code>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-cancel" onclick="window._closeModal('snippetModal')">Cancel</button>
+                <button class="modal-btn modal-btn-primary" id="btnSnippetCreate">Create Snippet</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Asset File Modal (CSS / JS) -->
+    <div class="modal-overlay" id="assetFileModal">
+        <div class="modal-card">
+            <div class="modal-header" id="assetFileTitle">New CSS File</div>
+            <div class="modal-body">
+                <div class="field-group">
+                    <label>Filename</label>
+                    <input type="text" id="assetFileName" placeholder="e.g. custom-styles">
+                    <div class="field-hint" id="assetFileHint">Will be saved as public/css/<em>name</em>.css</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-cancel" onclick="window._closeModal('assetFileModal')">Cancel</button>
+                <button class="modal-btn modal-btn-primary" id="btnAssetFileCreate">Create File</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Asset Folder Modal -->
+    <div class="modal-overlay" id="assetFolderModal">
+        <div class="modal-card">
+            <div class="modal-header">New Asset Folder</div>
+            <div class="modal-body">
+                <div class="field-group">
+                    <label>Folder name</label>
+                    <input type="text" id="assetFolderName" placeholder="e.g. fonts, images">
+                    <div class="field-hint">Will be created inside public/. Lowercase, no spaces.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-cancel" onclick="window._closeModal('assetFolderModal')">Cancel</button>
+                <button class="modal-btn modal-btn-primary" id="btnAssetFolderCreate">Create Folder</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden file upload input -->
+    <input type="file" id="assetUploadInput" multiple style="display:none"
+           accept=".css,.js,.json,.svg,.png,.jpg,.jpeg,.gif,.webp,.ico,.woff,.woff2,.ttf,.eot,.mp4,.webm,.pdf,.txt,.xml,.map">
 
     <!-- Rename Modal -->
     <div class="modal-overlay" id="renameModal">
@@ -1661,64 +1796,286 @@
         }
     }
 
-    // ── New File Modal ──
-    window._showNewFileModal = function(folderPath) {
-        const sel = $('newFileDir');
-        if (folderPath) {
-            // Try to select the matching option
-            const val = folderPath.endsWith('/') ? folderPath : folderPath + '/';
-            for (const opt of sel.options) {
-                if (opt.value === val) { sel.value = val; break; }
-            }
-        }
-        $('newFileName').value = '';
-        $('newFileModal').classList.add('visible');
-        setTimeout(() => $('newFileName').focus(), 100);
-    };
+    // ── Add Dropdown Toggle ──
+    (function() {
+        const btn = $('btnAddDropdown');
+        const dd = $('addDropdown');
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dd.classList.toggle('visible');
+        });
+        document.addEventListener('click', () => dd.classList.remove('visible'));
+        dd.addEventListener('click', (e) => e.stopPropagation());
+    })();
 
-    window._createNewFile = async function() {
-        const dir = $('newFileDir').value;
-        const name = $('newFileName').value.trim();
-        if (!name) { showToast('Filename is required', 'error'); return; }
-        const path = dir + name;
+    // ── Boilerplate generators ──
+    function layoutBoilerplate(name) {
+        return `<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>` + '{% block title %}' + `${name}` + '{% endblock %}' + `</title>\n    ` + '{{ assets_head()|raw }}' + `\n    ` + '{% block styles %}{% endblock %}' + `\n</head>\n<body>\n    ` + '{% include "@theme/snippets/header.twig" %}' + `\n\n    <main>\n        ` + '{% block body %}' + `\n        <div class="container">\n            ` + '{% block content %}{% endblock %}' + `\n        </div>\n        ` + '{% endblock %}' + `\n    </main>\n\n    ` + '{% include "@theme/snippets/footer.twig" %}' + `\n    ` + '{{ assets_footer()|raw }}' + `\n    ` + '{% block scripts %}{% endblock %}' + `\n</body>\n</html>\n`;
+    }
+
+    function sectionBoilerplate(name) {
+        const label = name.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        return `<section class="section-${name}">\n    <div class="container">\n        <h2>` + '{{ section.settings.heading }}' + `</h2>\n        <div>` + '{{ section.settings.content }}' + `</div>\n    </div>\n</section>\n\n` + '{% schema %}' + `\n{\n    "name": "${label}",\n    "settings": [\n        {\n            "type": "text",\n            "id": "heading",\n            "label": "Heading",\n            "default": "${label}"\n        },\n        {\n            "type": "richtext",\n            "id": "content",\n            "label": "Content",\n            "default": ""\n        }\n    ]\n}\n` + '{% endschema %}' + `\n`;
+    }
+
+    function templateBoilerplate(name) {
+        return '{% extends "@theme/layouts/base.twig" %}' + `\n\n` + '{% block content %}' + `\n<div class="page-${name}">\n    <h1>` + '{{ page.title }}' + `</h1>\n    <div class="page-content">\n        ` + '{{ content|raw }}' + `\n    </div>\n</div>\n` + '{% endblock %}' + `\n`;
+    }
+
+    function snippetBoilerplate(name) {
+        return `{# Snippet: ${name} #}\n{# Usage: ` + '{% include "@theme/snippets/' + name + '.twig" %}' + ` #}\n\n<div class="snippet-${name}">\n    {# Add your snippet content here #}\n</div>\n`;
+    }
+
+    // ── Populate layout copy-from select ──
+    function populateLayoutSelect() {
+        const sel = $('layoutCopyFrom');
+        // Keep the first "blank" option, remove the rest
+        while (sel.options.length > 1) sel.remove(1);
+        // Find layout files from allFilePaths
+        const paths = state.allFilePaths || [];
+        paths.forEach(f => {
+            if (f.startsWith('layouts/') && f.endsWith('.twig')) {
+                const opt = document.createElement('option');
+                opt.value = f;
+                opt.textContent = f;
+                sel.appendChild(opt);
+            }
+        });
+    }
+
+    // ── Dropdown item handlers ──
+    let _assetType = 'css'; // track which asset type is being created
+
+    document.querySelectorAll('.add-dropdown-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+            $('addDropdown').classList.remove('visible');
+            const type = btn.dataset.addType;
+            switch(type) {
+                case 'layout':
+                    $('layoutName').value = '';
+                    populateLayoutSelect();
+                    $('layoutModal').classList.add('visible');
+                    setTimeout(() => $('layoutName').focus(), 100);
+                    break;
+                case 'section':
+                    $('sectionName').value = '';
+                    $('sectionModal').classList.add('visible');
+                    setTimeout(() => $('sectionName').focus(), 100);
+                    break;
+                case 'template':
+                    $('templateName').value = '';
+                    $('templateModal').classList.add('visible');
+                    setTimeout(() => $('templateName').focus(), 100);
+                    break;
+                case 'snippet':
+                    $('snippetName').value = '';
+                    $('snippetUsageName').textContent = 'name';
+                    $('snippetModal').classList.add('visible');
+                    setTimeout(() => $('snippetName').focus(), 100);
+                    break;
+                case 'css':
+                    _assetType = 'css';
+                    $('assetFileTitle').textContent = 'New CSS File';
+                    $('assetFileHint').innerHTML = 'Will be saved as public/css/<em>name</em>.css';
+                    $('assetFileName').value = '';
+                    $('assetFileModal').classList.add('visible');
+                    setTimeout(() => $('assetFileName').focus(), 100);
+                    break;
+                case 'js':
+                    _assetType = 'js';
+                    $('assetFileTitle').textContent = 'New JS File';
+                    $('assetFileHint').innerHTML = 'Will be saved as public/js/<em>name</em>.js';
+                    $('assetFileName').value = '';
+                    $('assetFileModal').classList.add('visible');
+                    setTimeout(() => $('assetFileName').focus(), 100);
+                    break;
+                case 'asset-folder':
+                    $('assetFolderName').value = '';
+                    $('assetFolderModal').classList.add('visible');
+                    setTimeout(() => $('assetFolderName').focus(), 100);
+                    break;
+                case 'upload':
+                    $('assetUploadInput').click();
+                    break;
+            }
+        });
+    });
+
+    // Update snippet usage hint live
+    $('snippetName').addEventListener('input', () => {
+        const val = $('snippetName').value.trim().replace(/[^a-z0-9_-]/gi, '-').toLowerCase() || 'name';
+        $('snippetUsageName').textContent = val;
+    });
+
+    // ── Create handlers ──
+    function sanitizeName(name) {
+        return name.trim().replace(/\.twig$/i, '').replace(/[^a-z0-9_-]/gi, '-').toLowerCase();
+    }
+
+    $('btnLayoutCreate').addEventListener('click', async () => {
+        const raw = $('layoutName').value;
+        const name = sanitizeName(raw);
+        if (!name) { showToast('Layout name is required', 'error'); return; }
+        const path = 'layouts/' + name + '.twig';
+        const copyFrom = $('layoutCopyFrom').value;
+        let content = '';
+        if (copyFrom) {
+            // Load the source layout content
+            try {
+                const resp = await apiFetch(`${BASE_URL}/file?path=${encodeURIComponent(copyFrom)}`);
+                content = resp.content || '';
+            } catch(e) {
+                content = layoutBoilerplate(name);
+            }
+        } else {
+            content = layoutBoilerplate(name);
+        }
         try {
-            await apiFetch(`${BASE_URL}/file/create`, { method: 'POST', body: { path, content: '' } });
-            window._closeModal('newFileModal');
+            await apiFetch(`${BASE_URL}/file/create`, { method: 'POST', body: { path, content } });
+            window._closeModal('layoutModal');
             await loadFileTree();
             await openFile(path);
-            showToast('File created');
-        } catch (e) {
-            showToast(`Failed: ${e.message}`, 'error');
-        }
-    };
+            showToast('Layout created');
+        } catch(e) { showToast(`Failed: ${e.message}`, 'error'); }
+    });
 
-    // ── New Folder Modal ──
-    window._showNewFolderModal = function(parentPath) {
-        const sel = $('newFolderParent');
-        if (parentPath) {
-            const val = parentPath.endsWith('/') ? parentPath : parentPath + '/';
-            for (const opt of sel.options) {
-                if (opt.value === val) { sel.value = val; break; }
-            }
-        }
-        $('newFolderName').value = '';
-        $('newFolderModal').classList.add('visible');
-        setTimeout(() => $('newFolderName').focus(), 100);
-    };
+    $('btnSectionCreate').addEventListener('click', async () => {
+        const name = sanitizeName($('sectionName').value);
+        if (!name) { showToast('Section name is required', 'error'); return; }
+        const path = 'sections/' + name + '.twig';
+        try {
+            await apiFetch(`${BASE_URL}/file/create`, { method: 'POST', body: { path, content: sectionBoilerplate(name) } });
+            window._closeModal('sectionModal');
+            await loadFileTree();
+            await openFile(path);
+            showToast('Section created');
+        } catch(e) { showToast(`Failed: ${e.message}`, 'error'); }
+    });
 
-    window._createNewFolder = async function() {
-        const parent = $('newFolderParent').value;
-        const name = $('newFolderName').value.trim().replace(/[^a-z0-9_-]/gi, '-').toLowerCase();
+    $('btnTemplateCreate').addEventListener('click', async () => {
+        const name = sanitizeName($('templateName').value);
+        if (!name) { showToast('Template name is required', 'error'); return; }
+        const path = 'templates/' + name + '.twig';
+        try {
+            await apiFetch(`${BASE_URL}/file/create`, { method: 'POST', body: { path, content: templateBoilerplate(name) } });
+            window._closeModal('templateModal');
+            await loadFileTree();
+            await openFile(path);
+            showToast('Template created');
+        } catch(e) { showToast(`Failed: ${e.message}`, 'error'); }
+    });
+
+    $('btnSnippetCreate').addEventListener('click', async () => {
+        const name = sanitizeName($('snippetName').value);
+        if (!name) { showToast('Snippet name is required', 'error'); return; }
+        const path = 'snippets/' + name + '.twig';
+        try {
+            await apiFetch(`${BASE_URL}/file/create`, { method: 'POST', body: { path, content: snippetBoilerplate(name) } });
+            window._closeModal('snippetModal');
+            await loadFileTree();
+            await openFile(path);
+            showToast('Snippet created');
+        } catch(e) { showToast(`Failed: ${e.message}`, 'error'); }
+    });
+
+    $('btnAssetFileCreate').addEventListener('click', async () => {
+        let name = $('assetFileName').value.trim().replace(/[^a-z0-9_.-]/gi, '-').toLowerCase();
+        if (!name) { showToast('Filename is required', 'error'); return; }
+        // Strip any extension the user may have typed, enforce correct one
+        name = name.replace(/\.(css|js|php|twig|html)$/i, '');
+        const ext = _assetType === 'js' ? '.js' : '.css';
+        const dir = _assetType === 'js' ? 'public/js/' : 'public/css/';
+        const path = dir + name + ext;
+        const content = _assetType === 'css'
+            ? `/* ${name}.css */\n`
+            : `// ${name}.js\n`;
+        try {
+            await apiFetch(`${BASE_URL}/file/create`, { method: 'POST', body: { path, content } });
+            window._closeModal('assetFileModal');
+            await loadFileTree();
+            await openFile(path);
+            showToast(`${_assetType.toUpperCase()} file created`);
+        } catch(e) { showToast(`Failed: ${e.message}`, 'error'); }
+    });
+
+    $('btnAssetFolderCreate').addEventListener('click', async () => {
+        const name = $('assetFolderName').value.trim().replace(/[^a-z0-9_-]/gi, '-').toLowerCase();
         if (!name) { showToast('Folder name is required', 'error'); return; }
-        const path = parent + name;
+        const path = 'public/' + name;
         try {
             await apiFetch(`${BASE_URL}/folder`, { method: 'POST', body: { path } });
-            window._closeModal('newFolderModal');
+            window._closeModal('assetFolderModal');
             await loadFileTree();
             showToast('Folder created');
-        } catch (e) {
-            showToast(`Failed: ${e.message}`, 'error');
+        } catch(e) { showToast(`Failed: ${e.message}`, 'error'); }
+    });
+
+    // ── Upload files handler ──
+    const $uploadInput = $('assetUploadInput');
+    $uploadInput.addEventListener('change', async () => {
+        const files = $uploadInput.files;
+        if (!files || files.length === 0) return;
+        const formData = new FormData();
+        for (let i = 0; i < files.length; i++) {
+            formData.append('files[]', files[i]);
         }
+        // Upload to public/ root by default
+        formData.append('subdir', '');
+        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        try {
+            const resp = await fetch(`${BASE_URL}/upload`, {
+                method: 'POST',
+                headers: csrfMeta ? { 'X-CSRF-Token': csrfMeta.content } : {},
+                body: formData,
+            });
+            const data = await resp.json();
+            if (data.error) { showToast(data.error, 'error'); return; }
+            await loadFileTree();
+            if (data.files && data.files.length > 0) {
+                await openFile(data.files[0]);
+            }
+            showToast(`${data.files ? data.files.length : 0} file(s) uploaded`);
+        } catch(e) {
+            showToast(`Upload failed: ${e.message}`, 'error');
+        }
+        $uploadInput.value = '';
+    });
+
+    // ── Legacy helpers for context menu ──
+    window._showNewFileModal = function(folderPath) {
+        // Determine best modal from folder path
+        if (folderPath && folderPath.startsWith('sections')) {
+            $('sectionName').value = '';
+            $('sectionModal').classList.add('visible');
+            setTimeout(() => $('sectionName').focus(), 100);
+        } else if (folderPath && folderPath.startsWith('layouts')) {
+            $('layoutName').value = '';
+            populateLayoutSelect();
+            $('layoutModal').classList.add('visible');
+            setTimeout(() => $('layoutName').focus(), 100);
+        } else if (folderPath && folderPath.startsWith('snippets')) {
+            $('snippetName').value = '';
+            $('snippetModal').classList.add('visible');
+            setTimeout(() => $('snippetName').focus(), 100);
+        } else if (folderPath && folderPath.startsWith('templates')) {
+            $('templateName').value = '';
+            $('templateModal').classList.add('visible');
+            setTimeout(() => $('templateName').focus(), 100);
+        } else if (folderPath && folderPath.startsWith('public')) {
+            $('assetFolderName').value = '';
+            $('assetFolderModal').classList.add('visible');
+            setTimeout(() => $('assetFolderName').focus(), 100);
+        } else {
+            // Generic — show template modal as default
+            $('templateName').value = '';
+            $('templateModal').classList.add('visible');
+            setTimeout(() => $('templateName').focus(), 100);
+        }
+    };
+    window._showNewFolderModal = function(parentPath) {
+        $('assetFolderName').value = '';
+        $('assetFolderModal').classList.add('visible');
+        setTimeout(() => $('assetFolderName').focus(), 100);
     };
 
     // ── Rename Modal ──
@@ -2359,7 +2716,7 @@
         if ((e.ctrlKey || e.metaKey) && e.key === 'p') { e.preventDefault(); window._openQuickSearch(); }
         if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
             e.preventDefault();
-            window._showNewFileModal();
+            $('addDropdown').classList.toggle('visible');
         }
     });
 
@@ -2368,8 +2725,12 @@
     });
 
     // Handle Enter in modal inputs
-    $('newFileName').addEventListener('keydown', e => { if (e.key === 'Enter') window._createNewFile(); });
-    $('newFolderName').addEventListener('keydown', e => { if (e.key === 'Enter') window._createNewFolder(); });
+    $('layoutName').addEventListener('keydown', e => { if (e.key === 'Enter') $('btnLayoutCreate').click(); });
+    $('sectionName').addEventListener('keydown', e => { if (e.key === 'Enter') $('btnSectionCreate').click(); });
+    $('templateName').addEventListener('keydown', e => { if (e.key === 'Enter') $('btnTemplateCreate').click(); });
+    $('snippetName').addEventListener('keydown', e => { if (e.key === 'Enter') $('btnSnippetCreate').click(); });
+    $('assetFileName').addEventListener('keydown', e => { if (e.key === 'Enter') $('btnAssetFileCreate').click(); });
+    $('assetFolderName').addEventListener('keydown', e => { if (e.key === 'Enter') $('btnAssetFolderCreate').click(); });
     $('renameNewName').addEventListener('keydown', e => { if (e.key === 'Enter') window._renameFile(); });
 
     // ══════════════════════════════════════════════
@@ -2378,8 +2739,6 @@
 
     // ── Static button bindings ──
     $btnSave.addEventListener('click', () => window._saveFile());
-    $('btnNewFile').addEventListener('click', () => window._showNewFileModal());
-    $('btnNewFolder').addEventListener('click', () => window._showNewFolderModal());
     $('btnSearch').addEventListener('click', () => window._openQuickSearch());
     $('btnFormat').addEventListener('click', () => window._formatCode());
     $('btnWrap').addEventListener('click', () => window._toggleWordWrap());
@@ -2389,10 +2748,6 @@
     $('btnSchemaClose').addEventListener('click', () => window._toggleSchemaPanel());
 
     // ── Modal button bindings ──
-    $('btnNewFileCancel').addEventListener('click', () => window._closeModal('newFileModal'));
-    $('btnNewFileCreate').addEventListener('click', () => window._createNewFile());
-    $('btnNewFolderCancel').addEventListener('click', () => window._closeModal('newFolderModal'));
-    $('btnNewFolderCreate').addEventListener('click', () => window._createNewFolder());
     $('btnRenameCancel').addEventListener('click', () => window._closeModal('renameModal'));
     $('btnRenameSubmit').addEventListener('click', () => window._renameFile());
 

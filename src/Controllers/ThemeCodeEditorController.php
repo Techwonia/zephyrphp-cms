@@ -581,7 +581,7 @@ class ThemeCodeEditorController extends Controller
         }
 
         // Must start with an allowed prefix
-        $allowedPrefixes = ['layouts/', 'templates/', 'sections/', 'config/', 'controllers/', 'assets/', 'public/'];
+        $allowedPrefixes = ['layouts/', 'templates/', 'snippets/', 'sections/', 'config/', 'controllers/', 'assets/', 'public/'];
         $isAllowedPrefix = false;
         foreach ($allowedPrefixes as $prefix) {
             if (str_starts_with($path, $prefix)) {
@@ -798,6 +798,106 @@ class ThemeCodeEditorController extends Controller
     private function isRootFile(string $path): bool
     {
         return in_array($path, ['theme.json', 'pages.json'], true);
+    }
+
+    /**
+     * AJAX: Upload asset file(s) into the theme's public directory.
+     */
+    public function uploadAsset(string $slug): void
+    {
+        if (!$this->requireAdmin()) return;
+
+        header('Content-Type: application/json');
+
+        $theme = Theme::findOneBy(['slug' => $slug]);
+        if (!$theme) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Theme not found']);
+            return;
+        }
+
+        $basePath = realpath($this->themeManager->getThemeAssetsPath($slug));
+        if (!$basePath) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Public assets directory not found']);
+            return;
+        }
+
+        // Target subdirectory within public/ (e.g. "css", "js", "fonts", "images")
+        $subdir = $_POST['subdir'] ?? '';
+        $subdir = trim(str_replace('\\', '/', $subdir), '/');
+
+        if (str_contains($subdir, '..')) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Invalid path']);
+            return;
+        }
+
+        $targetDir = $basePath;
+        if ($subdir !== '') {
+            $targetDir = $basePath . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $subdir);
+            if (!is_dir($targetDir)) {
+                mkdir($targetDir, 0755, true);
+            }
+            $realTarget = realpath($targetDir);
+            if (!$realTarget || !str_starts_with($realTarget, $basePath)) {
+                http_response_code(403);
+                echo json_encode(['error' => 'Access denied']);
+                return;
+            }
+            $targetDir = $realTarget;
+        }
+
+        if (empty($_FILES['files'])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'No files uploaded']);
+            return;
+        }
+
+        // Blocked extensions in public/
+        $blockedExts = ['php', 'phtml', 'phar', 'twig', 'sh', 'bat', 'exe', 'com'];
+
+        $uploaded = [];
+        $files = $_FILES['files'];
+        $count = is_array($files['name']) ? count($files['name']) : 1;
+
+        for ($i = 0; $i < $count; $i++) {
+            $name = is_array($files['name']) ? $files['name'][$i] : $files['name'];
+            $tmpName = is_array($files['tmp_name']) ? $files['tmp_name'][$i] : $files['tmp_name'];
+            $error = is_array($files['error']) ? $files['error'][$i] : $files['error'];
+
+            if ($error !== UPLOAD_ERR_OK) {
+                continue;
+            }
+
+            // Sanitize filename
+            $safeName = preg_replace('/[^a-zA-Z0-9._-]/', '-', basename($name));
+            $ext = strtolower(pathinfo($safeName, PATHINFO_EXTENSION));
+
+            if (in_array($ext, $blockedExts, true)) {
+                continue; // silently skip blocked extensions
+            }
+
+            $dest = $targetDir . DIRECTORY_SEPARATOR . $safeName;
+
+            // Don't overwrite — append number
+            if (file_exists($dest)) {
+                $base = pathinfo($safeName, PATHINFO_FILENAME);
+                $n = 1;
+                while (file_exists($targetDir . DIRECTORY_SEPARATOR . $base . '-' . $n . '.' . $ext)) {
+                    $n++;
+                }
+                $safeName = $base . '-' . $n . '.' . $ext;
+                $dest = $targetDir . DIRECTORY_SEPARATOR . $safeName;
+            }
+
+            if (move_uploaded_file($tmpName, $dest)) {
+                $relativePath = 'public/' . ($subdir !== '' ? $subdir . '/' : '') . $safeName;
+                $uploaded[] = $relativePath;
+            }
+        }
+
+        echo json_encode(['success' => true, 'files' => $uploaded]);
     }
 
     /**
