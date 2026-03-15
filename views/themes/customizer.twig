@@ -1668,7 +1668,8 @@
             var style = doc.createElement('style');
             style.id = 'customizer-inspector-style';
             style.textContent =
-                '.inspector-enabled [data-section-id] { position: relative; transition: outline 0.15s, box-shadow 0.15s; }' +
+                /* Section-level inspector */
+                '.inspector-enabled [data-section-id] { position: relative; transition: outline 0.15s; }' +
                 '.inspector-enabled [data-section-id]:hover { outline: 2px solid #005bd3; outline-offset: -2px; z-index: 99998; }' +
                 '.inspector-enabled [data-section-id]:hover::before {' +
                 '  content: attr(data-section-type); position: absolute; top: 0; left: 0;' +
@@ -1683,7 +1684,12 @@
                 '  padding: 3px 8px; font-family: -apple-system, sans-serif;' +
                 '  pointer-events: none; z-index: 99999; border-radius: 0 0 4px 0;' +
                 '}' +
-                '.inspector-disabled [data-section-id]:hover { outline: none; }' +
+                /* Block-level inspector */
+                '.inspector-enabled [data-block-id] { position: relative; transition: outline 0.15s; cursor: pointer; }' +
+                '.inspector-enabled [data-block-id]:hover { outline: 2px dashed #e67700; outline-offset: -1px; z-index: 99999; }' +
+                '[data-block-id].inspector-block-active { outline: 2px solid #e67700; outline-offset: -1px; z-index: 99999; }' +
+                /* Disable when inspector off */
+                '.inspector-disabled [data-section-id]:hover, .inspector-disabled [data-block-id]:hover { outline: none; }' +
                 '.inspector-disabled [data-section-id]:hover::before { display: none; }';
             doc.head.appendChild(style);
 
@@ -1693,7 +1699,12 @@
 
             // Attach click handlers to all sections
             doc.querySelectorAll('[data-section-id]').forEach(function(el) {
-                injectInspectorOnElement(doc, el);
+                injectInspectorOnSection(doc, el);
+            });
+
+            // Attach click handlers to all blocks
+            doc.querySelectorAll('[data-block-id]').forEach(function(el) {
+                injectInspectorOnBlock(doc, el);
             });
 
             // Listen for messages from parent
@@ -1704,7 +1715,16 @@
                     doc.querySelectorAll('[data-section-id]').forEach(function(el) {
                         el.classList.remove('inspector-active');
                     });
-                    if (e.data.sectionId) {
+                    doc.querySelectorAll('[data-block-id]').forEach(function(el) {
+                        el.classList.remove('inspector-block-active');
+                    });
+                    if (e.data.blockId) {
+                        var blockTarget = doc.querySelector('[data-block-id="' + e.data.blockId + '"]');
+                        if (blockTarget) {
+                            blockTarget.classList.add('inspector-block-active');
+                            blockTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    } else if (e.data.sectionId) {
                         var target = doc.querySelector('[data-section-id="' + e.data.sectionId + '"]');
                         if (target) {
                             target.classList.add('inspector-active');
@@ -1719,8 +1739,11 @@
                 }
             });
 
-            // Highlight active section if any
-            if (state.activeSection) {
+            // Highlight active section/block if any
+            if (state.activeBlock) {
+                var activeBlockEl = doc.querySelector('[data-block-id="' + state.activeBlock + '"]');
+                if (activeBlockEl) activeBlockEl.classList.add('inspector-block-active');
+            } else if (state.activeSection) {
                 var activeEl = doc.querySelector('[data-section-id="' + state.activeSection + '"]');
                 if (activeEl) activeEl.classList.add('inspector-active');
             }
@@ -1729,19 +1752,33 @@
         }
     }
 
-    function injectInspectorOnElement(doc, el) {
-        // Remove existing listener by cloning
-        var newEl = el.cloneNode(true);
-        el.parentNode.replaceChild(newEl, el);
-
-        newEl.addEventListener('click', function(e) {
+    function injectInspectorOnSection(doc, el) {
+        el.addEventListener('click', function(e) {
             if (!state.inspectorEnabled) return;
+            // Don't fire if a block was clicked (block handler will fire instead)
+            if (e.target.closest('[data-block-id]')) return;
             e.preventDefault();
             e.stopPropagation();
             window.parent.postMessage({
                 type: 'inspector:select',
-                sectionId: newEl.dataset.sectionId,
-                sectionType: newEl.dataset.sectionType
+                sectionId: el.dataset.sectionId,
+                sectionType: el.dataset.sectionType
+            }, '*');
+        });
+    }
+
+    function injectInspectorOnBlock(doc, el) {
+        el.addEventListener('click', function(e) {
+            if (!state.inspectorEnabled) return;
+            e.preventDefault();
+            e.stopPropagation();
+            // Find parent section
+            var sectionEl = el.closest('[data-section-id]');
+            var sectionId = sectionEl ? sectionEl.dataset.sectionId : null;
+            window.parent.postMessage({
+                type: 'inspector:select-block',
+                sectionId: sectionId,
+                blockId: el.dataset.blockId
             }, '*');
         });
     }
@@ -1770,10 +1807,18 @@
 
     // Listen for inspector clicks from iframe
     window.addEventListener('message', function(e) {
-        if (e.data && e.data.type === 'inspector:select') {
+        if (!e.data) return;
+        if (e.data.type === 'inspector:select') {
             selectSection(e.data.sectionId);
             var treeEl = document.querySelector('[data-tree-section-id="' + e.data.sectionId + '"]');
             if (treeEl) treeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        if (e.data.type === 'inspector:select-block') {
+            if (e.data.sectionId && e.data.blockId) {
+                selectBlock(e.data.sectionId, e.data.blockId);
+                var treeEl = document.querySelector('[data-block-id="' + e.data.blockId + '"]');
+                if (treeEl) treeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
         }
     });
 

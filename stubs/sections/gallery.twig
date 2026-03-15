@@ -10,7 +10,7 @@
             <div style="display:grid; grid-template-columns:repeat({{ section.settings.columns|default(3) }}, 1fr); gap:{{ section.settings.gap|default(8) }}px;">
                 {% for block in section.blocks %}
                     {% if block.type == 'image' %}
-                        <div style="overflow:hidden; border-radius:{{ section.settings.border_radius|default(4) }}px; aspect-ratio:{{ section.settings.aspect_ratio|default('1/1') }};">
+                        <div data-block-id="{{ block.id }}" style="overflow:hidden; border-radius:{{ section.settings.border_radius|default(4) }}px; aspect-ratio:{{ section.settings.aspect_ratio|default('1/1') }};">
                             {% if block.settings.image %}
                                 <img src="/{{ block.settings.image }}" alt="{{ block.settings.alt|default('') }}" style="width:100%; height:100%; object-fit:cover; transition:transform 0.3s;">
                             {% else %}
