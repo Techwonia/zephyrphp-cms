@@ -82,6 +82,16 @@
         .device-btn:hover { color: #ccc; background: rgba(255,255,255,0.06); }
         .device-btn.active { color: #fff; background: rgba(255,255,255,0.15); }
         .device-btn svg { width: 18px; height: 18px; }
+        .topbar-page-select {
+            background: transparent; border: none; color: #fff;
+            font-size: 13px; font-weight: 500; font-family: var(--font);
+            padding: 4px 8px; cursor: pointer; outline: none;
+            appearance: none; max-width: 160px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 2px center; padding-right: 16px;
+        }
+        .topbar-page-select option { background: #1a1a1a; color: #fff; }
+        .topbar-divider { width: 1px; height: 20px; background: rgba(255,255,255,0.15); margin: 0 4px; }
 
         .topbar-right { display: flex; align-items: center; gap: 8px; }
         .topbar-unsaved {
@@ -132,21 +142,6 @@
             display: flex; align-items: center; justify-content: space-between;
         }
         .left-header-title { font-size: 14px; font-weight: 600; }
-        .page-selector {
-            padding: 8px 12px;
-            border-bottom: 1px solid var(--border);
-        }
-        .page-select {
-            width: 100%; padding: 7px 10px;
-            border: 1px solid var(--border); border-radius: 6px;
-            font-size: 13px; font-family: var(--font); background: var(--bg-surface);
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23616161' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 10px center;
-            padding-right: 28px;
-        }
-        .page-select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(0,91,211,0.15); }
 
         /* Left panel tabs */
         .left-tabs {
@@ -188,6 +183,8 @@
             background: var(--bg-subdued); border-radius: 6px; font-size: 14px;
         }
         .tree-section-list { padding: 0 8px 4px; }
+        .tree-section-wrapper { margin-bottom: 2px; }
+        .tree-section-wrapper + .tree-section-wrapper { border-top: 1px solid var(--border); padding-top: 2px; }
 
         .tree-item {
             display: flex; align-items: center; gap: 6px;
@@ -484,8 +481,16 @@
         {% if theme.isLive() %}<span class="topbar-badge">Live</span>{% endif %}
     </div>
 
-    <!-- Responsive device buttons -->
+    <!-- Center: page selector + responsive device buttons -->
     <div class="topbar-center">
+        <select class="topbar-page-select" id="pageSelect">
+            {% for page in pages %}
+            <option value="{{ page.template }}" {% if page.template == currentPage %}selected{% endif %}>
+                {{ page.title }}
+            </option>
+            {% endfor %}
+        </select>
+        <span class="topbar-divider"></span>
         <button class="device-btn active" data-device="desktop" title="Desktop">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
         </button>
@@ -518,16 +523,6 @@
 
     <!-- Left Panel -->
     <div class="left-panel">
-        <div class="page-selector">
-            <select class="page-select" id="pageSelect">
-                {% for page in pages %}
-                <option value="{{ page.template }}" {% if page.template == currentPage %}selected{% endif %}>
-                    {{ page.title }}
-                </option>
-                {% endfor %}
-            </select>
-        </div>
-
         <div class="left-tabs">
             <button class="left-tab active" data-tab="tree">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="9" x2="9" y2="21"/></svg>
@@ -729,6 +724,7 @@
             var isExpanded = !!state.expandedSections[sectionId];
 
             var wrapper = document.createElement('div');
+            wrapper.className = 'tree-section-wrapper';
             wrapper.dataset.treeSectionId = sectionId;
 
             // Section row
