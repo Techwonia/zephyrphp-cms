@@ -1546,7 +1546,8 @@
     };
 
     function extractSchema(twigContent) {
-        const match = twigContent.match(/\{%\s*schema\s*%\}([\s\S]*?)\{%\s*endschema\s*%\}/);
+        const re = new RegExp('\\{' + '%\\s*schema\\s*%' + '\\}([\\s\\S]*?)\\{' + '%\\s*endschema\\s*%' + '\\}');
+        const match = twigContent.match(re);
         if (!match) return '{\n  "name": "Section Name",\n  "settings": []\n}';
         try {
             return JSON.stringify(JSON.parse(match[1].trim()), null, 2);
