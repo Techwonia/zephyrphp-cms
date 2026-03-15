@@ -7,6 +7,7 @@ namespace ZephyrPHP\Cms\Controllers;
 use ZephyrPHP\Core\Controllers\Controller;
 use ZephyrPHP\Auth\Auth;
 use ZephyrPHP\Cms\Services\PermissionService;
+use ZephyrPHP\Asset\Asset;
 
 class AssetSettingsController extends Controller
 {
@@ -36,10 +37,6 @@ class AssetSettingsController extends Controller
         $publicAssets = $this->scanPublicAssets();
 
         return $this->render('cms::settings/assets', [
-            'collections' => $config['collections'] ?? [],
-            'preload' => $config['preload'] ?? [],
-            'preconnect' => $config['preconnect'] ?? [],
-            'assetsPrefix' => $config['assets_prefix'] ?? 'assets',
             'versionStrategy' => $config['version_strategy'] ?? 'timestamp',
             'globalVersion' => $config['global_version'] ?? '1.0.0',
             'cdnUrl' => $config['cdn_url'] ?? '',
@@ -52,7 +49,7 @@ class AssetSettingsController extends Controller
     }
 
     /**
-     * AJAX: Save asset collections configuration.
+     * AJAX: Save asset settings.
      */
     public function update(): void
     {
@@ -68,63 +65,6 @@ class AssetSettingsController extends Controller
 
         $config = $this->loadAssetsConfig();
 
-        // Update collections
-        if (isset($input['collections']) && is_array($input['collections'])) {
-            $collections = [];
-            foreach ($input['collections'] as $name => $assets) {
-                $safeName = preg_replace('/[^a-z0-9_-]/', '', strtolower(trim($name)));
-                if (empty($safeName)) continue;
-
-                $safeAssets = [];
-                foreach ((array) $assets as $asset) {
-                    if (empty($asset['path'])) continue;
-                    $entry = ['path' => trim($asset['path'])];
-                    if (isset($asset['priority'])) {
-                        $entry['priority'] = max(0, (int) $asset['priority']);
-                    }
-                    if (!empty($asset['head'])) {
-                        $entry['head'] = true;
-                    }
-                    $safeAssets[] = $entry;
-                }
-                if (!empty($safeAssets)) {
-                    $collections[$safeName] = $safeAssets;
-                }
-            }
-            $config['collections'] = $collections;
-        }
-
-        // Update preload
-        if (isset($input['preload']) && is_array($input['preload'])) {
-            $preload = [];
-            foreach ($input['preload'] as $item) {
-                if (empty($item['path']) || empty($item['as'])) continue;
-                $allowedAs = ['script', 'style', 'font', 'image', 'fetch'];
-                if (!in_array($item['as'], $allowedAs, true)) continue;
-                $preload[] = ['path' => trim($item['path']), 'as' => $item['as']];
-            }
-            $config['preload'] = $preload;
-        }
-
-        // Update preconnect
-        if (isset($input['preconnect']) && is_array($input['preconnect'])) {
-            $preconnect = [];
-            foreach ($input['preconnect'] as $item) {
-                if (empty($item['url'])) continue;
-                $url = trim($item['url']);
-                if (!preg_match('#^https?://#', $url)) continue;
-                $preconnect[] = [
-                    'url' => $url,
-                    'crossorigin' => !empty($item['crossorigin']),
-                ];
-            }
-            $config['preconnect'] = $preconnect;
-        }
-
-        // Update simple settings
-        if (isset($input['assets_prefix'])) {
-            $config['assets_prefix'] = preg_replace('/[^a-z0-9_\/-]/', '', strtolower(trim($input['assets_prefix']))) ?: 'assets';
-        }
         if (isset($input['version_strategy'])) {
             $allowed = ['timestamp', 'hash', 'manifest', 'global', 'none'];
             if (in_array($input['version_strategy'], $allowed, true)) {
@@ -152,6 +92,135 @@ class AssetSettingsController extends Controller
             http_response_code(500);
             echo json_encode(['error' => 'Failed to save config/assets.php']);
         }
+    }
+
+    /**
+     * AJAX: Minify all CSS and JS files in public/assets/.
+     */
+    public function minify(): void
+    {
+        $this->requirePermission('settings.edit');
+        header('Content-Type: application/json');
+
+        if (!class_exists(\MatthiasMullie\Minify\CSS::class)) {
+            http_response_code(500);
+            echo json_encode(['error' => 'Minifier not installed. Run: composer require matthiasmullie/minify']);
+            return;
+        }
+
+        $assetsDir = $this->getPublicAssetsPath();
+        if (!is_dir($assetsDir)) {
+            echo json_encode(['success' => true, 'minified' => 0, 'skipped' => 0]);
+            return;
+        }
+
+        $minified = 0;
+        $skipped = 0;
+        $errors = [];
+
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($assetsDir, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::LEAVES_ONLY
+        );
+
+        foreach ($iterator as $file) {
+            if (!$file->isFile()) continue;
+
+            $ext = strtolower($file->getExtension());
+            $filePath = $file->getPathname();
+            $fileName = $file->getFilename();
+
+            // Skip already minified files and source maps
+            if (str_ends_with($fileName, '.min.css') || str_ends_with($fileName, '.min.js') || $ext === 'map') {
+                $skipped++;
+                continue;
+            }
+
+            if ($ext !== 'css' && $ext !== 'js') continue;
+
+            $minPath = preg_replace('/\.' . $ext . '$/', '.min.' . $ext, $filePath);
+
+            try {
+                $source = file_get_contents($filePath);
+                if ($source === false || trim($source) === '') {
+                    $skipped++;
+                    continue;
+                }
+
+                if ($ext === 'css') {
+                    $minifier = new \MatthiasMullie\Minify\CSS($source);
+                } else {
+                    $minifier = new \MatthiasMullie\Minify\JS($source);
+                }
+
+                $result = $minifier->minify();
+
+                if (file_put_contents($minPath, $result) !== false) {
+                    $minified++;
+                } else {
+                    $errors[] = $fileName;
+                }
+            } catch (\Throwable $e) {
+                $errors[] = $fileName . ': ' . $e->getMessage();
+            }
+        }
+
+        // Also minify theme assets
+        $themesDir = $this->getPublicPath() . '/themes';
+        if (is_dir($themesDir)) {
+            $themeIterator = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($themesDir, \FilesystemIterator::SKIP_DOTS),
+                \RecursiveIteratorIterator::LEAVES_ONLY
+            );
+
+            foreach ($themeIterator as $file) {
+                if (!$file->isFile()) continue;
+
+                $ext = strtolower($file->getExtension());
+                $filePath = $file->getPathname();
+                $fileName = $file->getFilename();
+
+                if (str_ends_with($fileName, '.min.css') || str_ends_with($fileName, '.min.js') || $ext === 'map') {
+                    $skipped++;
+                    continue;
+                }
+
+                if ($ext !== 'css' && $ext !== 'js') continue;
+
+                $minPath = preg_replace('/\.' . $ext . '$/', '.min.' . $ext, $filePath);
+
+                try {
+                    $source = file_get_contents($filePath);
+                    if ($source === false || trim($source) === '') {
+                        $skipped++;
+                        continue;
+                    }
+
+                    if ($ext === 'css') {
+                        $minifier = new \MatthiasMullie\Minify\CSS($source);
+                    } else {
+                        $minifier = new \MatthiasMullie\Minify\JS($source);
+                    }
+
+                    $result = $minifier->minify();
+
+                    if (file_put_contents($minPath, $result) !== false) {
+                        $minified++;
+                    } else {
+                        $errors[] = $fileName;
+                    }
+                } catch (\Throwable $e) {
+                    $errors[] = $fileName . ': ' . $e->getMessage();
+                }
+            }
+        }
+
+        $response = ['success' => true, 'minified' => $minified, 'skipped' => $skipped];
+        if (!empty($errors)) {
+            $response['errors'] = $errors;
+        }
+
+        echo json_encode($response);
     }
 
     /**
@@ -194,7 +263,6 @@ class AssetSettingsController extends Controller
             return;
         }
 
-        // Validate extension by category
         $allowedExts = [
             'css' => ['css', 'map'],
             'js' => ['js', 'map'],
@@ -208,7 +276,6 @@ class AssetSettingsController extends Controller
             return;
         }
 
-        // Max file size: 5MB
         if ($file['size'] > 5 * 1024 * 1024) {
             http_response_code(400);
             echo json_encode(['error' => 'File too large. Maximum size is 5MB.']);
@@ -221,7 +288,6 @@ class AssetSettingsController extends Controller
             mkdir($targetDir, 0755, true);
         }
 
-        // Verify target is within public/assets
         $realAssets = realpath($assetsDir);
         $realTarget = realpath($targetDir);
         if (!$realAssets || !$realTarget || !str_starts_with($realTarget, $realAssets)) {
@@ -276,8 +342,7 @@ class AssetSettingsController extends Controller
             return;
         }
 
-        $basePath = defined('BASE_PATH') ? BASE_PATH : getcwd();
-        $publicPath = realpath($basePath . '/public');
+        $publicPath = realpath($this->getPublicPath());
         if (!$publicPath) {
             http_response_code(404);
             echo json_encode(['error' => 'Public directory not found']);
@@ -365,7 +430,7 @@ class AssetSettingsController extends Controller
         if (file_exists($path)) {
             return (array) (require $path);
         }
-        return ['assets_prefix' => 'assets', 'version_strategy' => 'timestamp', 'collections' => []];
+        return ['version_strategy' => 'timestamp'];
     }
 
     private function saveAssetsConfig(array $config): bool
@@ -424,10 +489,15 @@ class AssetSettingsController extends Controller
         return $basePath . '/config/assets.php';
     }
 
-    private function getPublicAssetsPath(): string
+    private function getPublicPath(): string
     {
         $basePath = defined('BASE_PATH') ? BASE_PATH : getcwd();
-        return $basePath . '/public/assets';
+        return $basePath . '/public';
+    }
+
+    private function getPublicAssetsPath(): string
+    {
+        return $this->getPublicPath() . '/assets';
     }
 
     private function formatSize(int $bytes): string

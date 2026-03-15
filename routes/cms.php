@@ -48,6 +48,7 @@ use ZephyrPHP\Cms\Controllers\WorkflowVisualizerController;
 use ZephyrPHP\Cms\Controllers\ApiAnalyticsController;
 use ZephyrPHP\Cms\Controllers\QueueMonitorController;
 use ZephyrPHP\Cms\Controllers\SystemMonitorController;
+use ZephyrPHP\Cms\Controllers\ThemeAssetController;
 
 // CMS Admin Routes (protected by auth middleware)
 Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMiddleware::class]], function () {
@@ -124,6 +125,11 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     Route::get('/themes/{slug}/customize/collections', [ThemeCustomizerController::class, 'listCollections']);
     Route::get('/themes/{slug}/customize/collection-fields/{collectionSlug}', [ThemeCustomizerController::class, 'collectionFields']);
 
+    // Theme Assets (per-theme CSS, JS, fonts)
+    Route::get('/themes/{slug}/assets', [ThemeAssetController::class, 'list']);
+    Route::post('/themes/{slug}/assets/upload', [ThemeAssetController::class, 'upload']);
+    Route::post('/themes/{slug}/assets/delete', [ThemeAssetController::class, 'delete']);
+
     // Theme section creation
     Route::post('/themes/{slug}/sections/create', [ThemeController::class, 'createSection']);
 
@@ -183,6 +189,7 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     Route::post('/settings/assets/upload', [AssetSettingsController::class, 'upload']);
     Route::post('/settings/assets/delete', [AssetSettingsController::class, 'deleteFile']);
     Route::get('/settings/assets/files', [AssetSettingsController::class, 'listFiles']);
+    Route::post('/settings/assets/minify', [AssetSettingsController::class, 'minify']);
 
     // Database Settings
     Route::get('/settings/database', [DatabaseSettingsController::class, 'index']);

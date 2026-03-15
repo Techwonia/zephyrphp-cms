@@ -130,8 +130,9 @@ class ThemeInstaller
                 return ['success' => false, 'error' => $validationResult];
             }
 
-            // Extract to theme directory
-            $extractResult = $this->extractTheme($zip, $themePath);
+            // Extract to theme directory (assets go to public/themes/{slug}/)
+            $assetsPath = $this->themeManager->getThemeAssetsPath($slug);
+            $extractResult = $this->extractTheme($zip, $themePath, $assetsPath);
             if ($extractResult !== null) {
                 return ['success' => false, 'error' => $extractResult];
             }
@@ -179,8 +180,8 @@ class ThemeInstaller
             // DB might not be available
         }
 
-        // Remove published assets
-        $this->unpublishAssets($slug);
+        // Remove public assets directory
+        $this->removeAssets($slug);
 
         // Remove theme files
         $themePath = $this->themeManager->getThemePath($slug);
@@ -205,59 +206,35 @@ class ThemeInstaller
     }
 
     /**
-     * Publish a theme's assets to public/assets/themes/{slug}/.
-     * Called when a theme is activated.
+     * Ensure the public assets directory exists for a theme.
+     * Assets live directly at public/themes/{slug}/ — no publish/copy needed.
      */
-    public function publishAssets(string $slug): bool
+    public function ensureAssetsDir(string $slug): bool
     {
         $slug = $this->sanitizeSlug($slug);
-        $themePath = $this->themeManager->getThemePath($slug);
-        $assetsSource = $themePath . '/assets';
+        $assetsPath = $this->themeManager->getThemeAssetsPath($slug);
 
-        if (!is_dir($assetsSource)) {
-            return true; // No assets to publish — not an error
-        }
-
-        $basePath = defined('BASE_PATH') ? BASE_PATH : getcwd();
-        $publishDir = $basePath . '/public/assets/themes/' . $slug;
-
-        // Clean existing published assets
-        if (is_dir($publishDir)) {
-            $this->deleteDirectory($publishDir);
-        }
-
-        // Copy assets
-        $this->copyDirectory($assetsSource, $publishDir);
-
-        // Verify published dir is within public/assets
-        $realPublic = realpath($basePath . '/public/assets');
-        $realPublish = realpath($publishDir);
-        if (!$realPublic || !$realPublish || !str_starts_with($realPublish, $realPublic)) {
-            // Safety check failed — clean up
-            if (is_dir($publishDir)) {
-                $this->deleteDirectory($publishDir);
-            }
-            return false;
+        if (!is_dir($assetsPath)) {
+            return mkdir($assetsPath, 0755, true);
         }
 
         return true;
     }
 
     /**
-     * Remove published assets for a theme.
+     * Remove public assets directory for a theme.
      */
-    public function unpublishAssets(string $slug): void
+    public function removeAssets(string $slug): void
     {
         $slug = $this->sanitizeSlug($slug);
-        $basePath = defined('BASE_PATH') ? BASE_PATH : getcwd();
-        $publishDir = $basePath . '/public/assets/themes/' . $slug;
+        $assetsPath = $this->themeManager->getThemeAssetsPath($slug);
 
-        if (is_dir($publishDir)) {
-            // Verify path is within public/assets before deleting
-            $realPublic = realpath($basePath . '/public/assets');
-            $realPublish = realpath($publishDir);
-            if ($realPublic && $realPublish && str_starts_with($realPublish, $realPublic)) {
-                $this->deleteDirectory($publishDir);
+        if (is_dir($assetsPath)) {
+            // Verify path is within public/themes before deleting
+            $realPublicThemes = realpath($this->themeManager->getPublicThemesPath());
+            $realAssets = realpath($assetsPath);
+            if ($realPublicThemes && $realAssets && str_starts_with($realAssets, $realPublicThemes)) {
+                $this->deleteDirectory($assetsPath);
             }
         }
     }
@@ -292,9 +269,9 @@ class ThemeInstaller
             return ['success' => false, 'error' => 'Theme activation was blocked by a listener.'];
         }
 
-        // Publish theme assets
-        if (!$this->publishAssets($slug)) {
-            return ['success' => false, 'error' => 'Failed to publish theme assets.'];
+        // Ensure public assets directory exists
+        if (!$this->ensureAssetsDir($slug)) {
+            return ['success' => false, 'error' => 'Failed to create theme assets directory.'];
         }
 
         // Register theme asset collection
@@ -314,6 +291,10 @@ class ThemeInstaller
     /**
      * Register the theme's assets as a collection in the Asset system.
      */
+    /**
+     * Register the theme's assets as a collection in the Asset system.
+     * Supports both simple string paths and object entries with attributes.
+     */
     private function registerThemeAssetCollection(string $slug): void
     {
         $themePath = $this->themeManager->getThemePath($slug);
@@ -329,21 +310,41 @@ class ThemeInstaller
         }
 
         $assets = [];
-        $prefix = 'assets/themes/' . $slug . '/';
+        $prefix = 'themes/' . $slug . '/';
 
-        // Register CSS assets from theme.json
-        foreach ($config['assets']['css'] ?? [] as $cssPath) {
-            $safePath = $this->sanitizeAssetPath($cssPath, $prefix);
+        // Register CSS assets from theme.json (supports string or {path, media, ...})
+        foreach ($config['assets']['css'] ?? [] as $entry) {
+            $rawPath = is_string($entry) ? $entry : ($entry['path'] ?? '');
+            $safePath = $this->sanitizeAssetPath($rawPath, $prefix);
             if ($safePath) {
-                $assets[] = ['path' => $safePath, 'priority' => 5];
+                $item = ['path' => $safePath, 'priority' => 5];
+                if (is_array($entry)) {
+                    $attrs = [];
+                    if (!empty($entry['media'])) $attrs['media'] = $entry['media'];
+                    if (!empty($entry['crossorigin'])) $attrs['crossorigin'] = $entry['crossorigin'] === true ? 'anonymous' : $entry['crossorigin'];
+                    if (!empty($entry['integrity'])) $attrs['integrity'] = $entry['integrity'];
+                    if (!empty($attrs)) $item['attributes'] = $attrs;
+                }
+                $assets[] = $item;
             }
         }
 
-        // Register JS assets from theme.json
-        foreach ($config['assets']['js'] ?? [] as $jsPath) {
-            $safePath = $this->sanitizeAssetPath($jsPath, $prefix);
+        // Register JS assets from theme.json (supports string or {path, defer, async, ...})
+        foreach ($config['assets']['js'] ?? [] as $entry) {
+            $rawPath = is_string($entry) ? $entry : ($entry['path'] ?? '');
+            $safePath = $this->sanitizeAssetPath($rawPath, $prefix);
             if ($safePath) {
-                $assets[] = ['path' => $safePath, 'priority' => 100];
+                $item = ['path' => $safePath, 'priority' => 100];
+                if (is_array($entry)) {
+                    $attrs = [];
+                    if (!empty($entry['defer'])) $attrs['defer'] = true;
+                    if (!empty($entry['async'])) $attrs['async'] = true;
+                    if (!empty($entry['type'])) $attrs['type'] = $entry['type'];
+                    if (!empty($entry['crossorigin'])) $attrs['crossorigin'] = $entry['crossorigin'] === true ? 'anonymous' : $entry['crossorigin'];
+                    if (!empty($entry['integrity'])) $attrs['integrity'] = $entry['integrity'];
+                    if (!empty($attrs)) $item['attributes'] = $attrs;
+                }
+                $assets[] = $item;
             }
         }
 
@@ -357,6 +358,10 @@ class ThemeInstaller
      */
     private function sanitizeAssetPath(string $path, string $prefix): ?string
     {
+        if (empty($path)) {
+            return null;
+        }
+
         // Remove leading slashes, prevent traversal
         $path = ltrim(str_replace('\\', '/', $path), '/');
         if (str_contains($path, '..') || str_contains($path, '//')) {
@@ -549,10 +554,11 @@ class ThemeInstaller
 
     /**
      * Extract theme ZIP to the target directory.
+     * Files under assets/ are extracted to the public assets path instead.
      *
      * @return string|null Error message or null on success
      */
-    private function extractTheme(\ZipArchive $zip, string $targetPath): ?string
+    private function extractTheme(\ZipArchive $zip, string $targetPath, string $assetsPath): ?string
     {
         // Clean target if it exists
         if (is_dir($targetPath)) {
@@ -561,6 +567,11 @@ class ThemeInstaller
 
         if (!mkdir($targetPath, 0755, true)) {
             return 'Failed to create theme directory.';
+        }
+
+        // Ensure public assets directory exists
+        if (!is_dir($assetsPath)) {
+            mkdir($assetsPath, 0755, true);
         }
 
         $prefix = $this->detectZipPrefix($zip);
@@ -579,18 +590,34 @@ class ThemeInstaller
                 continue;
             }
 
-            $destFile = $targetPath . '/' . $relativePath;
-            $destDir = dirname($destFile);
+            // Route assets/ files to public/themes/{slug}/ instead of theme template dir
+            if (str_starts_with($relativePath, 'assets/')) {
+                $assetRelative = substr($relativePath, 7); // strip 'assets/'
+                $destFile = $assetsPath . '/' . $assetRelative;
+                $destDir = dirname($destFile);
 
-            if (!is_dir($destDir)) {
-                mkdir($destDir, 0755, true);
-            }
+                if (!is_dir($destDir)) {
+                    mkdir($destDir, 0755, true);
+                }
 
-            // Verify destination is within target path
-            $realTarget = realpath($targetPath);
-            $realDest = realpath($destDir);
-            if (!$realTarget || !$realDest || !str_starts_with($realDest, $realTarget)) {
-                continue; // Skip this file silently
+                $realAssets = realpath($assetsPath);
+                $realDest = realpath($destDir);
+                if (!$realAssets || !$realDest || !str_starts_with($realDest, $realAssets)) {
+                    continue;
+                }
+            } else {
+                $destFile = $targetPath . '/' . $relativePath;
+                $destDir = dirname($destFile);
+
+                if (!is_dir($destDir)) {
+                    mkdir($destDir, 0755, true);
+                }
+
+                $realTarget = realpath($targetPath);
+                $realDest = realpath($destDir);
+                if (!$realTarget || !$realDest || !str_starts_with($realDest, $realTarget)) {
+                    continue;
+                }
             }
 
             // Extract file

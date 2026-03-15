@@ -54,8 +54,20 @@ class ThemeController extends Controller
 
         $themes = $this->themeManager->listThemes();
 
+        // Enrich themes with config from theme.json
+        $themeConfigs = [];
+        foreach ($themes as $theme) {
+            $slug = $theme->getSlug();
+            $config = $this->themeManager->getThemeConfig($slug);
+            $themeConfigs[$slug] = [
+                'version' => $config['version'] ?? '1.0.0',
+                'layouts' => array_keys($config['layouts'] ?? []),
+            ];
+        }
+
         return $this->render('cms::themes/index', [
             'themes' => $themes,
+            'themeConfigs' => $themeConfigs,
             'user' => Auth::user(),
         ]);
     }
@@ -209,11 +221,15 @@ class ThemeController extends Controller
             return;
         }
 
-        if ($this->themeManager->publishTheme($slug)) {
+        // Publish assets to public directory and update DB status
+        $installer = new ThemeInstaller($this->themeManager);
+        $result = $installer->activate($slug);
+
+        if ($result['success']) {
             ActivityLogger::log('published', 'theme', $slug, $theme->getName());
             $this->flash('success', "Theme \"{$theme->getName()}\" is now live.");
         } else {
-            $this->flash('errors', ['Failed to publish theme.']);
+            $this->flash('errors', [$result['error'] ?? 'Failed to publish theme.']);
         }
 
         $this->redirect('/cms/themes');

@@ -136,6 +136,9 @@ class ThemeCustomizerController extends Controller
             }
         }
 
+        // Override Asset path prefix to point to this specific previewed theme's assets
+        \ZephyrPHP\Asset\Asset::setPathPrefix('themes/' . $slug);
+
         // Check if page has sections
         if ($this->sectionManager->hasSections($slug, $pageTemplate)) {
             $sectionsHtml = $this->sectionManager->renderSections($pageTemplate, $slug);

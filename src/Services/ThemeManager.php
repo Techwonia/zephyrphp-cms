@@ -9,6 +9,7 @@ use ZephyrPHP\Cms\Models\Theme;
 class ThemeManager
 {
     private string $themesBasePath;
+    private string $publicThemesPath;
     private ?array $themeConfig = null;
     private ?string $effectiveThemeSlug = null;
 
@@ -17,6 +18,7 @@ class ThemeManager
         $basePath = defined('BASE_PATH') ? BASE_PATH : dirname(__DIR__, 4);
         $viewsPath = $_ENV['VIEWS_PATH'] ?? 'pages';
         $this->themesBasePath = $basePath . '/' . $viewsPath . '/themes';
+        $this->publicThemesPath = $basePath . '/public/themes';
     }
 
     /**
@@ -370,8 +372,15 @@ class ThemeManager
         $themePath = $this->getThemePath($slug);
 
         if ($copyFrom && is_dir($this->getThemePath($copyFrom))) {
-            // Duplicate from existing theme
+            // Duplicate from existing theme (templates, layouts, etc.)
             $this->copyDirectory($this->getThemePath($copyFrom), $themePath);
+
+            // Duplicate public assets
+            $sourceAssets = $this->getThemeAssetsPath($copyFrom);
+            $targetAssets = $this->getThemeAssetsPath($slug);
+            if (is_dir($sourceAssets)) {
+                $this->copyDirectory($sourceAssets, $targetAssets);
+            }
 
             // Update theme.json with new name
             $configFile = $themePath . '/theme.json';
@@ -382,7 +391,7 @@ class ThemeManager
             }
         } else {
             // Create fresh theme with starter files
-            $this->createStarterTheme($themePath, $name);
+            $this->createStarterTheme($themePath, $name, $slug);
         }
 
         // Create DB record
@@ -434,10 +443,16 @@ class ThemeManager
             return false;
         }
 
-        // Delete files
+        // Delete template files
         $themePath = $this->getThemePath($slug);
         if (is_dir($themePath)) {
             $this->deleteDirectory($themePath);
+        }
+
+        // Delete public assets (public/themes/{slug}/)
+        $assetsPath = $this->getThemeAssetsPath($slug);
+        if (is_dir($assetsPath)) {
+            $this->deleteDirectory($assetsPath);
         }
 
         // Delete DB record
@@ -452,6 +467,27 @@ class ThemeManager
     public function getThemesBasePath(): string
     {
         return $this->themesBasePath;
+    }
+
+    /**
+     * Get the public assets path for a specific theme.
+     * Assets live directly at public/themes/{slug}/ — served by the web server.
+     */
+    public function getThemeAssetsPath(string $slug): string
+    {
+        $slug = preg_replace('/[^a-z0-9_-]/', '', strtolower($slug));
+        if (empty($slug)) {
+            throw new \InvalidArgumentException('Invalid theme slug.');
+        }
+        return $this->publicThemesPath . '/' . $slug;
+    }
+
+    /**
+     * Get the public themes base path.
+     */
+    public function getPublicThemesPath(): string
+    {
+        return $this->publicThemesPath;
     }
 
     // --- Pages Management ---
@@ -567,11 +603,18 @@ class ThemeManager
 
     // --- Private Helpers ---
 
-    private function createStarterTheme(string $path, string $name): void
+    private function createStarterTheme(string $path, string $name, string $slug): void
     {
-        $dirs = ['layouts', 'templates', 'snippets', 'sections', 'config', 'assets/css', 'assets/js', 'assets/images', 'assets/fonts'];
+        $dirs = ['layouts', 'templates', 'snippets', 'sections', 'config'];
         foreach ($dirs as $dir) {
             mkdir($path . '/' . $dir, 0755, true);
+        }
+
+        // Create public assets directory at public/themes/{slug}/
+        $assetsPath = $this->getThemeAssetsPath($slug);
+        $assetDirs = ['css', 'js', 'images', 'fonts'];
+        foreach ($assetDirs as $dir) {
+            mkdir($assetsPath . '/' . $dir, 0755, true);
         }
 
         // Copy starter sections from stubs
@@ -580,27 +623,50 @@ class ThemeManager
         // Copy config stubs (settings_schema.json, settings_data.json)
         $this->copyConfigStubs($path);
 
-        // theme.json
+        // theme.json — enhanced asset schema with defer, preload, preconnect, CSP support
         $config = [
             'name' => $name,
             'version' => '1.0.0',
             'layouts' => [
                 'base' => ['name' => 'Base Layout', 'description' => 'Default page layout'],
-                'full-width' => ['name' => 'Full Width', 'description' => 'No container constraints'],
+            ],
+            'assets' => [
+                'css' => [
+                    'css/base.css',
+                ],
+                'js' => [
+                    ['path' => 'js/base.js', 'defer' => true],
+                ],
+                'preload' => [
+                ],
+                'preconnect' => [
+                ],
+                'external_css' => [
+                ],
+                'external_js' => [
+                ],
+                'csp' => [
+                    'default-src' => "'self'",
+                    'script-src' => "'self'",
+                    'style-src' => "'self' 'unsafe-inline'",
+                    'img-src' => "'self' data:",
+                    'font-src' => "'self'",
+                ],
             ],
         ];
         file_put_contents($path . '/theme.json', json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 
-        // Base layout
+        // Base layout — uses assets_head()/assets_footer() for automatic asset management
         $baseLayout = <<<'TWIG'
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {{ assets_csp()|raw }}
     <title>{% block title %}{{ config('app.name', 'ZephyrPHP') }}{% endblock %}</title>
     {% block meta %}{% endblock %}
-    <link rel="stylesheet" href="/assets/css/app.css">
+    {{ assets_head()|raw }}
     {% block styles %}{% endblock %}
 </head>
 <body>
@@ -609,23 +675,12 @@ class ThemeManager
         {% block content %}{% endblock %}
     </main>
     {% endblock %}
+    {{ assets_footer()|raw }}
     {% block scripts %}{% endblock %}
 </body>
 </html>
 TWIG;
         file_put_contents($path . '/layouts/base.twig', $baseLayout);
-
-        // Full-width layout
-        $fullWidth = <<<'TWIG'
-{% extends "@theme/layouts/base.twig" %}
-
-{% block body %}
-<main class="full-width">
-    {% block content %}{% endblock %}
-</main>
-{% endblock %}
-TWIG;
-        file_put_contents($path . '/layouts/full-width.twig', $fullWidth);
 
         // Header snippet
         $header = <<<'TWIG'
@@ -661,6 +716,18 @@ TWIG;
 {% endblock %}
 TWIG;
         file_put_contents($path . '/templates/home.twig', $home);
+
+        // Starter CSS (in public/themes/{slug}/css/)
+        $starterCss = <<<'CSS'
+/* Theme Stylesheet */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; color: #333; }
+.container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+CSS;
+        file_put_contents($assetsPath . '/css/base.css', $starterCss);
+
+        // Starter JS (in public/themes/{slug}/js/)
+        file_put_contents($assetsPath . '/js/base.js', "/* Theme JavaScript */\n");
 
         // pages.json
         $pagesConfig = [

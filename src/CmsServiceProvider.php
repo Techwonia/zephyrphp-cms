@@ -12,6 +12,7 @@ use ZephyrPHP\Cms\Services\SidebarManager;
 use ZephyrPHP\Cms\Services\DashboardManager;
 use ZephyrPHP\Cms\Services\SettingsManager;
 use ZephyrPHP\Cms\Services\ThemeInstaller;
+use ZephyrPHP\Cms\Extensions\ThemeAssetExtension;
 use ZephyrPHP\Database\EntityManager;
 
 class CmsServiceProvider
@@ -73,6 +74,16 @@ class CmsServiceProvider
                 $view->prependTemplatePath($templatesPath);
             }
         }
+
+        // Set Asset path prefix so asset()/css()/js() auto-resolve to the active theme's
+        // public directory: public/themes/{slug}/ — no need for a separate theme_asset()
+        $effectiveTheme = $themeManager->getEffectiveTheme();
+        if ($effectiveTheme) {
+            \ZephyrPHP\Asset\Asset::setPathPrefix('themes/' . $effectiveTheme);
+        }
+
+        // Register ThemeAssetExtension — provides assets_head(), assets_footer(), assets_csp(), etc.
+        $view->addExtension(new ThemeAssetExtension($themeManager));
 
         // Pass preview state as global Twig vars
         $previewTheme = $themeManager->getPreviewTheme();
@@ -411,6 +422,9 @@ class CmsServiceProvider
         $view->addFunction('entry', function (string $ptSlug, string|int $identifier) {
             return entry($ptSlug, $identifier);
         });
+
+        // Asset functions (assets_head, assets_footer, assets_csp, etc.) are provided
+        // by ThemeAssetExtension registered in boot() — no inline functions needed here.
 
         // theme_config() - Expose theme info to templates
         $view->addFunction('theme_config', function () use ($themeManager) {

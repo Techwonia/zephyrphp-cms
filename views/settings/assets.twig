@@ -1,6 +1,6 @@
 {% extends "@cms/layouts/cms.twig" %}
 
-{% block title %}Asset Configuration{% endblock %}
+{% block title %}Asset Settings{% endblock %}
 
 {% block content %}
 <div class="breadcrumb">
@@ -8,8 +8,8 @@
 </div>
 
 <div class="page-header" style="display:flex; justify-content:space-between; align-items:center;">
-    <h1>Asset Configuration</h1>
-    <button class="btn btn-primary" id="saveAllBtn">Save Changes</button>
+    <h1>Asset Settings</h1>
+    <button class="btn btn-primary" id="saveBtn">Save Changes</button>
 </div>
 
 {# Asset Files (public/assets/) #}
@@ -19,7 +19,7 @@
     </div>
     <div class="card-body">
         <p style="color:var(--text-secondary); font-size:0.8125rem; margin:0 0 16px;">
-            Upload CSS, JavaScript, and font files to <code>/public/assets/</code>. Use them in collections below or directly with <code>{{ '{{ css(\'assets/css/file.css\') }}' }}</code>.
+            Upload CSS, JavaScript, and font files to <code>/public/assets/</code>. Use directly with <code>{{ '{{ css(\'css/file.css\') }}' }}</code>.
         </p>
 
         {# Upload Form #}
@@ -72,110 +72,13 @@
     </div>
 </div>
 
-{# Asset Collections #}
-<div class="card" style="margin-bottom: var(--space-500);">
-    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
-        <h3 style="margin:0; font-size:1rem;">Asset Collections</h3>
-        <button class="btn btn-sm btn-primary" id="addCollectionBtn">+ Add Collection</button>
-    </div>
-    <div class="card-body">
-        <p style="color:var(--text-secondary); font-size:0.8125rem; margin:0 0 16px;">
-            Group CSS/JS files into collections. Load in templates with <code>{{ '{{ load_assets(\'name\') }}' }}</code>
-        </p>
-        <div id="collectionsContainer">
-            {% for name, assets in collections %}
-            <div class="collection-group" data-collection="{{ name }}">
-                <div class="collection-header" style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-                    <input type="text" class="form-control collection-name" value="{{ name }}" style="width:200px; font-weight:600;" placeholder="Collection name">
-                    <code style="color:var(--text-secondary); font-size:0.75rem;">{{ '{{ load_assets(\'' }}{{ name }}{{ '\') }}' }}</code>
-                    <button class="btn btn-xs btn-outline add-asset-btn" style="margin-left:auto;">+ File</button>
-                    <button class="btn btn-xs btn-danger remove-collection-btn">Remove</button>
-                </div>
-                <div class="collection-assets" style="display:grid; gap:4px; margin-left:16px; margin-bottom:16px;">
-                    {% for asset in assets %}
-                    <div class="asset-row" style="display:flex; align-items:center; gap:8px;">
-                        <input type="text" class="form-control asset-path" value="{{ asset.path }}" placeholder="assets/css/app.css" style="flex:1;">
-                        <input type="number" class="form-control asset-priority" value="{{ asset.priority ?? 10 }}" style="width:70px;" placeholder="Priority" title="Priority (lower = loads first)">
-                        <label style="display:flex; align-items:center; gap:4px; font-size:0.75rem; white-space:nowrap; cursor:pointer;">
-                            <input type="checkbox" class="asset-head" {% if asset.head is defined and asset.head %}checked{% endif %}> Head
-                        </label>
-                        <button class="btn btn-xs btn-danger remove-asset-btn" title="Remove file">&times;</button>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        <div id="noCollections" style="text-align:center; padding:20px; color:var(--text-secondary); {% if collections|length > 0 %}display:none;{% endif %}">
-            No collections configured. Click "+ Add Collection" to create one.
-        </div>
-    </div>
-</div>
-
-{# Preload Resources #}
-<div class="card" style="margin-bottom: var(--space-500);">
-    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
-        <h3 style="margin:0; font-size:1rem;">Preload Resources</h3>
-        <button class="btn btn-sm btn-primary" id="addPreloadBtn">+ Add</button>
-    </div>
-    <div class="card-body">
-        <p style="color:var(--text-secondary); font-size:0.8125rem; margin:0 0 16px;">
-            Tell the browser to download critical assets early (fonts, hero images, etc.)
-        </p>
-        <div id="preloadContainer">
-            {% for item in preload %}
-            <div class="preload-row" style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
-                <input type="text" class="form-control preload-path" value="{{ item.path }}" placeholder="assets/fonts/inter.woff2" style="flex:1;">
-                <select class="form-control preload-as" style="width:120px;">
-                    <option value="font" {% if item.as == 'font' %}selected{% endif %}>Font</option>
-                    <option value="style" {% if item.as == 'style' %}selected{% endif %}>Style</option>
-                    <option value="script" {% if item.as == 'script' %}selected{% endif %}>Script</option>
-                    <option value="image" {% if item.as == 'image' %}selected{% endif %}>Image</option>
-                    <option value="fetch" {% if item.as == 'fetch' %}selected{% endif %}>Fetch</option>
-                </select>
-                <button class="btn btn-xs btn-danger remove-preload-btn">&times;</button>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-</div>
-
-{# Preconnect Domains #}
-<div class="card" style="margin-bottom: var(--space-500);">
-    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
-        <h3 style="margin:0; font-size:1rem;">Preconnect Domains</h3>
-        <button class="btn btn-sm btn-primary" id="addPreconnectBtn">+ Add</button>
-    </div>
-    <div class="card-body">
-        <p style="color:var(--text-secondary); font-size:0.8125rem; margin:0 0 16px;">
-            Early DNS/TLS connections to external domains (CDNs, APIs, font providers).
-        </p>
-        <div id="preconnectContainer">
-            {% for item in preconnect %}
-            <div class="preconnect-row" style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
-                <input type="text" class="form-control preconnect-url" value="{{ item.url }}" placeholder="https://fonts.googleapis.com" style="flex:1;">
-                <label style="display:flex; align-items:center; gap:4px; font-size:0.8125rem; white-space:nowrap; cursor:pointer;">
-                    <input type="checkbox" class="preconnect-crossorigin" {% if item.crossorigin %}checked{% endif %}> CORS
-                </label>
-                <button class="btn btn-xs btn-danger remove-preconnect-btn">&times;</button>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-</div>
-
 {# General Asset Settings #}
 <div class="card" style="margin-bottom: var(--space-500);">
     <div class="card-header">
-        <h3 style="margin:0; font-size:1rem;">General Settings</h3>
+        <h3 style="margin:0; font-size:1rem;">Versioning &amp; Performance</h3>
     </div>
     <div class="card-body">
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-400);">
-            <div class="form-group">
-                <label for="assetsPrefix">Assets Prefix</label>
-                <input type="text" id="assetsPrefix" class="form-control" value="{{ assetsPrefix }}" placeholder="assets">
-                <small style="color:var(--text-secondary);">Folder inside /public where assets live (e.g. "assets").</small>
-            </div>
             <div class="form-group">
                 <label for="versionStrategy">Versioning Strategy</label>
                 <select id="versionStrategy" class="form-control">
@@ -185,11 +88,12 @@
                     <option value="global" {% if versionStrategy == 'global' %}selected{% endif %}>Global Version</option>
                     <option value="none" {% if versionStrategy == 'none' %}selected{% endif %}>None</option>
                 </select>
+                <small style="color:var(--text-secondary);">How <code>?v=</code> is appended to asset URLs for cache busting.</small>
             </div>
             <div class="form-group">
                 <label for="globalVersion">Global Version</label>
                 <input type="text" id="globalVersion" class="form-control" value="{{ globalVersion }}" placeholder="1.0.0">
-                <small style="color:var(--text-secondary);">Used when strategy is "Global". Increment on deploy.</small>
+                <small style="color:var(--text-secondary);">Used when strategy is "Global Version". Increment on deploy.</small>
             </div>
             <div class="form-group">
                 <label for="cdnUrl">CDN URL</label>
@@ -207,7 +111,12 @@
                     <option value="0" {% if not minify %}selected{% endif %}>Disabled</option>
                     <option value="1" {% if minify %}selected{% endif %}>Enabled</option>
                 </select>
-                <small style="color:var(--text-secondary);">Auto-use .min.css/.min.js in production.</small>
+                <small style="color:var(--text-secondary);">Serve .min.css/.min.js versions in production automatically.</small>
+            </div>
+            <div class="form-group" style="display:flex; flex-direction:column; justify-content:center;">
+                <label>Minify Assets</label>
+                <button class="btn btn-outline" id="minifyBtn" style="width:fit-content;">Minify Now</button>
+                <small id="minifyResult" style="color:var(--text-secondary); margin-top:4px;"></small>
             </div>
         </div>
     </div>
@@ -215,204 +124,30 @@
 
 <div style="display:flex; justify-content:flex-end; gap:8px; margin-bottom:40px;">
     <a href="/cms/settings/system" class="btn btn-outline">Back to System Settings</a>
-    <button class="btn btn-primary" id="saveAllBtn2">Save Changes</button>
+    <button class="btn btn-primary" id="saveBtn2">Save Changes</button>
 </div>
+
+<p style="color:var(--text-secondary); font-size:0.8125rem; margin-bottom:40px;">
+    <strong>Note:</strong> Theme-specific assets (CSS, JS, preload, preconnect, CSP) are configured per-theme in <code>theme.json</code>.
+    These global settings apply to all asset URLs across the site.
+</p>
 {% endblock %}
 
 {% block scripts %}
 <script nonce="{{ csp_nonce() }}">
 (function() {
-    // ===== Collection Management =====
-    function createAssetRow(path, priority, head) {
-        var div = document.createElement('div');
-        div.className = 'asset-row';
-        div.style.cssText = 'display:flex; align-items:center; gap:8px;';
-        div.innerHTML =
-            '<input type="text" class="form-control asset-path" value="' + escapeAttr(path || '') + '" placeholder="assets/css/app.css" style="flex:1;">' +
-            '<input type="number" class="form-control asset-priority" value="' + (priority || 10) + '" style="width:70px;" placeholder="Priority" title="Priority (lower = loads first)">' +
-            '<label style="display:flex; align-items:center; gap:4px; font-size:0.75rem; white-space:nowrap; cursor:pointer;">' +
-            '<input type="checkbox" class="asset-head"' + (head ? ' checked' : '') + '> Head</label>' +
-            '<button class="btn btn-xs btn-danger remove-asset-btn" title="Remove file">&times;</button>';
+    // ===== Save Settings =====
+    function saveSettings() {
+        var data = {
+            version_strategy: document.getElementById('versionStrategy').value,
+            global_version: document.getElementById('globalVersion').value.trim(),
+            cdn_url: document.getElementById('cdnUrl').value.trim(),
+            manifest: document.getElementById('manifest').value.trim(),
+            minify: document.getElementById('minify').value === '1'
+        };
 
-        div.querySelector('.remove-asset-btn').addEventListener('click', function() { div.remove(); });
-        return div;
-    }
-
-    function createCollectionGroup(name, assets) {
-        var div = document.createElement('div');
-        div.className = 'collection-group';
-        div.dataset.collection = name || '';
-        div.innerHTML =
-            '<div class="collection-header" style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">' +
-            '<input type="text" class="form-control collection-name" value="' + escapeAttr(name || '') + '" style="width:200px; font-weight:600;" placeholder="Collection name">' +
-            '<code class="collection-usage" style="color:var(--text-secondary); font-size:0.75rem;"></code>' +
-            '<button class="btn btn-xs btn-outline add-asset-btn" style="margin-left:auto;">+ File</button>' +
-            '<button class="btn btn-xs btn-danger remove-collection-btn">Remove</button>' +
-            '</div>' +
-            '<div class="collection-assets" style="display:grid; gap:4px; margin-left:16px; margin-bottom:16px;"></div>';
-
-        var nameInput = div.querySelector('.collection-name');
-        var usageCode = div.querySelector('.collection-usage');
-        function updateUsage() {
-            var n = nameInput.value.trim();
-            usageCode.textContent = n ? "{{ load_assets('" + n + "') }}" : '';
-        }
-        nameInput.addEventListener('input', updateUsage);
-        updateUsage();
-
-        div.querySelector('.add-asset-btn').addEventListener('click', function() {
-            div.querySelector('.collection-assets').appendChild(createAssetRow('', 10, false));
-        });
-
-        div.querySelector('.remove-collection-btn').addEventListener('click', function() {
-            if (confirm('Remove collection "' + (nameInput.value || 'untitled') + '"?')) {
-                div.remove();
-                toggleNoCollections();
-            }
-        });
-
-        var assetsContainer = div.querySelector('.collection-assets');
-        (assets || []).forEach(function(a) {
-            assetsContainer.appendChild(createAssetRow(a.path, a.priority, a.head));
-        });
-
-        // Bind existing remove buttons
-        assetsContainer.querySelectorAll('.remove-asset-btn').forEach(function(btn) {
-            btn.addEventListener('click', function() { btn.closest('.asset-row').remove(); });
-        });
-
-        return div;
-    }
-
-    function toggleNoCollections() {
-        var container = document.getElementById('collectionsContainer');
-        var noMsg = document.getElementById('noCollections');
-        noMsg.style.display = container.children.length === 0 ? '' : 'none';
-    }
-
-    // Init existing collection remove/add buttons
-    document.querySelectorAll('.collection-group').forEach(function(group) {
-        group.querySelectorAll('.remove-asset-btn').forEach(function(btn) {
-            btn.addEventListener('click', function() { btn.closest('.asset-row').remove(); });
-        });
-        group.querySelector('.add-asset-btn').addEventListener('click', function() {
-            group.querySelector('.collection-assets').appendChild(createAssetRow('', 10, false));
-        });
-        group.querySelector('.remove-collection-btn').addEventListener('click', function() {
-            if (confirm('Remove this collection?')) { group.remove(); toggleNoCollections(); }
-        });
-    });
-
-    document.getElementById('addCollectionBtn').addEventListener('click', function() {
-        var container = document.getElementById('collectionsContainer');
-        var group = createCollectionGroup('', [{ path: '', priority: 10 }]);
-        container.appendChild(group);
-        group.querySelector('.collection-name').focus();
-        toggleNoCollections();
-    });
-
-    // ===== Preload Management =====
-    function createPreloadRow(path, as) {
-        var div = document.createElement('div');
-        div.className = 'preload-row';
-        div.style.cssText = 'display:flex; align-items:center; gap:8px; margin-bottom:6px;';
-        var options = ['font', 'style', 'script', 'image', 'fetch'];
-        var selectHtml = '<select class="form-control preload-as" style="width:120px;">';
-        options.forEach(function(o) {
-            selectHtml += '<option value="' + o + '"' + (o === (as || 'font') ? ' selected' : '') + '>' + o.charAt(0).toUpperCase() + o.slice(1) + '</option>';
-        });
-        selectHtml += '</select>';
-        div.innerHTML =
-            '<input type="text" class="form-control preload-path" value="' + escapeAttr(path || '') + '" placeholder="assets/fonts/inter.woff2" style="flex:1;">' +
-            selectHtml +
-            '<button class="btn btn-xs btn-danger remove-preload-btn">&times;</button>';
-        div.querySelector('.remove-preload-btn').addEventListener('click', function() { div.remove(); });
-        return div;
-    }
-
-    document.querySelectorAll('.remove-preload-btn').forEach(function(btn) {
-        btn.addEventListener('click', function() { btn.closest('.preload-row').remove(); });
-    });
-
-    document.getElementById('addPreloadBtn').addEventListener('click', function() {
-        document.getElementById('preloadContainer').appendChild(createPreloadRow('', 'font'));
-    });
-
-    // ===== Preconnect Management =====
-    function createPreconnectRow(url, crossorigin) {
-        var div = document.createElement('div');
-        div.className = 'preconnect-row';
-        div.style.cssText = 'display:flex; align-items:center; gap:8px; margin-bottom:6px;';
-        div.innerHTML =
-            '<input type="text" class="form-control preconnect-url" value="' + escapeAttr(url || '') + '" placeholder="https://fonts.googleapis.com" style="flex:1;">' +
-            '<label style="display:flex; align-items:center; gap:4px; font-size:0.8125rem; white-space:nowrap; cursor:pointer;">' +
-            '<input type="checkbox" class="preconnect-crossorigin"' + (crossorigin ? ' checked' : '') + '> CORS</label>' +
-            '<button class="btn btn-xs btn-danger remove-preconnect-btn">&times;</button>';
-        div.querySelector('.remove-preconnect-btn').addEventListener('click', function() { div.remove(); });
-        return div;
-    }
-
-    document.querySelectorAll('.remove-preconnect-btn').forEach(function(btn) {
-        btn.addEventListener('click', function() { btn.closest('.preconnect-row').remove(); });
-    });
-
-    document.getElementById('addPreconnectBtn').addEventListener('click', function() {
-        document.getElementById('preconnectContainer').appendChild(createPreconnectRow('', false));
-    });
-
-    // ===== Save =====
-    function gatherData() {
-        var data = {};
-
-        // Collections
-        var collections = {};
-        document.querySelectorAll('.collection-group').forEach(function(group) {
-            var name = group.querySelector('.collection-name').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
-            if (!name) return;
-            var assets = [];
-            group.querySelectorAll('.asset-row').forEach(function(row) {
-                var path = row.querySelector('.asset-path').value.trim();
-                if (!path) return;
-                var entry = { path: path, priority: parseInt(row.querySelector('.asset-priority').value) || 10 };
-                if (row.querySelector('.asset-head').checked) entry.head = true;
-                assets.push(entry);
-            });
-            if (assets.length > 0) collections[name] = assets;
-        });
-        data.collections = collections;
-
-        // Preload
-        var preload = [];
-        document.querySelectorAll('.preload-row').forEach(function(row) {
-            var path = row.querySelector('.preload-path').value.trim();
-            var as = row.querySelector('.preload-as').value;
-            if (path && as) preload.push({ path: path, as: as });
-        });
-        data.preload = preload;
-
-        // Preconnect
-        var preconnect = [];
-        document.querySelectorAll('.preconnect-row').forEach(function(row) {
-            var url = row.querySelector('.preconnect-url').value.trim();
-            if (url) preconnect.push({ url: url, crossorigin: row.querySelector('.preconnect-crossorigin').checked });
-        });
-        data.preconnect = preconnect;
-
-        // General settings
-        data.assets_prefix = document.getElementById('assetsPrefix').value.trim();
-        data.version_strategy = document.getElementById('versionStrategy').value;
-        data.global_version = document.getElementById('globalVersion').value.trim();
-        data.cdn_url = document.getElementById('cdnUrl').value.trim();
-        data.manifest = document.getElementById('manifest').value.trim();
-        data.minify = document.getElementById('minify').value === '1';
-
-        return data;
-    }
-
-    function saveAll() {
-        var data = gatherData();
-        var btn = document.getElementById('saveAllBtn');
-        var btn2 = document.getElementById('saveAllBtn2');
+        var btn = document.getElementById('saveBtn');
+        var btn2 = document.getElementById('saveBtn2');
         btn.disabled = true; btn2.disabled = true;
         btn.textContent = 'Saving...'; btn2.textContent = 'Saving...';
 
@@ -443,14 +178,54 @@
         });
     }
 
-    document.getElementById('saveAllBtn').addEventListener('click', saveAll);
-    document.getElementById('saveAllBtn2').addEventListener('click', saveAll);
+    document.getElementById('saveBtn').addEventListener('click', saveSettings);
+    document.getElementById('saveBtn2').addEventListener('click', saveSettings);
+
+    // ===== Minify Now =====
+    document.getElementById('minifyBtn').addEventListener('click', function() {
+        var btn = this;
+        var result = document.getElementById('minifyResult');
+        btn.disabled = true;
+        btn.textContent = 'Minifying...';
+        result.textContent = '';
+
+        var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        fetch('/cms/settings/assets/minify', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfMeta ? csrfMeta.content : ''
+            }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(resp) {
+            btn.disabled = false;
+            btn.textContent = 'Minify Now';
+            if (resp.success) {
+                var msg = resp.minified + ' file(s) minified, ' + resp.skipped + ' skipped';
+                if (resp.errors && resp.errors.length > 0) {
+                    msg += ' (' + resp.errors.length + ' error(s))';
+                }
+                result.textContent = msg;
+                result.style.color = 'var(--color-success, green)';
+            } else {
+                result.textContent = resp.error || 'Minification failed';
+                result.style.color = 'var(--color-critical, red)';
+            }
+        })
+        .catch(function() {
+            btn.disabled = false;
+            btn.textContent = 'Minify Now';
+            result.textContent = 'Network error';
+            result.style.color = 'var(--color-critical, red)';
+        });
+    });
 
     // ===== File Upload =====
     var fileInput = document.getElementById('assetFileInput');
     var uploadBtn = document.getElementById('assetUploadBtn');
     var fileNameDisplay = document.getElementById('assetFileName');
-    var csrfMeta2 = document.querySelector('meta[name="csrf-token"]');
+    var csrfMeta = document.querySelector('meta[name="csrf-token"]');
 
     if (fileInput) {
         fileInput.addEventListener('change', function() {
@@ -482,7 +257,7 @@
 
             var xhr = new XMLHttpRequest();
             xhr.open('POST', '/cms/settings/assets/upload');
-            if (csrfMeta2) xhr.setRequestHeader('X-CSRF-TOKEN', csrfMeta2.content);
+            if (csrfMeta) xhr.setRequestHeader('X-CSRF-TOKEN', csrfMeta.content);
 
             xhr.upload.addEventListener('progress', function(e) {
                 if (e.lengthComputable) progressBar.style.width = Math.round(e.loaded / e.total * 100) + '%';
@@ -533,7 +308,7 @@
             if (!confirm('Delete "' + name + '"? This cannot be undone.')) return;
             fetch('/cms/settings/assets/delete', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfMeta2 ? csrfMeta2.content : '' },
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfMeta ? csrfMeta.content : '' },
                 body: JSON.stringify({ path: path })
             })
             .then(function(r) { return r.json(); })
@@ -544,10 +319,6 @@
             .catch(function() { alert('Network error'); });
         });
     });
-
-    function escapeAttr(s) {
-        return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    }
 })();
 </script>
 {% endblock %}

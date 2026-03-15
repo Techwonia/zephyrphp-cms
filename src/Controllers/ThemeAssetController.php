@@ -39,7 +39,7 @@ class ThemeAssetController extends Controller
     }
 
     /**
-     * AJAX: List all assets in a theme's assets/ directory.
+     * AJAX: List all assets in a theme's public/themes/{slug}/ directory.
      */
     public function list(string $slug): void
     {
@@ -53,8 +53,7 @@ class ThemeAssetController extends Controller
             return;
         }
 
-        $themePath = $this->themeManager->getThemePath($slug);
-        $assetsDir = $themePath . '/assets';
+        $assetsDir = $this->themeManager->getThemeAssetsPath($slug);
 
         $assets = ['css' => [], 'js' => [], 'fonts' => []];
 
@@ -79,7 +78,7 @@ class ThemeAssetController extends Controller
             $ext = strtolower($file->getExtension());
             $relativePath = str_replace('\\', '/', $iterator->getSubPathName());
             $fileInfo = [
-                'path' => 'assets/' . $relativePath,
+                'path' => $relativePath,
                 'name' => $file->getFilename(),
                 'size' => $this->formatSize($file->getSize()),
                 'modified' => date('Y-m-d H:i', $file->getMTime()),
@@ -116,7 +115,7 @@ class ThemeAssetController extends Controller
             return;
         }
 
-        $themePath = $this->themeManager->getThemePath($slug);
+        $assetsBasePath = $this->themeManager->getThemeAssetsPath($slug);
         $category = $_POST['category'] ?? 'css';
 
         // Validate category — images use Media, not theme assets
@@ -189,14 +188,7 @@ class ThemeAssetController extends Controller
             return;
         }
 
-        // Ensure theme directory exists first
-        if (!is_dir($themePath)) {
-            http_response_code(404);
-            echo json_encode(['error' => 'Theme directory not found']);
-            return;
-        }
-
-        $targetDir = $themePath . '/assets/' . $category;
+        $targetDir = $assetsBasePath . '/' . $category;
         if (!is_dir($targetDir)) {
             if (!mkdir($targetDir, 0755, true)) {
                 http_response_code(500);
@@ -205,10 +197,11 @@ class ThemeAssetController extends Controller
             }
         }
 
-        // Verify target is within theme (use realpath after mkdir)
-        $realTheme = realpath($themePath);
+        // Verify target is within public themes directory
+        $basePath = defined('BASE_PATH') ? BASE_PATH : dirname(__DIR__, 4);
+        $realPublic = realpath($basePath . '/public/themes');
         $realTarget = realpath($targetDir);
-        if (!$realTheme || !$realTarget || !str_starts_with($realTarget, $realTheme . DIRECTORY_SEPARATOR)) {
+        if (!$realPublic || !$realTarget || !str_starts_with($realTarget, $realPublic . DIRECTORY_SEPARATOR)) {
             http_response_code(403);
             echo json_encode(['error' => 'Path traversal detected']);
             return;
@@ -227,7 +220,7 @@ class ThemeAssetController extends Controller
             echo json_encode([
                 'success' => true,
                 'file' => [
-                    'path' => "assets/{$category}/{$safeName}",
+                    'path' => "{$category}/{$safeName}",
                     'name' => $safeName,
                     'size' => $this->formatSize(filesize($targetPath)),
                 ],
@@ -256,30 +249,30 @@ class ThemeAssetController extends Controller
         $input = json_decode(file_get_contents('php://input'), true);
         $filePath = $input['path'] ?? '';
 
-        if (empty($filePath) || !str_starts_with($filePath, 'assets/')) {
+        if (empty($filePath)) {
             http_response_code(400);
             echo json_encode(['error' => 'Invalid asset path']);
             return;
         }
 
         // Block path traversal
-        if (str_contains($filePath, '..')) {
+        if (str_contains($filePath, '..') || str_starts_with($filePath, '/')) {
             http_response_code(403);
             echo json_encode(['error' => 'Access denied']);
             return;
         }
 
-        $themePath = realpath($this->themeManager->getThemePath($slug));
-        if (!$themePath) {
+        $assetsPath = realpath($this->themeManager->getThemeAssetsPath($slug));
+        if (!$assetsPath) {
             http_response_code(404);
-            echo json_encode(['error' => 'Theme directory not found']);
+            echo json_encode(['error' => 'Theme assets directory not found']);
             return;
         }
 
-        $fullPath = $themePath . '/' . $filePath;
+        $fullPath = $assetsPath . '/' . $filePath;
         $realPath = realpath($fullPath);
 
-        if (!$realPath || !str_starts_with($realPath, $themePath . DIRECTORY_SEPARATOR)) {
+        if (!$realPath || !str_starts_with($realPath, $assetsPath . DIRECTORY_SEPARATOR)) {
             http_response_code(403);
             echo json_encode(['error' => 'Access denied']);
             return;
