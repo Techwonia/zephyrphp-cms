@@ -909,6 +909,11 @@
         if (!EditorView || !EditorState || !basicSetup) throw new Error('Core CodeMirror exports missing');
 
         state.cmAvailable = true;
+        console.log('[CM Debug]', {
+            basicSetup: typeof basicSetup, oneDark: typeof oneDark,
+            langHtml: typeof langHtml, keymap: typeof keymap,
+            oneDarkKeys: oneDark ? (Array.isArray(oneDark) ? 'array[' + oneDark.length + ']' : Object.keys(oneDark)) : 'falsy',
+        });
     } catch (e) {
         console.warn('CodeMirror failed to load:', e);
     }
@@ -1280,6 +1285,7 @@
                     '.cm-scroller': { overflow: 'auto', fontFamily: 'var(--font-mono)', fontSize: '13px', lineHeight: '1.6' },
                 }),
             ].filter(Boolean);
+            console.log('[CM createEditor]', { role, path, extCount: extensions.length, hasOneDark: !!oneDark, hasLang: !!langExt, langExt });
             if (state.wordWrap) {
                 extensions.push(EditorView.lineWrapping);
             }
