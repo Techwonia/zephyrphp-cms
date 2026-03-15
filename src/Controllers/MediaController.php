@@ -111,8 +111,16 @@ class MediaController extends Controller
     {
         $this->requirePermission('media.upload');
 
+        $isApiCall = !empty($_SERVER['HTTP_X_CSRF_TOKEN']) || $this->isAjax();
+
         $file = $_FILES['file'] ?? null;
         if (!$file) {
+            if ($isApiCall) {
+                header('Content-Type: application/json');
+                http_response_code(400);
+                echo json_encode(['error' => 'No file uploaded.']);
+                return;
+            }
             $this->flash('errors', ['file' => 'No file uploaded.']);
             $this->back();
             return;
@@ -121,6 +129,12 @@ class MediaController extends Controller
         // Validate file using FileValidator (checks size, real MIME, extension, dangerous files)
         $validation = FileValidator::validate($file);
         if (!$validation['valid']) {
+            if ($isApiCall) {
+                header('Content-Type: application/json');
+                http_response_code(422);
+                echo json_encode(['error' => $validation['error']]);
+                return;
+            }
             $this->flash('errors', ['file' => $validation['error']]);
             $this->back();
             return;
@@ -180,8 +194,25 @@ class MediaController extends Controller
             $media->setUploadedBy(Auth::user()?->getId());
             $media->save();
 
+            if ($isApiCall) {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => true,
+                    'path' => $relativePath,
+                    'thumbnail' => $thumbnailRelPath,
+                    'id' => $media->getId(),
+                ]);
+                return;
+            }
+
             $this->flash('success', 'File uploaded successfully.');
         } else {
+            if ($isApiCall) {
+                header('Content-Type: application/json');
+                http_response_code(500);
+                echo json_encode(['error' => 'Failed to move uploaded file.']);
+                return;
+            }
             $this->flash('errors', ['file' => 'Failed to move uploaded file.']);
         }
 

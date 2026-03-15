@@ -352,8 +352,8 @@ class SectionManager
             if ($schema) {
                 foreach ($schema['settings'] ?? [] as $schemaSetting) {
                     $id = $schemaSetting['id'] ?? null;
-                    if ($id && !isset($settings[$id]) && isset($schemaSetting['default'])) {
-                        $settings[$id] = $schemaSetting['default'];
+                    if ($id && !isset($settings[$id])) {
+                        $settings[$id] = $schemaSetting['default'] ?? '';
                     }
                 }
             }
@@ -365,14 +365,14 @@ class SectionManager
                     $block = $blocks[$blockId];
                     $block['id'] = $blockId;
 
-                    // Merge block schema defaults
+                    // Merge block schema defaults — ensure all defined settings exist
                     if ($schema && isset($schema['blocks'])) {
                         foreach ($schema['blocks'] as $blockSchema) {
                             if (($blockSchema['type'] ?? '') === ($block['type'] ?? '')) {
                                 foreach ($blockSchema['settings'] ?? [] as $bs) {
                                     $bsId = $bs['id'] ?? null;
-                                    if ($bsId && !isset($block['settings'][$bsId]) && isset($bs['default'])) {
-                                        $block['settings'][$bsId] = $bs['default'];
+                                    if ($bsId && !isset($block['settings'][$bsId])) {
+                                        $block['settings'][$bsId] = $bs['default'] ?? '';
                                     }
                                 }
                             }
