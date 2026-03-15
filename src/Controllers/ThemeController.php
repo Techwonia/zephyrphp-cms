@@ -133,14 +133,9 @@ class ThemeController extends Controller
 
     public function edit(string $slug): string
     {
-        $this->requirePermission('themes.edit');
-
-        $theme = Theme::findOneBy(['slug' => $slug]);
-        if (!$theme) {
-            $this->flash('errors', ['Theme not found.']);
-            $this->redirect('/cms/themes');
-            return '';
-        }
+        // Redirect to the code editor — the old edit page is removed
+        $this->redirect('/cms/themes/' . urlencode($slug) . '/code');
+        return '';
 
         $files = $this->themeManager->listFiles($slug);
         $config = $this->themeManager->getThemeConfig($slug);
@@ -192,7 +187,7 @@ class ThemeController extends Controller
 
         if (empty($name)) {
             $this->flash('errors', ['Theme name is required.']);
-            $this->redirect('/cms/themes/' . $slug);
+            $this->redirect('/cms/themes');
             return;
         }
 
@@ -207,7 +202,7 @@ class ThemeController extends Controller
         file_put_contents($configPath, json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 
         $this->flash('success', 'Theme updated successfully.');
-        $this->redirect('/cms/themes/' . $slug);
+        $this->redirect('/cms/themes');
     }
 
     public function publish(string $slug): void

@@ -70,52 +70,32 @@
     {% endif %}
 {% endfor %}
 
-{# ── Current Theme ── #}
-{% if liveTheme %}
-<div class="current-theme-card">
-    <div class="current-theme-preview">
-        <div class="preview-frame preview-desktop">
-            <div class="preview-chrome">
-                <span class="preview-dots"><i></i><i></i><i></i></span>
-                <span class="preview-bar"></span>
-            </div>
-            <div class="preview-body">
-                <div class="preview-nav"></div>
-                <div class="preview-hero">
-                    <div class="preview-hero-title"></div>
-                    <div class="preview-hero-sub"></div>
-                    <div class="preview-hero-btn"></div>
-                </div>
-                <div class="preview-cols">
-                    <div class="preview-col"></div>
-                    <div class="preview-col"></div>
-                    <div class="preview-col"></div>
-                </div>
-            </div>
+<div class="themes-container">
+    {# ── Active Theme (full width with live preview) ── #}
+    {% if liveTheme %}
+    <div class="active-theme-card">
+        <div class="active-theme-preview">
+            <iframe src="/?theme_preview={{ liveTheme.getSlug() }}" class="preview-iframe" loading="lazy"></iframe>
         </div>
-        <div class="preview-frame preview-mobile">
-            <div class="preview-chrome preview-chrome--mobile">
-                <span class="preview-notch"></span>
-            </div>
-            <div class="preview-body">
-                <div class="preview-nav"></div>
-                <div class="preview-hero preview-hero--sm">
-                    <div class="preview-hero-title"></div>
-                    <div class="preview-hero-sub"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="current-theme-info">
-        <div class="current-theme-top">
+        <div class="active-theme-info">
             <div>
-                <h2 class="current-theme-name">{{ liveTheme.getName() }}</h2>
-                <span class="badge badge-live">Current theme</span>
+                <div class="theme-card-header">
+                    <h3 class="theme-card-name" style="font-size:1.15rem;">{{ liveTheme.getName() }}</h3>
+                    <span class="badge badge-live">Active</span>
+                </div>
                 {% if themeConfigs[liveTheme.getSlug()] is defined %}
                     <span class="theme-version">v{{ themeConfigs[liveTheme.getSlug()].version }}</span>
                 {% endif %}
+                {% if themeConfigs[liveTheme.getSlug()] is defined and themeConfigs[liveTheme.getSlug()].layouts|length > 0 %}
+                    <div style="margin-top:8px;">
+                        <span class="theme-meta-item">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
+                            {{ themeConfigs[liveTheme.getSlug()].layouts|length }} layout{{ themeConfigs[liveTheme.getSlug()].layouts|length > 1 ? 's' : '' }}
+                        </span>
+                    </div>
+                {% endif %}
             </div>
-            <div class="current-theme-actions">
+            <div class="theme-card-actions">
                 <a href="/cms/themes/{{ liveTheme.getSlug() }}/customize" class="btn btn-primary btn-sm">Customize</a>
                 <div class="dropdown">
                     <button type="button" class="btn-icon" data-dropdown="live-menu">
@@ -126,168 +106,221 @@
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                             Preview
                         </a>
-                        <a href="/cms/themes/{{ liveTheme.getSlug() }}" class="dropdown-item">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        <a href="/cms/themes/{{ liveTheme.getSlug() }}/code" class="dropdown-item">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
                             Edit code
                         </a>
                     </div>
                 </div>
             </div>
         </div>
-        {% if liveTheme.getDescription() %}
-            <p class="current-theme-desc">{{ liveTheme.getDescription() }}</p>
-        {% endif %}
-        {% if themeConfigs[liveTheme.getSlug()] is defined and themeConfigs[liveTheme.getSlug()].layouts|length > 0 %}
-            <div class="theme-meta">
-                <span class="theme-meta-item">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
-                    {{ themeConfigs[liveTheme.getSlug()].layouts|length }} layout{{ themeConfigs[liveTheme.getSlug()].layouts|length > 1 ? 's' : '' }}
-                </span>
-            </div>
-        {% endif %}
     </div>
-</div>
-{% endif %}
+    {% endif %}
 
-{# ── Theme Library ── #}
-<div class="theme-library">
-    <div class="theme-library-header">
-        <h2>Theme library</h2>
-        <p class="text-muted">Add and publish themes to change your site's look and feel.</p>
-    </div>
-
+    {# ── Other Themes Grid ── #}
     {% if draftThemes|length > 0 %}
-    <div class="theme-list">
+    <h2 class="section-title">Theme library</h2>
+    <div class="theme-grid">
+
         {% for theme in draftThemes %}
-        <div class="theme-list-item">
-            <div class="theme-list-thumb">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <rect x="3" y="3" width="18" height="18" rx="2"/>
-                    <line x1="3" y1="9" x2="21" y2="9"/>
-                    <line x1="9" y1="9" x2="9" y2="21"/>
-                </svg>
+        <div class="theme-card">
+            <div class="theme-card-preview">
+                <div class="preview-frame">
+                    <div class="preview-chrome">
+                        <span class="preview-dots"><i></i><i></i><i></i></span>
+                        <span class="preview-bar"></span>
+                    </div>
+                    <div class="preview-body">
+                        <div class="preview-nav"></div>
+                        <div class="preview-hero">
+                            <div class="preview-hero-title"></div>
+                            <div class="preview-hero-sub"></div>
+                            <div class="preview-hero-btn"></div>
+                        </div>
+                        <div class="preview-cols">
+                            <div class="preview-col"></div>
+                            <div class="preview-col"></div>
+                            <div class="preview-col"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="theme-list-info">
-                <h3 class="theme-list-name">{{ theme.getName() }}</h3>
-                {% if themeConfigs[theme.getSlug()] is defined %}
-                    <span class="theme-version">v{{ themeConfigs[theme.getSlug()].version }}</span>
-                {% endif %}
-                {% if theme.getDescription() %}
-                    <p class="theme-list-desc">{{ theme.getDescription() }}</p>
-                {% endif %}
-            </div>
-            <div class="theme-list-actions">
-                <a href="/cms/themes/{{ theme.getSlug() }}/customize" class="btn btn-outline btn-sm">Customize</a>
-                <form method="POST" action="/cms/themes/{{ theme.getSlug() }}/publish" style="display:inline">
-                    {{ csrf_field() | raw }}
-                    <button type="submit" class="btn btn-primary btn-sm">Publish</button>
-                </form>
-                <div class="dropdown">
-                    <button type="button" class="btn-icon" data-dropdown="menu-{{ theme.getSlug() }}">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
-                    </button>
-                    <div class="dropdown-menu dropdown-menu--right" id="menu-{{ theme.getSlug() }}">
-                        <a href="/cms/themes/{{ theme.getSlug() }}/preview" class="dropdown-item">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                            Preview
-                        </a>
-                        <a href="/cms/themes/{{ theme.getSlug() }}" class="dropdown-item">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                            Edit code
-                        </a>
-                        <a href="/cms/themes/{{ theme.getSlug() }}/customize" class="dropdown-item">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.32 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-                            Customize
-                        </a>
-                        <div class="dropdown-divider"></div>
-                        <form method="POST" action="/cms/themes/{{ theme.getSlug() }}/delete" class="confirm-delete" data-message="Delete theme '{{ theme.getName() }}'? This cannot be undone.">
-                            {{ csrf_field() | raw }}
-                            <button type="submit" class="dropdown-item dropdown-item--danger">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                                Delete
-                            </button>
-                        </form>
-                        <form method="POST" action="/cms/themes/{{ theme.getSlug() }}/uninstall" class="confirm-delete" data-message="Uninstall theme '{{ theme.getName() }}'? This removes all theme files.">
-                            {{ csrf_field() | raw }}
-                            <button type="submit" class="dropdown-item dropdown-item--danger">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                                Uninstall
-                            </button>
-                        </form>
+            <div class="theme-card-info">
+                <div class="theme-card-header">
+                    <h3 class="theme-card-name">{{ theme.getName() }}</h3>
+                    {% if themeConfigs[theme.getSlug()] is defined %}
+                        <span class="theme-version">v{{ themeConfigs[theme.getSlug()].version }}</span>
+                    {% endif %}
+                </div>
+                <div class="theme-card-actions">
+                    <a href="/cms/themes/{{ theme.getSlug() }}/customize" class="btn btn-outline btn-sm">Customize</a>
+                    <div class="dropdown">
+                        <button type="button" class="btn-icon" data-dropdown="menu-{{ theme.getSlug() }}">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu--right" id="menu-{{ theme.getSlug() }}">
+                            <a href="/cms/themes/{{ theme.getSlug() }}/preview" class="dropdown-item">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                Preview
+                            </a>
+                            <a href="/cms/themes/{{ theme.getSlug() }}/code" class="dropdown-item">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                                Edit code
+                            </a>
+                            <form method="POST" action="/cms/themes/{{ theme.getSlug() }}/publish" style="display:contents">
+                                {{ csrf_field() | raw }}
+                                <button type="submit" class="dropdown-item">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                    Publish
+                                </button>
+                            </form>
+                            <div class="dropdown-divider"></div>
+                            <form method="POST" action="/cms/themes/{{ theme.getSlug() }}/delete" class="confirm-delete" data-message="Delete theme '{{ theme.getName() }}'? This cannot be undone.">
+                                {{ csrf_field() | raw }}
+                                <button type="submit" class="dropdown-item dropdown-item--danger">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                                    Delete
+                                </button>
+                            </form>
+                            <form method="POST" action="/cms/themes/{{ theme.getSlug() }}/uninstall" class="confirm-delete" data-message="Uninstall theme '{{ theme.getName() }}'? This removes all theme files.">
+                                {{ csrf_field() | raw }}
+                                <button type="submit" class="dropdown-item dropdown-item--danger">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                                    Uninstall
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
         {% endfor %}
     </div>
-    {% else %}
-        {% if not liveTheme %}
-        <div class="card">
-            <div class="card-body empty-state">
-                <h3>No themes found</h3>
-                <p>Create your first theme or upload one from a ZIP package.</p>
-                <div style="display:flex;gap:8px;justify-content:center;">
-                    <a href="/cms/themes/create" class="btn btn-primary">Create Theme</a>
-                    <button type="button" class="btn btn-outline" onclick="document.getElementById('install-modal').style.display='flex'">Upload ZIP</button>
-                </div>
+    {% endif %}
+
+    {% if not liveTheme and draftThemes|length == 0 %}
+    <div class="card">
+        <div class="card-body empty-state">
+            <h3>No themes found</h3>
+            <p>Create your first theme or upload one from a ZIP package.</p>
+            <div style="display:flex;gap:8px;justify-content:center;">
+                <a href="/cms/themes/create" class="btn btn-primary">Create Theme</a>
+                <button type="button" class="btn btn-outline" onclick="document.getElementById('install-modal').style.display='flex'">Upload ZIP</button>
             </div>
         </div>
-        {% else %}
-        <div class="theme-library-empty">
-            <p class="text-muted">No additional themes in your library. Add a theme to try a new look.</p>
-        </div>
-        {% endif %}
+    </div>
     {% endif %}
 </div>
 {% endblock %}
 
 {% block styles %}
 <style nonce="{{ csp_nonce() }}">
-/* ── Current Theme Card ── */
-.current-theme-card {
+/* ── Container ── */
+.themes-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* ── Active Theme Card ── */
+.active-theme-card {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    background: var(--bg-surface);
-    border-radius: var(--radius-200);
-    box-shadow: var(--shadow-card, 0 1px 3px rgba(0,0,0,0.08));
+    background: var(--bg-surface, #fff);
+    border-radius: var(--radius-200, 8px);
+    border: 2px solid var(--color-primary, #047B5D);
     overflow: hidden;
-    margin-bottom: var(--space-600, 32px);
+    margin-bottom: 24px;
 }
-.current-theme-preview {
+.active-theme-preview {
     background: var(--bg-subdued, #f6f6f7);
-    padding: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
+    position: relative;
     min-height: 280px;
+    overflow: hidden;
 }
-.current-theme-info {
+.preview-iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 200%;
+    height: 200%;
+    transform: scale(0.5);
+    transform-origin: top left;
+    border: none;
+    pointer-events: none;
+}
+.active-theme-info {
     padding: 24px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-}
-.current-theme-top {
-    display: flex;
     justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 12px;
 }
-.current-theme-name {
-    font-size: 1.25rem;
+.section-title {
+    font-size: 1rem;
     font-weight: 700;
-    margin: 0 0 8px;
+    margin: 0 0 16px;
+    color: var(--text-primary, #303030);
 }
-.current-theme-actions {
+
+/* ── Theme Grid ── */
+.theme-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+/* ── Theme Card ── */
+.theme-card {
+    background: var(--bg-surface, #fff);
+    border-radius: var(--radius-200, 8px);
+    border: 1px solid var(--border-color, #e5e5e5);
+    overflow: hidden;
+    transition: box-shadow 0.2s, border-color 0.2s;
+}
+.theme-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    border-color: var(--border-color-hover, #ccc);
+}
+.theme-card--active {
+    border-color: var(--color-primary, #047B5D);
+    border-width: 2px;
+}
+
+/* ── Card Preview ── */
+.theme-card-preview {
+    background: var(--bg-subdued, #f6f6f7);
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    min-height: 180px;
+}
+.theme-card-preview .badge-live {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+/* ── Card Info ── */
+.theme-card-info {
+    padding: 16px;
+}
+.theme-card-header {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+.theme-card-name {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    margin: 0;
+}
+.theme-card-actions {
     display: flex;
     align-items: center;
     gap: 8px;
-}
-.current-theme-desc {
-    color: var(--text-secondary, #616161);
-    font-size: var(--font-size-sm, 0.8125rem);
-    margin-bottom: 12px;
+    margin-top: 12px;
 }
 
 /* ── Badge ── */
@@ -295,24 +328,17 @@
     display: inline-block;
     background: #e3fcef;
     color: #047B5D;
-    font-size: 0.75rem;
+    font-size: 0.6875rem;
     font-weight: 600;
-    padding: 2px 10px;
+    padding: 2px 8px;
     border-radius: 999px;
-    vertical-align: middle;
 }
 .theme-version {
     font-size: 0.75rem;
     color: var(--text-secondary, #999);
-    margin-left: 8px;
 }
 
 /* ── Theme Meta ── */
-.theme-meta {
-    margin-top: 8px;
-    display: flex;
-    gap: 16px;
-}
 .theme-meta-item {
     display: inline-flex;
     align-items: center;
@@ -321,34 +347,26 @@
     color: var(--text-secondary, #616161);
 }
 
-/* ── Preview Frames ── */
+/* ── Preview Frame ── */
 .preview-frame {
     background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    border-radius: 6px;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.08);
     overflow: hidden;
-}
-.preview-desktop {
-    width: 260px;
-}
-.preview-mobile {
-    width: 80px;
+    width: 100%;
+    max-width: 220px;
 }
 .preview-chrome {
     background: #f1f1f1;
-    padding: 6px 10px;
+    padding: 5px 8px;
     display: flex;
     align-items: center;
-    gap: 6px;
-}
-.preview-chrome--mobile {
-    justify-content: center;
-    padding: 4px 0;
+    gap: 5px;
 }
 .preview-dots i {
     display: inline-block;
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
     border-radius: 50%;
     background: #ccc;
 }
@@ -357,141 +375,55 @@
 .preview-dots i:last-child { background: #28c840; }
 .preview-bar {
     flex: 1;
-    height: 10px;
+    height: 8px;
     background: #e5e5e5;
     border-radius: 3px;
     margin-left: 4px;
 }
-.preview-notch {
-    width: 28px;
-    height: 4px;
-    border-radius: 2px;
-    background: #ddd;
-}
 .preview-body {
-    padding: 8px;
+    padding: 6px;
 }
 .preview-nav {
-    height: 8px;
+    height: 6px;
     background: #f5f5f5;
     border-radius: 2px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 .preview-hero {
     text-align: center;
-    padding: 16px 8px;
-}
-.preview-hero--sm {
-    padding: 8px 4px;
+    padding: 12px 6px;
 }
 .preview-hero-title {
     width: 60%;
-    height: 10px;
+    height: 8px;
     background: #e0e0e0;
     border-radius: 2px;
-    margin: 0 auto 6px;
+    margin: 0 auto 5px;
 }
 .preview-hero-sub {
     width: 80%;
-    height: 6px;
+    height: 5px;
     background: #eee;
     border-radius: 2px;
-    margin: 0 auto 8px;
+    margin: 0 auto 6px;
 }
 .preview-hero-btn {
     width: 40%;
-    height: 10px;
+    height: 8px;
     background: #333;
     border-radius: 3px;
     margin: 0 auto;
 }
 .preview-cols {
     display: flex;
-    gap: 4px;
-    padding: 4px 0;
+    gap: 3px;
+    padding: 3px 0;
 }
 .preview-col {
     flex: 1;
-    height: 30px;
+    height: 24px;
     background: #f5f5f5;
     border-radius: 2px;
-}
-
-/* ── Theme Library ── */
-.theme-library {
-    margin-top: var(--space-400, 16px);
-}
-.theme-library-header {
-    margin-bottom: var(--space-400, 16px);
-}
-.theme-library-header h2 {
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin: 0 0 4px;
-}
-.theme-library-header .text-muted {
-    font-size: var(--font-size-sm, 0.8125rem);
-}
-.theme-library-empty {
-    padding: 32px;
-    text-align: center;
-}
-
-/* ── Theme List ── */
-.theme-list {
-    border: 1px solid var(--border-color, #e5e5e5);
-    border-radius: var(--radius-200, 8px);
-    overflow: hidden;
-}
-.theme-list-item {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 16px 20px;
-    background: var(--bg-surface, #fff);
-    border-bottom: 1px solid var(--border-color, #e5e5e5);
-    transition: background 0.15s;
-}
-.theme-list-item:last-child {
-    border-bottom: none;
-}
-.theme-list-item:hover {
-    background: var(--bg-subdued, #fafafa);
-}
-.theme-list-thumb {
-    width: 56px;
-    height: 56px;
-    border-radius: var(--radius-100, 4px);
-    background: var(--bg-subdued, #f6f6f7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-disabled, #b5b5b5);
-    flex-shrink: 0;
-}
-.theme-list-info {
-    flex: 1;
-    min-width: 0;
-}
-.theme-list-name {
-    font-size: 0.9375rem;
-    font-weight: 600;
-    margin: 0;
-    display: inline;
-}
-.theme-list-desc {
-    color: var(--text-secondary, #616161);
-    font-size: var(--font-size-sm, 0.8125rem);
-    margin: 4px 0 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.theme-list-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-shrink: 0;
 }
 
 /* ── Dropdowns ── */
@@ -627,17 +559,15 @@
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
-    .current-theme-card {
+    .active-theme-card {
         grid-template-columns: 1fr;
     }
-    .current-theme-preview {
-        min-height: 180px;
-        padding: 20px;
+    .active-theme-preview {
+        min-height: 200px;
     }
-    .preview-desktop { width: 200px; }
-    .preview-mobile { width: 60px; }
-    .theme-list-actions .btn { display: none; }
-    .theme-list-actions .btn:last-of-type { display: inline-flex; }
+    .theme-grid {
+        grid-template-columns: 1fr;
+    }
 }
 </style>
 {% endblock %}
@@ -651,7 +581,6 @@ document.querySelectorAll('[data-dropdown]').forEach(function(btn) {
         var id = this.getAttribute('data-dropdown');
         var menu = document.getElementById(id);
         var wasOpen = menu.classList.contains('is-open');
-        // Close all open dropdowns
         document.querySelectorAll('.dropdown-menu.is-open').forEach(function(m) {
             m.classList.remove('is-open');
         });
@@ -659,7 +588,6 @@ document.querySelectorAll('[data-dropdown]').forEach(function(btn) {
     });
 });
 
-// Close dropdowns on outside click
 document.addEventListener('click', function() {
     document.querySelectorAll('.dropdown-menu.is-open').forEach(function(m) {
         m.classList.remove('is-open');
