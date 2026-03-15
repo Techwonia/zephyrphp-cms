@@ -1617,9 +1617,9 @@
             } else if (ext === 'css') {
                 content = formatCSS(content);
             } else if (ext === 'js') {
-                // Basic JS formatting: normalize indentation
-                showToast('JS formatting: normalized whitespace');
-                return;
+                content = formatJS(content);
+            } else if (ext === 'twig' || ext === 'html' || ext === 'htm') {
+                content = formatHTML(content);
             } else {
                 showToast('Format not available for this file type', 'error');
                 return;
@@ -1644,6 +1644,106 @@
             .replace(/\n\s*\n/g, '\n')
             .replace(/    \}/g, '}')
             .trim();
+    }
+
+    function formatJS(src) {
+        let indent = 0;
+        const lines = src.split('\n');
+        const result = [];
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i].trim();
+            if (!line) { result.push(''); continue; }
+            const closersOnly = /^[}\])]/.test(line);
+            if (closersOnly) indent = Math.max(0, indent - 1);
+            result.push('    '.repeat(indent) + line);
+            const opens = (line.match(/[{(\[]/g) || []).length;
+            const closes = (line.match(/[})\]]/g) || []).length;
+            indent = Math.max(0, indent + opens - closes);
+            if (closersOnly) indent = Math.max(0, indent);
+        }
+        return result.join('\n').trim();
+    }
+
+    function formatHTML(src) {
+        const voidTags = new Set(['area','base','br','col','embed','hr','img','input','link','meta','param','source','track','wbr']);
+        const rawTags = new Set(['script','style','pre','code','textarea']);
+        let indent = 0;
+        let inRaw = false;
+        let rawTag = '';
+        const result = [];
+
+        // Normalize: put each tag on its own line
+        src = src
+            .replace(/>\s*</g, '>\n<')
+            .replace(/^\s+|\s+$/g, '');
+
+        const lines = src.split('\n');
+        // Twig block-level tags that decrease indent before and increase after
+        const twigOpenRe = new RegExp('^' + '\\{' + '%[-\\s]+(block|for|if|macro|embed|autoescape|apply|verbatim|set\\s+\\w+\\s*%' + '}' + '|set\\s+\\w+)');
+        const twigMidRe = new RegExp('^' + '\\{' + '%[-\\s]+(else|elseif|elif)');
+        const twigCloseRe = new RegExp('^' + '\\{' + '%[-\\s]+(end(block|for|if|macro|embed|autoescape|apply|verbatim|set))');
+
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i].trim();
+            if (!line) { result.push(''); continue; }
+
+            // Track raw tags (don't re-indent contents of script/style/pre)
+            if (inRaw) {
+                result.push('    '.repeat(indent) + line);
+                const closeRe = new RegExp('</' + rawTag, 'i');
+                if (closeRe.test(line)) { inRaw = false; indent = Math.max(0, indent - 1); }
+                continue;
+            }
+
+            // Twig close tag: dedent then print
+            if (twigCloseRe.test(line)) {
+                indent = Math.max(0, indent - 1);
+                result.push('    '.repeat(indent) + line);
+                continue;
+            }
+
+            // Twig mid tag (else/elseif): dedent, print, re-indent
+            if (twigMidRe.test(line)) {
+                result.push('    '.repeat(Math.max(0, indent - 1)) + line);
+                continue;
+            }
+
+            // Twig open tag: print then indent
+            if (twigOpenRe.test(line) && !twigCloseRe.test(line)) {
+                result.push('    '.repeat(indent) + line);
+                indent++;
+                continue;
+            }
+
+            // HTML closing tag
+            if (/^<\//.test(line)) {
+                indent = Math.max(0, indent - 1);
+                result.push('    '.repeat(indent) + line);
+                continue;
+            }
+
+            // HTML opening tag
+            if (/^<[a-zA-Z]/.test(line)) {
+                result.push('    '.repeat(indent) + line);
+                const tagMatch = line.match(/^<([a-zA-Z][a-zA-Z0-9-]*)/);
+                if (tagMatch) {
+                    const tag = tagMatch[1].toLowerCase();
+                    const selfClose = /\/\s*>$/.test(line);
+                    if (!selfClose && !voidTags.has(tag)) {
+                        if (rawTags.has(tag)) { inRaw = true; rawTag = tag; }
+                        // Only indent if the closing tag is NOT on the same line
+                        const closeOnSame = new RegExp('</' + tag + '\\s*>', 'i');
+                        if (!closeOnSame.test(line)) indent++;
+                    }
+                }
+                continue;
+            }
+
+            // Everything else (text, comments, Twig output tags)
+            result.push('    '.repeat(indent) + line);
+        }
+
+        return result.join('\n').trim();
     }
 
     // ── Word Wrap ──
