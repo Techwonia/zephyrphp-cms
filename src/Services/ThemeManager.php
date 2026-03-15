@@ -664,17 +664,39 @@ class ThemeManager
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {{ assets_csp()|raw }}
-    <title>{% block title %}{{ config('app.name', 'ZephyrPHP') }}{% endblock %}</title>
+    <title>{% block title %}{{ seo.title ?? page.title ?? config('app.name', 'ZephyrPHP') }}{% endblock %}</title>
     {% block meta %}{% endblock %}
     {{ assets_head()|raw }}
+    {% if theme_settings is defined and theme_settings %}
+    <style>
+        :root {
+            --color-primary: {{ theme_settings.primary_color|default('#111111') }};
+            --color-accent: {{ theme_settings.secondary_color|default('#555555') }};
+            --color-bg: {{ theme_settings.bg_color|default('#ffffff') }};
+            --color-text: {{ theme_settings.text_color|default('#111111') }};
+            --color-muted: {{ theme_settings.text_secondary_color|default('#666666') }};
+            --font-heading: '{{ theme_settings.heading_font|default('Inter') }}', system-ui, sans-serif;
+            --font-body: '{{ theme_settings.body_font|default('Inter') }}', system-ui, sans-serif;
+            --font-size: {{ theme_settings.base_font_size|default(16) }}px;
+        }
+    </style>
+    {% endif %}
     {% block styles %}{% endblock %}
 </head>
 <body>
+    {% include "@theme/snippets/header.twig" %}
+
     {% block body %}
+    {% if use_sections is defined and use_sections %}
+        {{ sections_html|raw }}
+    {% else %}
     <main>
         {% block content %}{% endblock %}
     </main>
+    {% endif %}
     {% endblock %}
+
+    {% include "@theme/snippets/footer.twig" %}
     {{ assets_footer()|raw }}
     {% block scripts %}{% endblock %}
 </body>
@@ -684,20 +706,32 @@ TWIG;
 
         // Header snippet
         $header = <<<'TWIG'
-{# Header snippet - include with: {% include "@theme/snippets/header.twig" %} #}
-<header>
-    <nav>
-        <a href="/">{{ config('app.name', 'ZephyrPHP') }}</a>
-    </nav>
+<header class="site-header">
+    <div class="container">
+        <nav class="nav">
+            <a href="/" class="nav__logo">{{ config('app.name', 'ZephyrPHP') }}</a>
+            <ul class="nav__menu">
+                <li><a href="/">Home</a></li>
+                {% if auth_check() %}
+                    <li><a href="/cms">Dashboard</a></li>
+                {% else %}
+                    <li><a href="/login">Sign In</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
 </header>
 TWIG;
         file_put_contents($path . '/snippets/header.twig', $header);
 
         // Footer snippet
         $footer = <<<'TWIG'
-{# Footer snippet - include with: {% include "@theme/snippets/footer.twig" %} #}
-<footer>
-    <p>&copy; {{ "now"|date("Y") }} {{ config('app.name', 'ZephyrPHP') }}</p>
+<footer class="site-footer">
+    <div class="container">
+        <div class="footer__inner">
+            <p class="footer__copy">&copy; {{ "now"|date("Y") }} {{ config('app.name', 'ZephyrPHP') }}</p>
+        </div>
+    </div>
 </footer>
 TWIG;
         file_put_contents($path . '/snippets/footer.twig', $footer);
@@ -709,10 +743,14 @@ TWIG;
 {% block title %}{{ page.title ?? config('app.name', 'ZephyrPHP') }}{% endblock %}
 
 {% block content %}
-<div class="container" style="padding: 60px 20px; text-align: center;">
-    <h1>{{ page.title ?? config('app.name', 'ZephyrPHP') }}</h1>
-    <p>Your site is ready. Edit this page from the theme editor.</p>
-</div>
+<section class="hero">
+    <h1 class="hero__title">{{ config('app.name', 'ZephyrPHP') }}</h1>
+    <p class="hero__subtitle">Your site is ready. Sign in to start building.</p>
+    <div class="hero__actions">
+        <a href="/login" class="btn btn--primary">Sign In</a>
+        <a href="/register" class="btn btn--outline">Create Account</a>
+    </div>
+</section>
 {% endblock %}
 TWIG;
         file_put_contents($path . '/templates/home.twig', $home);
@@ -721,8 +759,72 @@ TWIG;
         $starterCss = <<<'CSS'
 /* Theme Stylesheet */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; color: #333; }
-.container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+
+:root {
+    --color-primary: #111;
+    --color-accent: #555;
+    --color-bg: #fff;
+    --color-text: #111;
+    --color-muted: #666;
+    --color-border: #e5e5e5;
+    --color-surface: #fafafa;
+    --font-heading: var(--font-body);
+    --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-size: 16px;
+    --max-width: 1120px;
+    --gap: 24px;
+    --radius: 6px;
+    --transition: 0.2s ease;
+}
+
+html { font-size: var(--font-size); scroll-behavior: smooth; }
+
+body {
+    font-family: var(--font-body);
+    background: var(--color-bg);
+    color: var(--color-text);
+    line-height: 1.65;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    -webkit-font-smoothing: antialiased;
+}
+
+.container { max-width: var(--max-width); margin: 0 auto; padding: 0 var(--gap); width: 100%; }
+
+.site-header { border-bottom: 1px solid var(--color-border); }
+.nav { display: flex; justify-content: space-between; align-items: center; height: 56px; }
+.nav__logo { font-size: 1.125rem; font-weight: 700; color: var(--color-text); text-decoration: none; letter-spacing: -0.02em; }
+.nav__menu { display: flex; list-style: none; gap: 28px; align-items: center; }
+.nav__menu a { color: var(--color-muted); text-decoration: none; font-size: 0.875rem; font-weight: 500; transition: color var(--transition); }
+.nav__menu a:hover { color: var(--color-text); }
+
+.hero { padding: 100px 0 80px; text-align: center; }
+.hero__title { font-family: var(--font-heading); font-size: clamp(2.25rem, 5vw, 3.5rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 16px; }
+.hero__subtitle { font-size: 1.125rem; color: var(--color-muted); max-width: 480px; margin: 0 auto 32px; }
+.hero__actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; padding: 10px 24px; border-radius: var(--radius); font-size: 0.875rem; font-weight: 600; text-decoration: none; border: 1px solid transparent; cursor: pointer; transition: all var(--transition); }
+.btn--primary { background: var(--color-text); color: var(--color-bg); border-color: var(--color-text); }
+.btn--primary:hover { opacity: 0.85; }
+.btn--outline { background: transparent; color: var(--color-text); border-color: var(--color-border); }
+.btn--outline:hover { border-color: var(--color-text); }
+
+.site-footer { border-top: 1px solid var(--color-border); padding: 32px 0; margin-top: auto; }
+.footer__inner { display: flex; justify-content: space-between; align-items: center; }
+.footer__copy { font-size: 0.8125rem; color: var(--color-muted); }
+
+.prose { max-width: 680px; }
+.prose p { margin-bottom: 1em; }
+.prose h2 { font-size: 1.5rem; margin: 2em 0 0.75em; font-weight: 700; }
+.prose h3 { font-size: 1.25rem; margin: 1.5em 0 0.5em; font-weight: 600; }
+
+@media (max-width: 640px) {
+    .nav__menu { gap: 16px; }
+    .hero { padding: 60px 0 48px; }
+    .hero__actions { flex-direction: column; align-items: stretch; }
+    .footer__inner { flex-direction: column; gap: 12px; text-align: center; }
+}
 CSS;
         file_put_contents($assetsPath . '/css/base.css', $starterCss);
 
