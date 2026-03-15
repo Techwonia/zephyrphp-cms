@@ -700,7 +700,7 @@
         </div>
     </div>
 
-    <script type="importmap" nonce="{{ csp_script_nonce() }}">
+    <script type="importmap" nonce="{{ csp_nonce() }}">
     {
         "imports": {
             "codemirror": "https://esm.sh/codemirror@6.65.7",
@@ -716,7 +716,7 @@
     }
     </script>
 
-    <script type="module" nonce="{{ csp_script_nonce() }}">
+    <script type="module" nonce="{{ csp_nonce() }}">
 
     // ── State ──
     const THEME_SLUG = '{{ theme.getSlug() }}';
