@@ -507,7 +507,7 @@
         <div class="topbar-center">{{ theme.getName() }}</div>
         <div class="topbar-right">
             <span class="unsaved-indicator" id="unsavedIndicator">Unsaved</span>
-            <button class="btn-save" id="btnSave" onclick="window._saveFile()" disabled>Save</button>
+            <button class="btn-save" id="btnSave" disabled>Save</button>
         </div>
     </div>
 
@@ -518,13 +518,13 @@
             <div class="sidebar-header">
                 <span class="sidebar-title">Explorer</span>
                 <div class="sidebar-actions">
-                    <button class="sidebar-btn" title="New file (Ctrl+N)" onclick="window._showNewFileModal()">
+                    <button class="sidebar-btn" id="btnNewFile" title="New file (Ctrl+N)">
                         <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a.5.5 0 01.5.5V7h5.5a.5.5 0 010 1H8.5v5.5a.5.5 0 01-1 0V8H2a.5.5 0 010-1h5.5V1.5A.5.5 0 018 1z"/></svg>
                     </button>
-                    <button class="sidebar-btn" title="New folder" onclick="window._showNewFolderModal()">
+                    <button class="sidebar-btn" id="btnNewFolder" title="New folder">
                         <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 3.5A1.5 1.5 0 012.5 2h3.172a1.5 1.5 0 011.06.44l.658.658A.5.5 0 007.744 3.25H13.5A1.5 1.5 0 0115 4.75v7.75a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 011 12.5v-9zM7.5 8a.5.5 0 01.5.5V10h1.5a.5.5 0 010 1H8v1.5a.5.5 0 01-1 0V11H5.5a.5.5 0 010-1H7V8.5a.5.5 0 01.5-.5z"/></svg>
                     </button>
-                    <button class="sidebar-btn" title="Search files (Ctrl+P)" onclick="window._openQuickSearch()">
+                    <button class="sidebar-btn" id="btnSearch" title="Search files (Ctrl+P)">
                         <svg viewBox="0 0 16 16" fill="currentColor"><path d="M11.742 10.344a6.5 6.5 0 10-1.397 1.398h-.001l3.85 3.85a1 1 0 001.415-1.414l-3.85-3.85zm-5.242.156a5 5 0 110-10 5 5 0 010 10z"/></svg>
                     </button>
                 </div>
@@ -540,20 +540,20 @@
 
             <!-- Toolbar -->
             <div class="editor-toolbar" id="editorToolbar">
-                <button class="toolbar-btn" id="btnFormat" onclick="window._formatCode()" title="Format code">
+                <button class="toolbar-btn" id="btnFormat" title="Format code">
                     <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 3h12v1H2V3zm2 3h8v1H4V6zm-1 3h10v1H3V9zm2 3h6v1H5v-1z"/></svg>
                     Format
                 </button>
-                <button class="toolbar-btn" id="btnWrap" onclick="window._toggleWordWrap()" title="Toggle word wrap">
+                <button class="toolbar-btn" id="btnWrap" title="Toggle word wrap">
                     <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 3h12v1H2V3zm0 4h9.5a2.5 2.5 0 010 5H10l1.5-1.5-.7-.7L8.3 12.3l2.5 2.5.7-.7L10 12.5h1.5a1.5 1.5 0 000-3H2V8zM2 13h5v-1H2v1z"/></svg>
                     Wrap
                 </button>
                 <div class="toolbar-separator"></div>
-                <button class="toolbar-btn" id="btnSplit" onclick="window._toggleSplitView()" title="Split editor">
+                <button class="toolbar-btn" id="btnSplit" title="Split editor">
                     <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 2.5A1.5 1.5 0 012.5 1h11A1.5 1.5 0 0115 2.5v11a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 011 13.5v-11zM7.5 2v12h6a.5.5 0 00.5-.5v-11a.5.5 0 00-.5-.5h-6zM2 2.5v11a.5.5 0 00.5.5H6.5V2H2.5a.5.5 0 00-.5.5z"/></svg>
                     Split
                 </button>
-                <button class="toolbar-btn" id="btnSchema" onclick="window._toggleSchemaPanel()" title="Section schema" style="display:none;">
+                <button class="toolbar-btn" id="btnSchema" title="Section schema" style="display:none;">
                     <svg viewBox="0 0 16 16" fill="currentColor"><path d="M5 4a2 2 0 00-2 2v1a1 1 0 01-1 1H1v1h1a1 1 0 011 1v1a2 2 0 002 2h1v-1H5a1 1 0 01-1-1V9.5A1.5 1.5 0 002.5 8 1.5 1.5 0 004 6.5V5a1 1 0 011-1h1V3H5zm6 0a2 2 0 012 2v1a1 1 0 001 1h1v1h-1a1 1 0 00-1 1v1a2 2 0 01-2 2h-1v-1h1a1 1 0 001-1V9.5A1.5 1.5 0 0013.5 8 1.5 1.5 0 0012 6.5V5a1 1 0 00-1-1h-1V3h1z"/></svg>
                     Schema
                 </button>
@@ -586,7 +586,7 @@
                 <div class="editor-pane" id="editorPane2" style="display:none;">
                     <div class="pane-tab-info">
                         <span class="pane-filename" id="pane2Name">—</span>
-                        <button class="pane-close-btn" onclick="window._closeSplitPane()">&times;</button>
+                        <button class="pane-close-btn" id="btnCloseSplit">&times;</button>
                     </div>
                     <div class="editor-container" id="editorContainer2"></div>
                 </div>
@@ -600,7 +600,7 @@
                     <svg viewBox="0 0 16 16" fill="currentColor"><path d="M5 4a2 2 0 00-2 2v1a1 1 0 01-1 1H1v1h1a1 1 0 011 1v1a2 2 0 002 2h1v-1H5a1 1 0 01-1-1V9.5A1.5 1.5 0 002.5 8 1.5 1.5 0 004 6.5V5a1 1 0 011-1h1V3H5zm6 0a2 2 0 012 2v1a1 1 0 001 1h1v1h-1a1 1 0 00-1 1v1a2 2 0 01-2 2h-1v-1h1a1 1 0 001-1V9.5A1.5 1.5 0 0013.5 8 1.5 1.5 0 0012 6.5V5a1 1 0 00-1-1h-1V3h1z"/></svg>
                     Section Schema
                 </span>
-                <button class="schema-panel-close" onclick="window._toggleSchemaPanel()">&times;</button>
+                <button class="schema-panel-close" id="btnSchemaClose">&times;</button>
             </div>
             <div class="schema-panel-body" id="schemaPanelBody"></div>
         </div>
@@ -644,8 +644,8 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="modal-btn modal-btn-cancel" onclick="window._closeModal('newFileModal')">Cancel</button>
-                <button class="modal-btn modal-btn-primary" onclick="window._createNewFile()">Create</button>
+                <button class="modal-btn modal-btn-cancel" id="btnNewFileCancel">Cancel</button>
+                <button class="modal-btn modal-btn-primary" id="btnNewFileCreate">Create</button>
             </div>
         </div>
     </div>
@@ -673,8 +673,8 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="modal-btn modal-btn-cancel" onclick="window._closeModal('newFolderModal')">Cancel</button>
-                <button class="modal-btn modal-btn-primary" onclick="window._createNewFolder()">Create</button>
+                <button class="modal-btn modal-btn-cancel" id="btnNewFolderCancel">Cancel</button>
+                <button class="modal-btn modal-btn-primary" id="btnNewFolderCreate">Create</button>
             </div>
         </div>
     </div>
@@ -694,8 +694,8 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="modal-btn modal-btn-cancel" onclick="window._closeModal('renameModal')">Cancel</button>
-                <button class="modal-btn modal-btn-primary" onclick="window._renameFile()">Rename</button>
+                <button class="modal-btn modal-btn-cancel" id="btnRenameCancel">Cancel</button>
+                <button class="modal-btn modal-btn-primary" id="btnRenameSubmit">Rename</button>
             </div>
         </div>
     </div>
@@ -835,8 +835,6 @@
     // ── Escape helpers ──
     function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
     function escAttr(s) { return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-    function escJs(s) { return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'\\"'); }
-
     // ══════════════════════════════════════════════
     // FILE TREE
     // ══════════════════════════════════════════════
@@ -936,7 +934,7 @@
         const totalCount = countFiles(node);
 
         let html = `<div class="folder-item">
-            <div class="folder-header" onclick="window._toggleFolder(this)" oncontextmenu="window._folderContext(event, '${escJs(fullPath)}')" style="padding-left:${10 + depth * 14}px;">
+            <div class="folder-header" data-folder-path="${escAttr(fullPath)}" style="padding-left:${10 + depth * 14}px;">
                 <span class="folder-toggle">&#9662;</span>
                 ${FOLDER_ICON_OPEN}
                 <span class="folder-name">${esc(name)}</span>
@@ -959,7 +957,7 @@
     function fileItemHtml(name, path, depth = 0) {
         const indent = 28 + (depth * 14);
         const isBinary = /\.(png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|eot)$/i.test(name);
-        return `<div class="file-item${isBinary ? ' binary' : ''}" data-path="${escAttr(path)}" onclick="window._fileClick('${escJs(path)}')" oncontextmenu="window._fileContext(event, '${escJs(path)}')" style="padding-left:${indent}px;">
+        return `<div class="file-item${isBinary ? ' binary' : ''}" data-path="${escAttr(path)}" style="padding-left:${indent}px;">
             ${fileIconSvg(name)}
             <span class="file-name">${esc(name)}</span>
         </div>`;
@@ -1246,10 +1244,10 @@
             const cls = ['tab'];
             if (isActive) cls.push('active');
             if (tab.modified) cls.push('modified');
-            html += `<div class="${cls.join(' ')}" data-path="${escAttr(tab.path)}" onclick="window._switchTab('${escJs(tab.path)}')">
+            html += `<div class="${cls.join(' ')}" data-tab-path="${escAttr(tab.path)}">
                 <span class="tab-modified"></span>
                 <span class="tab-name" title="${escAttr(tab.path)}">${esc(name)}</span>
-                <button class="tab-close" onclick="event.stopPropagation(); window._closeTab('${escJs(tab.path)}')">&times;</button>
+                <button class="tab-close" data-tab-close="${escAttr(tab.path)}">&times;</button>
             </div>`;
         }
         $tabBar.innerHTML = html;
@@ -1654,6 +1652,81 @@
     $('newFileName').addEventListener('keydown', e => { if (e.key === 'Enter') window._createNewFile(); });
     $('newFolderName').addEventListener('keydown', e => { if (e.key === 'Enter') window._createNewFolder(); });
     $('renameNewName').addEventListener('keydown', e => { if (e.key === 'Enter') window._renameFile(); });
+
+    // ══════════════════════════════════════════════
+    // EVENT BINDINGS (replacing inline handlers)
+    // ══════════════════════════════════════════════
+
+    // ── Static button bindings ──
+    $btnSave.addEventListener('click', () => window._saveFile());
+    $('btnNewFile').addEventListener('click', () => window._showNewFileModal());
+    $('btnNewFolder').addEventListener('click', () => window._showNewFolderModal());
+    $('btnSearch').addEventListener('click', () => window._openQuickSearch());
+    $('btnFormat').addEventListener('click', () => window._formatCode());
+    $('btnWrap').addEventListener('click', () => window._toggleWordWrap());
+    $('btnSplit').addEventListener('click', () => window._toggleSplitView());
+    $btnSchema.addEventListener('click', () => window._toggleSchemaPanel());
+    $('btnCloseSplit').addEventListener('click', () => window._closeSplitPane());
+    $('btnSchemaClose').addEventListener('click', () => window._toggleSchemaPanel());
+
+    // ── Modal button bindings ──
+    $('btnNewFileCancel').addEventListener('click', () => window._closeModal('newFileModal'));
+    $('btnNewFileCreate').addEventListener('click', () => window._createNewFile());
+    $('btnNewFolderCancel').addEventListener('click', () => window._closeModal('newFolderModal'));
+    $('btnNewFolderCreate').addEventListener('click', () => window._createNewFolder());
+    $('btnRenameCancel').addEventListener('click', () => window._closeModal('renameModal'));
+    $('btnRenameSubmit').addEventListener('click', () => window._renameFile());
+
+    // ── File tree event delegation ──
+    $fileTree.addEventListener('click', (e) => {
+        // File item click
+        const fileItem = e.target.closest('.file-item');
+        if (fileItem) {
+            const path = fileItem.dataset.path;
+            if (path) window._fileClick(path);
+            return;
+        }
+        // Folder header click (toggle)
+        const folderHeader = e.target.closest('.folder-header');
+        if (folderHeader) {
+            window._toggleFolder(folderHeader);
+            return;
+        }
+    });
+
+    $fileTree.addEventListener('contextmenu', (e) => {
+        // File item right-click
+        const fileItem = e.target.closest('.file-item');
+        if (fileItem) {
+            const path = fileItem.dataset.path;
+            if (path) window._fileContext(e, path);
+            return;
+        }
+        // Folder header right-click
+        const folderHeader = e.target.closest('.folder-header');
+        if (folderHeader) {
+            const folderPath = folderHeader.dataset.folderPath;
+            if (folderPath) window._folderContext(e, folderPath);
+            return;
+        }
+    });
+
+    // ── Tab bar event delegation ──
+    $tabBar.addEventListener('click', (e) => {
+        // Close button
+        const closeBtn = e.target.closest('[data-tab-close]');
+        if (closeBtn) {
+            e.stopPropagation();
+            window._closeTab(closeBtn.dataset.tabClose);
+            return;
+        }
+        // Tab click
+        const tab = e.target.closest('[data-tab-path]');
+        if (tab) {
+            window._switchTab(tab.dataset.tabPath);
+            return;
+        }
+    });
 
     // ══════════════════════════════════════════════
     // INIT
