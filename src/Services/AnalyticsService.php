@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ZephyrPHP\Cms\Services;
 
 use ZephyrPHP\Cms\Models\Collection;
+use ZephyrPHP\Cms\Services\EntryQuery;
 use ZephyrPHP\Database\Connection;
 
 class AnalyticsService
@@ -15,16 +16,11 @@ class AnalyticsService
     public static function getRecentEntries(int $limit = 10): array
     {
         try {
-            $conn = Connection::getInstance()->getConnection();
             $collections = Collection::findAll();
             $allEntries = [];
 
             foreach ($collections as $collection) {
-                $tableName = $collection->getTableName();
-                $schema = new SchemaManager();
-                if (!$schema->tableExists($tableName)) continue;
-
-                // Get a display field (first text/email field, or 'id')
+                // Determine display field (first text/email field, or 'id')
                 $displayField = 'id';
                 foreach ($collection->getFields() as $field) {
                     if (in_array($field->getType(), ['text', 'email'])) {
@@ -33,23 +29,22 @@ class AnalyticsService
                     }
                 }
 
-                $selectCols = "id, `{$displayField}` as display_value, created_at";
+                $fields = [$displayField, 'created_at'];
                 if ($collection->isPublishable()) {
-                    $selectCols .= ', status';
+                    $fields[] = 'status';
                 }
 
-                $rows = $conn->createQueryBuilder()
-                    ->select($selectCols)
-                    ->from($tableName)
-                    ->orderBy('created_at', 'DESC')
-                    ->setMaxResults($limit)
-                    ->executeQuery()
-                    ->fetchAllAssociative();
+                $rows = EntryQuery::collection($collection->getSlug())
+                    ->onlyFields(...$fields)
+                    ->latest('created_at')
+                    ->noCache()
+                    ->limit($limit)
+                    ->get();
 
                 foreach ($rows as $row) {
                     $allEntries[] = [
                         'id' => $row['id'],
-                        'label' => $row['display_value'] ?? "#{$row['id']}",
+                        'label' => $row[$displayField] ?? "#{$row['id']}",
                         'collection_name' => $collection->getName(),
                         'collection_slug' => $collection->getSlug(),
                         'status' => $row['status'] ?? null,
@@ -71,19 +66,30 @@ class AnalyticsService
 
     /**
      * Get entry counts per collection.
+     * Uses a single query per collection via direct SQL COUNT to minimize overhead.
      */
     public static function getEntryCountsByCollection(): array
     {
         try {
-            $schema = new SchemaManager();
             $collections = Collection::findAll();
+            if (empty($collections)) {
+                return [];
+            }
+
+            $conn = Connection::getInstance()->getConnection();
             $counts = [];
 
             foreach ($collections as $collection) {
+                $tableName = $collection->getTableName();
+                try {
+                    $count = (int) $conn->fetchOne("SELECT COUNT(*) FROM `{$tableName}`");
+                } catch (\Throwable $e) {
+                    $count = 0;
+                }
                 $counts[] = [
                     'name' => $collection->getName(),
                     'slug' => $collection->getSlug(),
-                    'count' => $schema->countEntries($collection->getTableName()),
+                    'count' => $count,
                 ];
             }
 
@@ -94,36 +100,56 @@ class AnalyticsService
     }
 
     /**
+     * Count draft and scheduled entries across all publishable collections in one pass.
+     *
+     * @return array{draft: int, scheduled: int}
+     */
+    private static function getStatusCounts(): array
+    {
+        $result = ['draft' => 0, 'scheduled' => 0];
+        try {
+            $collections = Collection::findAll();
+            $conn = Connection::getInstance()->getConnection();
+
+            $publishableTables = [];
+            foreach ($collections as $collection) {
+                if ($collection->isPublishable()) {
+                    $publishableTables[] = $collection->getTableName();
+                }
+            }
+
+            if (empty($publishableTables)) {
+                return $result;
+            }
+
+            // Build a UNION ALL query to count both statuses across all publishable tables at once
+            $unions = [];
+            foreach ($publishableTables as $table) {
+                $unions[] = "SELECT status, COUNT(*) AS cnt FROM `{$table}` WHERE status IN ('draft', 'scheduled') GROUP BY status";
+            }
+
+            $sql = implode(' UNION ALL ', $unions);
+            $rows = $conn->fetchAllAssociative($sql);
+
+            foreach ($rows as $row) {
+                $status = $row['status'] ?? '';
+                if (isset($result[$status])) {
+                    $result[$status] += (int) $row['cnt'];
+                }
+            }
+        } catch (\Throwable $e) {
+            // Silently fail
+        }
+
+        return $result;
+    }
+
+    /**
      * Count draft entries across all publishable collections.
      */
     public static function getDraftCount(): int
     {
-        try {
-            $conn = Connection::getInstance()->getConnection();
-            $collections = Collection::findAll();
-            $total = 0;
-
-            foreach ($collections as $collection) {
-                if (!$collection->isPublishable()) continue;
-                $tableName = $collection->getTableName();
-                $schema = new SchemaManager();
-                if (!$schema->tableExists($tableName)) continue;
-
-                $count = (int) $conn->createQueryBuilder()
-                    ->select('COUNT(*)')
-                    ->from($tableName)
-                    ->where('status = :status')
-                    ->setParameter('status', 'draft')
-                    ->executeQuery()
-                    ->fetchOne();
-
-                $total += $count;
-            }
-
-            return $total;
-        } catch (\Exception $e) {
-            return 0;
-        }
+        return self::getStatusCounts()['draft'];
     }
 
     /**
@@ -131,32 +157,7 @@ class AnalyticsService
      */
     public static function getScheduledCount(): int
     {
-        try {
-            $conn = Connection::getInstance()->getConnection();
-            $collections = Collection::findAll();
-            $total = 0;
-
-            foreach ($collections as $collection) {
-                if (!$collection->isPublishable()) continue;
-                $tableName = $collection->getTableName();
-                $schema = new SchemaManager();
-                if (!$schema->tableExists($tableName)) continue;
-
-                $count = (int) $conn->createQueryBuilder()
-                    ->select('COUNT(*)')
-                    ->from($tableName)
-                    ->where('status = :status')
-                    ->setParameter('status', 'scheduled')
-                    ->executeQuery()
-                    ->fetchOne();
-
-                $total += $count;
-            }
-
-            return $total;
-        } catch (\Exception $e) {
-            return 0;
-        }
+        return self::getStatusCounts()['scheduled'];
     }
 
     /**
@@ -213,19 +214,19 @@ class AnalyticsService
                 $dates[$date] = 0;
             }
 
-            foreach ($collections as $collection) {
-                $tableName = $collection->getTableName();
-                $schema = new SchemaManager();
-                if (!$schema->tableExists($tableName)) continue;
+            $startDate = date('Y-m-d', strtotime("-{$days} days"));
 
-                $rows = $conn->createQueryBuilder()
-                    ->select("DATE(created_at) as day, COUNT(*) as cnt")
-                    ->from($tableName)
-                    ->where("created_at >= :start")
-                    ->setParameter('start', date('Y-m-d', strtotime("-{$days} days")))
-                    ->groupBy('day')
-                    ->executeQuery()
-                    ->fetchAllAssociative();
+            if (!empty($collections)) {
+                // Build a single UNION ALL query across all collection tables
+                $unions = [];
+                foreach ($collections as $collection) {
+                    $table = $collection->getTableName();
+                    $unions[] = "SELECT DATE(created_at) AS day, COUNT(*) AS cnt FROM `{$table}` WHERE created_at >= ? GROUP BY day";
+                }
+
+                $sql = implode(' UNION ALL ', $unions);
+                $params = array_fill(0, count($collections), $startDate);
+                $rows = $conn->fetchAllAssociative($sql, $params);
 
                 foreach ($rows as $row) {
                     $day = $row['day'] ?? '';
@@ -247,15 +248,11 @@ class AnalyticsService
     public static function getScheduledEntries(int $limit = 5): array
     {
         try {
-            $conn = Connection::getInstance()->getConnection();
             $collections = Collection::findAll();
             $scheduled = [];
 
             foreach ($collections as $collection) {
                 if (!$collection->isPublishable()) continue;
-                $tableName = $collection->getTableName();
-                $schema = new SchemaManager();
-                if (!$schema->tableExists($tableName)) continue;
 
                 $displayField = 'id';
                 foreach ($collection->getFields() as $field) {
@@ -265,22 +262,19 @@ class AnalyticsService
                     }
                 }
 
-                $rows = $conn->createQueryBuilder()
-                    ->select("id, `{$displayField}` as display_value, scheduled_at")
-                    ->from($tableName)
-                    ->where('status = :status')
-                    ->andWhere('scheduled_at > :now')
-                    ->setParameter('status', 'scheduled')
-                    ->setParameter('now', date('Y-m-d H:i:s'))
+                $rows = EntryQuery::collection($collection->getSlug())
+                    ->where('status', 'scheduled')
+                    ->whereCompare('scheduled_at', '>', date('Y-m-d H:i:s'))
+                    ->onlyFields($displayField, 'scheduled_at')
                     ->orderBy('scheduled_at', 'ASC')
-                    ->setMaxResults($limit)
-                    ->executeQuery()
-                    ->fetchAllAssociative();
+                    ->noCache()
+                    ->limit($limit)
+                    ->get();
 
                 foreach ($rows as $row) {
                     $scheduled[] = [
                         'id' => $row['id'],
-                        'label' => $row['display_value'] ?? "#{$row['id']}",
+                        'label' => $row[$displayField] ?? "#{$row['id']}",
                         'collection_name' => $collection->getName(),
                         'collection_slug' => $collection->getSlug(),
                         'scheduled_at' => $row['scheduled_at'],

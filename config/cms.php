@@ -2,6 +2,7 @@
 
 return [
     'table_prefix' => 'cms_',
+    'content_prefix' => 'app_',
 
     'upload_path' => 'storage/cms/uploads',
 

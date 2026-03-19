@@ -233,11 +233,14 @@ class Collection extends Model
     }
 
     /**
-     * Get the dynamic table name for this collection
+     * Get the dynamic table name for this collection.
+     * User-created collection tables use the content prefix (default: app_)
+     * to distinguish them from CMS system tables (cms_).
      */
     public function getTableName(): string
     {
-        return 'cms_' . $this->slug;
+        $prefix = \ZephyrPHP\Config\Config::get('cms.content_prefix', 'app_');
+        return $prefix . $this->slug;
     }
 
     /**

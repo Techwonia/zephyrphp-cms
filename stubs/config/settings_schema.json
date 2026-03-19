@@ -16,38 +16,18 @@
         "name": "Typography",
         "settings": [
             {
-                "type": "select",
+                "type": "font_picker",
                 "id": "heading_font",
                 "label": "Heading Font",
-                "default": "Inter",
-                "options": [
-                    {"value": "Inter", "label": "Inter"},
-                    {"value": "Poppins", "label": "Poppins"},
-                    {"value": "Roboto", "label": "Roboto"},
-                    {"value": "Playfair Display", "label": "Playfair Display"},
-                    {"value": "Merriweather", "label": "Merriweather"},
-                    {"value": "Lato", "label": "Lato"},
-                    {"value": "Open Sans", "label": "Open Sans"},
-                    {"value": "Montserrat", "label": "Montserrat"}
-                ]
+                "default": "Inter"
             },
             {
-                "type": "select",
+                "type": "font_picker",
                 "id": "body_font",
                 "label": "Body Font",
-                "default": "Inter",
-                "options": [
-                    {"value": "Inter", "label": "Inter"},
-                    {"value": "Poppins", "label": "Poppins"},
-                    {"value": "Roboto", "label": "Roboto"},
-                    {"value": "Playfair Display", "label": "Playfair Display"},
-                    {"value": "Merriweather", "label": "Merriweather"},
-                    {"value": "Lato", "label": "Lato"},
-                    {"value": "Open Sans", "label": "Open Sans"},
-                    {"value": "Montserrat", "label": "Montserrat"}
-                ]
+                "default": "Inter"
             },
-            {"type": "range", "id": "base_font_size", "label": "Base Font Size (px)", "min": 14, "max": 20, "step": 1, "default": 16},
+            {"type": "range", "id": "base_font_size", "label": "Base Font Size (px)", "min": 12, "max": 24, "step": 1, "default": 16},
             {
                 "type": "select",
                 "id": "heading_weight",
@@ -59,6 +39,30 @@
                     {"value": "600", "label": "Semi-bold (600)"},
                     {"value": "700", "label": "Bold (700)"},
                     {"value": "800", "label": "Extra Bold (800)"}
+                ]
+            },
+            {
+                "type": "select",
+                "id": "body_weight",
+                "label": "Body Font Weight",
+                "default": "400",
+                "options": [
+                    {"value": "300", "label": "Light (300)"},
+                    {"value": "400", "label": "Regular (400)"},
+                    {"value": "500", "label": "Medium (500)"}
+                ]
+            },
+            {"type": "range", "id": "body_line_height", "label": "Body Line Height", "min": 1.2, "max": 2.0, "step": 0.1, "default": 1.6},
+            {
+                "type": "select",
+                "id": "heading_letter_spacing",
+                "label": "Heading Letter Spacing",
+                "default": "normal",
+                "options": [
+                    {"value": "-0.02em", "label": "Tight (-0.02em)"},
+                    {"value": "normal", "label": "Normal"},
+                    {"value": "0.02em", "label": "Wide (0.02em)"},
+                    {"value": "0.05em", "label": "Wider (0.05em)"}
                 ]
             }
         ]

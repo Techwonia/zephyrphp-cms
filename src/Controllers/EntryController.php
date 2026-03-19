@@ -12,6 +12,7 @@ use ZephyrPHP\Cms\Models\Media;
 use ZephyrPHP\Cms\Models\Revision;
 use ZephyrPHP\Cms\Models\SavedView;
 use ZephyrPHP\Cms\Services\SchemaManager;
+use ZephyrPHP\Cms\Services\EntryQuery;
 use ZephyrPHP\Cms\Services\FileValidator;
 use ZephyrPHP\Cms\Services\PermissionService;
 use ZephyrPHP\Cms\Services\ActivityLogger;
@@ -141,7 +142,19 @@ class EntryController extends Controller
             }
         }
 
-        $entries = $this->schema->listEntries($collection->getTableName(), $options);
+        $query = EntryQuery::collection($slug)->noCache();
+        $query->orderBy($options['sort_by'], $options['sort_dir']);
+
+        if (!empty($options['search'])) {
+            $query->search($options['search'], $options['searchFields'] ?? null);
+        }
+        if (!empty($options['filters'])) {
+            foreach ($options['filters'] as $field => $value) {
+                $query->where($field, $value);
+            }
+        }
+
+        $entries = $query->paginate($options['page'], $options['per_page']);
 
         // Resolve relation labels for list view
         $relationLabels = $this->resolveRelationLabels($listableFields, $entries['data']);
@@ -240,16 +253,16 @@ class EntryController extends Controller
             $data['robots'] = trim($this->input('robots', 'index,follow'));
         }
 
-        $entryId = $this->schema->insertEntry($collection->getTableName(), $data, $collection->isUuid());
+        // Merge pivot data into data — EntryQuery handles pivot sync automatically
+        foreach ($pivotData as $fieldSlug => $relIds) {
+            $data[$fieldSlug] = $relIds;
+        }
 
-        // Sync pivot relations
-        $this->syncAllPivotRelations($collection->getTableName(), $fields, $entryId, $pivotData);
+        $entryId = EntryQuery::collection($slug)->create($data);
 
-        // Record revision
-        Revision::record($collection->getTableName(), $entryId, $data, 'create');
-
-        // Invalidate collection cache
-        cms_invalidate_cache($slug);
+        // Record revision (uses scalar data, not pivot arrays)
+        $revisionData = array_filter($data, fn($v) => !is_array($v));
+        Revision::record($collection->getTableName(), $entryId, $revisionData, 'create');
 
         ActivityLogger::log('created', 'entry', (string) $entryId, $data['title'] ?? $data['name'] ?? "#{$entryId}", ['collection' => $slug]);
 
@@ -280,7 +293,7 @@ class EntryController extends Controller
         if (!$collection) return '';
         $this->requireCollectionPermission('edit', $collection);
 
-        $entry = $this->schema->findEntry($collection->getTableName(), $id);
+        $entry = EntryQuery::collection($slug)->noCache()->withRelations(1)->find($id);
         if (!$entry) {
             $this->flash('errors', ['entry' => 'Entry not found.']);
             $this->redirect("/cms/collections/{$slug}/entries");
@@ -290,18 +303,17 @@ class EntryController extends Controller
         $fields = $collection->getFields()->toArray();
         $relationData = $this->loadRelationData($fields);
 
-        // Load pivot relation IDs for multi-relation fields
+        // For multi-relation fields, extract just the IDs for the edit form
+        // (withRelations resolved full objects, but the form needs ID arrays)
         foreach ($fields as $field) {
             if ($field->getType() === 'relation') {
                 $relationType = $field->getOptions()['relation_type'] ?? 'one_to_one';
                 if ($relationType !== 'one_to_one') {
-                    $targetTable = 'cms_' . ($field->getOptions()['relation_collection'] ?? '');
-                    $entry[$field->getSlug()] = $this->schema->getPivotRelations(
-                        $collection->getTableName(),
-                        $field->getSlug(),
-                        $targetTable,
-                        $id
-                    );
+                    $resolved = $entry[$field->getSlug()] ?? [];
+                    if (is_array($resolved) && !empty($resolved) && is_array($resolved[0] ?? null)) {
+                        // Extract IDs from resolved objects
+                        $entry[$field->getSlug()] = array_column($resolved, 'id');
+                    }
                 }
             }
         }
@@ -321,7 +333,7 @@ class EntryController extends Controller
         if (!$collection) return;
         $this->requireCollectionPermission('edit', $collection);
 
-        $entry = $this->schema->findEntry($collection->getTableName(), $id);
+        $entry = EntryQuery::collection($slug)->noCache()->find($id);
         if (!$entry) {
             $this->flash('errors', ['entry' => 'Entry not found.']);
             $this->redirect("/cms/collections/{$slug}/entries");
@@ -392,16 +404,16 @@ class EntryController extends Controller
             }
         }
 
-        $this->schema->updateEntry($collection->getTableName(), $id, $data);
+        // Merge pivot data into data — EntryQuery handles pivot sync automatically
+        foreach ($pivotData as $fieldSlug => $relIds) {
+            $data[$fieldSlug] = $relIds;
+        }
 
-        // Sync pivot relations
-        $this->syncAllPivotRelations($collection->getTableName(), $fields, $id, $pivotData);
+        EntryQuery::collection($slug)->update($id, $data);
 
-        // Record revision
-        Revision::record($collection->getTableName(), $id, $data, 'update', $changedFields);
-
-        // Invalidate collection cache
-        cms_invalidate_cache($slug);
+        // Record revision (uses scalar data, not pivot arrays)
+        $revisionData = array_filter($data, fn($v) => !is_array($v));
+        Revision::record($collection->getTableName(), $id, $revisionData, 'update', $changedFields);
 
         ActivityLogger::log('updated', 'entry', (string) $id, $data['title'] ?? $data['name'] ?? "#{$id}", ['collection' => $slug, 'changed' => $changedFields]);
 
@@ -433,15 +445,12 @@ class EntryController extends Controller
         $this->requireCollectionPermission('delete', $collection);
 
         // Record revision before deleting
-        $entry = $this->schema->findEntry($collection->getTableName(), $id);
+        $entry = EntryQuery::collection($slug)->noCache()->find($id);
         if ($entry) {
             Revision::record($collection->getTableName(), $id, $entry, 'delete');
         }
 
-        $this->schema->deleteEntry($collection->getTableName(), $id);
-
-        // Invalidate collection cache
-        cms_invalidate_cache($slug);
+        EntryQuery::collection($slug)->delete($id);
 
         ActivityLogger::log('deleted', 'entry', (string) $id, null, ['collection' => $slug]);
 
@@ -465,7 +474,7 @@ class EntryController extends Controller
             return;
         }
 
-        $entry = $this->schema->findEntry($collection->getTableName(), $id);
+        $entry = EntryQuery::collection($slug)->noCache()->find($id);
         if (!$entry) {
             $this->json(['score' => 0, 'issues' => ['Entry not found.']], 404);
             return;
@@ -490,7 +499,7 @@ class EntryController extends Controller
             return '';
         }
 
-        $entry = $this->schema->findEntry($collection->getTableName(), $id);
+        $entry = EntryQuery::collection($slug)->noCache()->find($id);
         if (!$entry) {
             $this->flash('errors', ['entry' => 'Entry not found.']);
             $this->redirect("/cms/collections/{$slug}/entries");
@@ -537,7 +546,7 @@ class EntryController extends Controller
             return;
         }
 
-        $entry = $this->schema->findEntry($collection->getTableName(), $id);
+        $entry = EntryQuery::collection($slug)->noCache()->find($id);
         if (!$entry) {
             $this->flash('errors', ['entry' => 'Entry not found.']);
             $this->redirect("/cms/collections/{$slug}/entries");
@@ -591,7 +600,7 @@ class EntryController extends Controller
         $newStage = WorkflowService::advance($collection, $id, $userId, $userName, $comment ?: null);
 
         if ($newStage) {
-            $entry = $this->schema->findEntry($collection->getTableName(), $id);
+            $entry = EntryQuery::collection($slug)->noCache()->find($id);
             $entryTitle = $entry['title'] ?? $entry['name'] ?? "#{$id}";
 
             ActivityLogger::log('workflow_advanced', 'entry', (string) $id, $entryTitle, [
@@ -643,7 +652,7 @@ class EntryController extends Controller
         $newStage = WorkflowService::reject($collection, $id, $userId, $userName, $comment ?: null);
 
         if ($newStage) {
-            $entry = $this->schema->findEntry($collection->getTableName(), $id);
+            $entry = EntryQuery::collection($slug)->noCache()->find($id);
             $entryTitle = $entry['title'] ?? $entry['name'] ?? "#{$id}";
 
             ActivityLogger::log('workflow_rejected', 'entry', (string) $id, $entryTitle, [
@@ -681,7 +690,7 @@ class EntryController extends Controller
         if (!$collection) return '';
         $this->requireCollectionPermission('view', $collection);
 
-        $entry = $this->schema->findEntry($collection->getTableName(), $id);
+        $entry = EntryQuery::collection($slug)->noCache()->find($id);
         if (!$entry) {
             $this->flash('errors', ['entry' => 'Entry not found.']);
             $this->redirect("/cms/collections/{$slug}/entries");
@@ -718,7 +727,7 @@ class EntryController extends Controller
         // Remove system fields that shouldn't be overwritten
         unset($data['id'], $data['created_at'], $data['created_by']);
 
-        $this->schema->updateEntry($collection->getTableName(), $id, $data);
+        EntryQuery::collection($slug)->update($id, $data);
 
         // Record the restore as a new revision
         Revision::record($collection->getTableName(), $id, $data, 'update', ['_restored_from_revision' => $revisionId]);
@@ -736,7 +745,7 @@ class EntryController extends Controller
         if (!$collection) return '';
         $this->requireCollectionPermission('view', $collection);
 
-        $entry = $this->schema->findEntry($collection->getTableName(), $id);
+        $entry = EntryQuery::collection($slug)->noCache()->find($id);
         if (!$entry) {
             $this->flash('errors', ['Entry not found.']);
             $this->redirect("/cms/collections/{$slug}/entries");
@@ -849,22 +858,23 @@ class EntryController extends Controller
         $ids = array_filter(array_map('trim', $ids));
 
         $count = 0;
+        $eq = EntryQuery::collection($slug);
         foreach ($ids as $id) {
             if ($action === 'delete') {
-                $entry = $this->schema->findEntry($collection->getTableName(), $id);
+                $entry = EntryQuery::collection($slug)->noCache()->find($id);
                 if ($entry) {
                     Revision::record($collection->getTableName(), $id, $entry, 'delete');
-                    $this->schema->deleteEntry($collection->getTableName(), $id);
+                    $eq->delete($id);
                     $count++;
                 }
             } elseif ($action === 'publish' && $collection->isPublishable()) {
-                $this->schema->updateEntry($collection->getTableName(), $id, [
+                $eq->update($id, [
                     'status' => 'published',
                     'published_at' => (new \DateTime())->format('Y-m-d H:i:s'),
                 ]);
                 $count++;
             } elseif ($action === 'unpublish' && $collection->isPublishable()) {
-                $this->schema->updateEntry($collection->getTableName(), $id, [
+                $eq->update($id, [
                     'status' => 'draft',
                 ]);
                 $count++;
@@ -897,15 +907,17 @@ class EntryController extends Controller
         $this->requireCollectionPermission('view', $collection);
 
         $format = $this->input('format', 'csv');
-        $entries = $this->schema->listEntries($collection->getTableName(), ['per_page' => 10000])['data'];
+        $entries = EntryQuery::collection($slug)->noCache()->limit(10000)->get();
+
+        $safeSlug = preg_replace('/[^a-z0-9_-]/i', '', $slug);
 
         if ($format === 'json') {
             header('Content-Type: application/json');
-            header('Content-Disposition: attachment; filename="' . $slug . '_export.json"');
+            header('Content-Disposition: attachment; filename="' . $safeSlug . '_export.json"');
             echo json_encode(['collection' => $slug, 'data' => $entries], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
         } else {
             header('Content-Type: text/csv');
-            header('Content-Disposition: attachment; filename="' . $slug . '_export.csv"');
+            header('Content-Disposition: attachment; filename="' . $safeSlug . '_export.csv"');
             $output = fopen('php://output', 'w');
 
             if (!empty($entries)) {
@@ -1133,7 +1145,7 @@ class EntryController extends Controller
             }
             unset($value);
 
-            $this->schema->insertEntry($collection->getTableName(), $data, $collection->isUuid());
+            EntryQuery::collection($slug)->create($data);
             $imported++;
         }
 
@@ -1237,7 +1249,8 @@ class EntryController extends Controller
             if ($field->getType() === 'relation') {
                 $relationType = $field->getOptions()['relation_type'] ?? 'one_to_one';
                 if ($relationType !== 'one_to_one' && isset($pivotData[$field->getSlug()])) {
-                    $targetTable = 'cms_' . ($field->getOptions()['relation_collection'] ?? '');
+                    $contentPrefix = \ZephyrPHP\Config\Config::get('cms.content_prefix', 'app_');
+                    $targetTable = $contentPrefix . ($field->getOptions()['relation_collection'] ?? '');
                     $this->schema->syncPivotRelations(
                         $tableName,
                         $field->getSlug(),
@@ -1365,10 +1378,10 @@ class EntryController extends Controller
                 if (!empty($relSlug)) {
                     $relCollection = Collection::findOneBy(['slug' => $relSlug]);
                     if ($relCollection && $this->schema->tableExists($relCollection->getTableName())) {
-                        $result = $this->schema->listEntries($relCollection->getTableName(), ['per_page' => 1000]);
+                        $entries = EntryQuery::collection($relSlug)->noCache()->limit(1000)->get();
                         $relationData[$field->getSlug()] = [
                             'collection' => $relCollection,
-                            'entries' => $result['data'],
+                            'entries' => $entries,
                         ];
                     }
                 }

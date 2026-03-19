@@ -497,6 +497,150 @@
             text-align: center; padding: 20px; color: var(--text-disabled); font-size: 12px;
         }
 
+        /* ── Font Picker ── */
+        .font-picker-trigger {
+            display: flex; align-items: center; gap: 8px; width: 100%;
+            padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px;
+            background: var(--bg-surface); cursor: pointer; font-family: var(--font);
+            transition: border-color 0.15s;
+        }
+        .font-picker-trigger:hover { border-color: var(--border-dark); }
+        .font-picker-trigger .fp-preview {
+            flex: 1; font-size: 14px; color: var(--text); white-space: nowrap;
+            overflow: hidden; text-overflow: ellipsis;
+        }
+        .font-picker-trigger .fp-arrow { color: var(--text-disabled); font-size: 10px; }
+        .font-picker-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.55); z-index: 100000;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .font-picker-modal {
+            background: var(--bg-surface); border-radius: 12px;
+            width: 480px; max-width: 92vw; max-height: 80vh;
+            display: flex; flex-direction: column; box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+        }
+        .font-picker-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 18px; border-bottom: 1px solid var(--border);
+        }
+        .font-picker-header h3 { margin: 0; font-size: 15px; font-weight: 600; }
+        .font-picker-header button { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text); }
+        .font-picker-search {
+            padding: 12px 18px; border-bottom: 1px solid var(--border);
+        }
+        .font-picker-search input {
+            width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px;
+            font-size: 13px; font-family: var(--font);
+        }
+        .font-picker-search input:focus { outline: none; border-color: var(--primary); }
+        .font-picker-categories {
+            display: flex; gap: 4px; padding: 10px 18px; border-bottom: 1px solid var(--border);
+            overflow-x: auto; flex-shrink: 0;
+        }
+        .font-picker-cat {
+            padding: 4px 10px; font-size: 11px; font-weight: 500; border-radius: 20px;
+            border: 1px solid var(--border); background: transparent; cursor: pointer;
+            white-space: nowrap; font-family: var(--font); color: var(--text-secondary);
+        }
+        .font-picker-cat.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .font-picker-list {
+            flex: 1; overflow-y: auto; padding: 8px 0;
+        }
+        .font-picker-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 18px; cursor: pointer; transition: background 0.1s;
+        }
+        .font-picker-item:hover { background: var(--bg-hover); }
+        .font-picker-item.selected { background: var(--primary-bg); }
+        .font-picker-item .fp-name { font-size: 13px; font-weight: 500; }
+        .font-picker-item .fp-sample { font-size: 18px; color: var(--text); }
+
+        /* ── Visual CSS Editor Panel ── */
+        .css-editor-panel {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--bg-surface); z-index: 50; display: none;
+            flex-direction: column; overflow: hidden;
+        }
+        .css-editor-panel.active { display: flex; }
+        .css-editor-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 16px; border-bottom: 1px solid var(--border);
+        }
+        .css-editor-header h3 { font-size: 14px; font-weight: 600; margin: 0; }
+        .css-editor-close {
+            background: none; border: none; font-size: 16px; cursor: pointer; color: var(--text-secondary);
+        }
+        .css-editor-body { flex: 1; overflow-y: auto; padding: 12px 16px; }
+        .css-prop-group { margin-bottom: 16px; }
+        .css-prop-group-title {
+            font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-disabled);
+            margin-bottom: 8px; letter-spacing: 0.03em;
+        }
+        .css-prop-row {
+            display: grid; grid-template-columns: 90px 1fr; gap: 4px; align-items: center; margin-bottom: 6px;
+        }
+        .css-prop-label { font-size: 11px; color: var(--text-secondary); }
+        .css-prop-input {
+            padding: 5px 8px; border: 1px solid var(--border); border-radius: 4px;
+            font-size: 12px; font-family: var(--font); background: var(--bg-surface);
+        }
+        .css-prop-input:focus { outline: none; border-color: var(--primary); }
+        .css-prop-input.small { width: 70px; }
+        .css-prop-inline { display: flex; gap: 4px; align-items: center; }
+        .css-editor-code {
+            margin-top: 12px; padding: 12px 16px; border-top: 1px solid var(--border);
+        }
+        .css-editor-code label { font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-disabled); display: block; margin-bottom: 6px; }
+        .css-editor-code textarea {
+            width: 100%; min-height: 120px; padding: 10px; border: 1px solid var(--border);
+            border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 12px;
+            resize: vertical; background: #1e1e2e; color: #cdd6f4; line-height: 1.5;
+        }
+
+        /* ── Section Template Gallery ── */
+        .section-gallery-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.55); z-index: 100000;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .section-gallery-modal {
+            background: var(--bg-surface); border-radius: 12px;
+            width: 720px; max-width: 92vw; max-height: 85vh;
+            display: flex; flex-direction: column; box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+        }
+        .section-gallery-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 20px; border-bottom: 1px solid var(--border);
+        }
+        .section-gallery-header h3 { margin: 0; font-size: 16px; font-weight: 600; }
+        .section-gallery-tabs {
+            display: flex; gap: 6px; padding: 12px 20px; border-bottom: 1px solid var(--border);
+        }
+        .section-gallery-tab {
+            padding: 6px 14px; font-size: 12px; font-weight: 500; border-radius: 20px;
+            border: 1px solid var(--border); background: transparent; cursor: pointer;
+            font-family: var(--font); color: var(--text-secondary);
+        }
+        .section-gallery-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .section-gallery-grid {
+            flex: 1; overflow-y: auto; padding: 16px 20px;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px;
+        }
+        .section-gallery-card {
+            border: 2px solid var(--border); border-radius: 8px;
+            overflow: hidden; cursor: pointer; transition: all 0.15s;
+        }
+        .section-gallery-card:hover { border-color: var(--primary); box-shadow: 0 2px 8px rgba(0,91,211,0.1); }
+        .section-gallery-card-preview {
+            height: 100px; background: var(--bg-subdued);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 32px; color: var(--text-disabled);
+        }
+        .section-gallery-card-info { padding: 10px 12px; }
+        .section-gallery-card-name { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+        .section-gallery-card-desc { font-size: 11px; color: var(--text-secondary); line-height: 1.4; }
+
         /* Settings groups */
         .settings-group { border-bottom: 1px solid var(--border); margin: 0 -16px; }
         .settings-group-header {
@@ -855,6 +999,10 @@
                 <div class="ab-panel-header">Theme Settings</div>
                 <div id="themeSettingsGroups" style="padding: 8px 0;"><!-- Populated by JS --></div>
                 <div style="padding:0 12px 12px;">
+                    <button type="button" id="openCssEditorBtn" style="width:100%;padding:8px 12px;background:transparent;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;font-family:var(--font);color:var(--text-secondary);display:flex;align-items:center;gap:6px;transition:all 0.15s;margin-bottom:12px;" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)';" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-secondary)';">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                        Custom CSS Editor
+                    </button>
                     <div style="border-top:1px solid var(--border); padding-top:12px; margin-top:8px;">
                         <div class="ab-panel-subheader">Theme Info</div>
                         <form method="POST" action="/cms/themes/{{ theme.getSlug() }}" id="themeInfoForm">
@@ -2302,6 +2450,28 @@
             if (setting.max !== undefined) numInput.max = setting.max;
             numInput.addEventListener('change', function() { onChange(parseInt(this.value) || 0); });
             wrapper.appendChild(numInput);
+        } else if (setting.type === 'font_picker') {
+            var fpTrigger = document.createElement('button');
+            fpTrigger.type = 'button';
+            fpTrigger.className = 'font-picker-trigger';
+            var fpPreview = document.createElement('span');
+            fpPreview.className = 'fp-preview';
+            fpPreview.textContent = value || 'Select font...';
+            if (value) fpPreview.style.fontFamily = "'" + value + "', sans-serif";
+            var fpArrow = document.createElement('span');
+            fpArrow.className = 'fp-arrow';
+            fpArrow.textContent = '\u25BE';
+            fpTrigger.appendChild(fpPreview);
+            fpTrigger.appendChild(fpArrow);
+            fpTrigger.addEventListener('click', function() {
+                openFontPicker(value || '', function(font) {
+                    onChange(font);
+                    fpPreview.textContent = font;
+                    fpPreview.style.fontFamily = "'" + font + "', sans-serif";
+                    loadGoogleFont(font);
+                });
+            });
+            wrapper.appendChild(fpTrigger);
         } else if (setting.type === 'url') {
             var hiddenInput = document.createElement('input');
             hiddenInput.type = 'hidden';
@@ -2599,6 +2769,18 @@
             list.appendChild(item);
         });
 
+        // Browse gallery option
+        var galleryItem = document.createElement('button');
+        galleryItem.className = 'section-picker-list-item create';
+        galleryItem.innerHTML =
+            '<span class="section-picker-list-item-icon" style="color:var(--primary);">&#x1F5BC;</span>' +
+            '<span>Browse Gallery</span>';
+        galleryItem.addEventListener('click', function() {
+            closeSectionPicker();
+            openSectionGallery(pickerTargetGroup, state.currentPage);
+        });
+        list.appendChild(galleryItem);
+
         // Create new section option
         var createItem = document.createElement('button');
         createItem.className = 'section-picker-list-item create';
@@ -2846,6 +3028,560 @@
                 lastRenderedSections[el.dataset.sectionId] = el.innerHTML;
             });
         } catch(e) {}
+    }
+
+    // ══════════════════════════════════════════════
+    // FONT PICKER — Google Fonts Browser
+    // ══════════════════════════════════════════════
+
+    var GOOGLE_FONTS = [
+        {name:'Inter',cat:'sans-serif'},{name:'Roboto',cat:'sans-serif'},{name:'Open Sans',cat:'sans-serif'},
+        {name:'Lato',cat:'sans-serif'},{name:'Montserrat',cat:'sans-serif'},{name:'Poppins',cat:'sans-serif'},
+        {name:'Raleway',cat:'sans-serif'},{name:'Nunito',cat:'sans-serif'},{name:'Nunito Sans',cat:'sans-serif'},
+        {name:'Source Sans 3',cat:'sans-serif'},{name:'Ubuntu',cat:'sans-serif'},{name:'Work Sans',cat:'sans-serif'},
+        {name:'DM Sans',cat:'sans-serif'},{name:'Manrope',cat:'sans-serif'},{name:'Outfit',cat:'sans-serif'},
+        {name:'Plus Jakarta Sans',cat:'sans-serif'},{name:'Space Grotesk',cat:'sans-serif'},
+        {name:'Figtree',cat:'sans-serif'},{name:'Albert Sans',cat:'sans-serif'},{name:'Sora',cat:'sans-serif'},
+        {name:'Playfair Display',cat:'serif'},{name:'Merriweather',cat:'serif'},{name:'Lora',cat:'serif'},
+        {name:'PT Serif',cat:'serif'},{name:'Libre Baskerville',cat:'serif'},{name:'EB Garamond',cat:'serif'},
+        {name:'Cormorant Garamond',cat:'serif'},{name:'Crimson Text',cat:'serif'},{name:'Bitter',cat:'serif'},
+        {name:'DM Serif Display',cat:'serif'},{name:'Noto Serif',cat:'serif'},{name:'Source Serif 4',cat:'serif'},
+        {name:'Fraunces',cat:'serif'},{name:'Literata',cat:'serif'},
+        {name:'Bebas Neue',cat:'display'},{name:'Oswald',cat:'display'},{name:'Passion One',cat:'display'},
+        {name:'Archivo Black',cat:'display'},{name:'Anton',cat:'display'},{name:'Abril Fatface',cat:'display'},
+        {name:'Righteous',cat:'display'},{name:'Bungee',cat:'display'},{name:'Lobster',cat:'display'},
+        {name:'Pacifico',cat:'handwriting'},{name:'Dancing Script',cat:'handwriting'},
+        {name:'Caveat',cat:'handwriting'},{name:'Satisfy',cat:'handwriting'},{name:'Kalam',cat:'handwriting'},
+        {name:'JetBrains Mono',cat:'monospace'},{name:'Fira Code',cat:'monospace'},
+        {name:'Source Code Pro',cat:'monospace'},{name:'IBM Plex Mono',cat:'monospace'},
+        {name:'Space Mono',cat:'monospace'}
+    ];
+
+    var loadedFonts = {};
+    function loadGoogleFont(fontName) {
+        if (!fontName || loadedFonts[fontName]) return;
+        loadedFonts[fontName] = true;
+        var link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(fontName) + ':wght@400;500;600;700&display=swap';
+        document.head.appendChild(link);
+        // Also inject into preview iframe
+        try {
+            var frame = document.getElementById('previewFrame');
+            var doc = frame.contentDocument || frame.contentWindow.document;
+            var iframeLink = doc.createElement('link');
+            iframeLink.rel = 'stylesheet';
+            iframeLink.href = link.href;
+            doc.head.appendChild(iframeLink);
+        } catch(e) {}
+    }
+
+    var fontPickerCallback = null;
+    function openFontPicker(currentFont, cb) {
+        fontPickerCallback = cb;
+        var overlay = document.createElement('div');
+        overlay.className = 'font-picker-overlay';
+
+        var modal = document.createElement('div');
+        modal.className = 'font-picker-modal';
+
+        // Header
+        var header = document.createElement('div');
+        header.className = 'font-picker-header';
+        header.innerHTML = '<h3>Choose Font</h3><button type="button">&times;</button>';
+        header.querySelector('button').addEventListener('click', function() { overlay.remove(); });
+
+        // Search
+        var searchDiv = document.createElement('div');
+        searchDiv.className = 'font-picker-search';
+        var searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.placeholder = 'Search fonts...';
+        searchDiv.appendChild(searchInput);
+
+        // Categories
+        var catDiv = document.createElement('div');
+        catDiv.className = 'font-picker-categories';
+        var categories = ['all', 'sans-serif', 'serif', 'display', 'handwriting', 'monospace'];
+        var activeCat = 'all';
+        categories.forEach(function(cat) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'font-picker-cat' + (cat === activeCat ? ' active' : '');
+            btn.textContent = cat === 'all' ? 'All' : cat.charAt(0).toUpperCase() + cat.slice(1);
+            btn.dataset.cat = cat;
+            btn.addEventListener('click', function() {
+                activeCat = cat;
+                catDiv.querySelectorAll('.font-picker-cat').forEach(function(b) {
+                    b.classList.toggle('active', b.dataset.cat === cat);
+                });
+                renderFontList();
+            });
+            catDiv.appendChild(btn);
+        });
+
+        // Font list
+        var listDiv = document.createElement('div');
+        listDiv.className = 'font-picker-list';
+
+        function renderFontList() {
+            var query = searchInput.value.toLowerCase();
+            listDiv.innerHTML = '';
+            var filtered = GOOGLE_FONTS.filter(function(f) {
+                if (activeCat !== 'all' && f.cat !== activeCat) return false;
+                if (query && f.name.toLowerCase().indexOf(query) === -1) return false;
+                return true;
+            });
+            filtered.forEach(function(font) {
+                loadGoogleFont(font.name);
+                var item = document.createElement('div');
+                item.className = 'font-picker-item' + (font.name === currentFont ? ' selected' : '');
+                item.innerHTML = '<span class="fp-name">' + font.name + '</span>' +
+                    '<span class="fp-sample" style="font-family:\'' + font.name + '\',sans-serif;">Aa Bb Cc</span>';
+                item.addEventListener('click', function() {
+                    if (fontPickerCallback) fontPickerCallback(font.name);
+                    overlay.remove();
+                });
+                listDiv.appendChild(item);
+            });
+            if (filtered.length === 0) {
+                listDiv.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-disabled);font-size:13px;">No fonts found</div>';
+            }
+        }
+
+        searchInput.addEventListener('input', renderFontList);
+
+        modal.appendChild(header);
+        modal.appendChild(searchDiv);
+        modal.appendChild(catDiv);
+        modal.appendChild(listDiv);
+        overlay.appendChild(modal);
+        overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+        document.body.appendChild(overlay);
+        renderFontList();
+        searchInput.focus();
+    }
+
+    // ══════════════════════════════════════════════
+    // VISUAL CSS EDITOR
+    // ══════════════════════════════════════════════
+
+    var cssEditorActive = false;
+    var customCssRules = {};
+
+    function initCssEditor() {
+        // Load existing custom CSS from theme settings
+        var ts = state.settingsData.theme_settings || {};
+        if (ts.custom_css) {
+            try {
+                customCssRules = {}; // raw CSS string stored in theme_settings.custom_css
+            } catch(e) {}
+        }
+    }
+
+    function openCssEditor() {
+        cssEditorActive = true;
+        var panel = document.getElementById('cssEditorPanel');
+        if (!panel) {
+            panel = document.createElement('div');
+            panel.id = 'cssEditorPanel';
+            panel.className = 'css-editor-panel active';
+            renderCssEditorContent(panel);
+            document.getElementById('rightPanel').appendChild(panel);
+        } else {
+            panel.classList.add('active');
+            renderCssEditorContent(panel);
+        }
+    }
+
+    function closeCssEditor() {
+        cssEditorActive = false;
+        var panel = document.getElementById('cssEditorPanel');
+        if (panel) panel.classList.remove('active');
+    }
+
+    function renderCssEditorContent(panel) {
+        var ts = state.settingsData.theme_settings || {};
+        var customCss = ts.custom_css || '';
+
+        panel.innerHTML = '';
+
+        // Header
+        var header = document.createElement('div');
+        header.className = 'css-editor-header';
+        header.innerHTML = '<h3>Custom CSS</h3>';
+        var closeBtn = document.createElement('button');
+        closeBtn.className = 'css-editor-close';
+        closeBtn.textContent = '\u00D7';
+        closeBtn.addEventListener('click', closeCssEditor);
+        header.appendChild(closeBtn);
+        panel.appendChild(header);
+
+        // Body with property groups
+        var body = document.createElement('div');
+        body.className = 'css-editor-body';
+
+        // Quick property panels
+        var groups = [
+            { title: 'Body', selector: 'body', props: [
+                {label:'Background',prop:'background-color',type:'color'},
+                {label:'Text Color',prop:'color',type:'color'},
+                {label:'Font Size',prop:'font-size',type:'text',placeholder:'16px'},
+                {label:'Line Height',prop:'line-height',type:'text',placeholder:'1.6'}
+            ]},
+            { title: 'Headings (h1-h3)', selector: 'h1,h2,h3', props: [
+                {label:'Color',prop:'color',type:'color'},
+                {label:'Font Weight',prop:'font-weight',type:'select',options:['400','500','600','700','800']},
+                {label:'Letter Spacing',prop:'letter-spacing',type:'text',placeholder:'0px'}
+            ]},
+            { title: 'Links', selector: 'a', props: [
+                {label:'Color',prop:'color',type:'color'},
+                {label:'Hover Color',prop:'hover-color',type:'color'},
+                {label:'Decoration',prop:'text-decoration',type:'select',options:['none','underline']}
+            ]},
+            { title: 'Buttons', selector: '.btn,button[type="submit"]', props: [
+                {label:'Background',prop:'background-color',type:'color'},
+                {label:'Text Color',prop:'color',type:'color'},
+                {label:'Border Radius',prop:'border-radius',type:'text',placeholder:'6px'},
+                {label:'Padding',prop:'padding',type:'text',placeholder:'10px 20px'}
+            ]},
+            { title: 'Container', selector: '.container,[class*="container"]', props: [
+                {label:'Max Width',prop:'max-width',type:'text',placeholder:'1200px'},
+                {label:'Padding',prop:'padding',type:'text',placeholder:'0 20px'}
+            ]}
+        ];
+
+        groups.forEach(function(group) {
+            var gDiv = document.createElement('div');
+            gDiv.className = 'css-prop-group';
+            var title = document.createElement('div');
+            title.className = 'css-prop-group-title';
+            title.textContent = group.title;
+            gDiv.appendChild(title);
+
+            group.props.forEach(function(prop) {
+                var row = document.createElement('div');
+                row.className = 'css-prop-row';
+                var lbl = document.createElement('span');
+                lbl.className = 'css-prop-label';
+                lbl.textContent = prop.label;
+                row.appendChild(lbl);
+
+                if (prop.type === 'color') {
+                    var colorDiv = document.createElement('div');
+                    colorDiv.className = 'css-prop-inline';
+                    var swatch = document.createElement('input');
+                    swatch.type = 'color';
+                    swatch.className = 'color-swatch';
+                    swatch.style.cssText = 'width:28px;height:28px;';
+                    swatch.value = '#000000';
+                    var hex = document.createElement('input');
+                    hex.type = 'text';
+                    hex.className = 'css-prop-input';
+                    hex.placeholder = prop.placeholder || '#000000';
+                    hex.style.flex = '1';
+                    swatch.addEventListener('input', function() {
+                        hex.value = swatch.value;
+                        updateCustomCss(group.selector, prop.prop, swatch.value);
+                    });
+                    hex.addEventListener('change', function() {
+                        if (hex.value) swatch.value = hex.value;
+                        updateCustomCss(group.selector, prop.prop, hex.value);
+                    });
+                    colorDiv.appendChild(swatch);
+                    colorDiv.appendChild(hex);
+                    row.appendChild(colorDiv);
+                } else if (prop.type === 'select') {
+                    var sel = document.createElement('select');
+                    sel.className = 'css-prop-input';
+                    (prop.options || []).forEach(function(opt) {
+                        var o = document.createElement('option');
+                        o.value = opt; o.textContent = opt;
+                        sel.appendChild(o);
+                    });
+                    sel.addEventListener('change', function() {
+                        updateCustomCss(group.selector, prop.prop, sel.value);
+                    });
+                    row.appendChild(sel);
+                } else {
+                    var inp = document.createElement('input');
+                    inp.type = 'text';
+                    inp.className = 'css-prop-input';
+                    inp.placeholder = prop.placeholder || '';
+                    inp.addEventListener('change', function() {
+                        updateCustomCss(group.selector, prop.prop, inp.value);
+                    });
+                    row.appendChild(inp);
+                }
+                gDiv.appendChild(row);
+            });
+            body.appendChild(gDiv);
+        });
+
+        panel.appendChild(body);
+
+        // Raw CSS textarea
+        var codeDiv = document.createElement('div');
+        codeDiv.className = 'css-editor-code';
+        var codeLbl = document.createElement('label');
+        codeLbl.textContent = 'Custom CSS Code';
+        var codeArea = document.createElement('textarea');
+        codeArea.id = 'customCssTextarea';
+        codeArea.value = customCss;
+        codeArea.placeholder = '/* Add custom CSS here */\n.my-class {\n    color: red;\n}';
+        codeArea.addEventListener('change', function() {
+            if (!state.settingsData.theme_settings) state.settingsData.theme_settings = {};
+            state.settingsData.theme_settings.custom_css = codeArea.value;
+            markDirty();
+            injectCustomCssIntoPreview(codeArea.value);
+        });
+        codeDiv.appendChild(codeLbl);
+        codeDiv.appendChild(codeArea);
+        panel.appendChild(codeDiv);
+    }
+
+    function updateCustomCss(selector, prop, value) {
+        if (!value) return;
+        var key = selector + '{' + prop + '}';
+        customCssRules[key] = { selector: selector, prop: prop, value: value };
+        rebuildCustomCss();
+    }
+
+    function rebuildCustomCss() {
+        // Group by selector
+        var grouped = {};
+        Object.values(customCssRules).forEach(function(r) {
+            if (!grouped[r.selector]) grouped[r.selector] = {};
+            grouped[r.selector][r.prop] = r.value;
+        });
+        var css = '';
+        Object.keys(grouped).forEach(function(sel) {
+            css += sel + ' {\n';
+            Object.keys(grouped[sel]).forEach(function(prop) {
+                css += '    ' + prop + ': ' + grouped[sel][prop] + ';\n';
+            });
+            css += '}\n';
+        });
+        // Also prepend existing custom CSS
+        var textarea = document.getElementById('customCssTextarea');
+        var existing = textarea ? textarea.value : '';
+        // Only update if user hasn't manually edited
+        if (!state.settingsData.theme_settings) state.settingsData.theme_settings = {};
+        var combined = css + (existing ? '\n' + existing : '');
+        state.settingsData.theme_settings.custom_css = combined;
+        markDirty();
+        injectCustomCssIntoPreview(combined);
+    }
+
+    function injectCustomCssIntoPreview(css) {
+        try {
+            var frame = document.getElementById('previewFrame');
+            var doc = frame.contentDocument || frame.contentWindow.document;
+            var existing = doc.getElementById('customizer-custom-css');
+            if (existing) existing.remove();
+            if (css) {
+                var style = doc.createElement('style');
+                style.id = 'customizer-custom-css';
+                style.textContent = css;
+                doc.head.appendChild(style);
+            }
+        } catch(e) {}
+    }
+
+    // ══════════════════════════════════════════════
+    // SECTION TEMPLATE GALLERY
+    // ══════════════════════════════════════════════
+
+    var SECTION_TEMPLATES = [
+        { type: 'hero-banner', name: 'Hero Banner', icon: '\u{1F3AF}', desc: 'Full-width hero with heading, text, and buttons', cat: 'content' },
+        { type: 'image-with-text', name: 'Image with Text', icon: '\u{1F5BC}', desc: 'Side-by-side image and text layout', cat: 'content' },
+        { type: 'feature-columns', name: 'Feature Columns', icon: '\u{1F4CA}', desc: 'Multi-column feature highlights', cat: 'content' },
+        { type: 'rich-text', name: 'Rich Text', icon: '\u{1F4DD}', desc: 'WYSIWYG content editor section', cat: 'content' },
+        { type: 'gallery', name: 'Gallery', icon: '\u{1F5BC}', desc: 'Image gallery with lightbox', cat: 'media' },
+        { type: 'testimonials', name: 'Testimonials', icon: '\u{1F4AC}', desc: 'Customer testimonials carousel', cat: 'social' },
+        { type: 'faq', name: 'FAQ', icon: '\u{2753}', desc: 'Frequently asked questions accordion', cat: 'content' },
+        { type: 'contact', name: 'Contact Form', icon: '\u{1F4E7}', desc: 'Contact form with fields', cat: 'forms' },
+        { type: 'newsletter', name: 'Newsletter', icon: '\u{1F4E8}', desc: 'Email signup form', cat: 'forms' },
+        { type: 'blog-list', name: 'Blog List', icon: '\u{1F4F0}', desc: 'Display blog posts from collection', cat: 'dynamic' },
+        { type: 'pricing-table', name: 'Pricing Table', icon: '\u{1F4B0}', desc: 'Pricing plans comparison', cat: 'commerce' },
+        { type: 'team', name: 'Team', icon: '\u{1F465}', desc: 'Team members showcase', cat: 'content' },
+        { type: 'stats', name: 'Statistics', icon: '\u{1F4C8}', desc: 'Animated stat counters', cat: 'content' },
+        { type: 'cta-banner', name: 'CTA Banner', icon: '\u{1F514}', desc: 'Call-to-action with button', cat: 'content' },
+        { type: 'logo-cloud', name: 'Logo Cloud', icon: '\u{2B50}', desc: 'Client/partner logos', cat: 'social' },
+        { type: 'spacer', name: 'Spacer', icon: '\u{2195}', desc: 'Vertical spacing divider', cat: 'layout' },
+        { type: 'custom-code', name: 'Custom Code', icon: '\u{1F4BB}', desc: 'Custom HTML/CSS/JS section', cat: 'advanced' },
+        { type: 'dynamic-content', name: 'Dynamic Content', icon: '\u{1F504}', desc: 'Load content from collections', cat: 'dynamic' }
+    ];
+
+    function openSectionGallery(groupName, pageSlug) {
+        // groupName: 'header', 'template', 'footer'
+        var overlay = document.createElement('div');
+        overlay.className = 'section-gallery-overlay';
+
+        var modal = document.createElement('div');
+        modal.className = 'section-gallery-modal';
+
+        // Header
+        var header = document.createElement('div');
+        header.className = 'section-gallery-header';
+        header.innerHTML = '<h3>Add Section</h3>';
+        var closeBtn = document.createElement('button');
+        closeBtn.style.cssText = 'background:none;border:none;font-size:20px;cursor:pointer;color:var(--text);';
+        closeBtn.textContent = '\u00D7';
+        closeBtn.addEventListener('click', function() { overlay.remove(); });
+        header.appendChild(closeBtn);
+
+        // Category tabs
+        var tabDiv = document.createElement('div');
+        tabDiv.className = 'section-gallery-tabs';
+        var cats = [
+            { id: 'all', label: 'All' },
+            { id: 'content', label: 'Content' },
+            { id: 'media', label: 'Media' },
+            { id: 'forms', label: 'Forms' },
+            { id: 'dynamic', label: 'Dynamic' },
+            { id: 'social', label: 'Social' },
+            { id: 'commerce', label: 'Commerce' },
+            { id: 'layout', label: 'Layout' },
+            { id: 'advanced', label: 'Advanced' }
+        ];
+        var activeCat = 'all';
+
+        cats.forEach(function(cat) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'section-gallery-tab' + (cat.id === 'all' ? ' active' : '');
+            btn.textContent = cat.label;
+            btn.dataset.cat = cat.id;
+            btn.addEventListener('click', function() {
+                activeCat = cat.id;
+                tabDiv.querySelectorAll('.section-gallery-tab').forEach(function(b) {
+                    b.classList.toggle('active', b.dataset.cat === cat.id);
+                });
+                renderGalleryGrid();
+            });
+            tabDiv.appendChild(btn);
+        });
+
+        // Grid
+        var grid = document.createElement('div');
+        grid.className = 'section-gallery-grid';
+
+        function renderGalleryGrid() {
+            grid.innerHTML = '';
+
+            // Filter available sections from state.availableSections
+            var available = Object.keys(state.availableSections || {});
+            var templates = SECTION_TEMPLATES.filter(function(t) {
+                if (activeCat !== 'all' && t.cat !== activeCat) return false;
+                return available.indexOf(t.type) !== -1;
+            });
+
+            // Also add sections not in our template list (custom sections)
+            available.forEach(function(type) {
+                if (!SECTION_TEMPLATES.some(function(t) { return t.type === type; })) {
+                    var schema = state.availableSections[type];
+                    templates.push({
+                        type: type,
+                        name: schema.name || type,
+                        icon: '\u{1F4E6}',
+                        desc: schema.description || 'Custom section',
+                        cat: 'advanced'
+                    });
+                }
+            });
+
+            if (activeCat !== 'all') {
+                templates = templates.filter(function(t) { return t.cat === activeCat; });
+            }
+
+            templates.forEach(function(tpl) {
+                var card = document.createElement('div');
+                card.className = 'section-gallery-card';
+                card.innerHTML = '<div class="section-gallery-card-preview">' + tpl.icon + '</div>' +
+                    '<div class="section-gallery-card-info">' +
+                    '<div class="section-gallery-card-name">' + tpl.name + '</div>' +
+                    '<div class="section-gallery-card-desc">' + tpl.desc + '</div></div>';
+                card.addEventListener('click', function() {
+                    addSectionFromGallery(tpl.type, groupName, pageSlug);
+                    overlay.remove();
+                });
+                grid.appendChild(card);
+            });
+
+            if (templates.length === 0) {
+                grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-disabled);font-size:13px;">No sections in this category</div>';
+            }
+        }
+
+        modal.appendChild(header);
+        modal.appendChild(tabDiv);
+        modal.appendChild(grid);
+        overlay.appendChild(modal);
+        overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+        document.body.appendChild(overlay);
+        renderGalleryGrid();
+    }
+
+    function addSectionFromGallery(sectionType, groupName, pageSlug) {
+        // Use existing addSection logic
+        var schema = state.availableSections[sectionType];
+        if (!schema) { showToast('Section type not found', 'error'); return; }
+
+        var sectionId = 'section_' + Date.now().toString(36);
+        var defaultSettings = {};
+        (schema.settings || []).forEach(function(s) {
+            if (s.default !== undefined) defaultSettings[s.id] = s.default;
+        });
+
+        var defaultBlocks = {};
+        var blockOrder = [];
+        if (schema.presets && schema.presets.length > 0) {
+            var preset = schema.presets[0];
+            if (preset.settings) {
+                Object.keys(preset.settings).forEach(function(k) {
+                    defaultSettings[k] = preset.settings[k];
+                });
+            }
+            if (preset.blocks && Array.isArray(preset.blocks)) {
+                preset.blocks.forEach(function(b) {
+                    var bid = 'block_' + Math.random().toString(36).substr(2, 8);
+                    defaultBlocks[bid] = { type: b.type, settings: b.settings || {} };
+                    blockOrder.push(bid);
+                });
+            }
+        }
+
+        var pageData = getPageData();
+        pageData.sections[sectionId] = {
+            type: sectionType,
+            settings: defaultSettings,
+            blocks: defaultBlocks,
+            block_order: blockOrder,
+            disabled: false
+        };
+
+        // Insert into the correct group position
+        if (groupName === 'header') {
+            pageData.order.unshift(sectionId);
+        } else if (groupName === 'footer') {
+            pageData.order.push(sectionId);
+        } else {
+            // template — insert before footer sections or at end
+            var footerIdx = -1;
+            for (var i = 0; i < pageData.order.length; i++) {
+                var sec = pageData.sections[pageData.order[i]];
+                if (sec && (sec.type === 'header' || sec.type === 'footer' || sec.type === 'announcement-bar')) continue;
+                // find last template section
+            }
+            pageData.order.push(sectionId);
+        }
+
+        markDirty();
+        renderSectionTree();
+        selectSection(sectionId);
+        refreshPreview();
+        showToast('Added ' + (schema.name || sectionType), 'success');
     }
 
     // ── Inspector Mode ──
@@ -3374,6 +4110,10 @@
     document.getElementById('rightClose').addEventListener('click', hideRightPanel);
     document.getElementById('saveBtn').addEventListener('click', save);
     document.getElementById('discardBtn').addEventListener('click', discard);
+    document.getElementById('openCssEditorBtn').addEventListener('click', function() {
+        showRightPanel();
+        openCssEditor();
+    });
     document.getElementById('undoBtn').addEventListener('click', undo);
     document.getElementById('redoBtn').addEventListener('click', redo);
 

@@ -70,9 +70,9 @@ class AiBuilderController extends Controller
     {
         $this->requirePerm('pages.edit');
 
-        $prompt = trim($_POST['prompt'] ?? '');
-        $provider = trim($_POST['provider'] ?? '') ?: null;
-        $mode = $_POST['mode'] ?? 'page'; // page, section, content, explain, fix
+        $prompt = trim($this->input('prompt', ''));
+        $provider = trim($this->input('provider', '')) ?: null;
+        $mode = $this->input('mode', 'page'); // page, section, content, explain, fix
 
         if (empty($prompt)) {
             $this->json(['success' => false, 'error' => 'Please enter a prompt describing what you want to generate.'], 422);
@@ -115,7 +115,8 @@ class AiBuilderController extends Controller
                 'result' => $result,
             ]);
         } catch (\Throwable $e) {
-            $this->json(['success' => false, 'error' => $e->getMessage()], 500);
+            error_log('AI generation failed: ' . $e->getMessage());
+            $this->json(['success' => false, 'error' => 'An error occurred during generation. Please try again.'], 500);
         }
     }
 
@@ -126,10 +127,10 @@ class AiBuilderController extends Controller
     {
         $this->requirePerm('pages.edit');
 
-        $template = $_POST['template'] ?? '';
-        $title = trim($_POST['title'] ?? 'AI Generated Page');
-        $slug = trim($_POST['slug'] ?? '');
-        $css = $_POST['css'] ?? '';
+        $template = $this->input('template', '');
+        $title = trim($this->input('title', 'AI Generated Page'));
+        $slug = trim($this->input('slug', ''));
+        $css = $this->input('css', '');
 
         if (empty($template)) {
             $this->json(['success' => false, 'error' => 'No template content to save.'], 422);
@@ -165,7 +166,7 @@ class AiBuilderController extends Controller
             $templatePath = $templateDir . '/' . $slug . '.twig';
 
             // Prevent overwriting without confirmation
-            if (file_exists($templatePath) && empty($_POST['overwrite'])) {
+            if (file_exists($templatePath) && empty($this->input('overwrite', ''))) {
                 $this->json([
                     'success' => false,
                     'error' => 'Template already exists.',
@@ -207,9 +208,9 @@ class AiBuilderController extends Controller
     {
         $this->requirePerm('pages.edit');
 
-        $template = $_POST['template'] ?? '';
-        $slug = trim($_POST['slug'] ?? '');
-        $css = $_POST['css'] ?? '';
+        $template = $this->input('template', '');
+        $slug = trim($this->input('slug', ''));
+        $css = $this->input('css', '');
 
         if (empty($template) || empty($slug)) {
             $this->json(['success' => false, 'error' => 'Missing template content or slug.'], 422);
@@ -232,7 +233,7 @@ class AiBuilderController extends Controller
 
             $sectionPath = $sectionDir . '/' . $slug . '.twig';
 
-            if (file_exists($sectionPath) && empty($_POST['overwrite'])) {
+            if (file_exists($sectionPath) && empty($this->input('overwrite', ''))) {
                 $this->json([
                     'success' => false,
                     'error' => 'Section already exists.',
@@ -319,7 +320,7 @@ class AiBuilderController extends Controller
 
         // Validate default provider
         $validProviders = ['gemini', 'claude', 'openai', 'groq', 'mistral', 'openrouter', 'ollama'];
-        $defaultProvider = trim($_POST['AI_PROVIDER'] ?? 'gemini');
+        $defaultProvider = trim($this->input('AI_PROVIDER', 'gemini'));
         if (!in_array($defaultProvider, $validProviders, true)) {
             $this->flash('errors', ['Invalid default provider.']);
             $this->redirect('/cms/ai-builder/settings');
@@ -329,8 +330,9 @@ class AiBuilderController extends Controller
         // Collect settings from POST
         $settings = [];
         foreach ($allowedKeys as $key) {
-            if (isset($_POST[$key])) {
-                $value = trim($_POST[$key]);
+            $postValue = $this->input($key, null);
+            if ($postValue !== null) {
+                $value = trim($postValue);
                 // Validate model/host fields aren't absurdly long
                 if (strlen($value) > 500) {
                     $this->flash('errors', ["Value for {$key} is too long."]);

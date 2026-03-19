@@ -31,7 +31,7 @@ class SidebarManager
      * Allowed SVG icon identifiers — maps to SVG markup in the template.
      * Plugins reference icons by name; the template resolves to actual SVG.
      */
-    private const array BUILT_IN_ICONS = [
+    private const BUILT_IN_ICONS = [
         'home', 'folder', 'image', 'palette', 'users', 'shield',
         'key', 'user', 'database', 'settings', 'file', 'arrow-left',
         'code', 'globe', 'mail', 'bell', 'search', 'chart',

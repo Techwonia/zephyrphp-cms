@@ -150,39 +150,66 @@ class BackupController extends Controller
         $sm = $conn->createSchemaManager();
         $tableNames = $sm->listTableNames();
 
-        $sql = "-- ZephyrPHP Database Backup\n";
-        $sql .= "-- Generated: " . date('Y-m-d H:i:s') . "\n";
-        $sql .= "-- Database: " . ($params['dbname'] ?? '') . "\n\n";
-        $sql .= "SET FOREIGN_KEY_CHECKS=0;\n\n";
-
-        foreach ($tableNames as $tableName) {
-            try {
-                $result = $conn->fetchAssociative("SHOW CREATE TABLE `{$tableName}`");
-                $sql .= "DROP TABLE IF EXISTS `{$tableName}`;\n";
-                $sql .= ($result['Create Table'] ?? '') . ";\n\n";
-            } catch (\Throwable $e) {
-                continue;
-            }
-
-            $rows = $conn->fetchAllAssociative("SELECT * FROM `{$tableName}`");
-            if (!empty($rows)) {
-                $columns = array_keys($rows[0]);
-                $columnList = '`' . implode('`, `', $columns) . '`';
-
-                foreach ($rows as $row) {
-                    $values = array_map(function ($v) use ($conn) {
-                        return $v === null ? 'NULL' : $conn->quote((string) $v);
-                    }, array_values($row));
-                    $sql .= "INSERT INTO `{$tableName}` ({$columnList}) VALUES (" . implode(', ', $values) . ");\n";
-                }
-                $sql .= "\n";
-            }
+        $filename = "database_{$timestamp}.sql";
+        $filePath = $backupDir . '/' . $filename;
+        $fh = fopen($filePath, 'w');
+        if ($fh === false) {
+            throw new \RuntimeException('Could not create backup file.');
         }
 
-        $sql .= "SET FOREIGN_KEY_CHECKS=1;\n";
+        try {
+            fwrite($fh, "-- ZephyrPHP Database Backup\n");
+            fwrite($fh, "-- Generated: " . date('Y-m-d H:i:s') . "\n");
+            fwrite($fh, "-- Database: " . ($params['dbname'] ?? '') . "\n\n");
+            fwrite($fh, "SET FOREIGN_KEY_CHECKS=0;\n\n");
 
-        $filename = "database_{$timestamp}.sql";
-        file_put_contents($backupDir . '/' . $filename, $sql, LOCK_EX);
+            $chunkSize = 500;
+
+            foreach ($tableNames as $tableName) {
+                try {
+                    $result = $conn->fetchAssociative("SHOW CREATE TABLE `{$tableName}`");
+                    fwrite($fh, "DROP TABLE IF EXISTS `{$tableName}`;\n");
+                    fwrite($fh, ($result['Create Table'] ?? '') . ";\n\n");
+                } catch (\Throwable $e) {
+                    continue;
+                }
+
+                // Stream rows in chunks to avoid loading entire table into memory
+                $offset = 0;
+                $columnList = null;
+                while (true) {
+                    $rows = $conn->fetchAllAssociative(
+                        "SELECT * FROM `{$tableName}` LIMIT {$chunkSize} OFFSET {$offset}"
+                    );
+                    if (empty($rows)) {
+                        break;
+                    }
+
+                    if ($columnList === null) {
+                        $columns = array_keys($rows[0]);
+                        $columnList = '`' . implode('`, `', $columns) . '`';
+                    }
+
+                    foreach ($rows as $row) {
+                        $values = array_map(function ($v) use ($conn) {
+                            return $v === null ? 'NULL' : $conn->quote((string) $v);
+                        }, array_values($row));
+                        fwrite($fh, "INSERT INTO `{$tableName}` ({$columnList}) VALUES (" . implode(', ', $values) . ");\n");
+                    }
+
+                    if (count($rows) < $chunkSize) {
+                        break;
+                    }
+                    $offset += $chunkSize;
+                }
+
+                fwrite($fh, "\n");
+            }
+
+            fwrite($fh, "SET FOREIGN_KEY_CHECKS=1;\n");
+        } finally {
+            fclose($fh);
+        }
     }
 
     private function backupFiles(string $backupDir, string $timestamp, string $basePath): void
@@ -208,9 +235,19 @@ class BackupController extends Controller
             }
         }
 
-        // Backup .env
+        // Backup .env with sensitive values redacted
         if (file_exists($basePath . '/.env')) {
-            $zip->addFile($basePath . '/.env', '.env');
+            $envContent = file_get_contents($basePath . '/.env');
+            $sensitiveKeys = ['DB_PASSWORD', 'APP_KEY', 'APP_SECRET', 'API_KEY', 'API_SECRET',
+                'MAIL_PASSWORD', 'AWS_SECRET', 'STRIPE_SECRET', 'GEMINI_API_KEY',
+                'ANTHROPIC_API_KEY', 'OPENAI_API_KEY', 'GROQ_API_KEY', 'MISTRAL_API_KEY',
+                'OPENROUTER_API_KEY', 'OAUTH_CLIENT_SECRET'];
+            $redacted = preg_replace_callback(
+                '/^(' . implode('|', array_map('preg_quote', $sensitiveKeys)) . ')=(.+)$/m',
+                fn($m) => $m[1] . '=REDACTED',
+                $envContent
+            );
+            $zip->addFromString('.env', $redacted);
         }
 
         $zip->close();

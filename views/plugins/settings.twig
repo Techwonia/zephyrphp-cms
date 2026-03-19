@@ -1,0 +1,126 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}{{ plugin.name }} Settings{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / <a href="/cms/plugins">Plugins</a> / {{ plugin.name }} / Settings
+</div>
+
+<div class="page-header">
+    <h1>{{ plugin.name }} Settings</h1>
+    <div class="page-actions">
+        <a href="/cms/plugins" class="btn btn-outline">Back to Plugins</a>
+    </div>
+</div>
+
+{% if flash('success') %}
+<div class="alert alert-success" style="margin-bottom: var(--space-400);">{{ flash('success') }}</div>
+{% endif %}
+{% if flash('errors') %}
+{% for error in flash('errors') %}
+<div class="alert alert-danger" style="margin-bottom: var(--space-400);">{{ error }}</div>
+{% endfor %}
+{% endif %}
+
+<div class="card">
+    <div class="card-body">
+        {# Plugin info header #}
+        <div style="display: flex; gap: 16px; align-items: center; margin-bottom: var(--space-500); padding-bottom: var(--space-400); border-bottom: 1px solid var(--border-color, #e5e5e5);">
+            <div class="plugin-icon" style="width: 48px; height: 48px; border-radius: var(--radius-200, 6px); background: var(--bg-subdued, #f5f5f5); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>
+                </svg>
+            </div>
+            <div>
+                <h3 style="margin: 0; font-size: 1rem;">{{ plugin.name }}</h3>
+                <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                    v{{ plugin.version|default('1.0.0') }}
+                    {% if plugin.author %} &middot; {{ plugin.author }}{% endif %}
+                </div>
+                {% if plugin.description %}
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 4px 0 0;">{{ plugin.description }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if schema|length > 0 %}
+        <form method="POST" action="/cms/plugins/{{ slug }}/settings">
+            {{ csrf_field() | raw }}
+
+            {% for key, field in schema %}
+            <div class="form-group" style="margin-bottom: var(--space-400);">
+                <label class="form-label" for="setting_{{ key }}">{{ field.label|default(key|title) }}</label>
+
+                {% if field.type|default('text') == 'textarea' %}
+                    <textarea name="setting_{{ key }}" id="setting_{{ key }}" class="form-control" rows="4"
+                              placeholder="{{ field.placeholder|default('') }}">{{ settings[key]|default(field.default|default('')) }}</textarea>
+
+                {% elseif field.type|default('text') == 'select' %}
+                    <select name="setting_{{ key }}" id="setting_{{ key }}" class="form-control">
+                        {% for optVal, optLabel in field.options|default({}) %}
+                            <option value="{{ optVal }}" {{ settings[key]|default(field.default|default('')) == optVal ? 'selected' : '' }}>{{ optLabel }}</option>
+                        {% endfor %}
+                    </select>
+
+                {% elseif field.type|default('text') in ['boolean', 'checkbox'] %}
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="hidden" name="setting_{{ key }}" value="0">
+                        <input type="checkbox" name="setting_{{ key }}" id="setting_{{ key }}" value="1"
+                               {{ settings[key]|default(field.default|default(false)) ? 'checked' : '' }}
+                               style="width: 18px; height: 18px;">
+                        <span style="font-size: 0.875rem;">{{ field.label|default(key|title) }}</span>
+                    </label>
+
+                {% elseif field.type|default('text') == 'number' %}
+                    <input type="number" name="setting_{{ key }}" id="setting_{{ key }}" class="form-control"
+                           value="{{ settings[key]|default(field.default|default('')) }}"
+                           {% if field.min is defined %}min="{{ field.min }}"{% endif %}
+                           {% if field.max is defined %}max="{{ field.max }}"{% endif %}
+                           placeholder="{{ field.placeholder|default('') }}">
+
+                {% else %}
+                    <input type="text" name="setting_{{ key }}" id="setting_{{ key }}" class="form-control"
+                           value="{{ settings[key]|default(field.default|default('')) }}"
+                           placeholder="{{ field.placeholder|default('') }}">
+                {% endif %}
+
+                {% if field.hint is defined %}
+                    <small class="form-hint" style="display: block; margin-top: 4px; font-size: 0.8rem; color: var(--text-secondary);">{{ field.hint }}</small>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <div style="padding-top: var(--space-300); border-top: 1px solid var(--border-color, #e5e5e5);">
+                <button type="submit" class="btn btn-primary">Save Settings</button>
+            </div>
+        </form>
+        {% else %}
+        <div style="text-align: center; padding: 40px 20px; color: var(--text-secondary);">
+            <p>This plugin has no configurable settings.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style nonce="{{ csp_nonce() }}">
+.alert-success {
+    background: rgba(4,123,93,0.08);
+    border: 1px solid rgba(4,123,93,0.2);
+    border-radius: var(--radius-200, 6px);
+    padding: 12px 16px;
+    color: #047B5D;
+    font-size: 0.875rem;
+}
+.alert-danger {
+    background: rgba(220,53,69,0.08);
+    border: 1px solid rgba(220,53,69,0.2);
+    border-radius: var(--radius-200, 6px);
+    padding: 12px 16px;
+    color: #721c24;
+    font-size: 0.875rem;
+}
+</style>
+{% endblock %}

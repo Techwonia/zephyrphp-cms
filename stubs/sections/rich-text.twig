@@ -7,7 +7,7 @@
         {% endif %}
         {% if section.settings.content %}
             <div style="color:{{ section.settings.text_color|default('#616161') }}; line-height:1.8; font-size:{{ section.settings.font_size|default(16) }}px; text-align:{{ section.settings.text_align|default('left') }};">
-                {{ section.settings.content|raw }}
+                {{ section.settings.content|striptags('<p><br><strong><em><b><i><ul><ol><li><a><h1><h2><h3><h4><h5><h6><blockquote><pre><code><span><div><table><thead><tbody><tr><td><th><img><hr>') }}
             </div>
         {% endif %}
     </div>

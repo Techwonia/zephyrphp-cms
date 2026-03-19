@@ -80,6 +80,13 @@ class TranslationManagerController extends Controller
             return;
         }
 
+        // Validate group name (prevent directory traversal)
+        if (!preg_match('/^[a-z0-9_-]+$/i', $group)) {
+            $this->flash('errors', ['Invalid group name.']);
+            $this->redirect('/cms/system/translations');
+            return;
+        }
+
         // Validate locale name (prevent directory traversal)
         if (!preg_match('/^[a-z]{2}(-[A-Z]{2})?$/', $locale)) {
             $this->flash('errors', ['Invalid locale.']);
@@ -123,6 +130,13 @@ class TranslationManagerController extends Controller
         if ($locale === '' || $group === '' || $key === '') {
             $this->flash('errors', ['Key is required.']);
             $this->redirect('/cms/system/translations?locale=' . $locale . '&group=' . $group);
+            return;
+        }
+
+        // Validate group name (prevent directory traversal)
+        if (!preg_match('/^[a-z0-9_-]+$/i', $group)) {
+            $this->flash('errors', ['Invalid group name.']);
+            $this->redirect('/cms/system/translations?locale=' . $locale);
             return;
         }
 
@@ -241,6 +255,260 @@ class TranslationManagerController extends Controller
             'defaultLocale' => $defaultLocale,
             'user' => Auth::user(),
         ]);
+    }
+
+    /**
+     * Export translations for a locale as JSON or CSV.
+     */
+    public function export(): void
+    {
+        $this->requirePermission('settings.view');
+
+        $locale = $this->input('locale', '');
+        $format = $this->input('format', 'json');
+
+        if (!preg_match('/^[a-z]{2}(-[A-Z]{2})?$/', $locale)) {
+            $this->flash('errors', ['Invalid locale.']);
+            $this->redirect('/cms/system/translations');
+            return;
+        }
+
+        if (!in_array($format, ['json', 'csv'], true)) {
+            $format = 'json';
+        }
+
+        $langPath = $this->getLangPath();
+        $groups = $this->getGroups($langPath, $locale);
+
+        $allTranslations = [];
+        foreach ($groups as $group) {
+            $translations = $this->loadTranslations($langPath, $locale, $group);
+            foreach ($translations as $key => $value) {
+                $allTranslations[] = [
+                    'group' => $group,
+                    'key'   => $key,
+                    'value' => $value,
+                ];
+            }
+        }
+
+        $filename = "translations_{$locale}_" . date('Y-m-d');
+
+        if ($format === 'csv') {
+            header('Content-Type: text/csv; charset=UTF-8');
+            header("Content-Disposition: attachment; filename=\"{$filename}.csv\"");
+            $fp = fopen('php://output', 'w');
+            fputcsv($fp, ['group', 'key', 'value']);
+            foreach ($allTranslations as $row) {
+                fputcsv($fp, [$row['group'], $row['key'], $row['value']]);
+            }
+            fclose($fp);
+        } else {
+            header('Content-Type: application/json; charset=UTF-8');
+            header("Content-Disposition: attachment; filename=\"{$filename}.json\"");
+            $grouped = [];
+            foreach ($allTranslations as $row) {
+                $grouped[$row['group']][$row['key']] = $row['value'];
+            }
+            echo json_encode($grouped, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        }
+
+        exit;
+    }
+
+    /**
+     * Import translations from uploaded JSON or CSV file.
+     */
+    public function import(): void
+    {
+        $this->requirePermission('settings.edit');
+
+        $locale = $this->input('locale', '');
+        $mode = $this->input('mode', 'merge'); // merge or overwrite
+
+        if (!preg_match('/^[a-z]{2}(-[A-Z]{2})?$/', $locale)) {
+            $this->flash('errors', ['Invalid locale.']);
+            $this->redirect('/cms/system/translations');
+            return;
+        }
+
+        if (!in_array($mode, ['merge', 'overwrite'], true)) {
+            $mode = 'merge';
+        }
+
+        if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
+            $this->flash('errors', ['No file uploaded or upload error.']);
+            $this->redirect('/cms/system/translations?locale=' . $locale);
+            return;
+        }
+
+        $file = $_FILES['file'];
+
+        // Validate file size (max 2MB)
+        if ($file['size'] > 2 * 1024 * 1024) {
+            $this->flash('errors', ['File too large. Maximum 2MB.']);
+            $this->redirect('/cms/system/translations?locale=' . $locale);
+            return;
+        }
+
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if (!in_array($ext, ['json', 'csv'], true)) {
+            $this->flash('errors', ['Only JSON and CSV files are supported.']);
+            $this->redirect('/cms/system/translations?locale=' . $locale);
+            return;
+        }
+
+        $content = file_get_contents($file['tmp_name']);
+        if ($content === false || $content === '') {
+            $this->flash('errors', ['Could not read uploaded file.']);
+            $this->redirect('/cms/system/translations?locale=' . $locale);
+            return;
+        }
+
+        $langPath = $this->getLangPath();
+        $imported = 0;
+
+        if ($ext === 'json') {
+            $data = json_decode($content, true);
+            if (!is_array($data)) {
+                $this->flash('errors', ['Invalid JSON format. Expected: {"group": {"key": "value", ...}}']);
+                $this->redirect('/cms/system/translations?locale=' . $locale);
+                return;
+            }
+
+            foreach ($data as $group => $translations) {
+                if (!is_string($group) || !preg_match('/^[a-z0-9_-]+$/i', $group) || !is_array($translations)) {
+                    continue;
+                }
+
+                $existing = ($mode === 'merge') ? $this->loadTranslations($langPath, $locale, $group) : [];
+                foreach ($translations as $key => $value) {
+                    if (is_string($key) && is_string($value)) {
+                        $existing[$key] = $value;
+                        $imported++;
+                    }
+                }
+
+                $this->saveTranslationFile($langPath, $locale, $group, $existing);
+            }
+        } else {
+            // CSV: group,key,value
+            $lines = str_getcsv($content, "\n");
+            $header = null;
+            $groupedData = [];
+
+            foreach ($lines as $line) {
+                $cols = str_getcsv($line);
+                if ($header === null) {
+                    $header = $cols;
+                    continue;
+                }
+                if (count($cols) < 3) {
+                    continue;
+                }
+
+                $group = trim($cols[0]);
+                $key = trim($cols[1]);
+                $value = trim($cols[2]);
+
+                if (!preg_match('/^[a-z0-9_-]+$/i', $group) || $key === '') {
+                    continue;
+                }
+
+                $groupedData[$group][$key] = $value;
+            }
+
+            foreach ($groupedData as $group => $translations) {
+                $existing = ($mode === 'merge') ? $this->loadTranslations($langPath, $locale, $group) : [];
+                foreach ($translations as $key => $value) {
+                    $existing[$key] = $value;
+                    $imported++;
+                }
+                $this->saveTranslationFile($langPath, $locale, $group, $existing);
+            }
+        }
+
+        $this->flash('success', "Imported {$imported} translation keys for '{$locale}'.");
+        $this->redirect('/cms/system/translations?locale=' . $locale);
+    }
+
+    /**
+     * Delete a translation key.
+     */
+    public function deleteKey(): void
+    {
+        $this->requirePermission('settings.edit');
+
+        $locale = $this->input('locale', '');
+        $group = $this->input('group', '');
+        $key = $this->input('key', '');
+
+        if (!preg_match('/^[a-z]{2}(-[A-Z]{2})?$/', $locale) || !preg_match('/^[a-z0-9_-]+$/i', $group) || $key === '') {
+            $this->flash('errors', ['Invalid parameters.']);
+            $this->redirect('/cms/system/translations');
+            return;
+        }
+
+        $langPath = $this->getLangPath();
+        $translations = $this->loadTranslations($langPath, $locale, $group);
+
+        if (!isset($translations[$key])) {
+            $this->flash('errors', ['Key not found.']);
+            $this->redirect('/cms/system/translations?locale=' . $locale . '&group=' . $group);
+            return;
+        }
+
+        unset($translations[$key]);
+        $this->saveTranslationFile($langPath, $locale, $group, $translations);
+
+        $this->flash('success', "Key '{$key}' deleted.");
+        $this->redirect('/cms/system/translations?locale=' . $locale . '&group=' . $group);
+    }
+
+    /**
+     * Create a new locale directory.
+     */
+    public function createLocale(): void
+    {
+        $this->requirePermission('settings.edit');
+
+        $locale = trim($this->input('new_locale', ''));
+
+        if (!preg_match('/^[a-z]{2}(-[A-Z]{2})?$/', $locale)) {
+            $this->flash('errors', ['Invalid locale format. Use format: en, fr, pt-BR, etc.']);
+            $this->redirect('/cms/system/translations');
+            return;
+        }
+
+        $langPath = $this->getLangPath();
+        $dir = $langPath . '/' . $locale;
+
+        if (is_dir($dir)) {
+            $this->flash('errors', ['Locale already exists.']);
+            $this->redirect('/cms/system/translations?locale=' . $locale);
+            return;
+        }
+
+        if (!mkdir($dir, 0755, true)) {
+            $this->flash('errors', ['Could not create locale directory.']);
+            $this->redirect('/cms/system/translations');
+            return;
+        }
+
+        $this->flash('success', "Locale '{$locale}' created.");
+        $this->redirect('/cms/system/translations?locale=' . $locale);
+    }
+
+    private function saveTranslationFile(string $langPath, string $locale, string $group, array $translations): void
+    {
+        $dir = $langPath . '/' . $locale;
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        $filePath = $dir . '/' . $group . '.php';
+        $content = "<?php\n\nreturn " . var_export($translations, true) . ";\n";
+        file_put_contents($filePath, $content, LOCK_EX);
     }
 
     private function getLangPath(): string

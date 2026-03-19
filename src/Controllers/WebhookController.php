@@ -55,6 +55,12 @@ class WebhookController extends Controller
             return;
         }
 
+        if (!$this->isUrlSafe($url)) {
+            $this->flash('errors', ['Webhook URL must not point to a private or reserved IP address.']);
+            $this->redirect('/cms/webhooks');
+            return;
+        }
+
         if (empty($events) || !is_array($events)) {
             $this->flash('errors', ['Please select at least one event.']);
             $this->redirect('/cms/webhooks');
@@ -78,7 +84,8 @@ class WebhookController extends Controller
 
             $this->flash('success', 'Webhook created successfully.');
         } catch (\Throwable $e) {
-            $this->flash('errors', ['Failed to create webhook: ' . $e->getMessage()]);
+            error_log('Webhook creation failed: ' . $e->getMessage());
+            $this->flash('errors', ['Failed to create webhook. Please try again.']);
         }
 
         $this->redirect('/cms/webhooks');
@@ -174,7 +181,8 @@ class WebhookController extends Controller
                 $this->flash('errors', ['Webhook responded with HTTP ' . $result['status_code']]);
             }
         } catch (\Throwable $e) {
-            $this->flash('errors', ['Webhook test failed: ' . $e->getMessage()]);
+            error_log('Webhook test failed: ' . $e->getMessage());
+            $this->flash('errors', ['Webhook test failed. Please try again.']);
         }
 
         $this->redirect('/cms/webhooks');
@@ -255,6 +263,16 @@ class WebhookController extends Controller
 
     private function sendWebhook(array $webhook, string $event, string $payload): array
     {
+        if (!$this->isUrlSafe($webhook['url'])) {
+            return [
+                'success' => false,
+                'status_code' => 0,
+                'response' => '',
+                'error' => 'URL resolves to a private or reserved IP address.',
+                'duration_ms' => 0,
+            ];
+        }
+
         $headers = [
             'Content-Type: application/json',
             'User-Agent: ZephyrPHP-Webhook/1.0',
@@ -349,6 +367,32 @@ class WebhookController extends Controller
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             ");
         }
+    }
+
+    private function isUrlSafe(string $url): bool
+    {
+        $host = parse_url($url, PHP_URL_HOST);
+        if (!$host) {
+            return false;
+        }
+
+        $ip = gethostbyname($host);
+        // gethostbyname returns the hostname if resolution fails
+        if ($ip === $host && !filter_var($host, FILTER_VALIDATE_IP)) {
+            return false;
+        }
+
+        // Block private and reserved IP ranges
+        if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+            return false;
+        }
+
+        // Block cloud metadata endpoint
+        if ($ip === '169.254.169.254') {
+            return false;
+        }
+
+        return true;
     }
 
     private function ensureWebhooksTable($conn): void

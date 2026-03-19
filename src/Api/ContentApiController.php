@@ -7,17 +7,14 @@ namespace ZephyrPHP\Cms\Api;
 use ZephyrPHP\Core\Controllers\Controller;
 use ZephyrPHP\Cms\Models\Collection;
 use ZephyrPHP\Cms\Models\ApiKey;
-use ZephyrPHP\Cms\Services\SchemaManager;
+use ZephyrPHP\Cms\Services\EntryQuery;
 use ZephyrPHP\Cms\Services\TranslationService;
 
 class ContentApiController extends Controller
 {
-    private SchemaManager $schema;
-
     public function __construct()
     {
         parent::__construct();
-        $this->schema = new SchemaManager();
     }
 
     /**
@@ -173,28 +170,26 @@ class ContentApiController extends Controller
         $this->authenticate('read');
         $collection = $this->resolveCollection($slug);
 
-        $searchableFields = array_map(
-            fn($f) => $f->getSlug(),
-            $collection->getSearchableFields()
-        );
-
         $page = max(1, (int) ($this->input('page') ?? 1));
         $perPage = min(100, max(1, (int) ($this->input('per_page') ?? 15)));
-
-        $result = $this->schema->listEntries($collection->getTableName(), [
-            'page' => $page,
-            'per_page' => $perPage,
-            'sort_by' => $this->input('sort_by', 'id'),
-            'sort_dir' => $this->input('sort_dir', 'DESC'),
-            'search' => $this->input('search'),
-            'searchFields' => $searchableFields,
-        ]);
-
-        // Apply locale translations
         $locale = $this->input('locale');
-        if ($locale && $collection->isTranslatable()) {
-            $result['data'] = TranslationService::resolveEntries($result['data'], $collection->getTableName(), $locale);
+
+        $query = EntryQuery::collection($slug)
+            ->noCache()
+            ->orderBy($this->input('sort_by', 'id'), $this->input('sort_dir', 'DESC'))
+            ->withRelations(1);
+
+        $search = $this->input('search');
+        if ($search) {
+            $searchFields = array_map(fn($f) => $f->getSlug(), $collection->getSearchableFields());
+            $query->search($search, $searchFields);
         }
+
+        if ($locale) {
+            $query->locale($locale);
+        }
+
+        $result = $query->paginate($page, $perPage);
 
         $this->json([
             'data' => $result['data'],
@@ -212,34 +207,21 @@ class ContentApiController extends Controller
     public function show(string $slug, string $id): string
     {
         $this->authenticate('read');
-        $collection = $this->resolveCollection($slug);
+        $this->resolveCollection($slug);
 
-        $entry = $this->schema->findEntry($collection->getTableName(), $id);
+        $query = EntryQuery::collection($slug)
+            ->noCache()
+            ->withRelations(1);
+
+        $locale = $this->input('locale');
+        if ($locale) {
+            $query->locale($locale);
+        }
+
+        $entry = $query->find($id);
         if (!$entry) {
             $this->json(['error' => 'Entry not found.'], 404);
             return '';
-        }
-
-        // Include pivot relation data
-        foreach ($collection->getFields() as $field) {
-            if ($field->getType() === 'relation') {
-                $relationType = $field->getOptions()['relation_type'] ?? 'one_to_one';
-                if ($relationType !== 'one_to_one') {
-                    $targetTable = 'cms_' . ($field->getOptions()['relation_collection'] ?? '');
-                    $entry[$field->getSlug()] = $this->schema->getPivotRelations(
-                        $collection->getTableName(),
-                        $field->getSlug(),
-                        $targetTable,
-                        $id
-                    );
-                }
-            }
-        }
-
-        // Apply locale translations
-        $locale = $this->input('locale');
-        if ($locale && $collection->isTranslatable()) {
-            $entry = TranslationService::resolveEntry($entry, $collection->getTableName(), $locale);
         }
 
         $this->json(['data' => $entry]);
@@ -252,47 +234,10 @@ class ContentApiController extends Controller
         $collection = $this->resolveCollection($slug);
 
         $fields = $collection->getFields()->toArray();
-        $data = [];
-        $pivotData = [];
-
-        foreach ($fields as $field) {
-            $value = $this->input($field->getSlug());
-
-            if ($field->getType() === 'relation') {
-                $relationType = $field->getOptions()['relation_type'] ?? 'one_to_one';
-                if ($relationType !== 'one_to_one') {
-                    if ($value !== null) {
-                        $pivotData[$field->getSlug()] = is_array($value) ? array_map('intval', $value) : [(int) $value];
-                    }
-                    continue;
-                }
-            }
-
-            if ($value !== null) {
-                $data[$field->getSlug()] = match ($field->getType()) {
-                    'boolean' => (bool) $value ? 1 : 0,
-                    'number', 'relation' => (int) $value,
-                    'decimal' => (float) $value,
-                    default => $value,
-                };
-            }
-        }
+        $data = $this->buildInputData($fields);
 
         // Validate required fields
-        $errors = [];
-        foreach ($fields as $field) {
-            if ($field->isRequired() && !isset($data[$field->getSlug()])) {
-                $relationType = $field->getOptions()['relation_type'] ?? 'one_to_one';
-                if ($field->getType() === 'relation' && $relationType !== 'one_to_one') {
-                    if (empty($pivotData[$field->getSlug()] ?? [])) {
-                        $errors[$field->getSlug()] = "{$field->getName()} is required.";
-                    }
-                } else {
-                    $errors[$field->getSlug()] = "{$field->getName()} is required.";
-                }
-            }
-        }
-
+        $errors = $this->validateRequired($fields, $data);
         if (!empty($errors)) {
             $this->json(['error' => 'Validation failed.', 'errors' => $errors], 422);
             return '';
@@ -305,19 +250,9 @@ class ContentApiController extends Controller
             }
         }
 
-        $entryId = $this->schema->insertEntry($collection->getTableName(), $data, $collection->isUuid());
+        $entryId = EntryQuery::collection($slug)->create($data);
 
-        // Sync pivot relations
-        foreach ($fields as $field) {
-            if (isset($pivotData[$field->getSlug()])) {
-                $targetTable = 'cms_' . ($field->getOptions()['relation_collection'] ?? '');
-                $this->schema->syncPivotRelations(
-                    $collection->getTableName(), $field->getSlug(), $targetTable, $entryId, $pivotData[$field->getSlug()]
-                );
-            }
-        }
-
-        $entry = $this->schema->findEntry($collection->getTableName(), $entryId);
+        $entry = EntryQuery::collection($slug)->noCache()->find($entryId);
         $this->json(['data' => $entry], 201);
         return '';
     }
@@ -327,38 +262,15 @@ class ContentApiController extends Controller
         $this->authenticate('write');
         $collection = $this->resolveCollection($slug);
 
-        $entry = $this->schema->findEntry($collection->getTableName(), $id);
-        if (!$entry) {
+        // Check entry exists
+        $existing = EntryQuery::collection($slug)->noCache()->find($id);
+        if (!$existing) {
             $this->json(['error' => 'Entry not found.'], 404);
             return '';
         }
 
         $fields = $collection->getFields()->toArray();
-        $data = [];
-        $pivotData = [];
-
-        foreach ($fields as $field) {
-            $value = $this->input($field->getSlug());
-
-            if ($field->getType() === 'relation') {
-                $relationType = $field->getOptions()['relation_type'] ?? 'one_to_one';
-                if ($relationType !== 'one_to_one') {
-                    if ($value !== null) {
-                        $pivotData[$field->getSlug()] = is_array($value) ? array_map('intval', $value) : [(int) $value];
-                    }
-                    continue;
-                }
-            }
-
-            if ($value !== null) {
-                $data[$field->getSlug()] = match ($field->getType()) {
-                    'boolean' => (bool) $value ? 1 : 0,
-                    'number', 'relation' => (int) $value,
-                    'decimal' => (float) $value,
-                    default => $value,
-                };
-            }
-        }
+        $data = $this->buildInputData($fields);
 
         // Sanitize richtext fields
         foreach ($fields as $field) {
@@ -367,19 +279,9 @@ class ContentApiController extends Controller
             }
         }
 
-        $this->schema->updateEntry($collection->getTableName(), $id, $data);
+        EntryQuery::collection($slug)->update($id, $data);
 
-        // Sync pivot relations
-        foreach ($fields as $field) {
-            if (isset($pivotData[$field->getSlug()])) {
-                $targetTable = 'cms_' . ($field->getOptions()['relation_collection'] ?? '');
-                $this->schema->syncPivotRelations(
-                    $collection->getTableName(), $field->getSlug(), $targetTable, $id, $pivotData[$field->getSlug()]
-                );
-            }
-        }
-
-        $entry = $this->schema->findEntry($collection->getTableName(), $id);
+        $entry = EntryQuery::collection($slug)->noCache()->find($id);
         $this->json(['data' => $entry]);
         return '';
     }
@@ -387,64 +289,251 @@ class ContentApiController extends Controller
     public function destroy(string $slug, string $id): string
     {
         $this->authenticate('delete');
-        $collection = $this->resolveCollection($slug);
+        $this->resolveCollection($slug);
 
-        $entry = $this->schema->findEntry($collection->getTableName(), $id);
+        $entry = EntryQuery::collection($slug)->noCache()->find($id);
         if (!$entry) {
             $this->json(['error' => 'Entry not found.'], 404);
             return '';
         }
 
-        $this->schema->deleteEntry($collection->getTableName(), $id);
+        EntryQuery::collection($slug)->delete($id);
 
         $this->json(['message' => 'Entry deleted.']);
         return '';
     }
 
     /**
-     * Sanitize HTML to prevent XSS — allow safe tags only.
-     * Uses a multi-pass approach for robust protection.
+     * Build typed input data from request, handling relation arrays for pivot sync.
+     */
+    private function buildInputData(array $fields): array
+    {
+        $data = [];
+        foreach ($fields as $field) {
+            $value = $this->input($field->getSlug());
+            if ($value === null) {
+                continue;
+            }
+
+            // Many-to-many relations: pass as array (EntryQuery handles pivot sync)
+            if ($field->getType() === 'relation') {
+                $relationType = $field->getOptions()['relation_type'] ?? 'one_to_one';
+                if ($relationType !== 'one_to_one') {
+                    $data[$field->getSlug()] = is_array($value) ? array_map('intval', $value) : [(int) $value];
+                    continue;
+                }
+            }
+
+            $data[$field->getSlug()] = match ($field->getType()) {
+                'boolean' => (bool) $value ? 1 : 0,
+                'number', 'relation' => (int) $value,
+                'decimal' => (float) $value,
+                default => $value,
+            };
+        }
+        return $data;
+    }
+
+    /**
+     * Validate required fields, returns array of errors (empty = valid).
+     */
+    private function validateRequired(array $fields, array $data): array
+    {
+        $errors = [];
+        foreach ($fields as $field) {
+            if (!$field->isRequired()) {
+                continue;
+            }
+
+            $slug = $field->getSlug();
+            $value = $data[$slug] ?? null;
+
+            if ($field->getType() === 'relation') {
+                $relationType = $field->getOptions()['relation_type'] ?? 'one_to_one';
+                if ($relationType !== 'one_to_one') {
+                    if (empty($value)) {
+                        $errors[$slug] = "{$field->getName()} is required.";
+                    }
+                    continue;
+                }
+            }
+
+            if ($value === null || $value === '') {
+                $errors[$slug] = "{$field->getName()} is required.";
+            }
+        }
+        return $errors;
+    }
+
+    /**
+     * Sanitize HTML to prevent XSS — DOM-based allowlist approach.
+     *
+     * Uses PHP's DOMDocument to parse and rebuild HTML, only keeping
+     * whitelisted tags and safe attributes. This is fundamentally more
+     * secure than regex-based approaches which can be bypassed.
      */
     public static function sanitizeHtml(string $html): string
     {
-        $allowed = '<p><br><strong><b><em><i><u><s><h1><h2><h3><h4><h5><h6>'
-            . '<ul><ol><li><a><img><blockquote><pre><code><hr><table><thead><tbody><tr><th><td>'
-            . '<span><div><figure><figcaption><sub><sup>';
-        $clean = strip_tags($html, $allowed);
-
-        // Decode HTML entities to catch encoded attacks (&#106;avascript:, &#x6A;avascript:)
-        // Run multiple passes since attackers can double-encode
-        $maxPasses = 3;
-        for ($i = 0; $i < $maxPasses; $i++) {
-            $decoded = html_entity_decode($clean, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-            if ($decoded === $clean) {
-                break;
-            }
-            $clean = $decoded;
+        if (trim($html) === '') {
+            return '';
         }
 
-        // Re-strip tags after decoding (entities might have revealed new tags)
-        $clean = strip_tags($clean, $allowed);
+        // Remove null bytes first (used to bypass filters)
+        $html = str_replace("\0", '', $html);
 
-        // Remove ALL event handler attributes — handles whitespace variations and encoded forms
-        // Match: onXXX = "..." or onXXX = '...' or onXXX = value (with any whitespace)
-        $clean = preg_replace('/\bon\w+\s*=\s*(?:"[^"]*"|\'[^\']*\'|[^\s>]*)/i', '', $clean);
+        // Allowed tags and their allowed attributes
+        $allowedTags = [
+            'p' => ['class', 'id'],
+            'br' => [],
+            'strong' => [], 'b' => [],
+            'em' => [], 'i' => [],
+            'u' => [], 's' => [],
+            'h1' => ['id'], 'h2' => ['id'], 'h3' => ['id'],
+            'h4' => ['id'], 'h5' => ['id'], 'h6' => ['id'],
+            'ul' => ['class'], 'ol' => ['class', 'start', 'type'], 'li' => ['class'],
+            'a' => ['href', 'title', 'target', 'rel'],
+            'img' => ['src', 'alt', 'title', 'width', 'height', 'loading'],
+            'blockquote' => ['class'],
+            'pre' => ['class'], 'code' => ['class'],
+            'hr' => [],
+            'table' => ['class'], 'thead' => [], 'tbody' => [],
+            'tr' => [], 'th' => ['colspan', 'rowspan'], 'td' => ['colspan', 'rowspan'],
+            'span' => ['class'], 'div' => ['class'],
+            'figure' => ['class'], 'figcaption' => [],
+            'sub' => [], 'sup' => [],
+        ];
 
-        // Remove javascript: protocol in href/src/action — handles whitespace and encoding
-        $clean = preg_replace('/(?:href|src|action|formaction|xlink:href|poster|background)\s*=\s*["\']?\s*(?:javascript|vbscript|livescript)\s*:/i', 'href="#blocked"', $clean);
+        // Dangerous URI schemes
+        $dangerousSchemes = ['javascript', 'vbscript', 'livescript', 'data', 'mhtml'];
 
-        // Remove data: URIs in src/href (can embed executable content)
-        $clean = preg_replace('/(?:src|href|poster|background)\s*=\s*["\']?\s*data\s*:/i', 'src="#blocked"', $clean);
+        // Parse with DOMDocument
+        $dom = new \DOMDocument('1.0', 'UTF-8');
+        // Suppress warnings from malformed HTML
+        libxml_use_internal_errors(true);
+        $dom->loadHTML(
+            '<?xml encoding="UTF-8"><div id="__sanitize_root__">' . $html . '</div>',
+            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_NONET
+        );
+        libxml_clear_errors();
 
-        // Remove style attributes with expression() or url(javascript:)
-        $clean = preg_replace('/style\s*=\s*["\'][^"\']*(?:expression|javascript|vbscript)[^"\']*["\']/i', '', $clean);
+        // Recursively sanitize nodes
+        $root = $dom->getElementById('__sanitize_root__');
+        if (!$root) {
+            // Fallback: strip all tags
+            return strip_tags($html);
+        }
 
-        // Remove <base> tag injection attempts (already stripped by strip_tags, but be safe)
-        $clean = preg_replace('/<base\b[^>]*>/i', '', $clean);
+        self::sanitizeNode($root, $allowedTags, $dangerousSchemes, $dom);
 
-        // Remove null bytes (used to bypass filters)
-        $clean = str_replace("\0", '', $clean);
+        // Extract inner HTML of root
+        $output = '';
+        foreach ($root->childNodes as $child) {
+            $output .= $dom->saveHTML($child);
+        }
 
-        return $clean;
+        return trim($output);
+    }
+
+    /**
+     * Recursively sanitize a DOM node and its children.
+     */
+    private static function sanitizeNode(
+        \DOMNode $node,
+        array $allowedTags,
+        array $dangerousSchemes,
+        \DOMDocument $dom
+    ): void {
+        $nodesToRemove = [];
+
+        foreach ($node->childNodes as $child) {
+            if ($child->nodeType === XML_TEXT_NODE) {
+                continue; // Text nodes are safe
+            }
+
+            if ($child->nodeType === XML_COMMENT_NODE) {
+                $nodesToRemove[] = $child; // Strip comments (can contain IE conditionals)
+                continue;
+            }
+
+            if ($child->nodeType !== XML_ELEMENT_NODE) {
+                $nodesToRemove[] = $child;
+                continue;
+            }
+
+            /** @var \DOMElement $child */
+            $tagName = strtolower($child->nodeName);
+
+            if (!isset($allowedTags[$tagName])) {
+                // Unwrap: replace element with its children (preserves text content)
+                $fragment = $dom->createDocumentFragment();
+                while ($child->firstChild) {
+                    $fragment->appendChild($child->firstChild);
+                }
+                $node->replaceChild($fragment, $child);
+                // Re-sanitize since we changed the tree
+                self::sanitizeNode($node, $allowedTags, $dangerousSchemes, $dom);
+                return;
+            }
+
+            // Remove disallowed attributes
+            $allowedAttrs = $allowedTags[$tagName];
+            $attrsToRemove = [];
+            foreach ($child->attributes as $attr) {
+                $attrName = strtolower($attr->name);
+
+                // Block all event handlers (on*)
+                if (str_starts_with($attrName, 'on')) {
+                    $attrsToRemove[] = $attr->name;
+                    continue;
+                }
+
+                // Block style attribute entirely (expression(), url() attacks)
+                if ($attrName === 'style') {
+                    $attrsToRemove[] = $attr->name;
+                    continue;
+                }
+
+                // Check if attribute is in allowlist
+                if (!in_array($attrName, $allowedAttrs, true)) {
+                    $attrsToRemove[] = $attr->name;
+                    continue;
+                }
+
+                // Validate URI attributes against dangerous schemes
+                if (in_array($attrName, ['href', 'src', 'action', 'formaction', 'poster', 'background'], true)) {
+                    $value = trim($attr->value);
+                    // Decode entities to catch encoded schemes
+                    $decoded = html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                    // Remove whitespace/control chars that can hide schemes
+                    $normalized = preg_replace('/[\s\x00-\x1f]+/', '', strtolower($decoded));
+
+                    foreach ($dangerousSchemes as $scheme) {
+                        if (str_starts_with($normalized, $scheme . ':')) {
+                            $attrsToRemove[] = $attr->name;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            foreach ($attrsToRemove as $attrName) {
+                $child->removeAttribute($attrName);
+            }
+
+            // Force rel="noopener noreferrer" on links with target="_blank"
+            if ($tagName === 'a' && $child->getAttribute('target') === '_blank') {
+                $child->setAttribute('rel', 'noopener noreferrer');
+            }
+
+            // Recurse into children
+            if ($child->hasChildNodes()) {
+                self::sanitizeNode($child, $allowedTags, $dangerousSchemes, $dom);
+            }
+        }
+
+        // Remove collected nodes
+        foreach ($nodesToRemove as $nodeToRemove) {
+            $node->removeChild($nodeToRemove);
+        }
     }
 }

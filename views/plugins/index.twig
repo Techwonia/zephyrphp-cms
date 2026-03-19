@@ -1,0 +1,421 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Plugins{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / Plugins
+</div>
+
+<div class="page-header">
+    <h1>Plugins</h1>
+    <div class="page-actions">
+        <a href="/cms/plugins/browse" class="btn btn-outline">Browse Marketplace</a>
+        <button type="button" class="btn btn-primary" onclick="document.getElementById('uploadModal').showModal()">Upload Plugin</button>
+    </div>
+</div>
+
+{# Flash messages #}
+{% if flash('success') %}
+<div class="alert alert-success" style="margin-bottom: var(--space-400);">{{ flash('success') }}</div>
+{% endif %}
+{% if flash('errors') %}
+{% for error in flash('errors') %}
+<div class="alert alert-danger" style="margin-bottom: var(--space-400);">{{ error }}</div>
+{% endfor %}
+{% endif %}
+
+{# Filter tabs + Search #}
+<div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card-body">
+        <div class="plugin-toolbar">
+            <div class="plugin-tabs">
+                <a href="/cms/plugins?filter=all&search={{ search|url_encode }}" class="plugin-tab {{ filter == 'all' ? 'active' : '' }}">
+                    All <span class="tab-count">{{ counts.all }}</span>
+                </a>
+                <a href="/cms/plugins?filter=active&search={{ search|url_encode }}" class="plugin-tab {{ filter == 'active' ? 'active' : '' }}">
+                    Active <span class="tab-count">{{ counts.active }}</span>
+                </a>
+                <a href="/cms/plugins?filter=inactive&search={{ search|url_encode }}" class="plugin-tab {{ filter == 'inactive' ? 'active' : '' }}">
+                    Inactive <span class="tab-count">{{ counts.inactive }}</span>
+                </a>
+            </div>
+            <form method="GET" action="/cms/plugins" class="plugin-search">
+                <input type="hidden" name="filter" value="{{ filter }}">
+                <input type="text" name="search" value="{{ search }}" placeholder="Search plugins..." class="form-control" style="width: 240px;">
+                <button type="submit" class="btn btn-outline btn-sm">Search</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# Plugin Grid #}
+{% if plugins|length > 0 %}
+<div class="plugin-grid">
+    {% for plugin in plugins %}
+    {% set m = plugin.manifest %}
+    <div class="plugin-card {{ plugin.enabled ? 'plugin-active' : 'plugin-inactive' }}">
+        <div class="plugin-card-header">
+            <div class="plugin-icon">
+                {% if m.icon %}
+                    <img src="{{ m.icon }}" alt="{{ m.name }}" width="40" height="40">
+                {% else %}
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>
+                    </svg>
+                {% endif %}
+            </div>
+            <div class="plugin-status">
+                <span class="badge {{ plugin.enabled ? 'badge-success' : 'badge-muted' }}">
+                    {{ plugin.enabled ? 'Active' : 'Inactive' }}
+                </span>
+            </div>
+        </div>
+
+        <div class="plugin-card-body">
+            <h3 class="plugin-name">{{ m.name }}</h3>
+            <div class="plugin-meta">
+                {% if m.version %}<span class="plugin-version">v{{ m.version }}</span>{% endif %}
+                {% if m.author %}<span class="plugin-author">by {{ m.author }}</span>{% endif %}
+            </div>
+            <p class="plugin-desc">{{ m.description|default('No description available.')|slice(0, 120) }}{% if (m.description|default(''))|length > 120 %}...{% endif %}</p>
+        </div>
+
+        <div class="plugin-card-footer">
+            <div class="plugin-actions">
+                <form method="POST" action="/cms/plugins/{{ plugin.slug }}/toggle" style="display: inline;">
+                    {{ csrf_field() | raw }}
+                    <button type="submit" class="btn btn-sm {{ plugin.enabled ? 'btn-outline' : 'btn-primary' }}">
+                        {{ plugin.enabled ? 'Disable' : 'Enable' }}
+                    </button>
+                </form>
+
+                {% if plugin.has_settings and plugin.enabled %}
+                <a href="/cms/plugins/{{ plugin.slug }}/settings" class="btn btn-sm btn-outline">Settings</a>
+                {% endif %}
+
+                <form method="POST" action="/cms/plugins/{{ plugin.slug }}/uninstall"
+                      onsubmit="return confirm('Are you sure you want to uninstall {{ m.name|e('js') }}? This will remove all plugin files.')"
+                      style="display: inline;">
+                    {{ csrf_field() | raw }}
+                    <button type="submit" class="btn btn-sm btn-danger-outline">Uninstall</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body empty-state" style="text-align: center; padding: 60px 20px;">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-disabled, #ccc)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 16px;">
+            <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>
+        </svg>
+        <h3 style="margin: 0 0 8px;">No plugins {% if filter != 'all' %}matching this filter{% else %}installed{% endif %}</h3>
+        <p style="color: var(--text-secondary); margin: 0 0 20px;">
+            {% if search %}
+                No plugins match "{{ search }}". Try a different search term.
+            {% elseif filter == 'active' %}
+                No plugins are currently active.
+            {% elseif filter == 'inactive' %}
+                All plugins are active.
+            {% else %}
+                Install plugins from the marketplace or upload a ZIP file.
+            {% endif %}
+        </p>
+        <div style="display: flex; gap: 8px; justify-content: center;">
+            <a href="/cms/plugins/browse" class="btn btn-outline">Browse Marketplace</a>
+            <button type="button" class="btn btn-primary" onclick="document.getElementById('uploadModal').showModal()">Upload Plugin</button>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{# Upload Modal #}
+<dialog id="uploadModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Install Plugin</h2>
+            <button type="button" onclick="document.getElementById('uploadModal').close()" class="modal-close">&times;</button>
+        </div>
+        <form method="POST" action="/cms/plugins/install" enctype="multipart/form-data">
+            {{ csrf_field() | raw }}
+            <div class="modal-body">
+                <div class="form-group" style="margin-bottom: var(--space-400);">
+                    <label class="form-label">Upload ZIP File</label>
+                    <input type="file" name="plugin_zip" accept=".zip" class="form-control">
+                    <small class="form-hint">Upload a plugin .zip archive (max 50 MB).</small>
+                </div>
+
+                <div class="divider-text" style="text-align: center; margin: 20px 0; color: var(--text-secondary); font-size: 0.85rem;">
+                    <span style="background: var(--bg-surface); padding: 0 12px;">or</span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Install from URL</label>
+                    <input type="url" name="download_url" placeholder="https://example.com/plugin.zip" class="form-control">
+                    <small class="form-hint">Enter a direct HTTPS link to the plugin ZIP.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" onclick="document.getElementById('uploadModal').close()" class="btn btn-outline">Cancel</button>
+                <button type="submit" class="btn btn-primary">Install Plugin</button>
+            </div>
+        </form>
+    </div>
+</dialog>
+{% endblock %}
+
+{% block styles %}
+<style nonce="{{ csp_nonce() }}">
+/* Toolbar */
+.plugin-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.plugin-tabs {
+    display: flex;
+    gap: 4px;
+}
+.plugin-tab {
+    padding: 6px 14px;
+    border-radius: var(--radius-200, 6px);
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: all 0.15s ease;
+}
+.plugin-tab:hover {
+    background: var(--bg-subdued, #f5f5f5);
+    color: var(--text-primary);
+}
+.plugin-tab.active {
+    background: var(--color-primary, #111);
+    color: #fff;
+}
+.tab-count {
+    font-size: 0.75rem;
+    opacity: 0.7;
+    margin-left: 2px;
+}
+.plugin-search {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+/* Grid */
+.plugin-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: var(--space-400, 16px);
+}
+
+/* Card */
+.plugin-card {
+    background: var(--bg-surface, #fff);
+    border-radius: var(--radius-200, 6px);
+    box-shadow: var(--shadow-card, 0 1px 3px rgba(0,0,0,0.08));
+    border: 1px solid var(--border-color, #e5e5e5);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.plugin-card:hover {
+    box-shadow: var(--shadow-card-hover, 0 4px 12px rgba(0,0,0,0.1));
+}
+.plugin-card.plugin-active {
+    border-left: 3px solid var(--color-success, #047B5D);
+}
+.plugin-card.plugin-inactive {
+    border-left: 3px solid var(--border-color, #e5e5e5);
+}
+
+.plugin-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 16px 0;
+}
+.plugin-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-200, 6px);
+    background: var(--bg-subdued, #f5f5f5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+.plugin-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: var(--radius-200, 6px);
+}
+
+.plugin-card-body {
+    padding: 12px 16px;
+    flex: 1;
+}
+.plugin-name {
+    margin: 0 0 4px;
+    font-size: 1rem;
+    font-weight: 600;
+}
+.plugin-meta {
+    display: flex;
+    gap: 8px;
+    font-size: 0.75rem;
+    color: var(--text-disabled, #999);
+    margin-bottom: 8px;
+}
+.plugin-meta span:not(:last-child)::after {
+    content: "\00b7";
+    margin-left: 8px;
+}
+.plugin-desc {
+    font-size: var(--font-size-sm, 0.8125rem);
+    color: var(--text-secondary, #616161);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.plugin-card-footer {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border-color, #e5e5e5);
+}
+.plugin-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* Badges */
+.badge-success {
+    background: var(--color-success, #047B5D);
+    color: #fff;
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-weight: 500;
+}
+.badge-muted {
+    background: var(--bg-subdued, #f0f0f0);
+    color: var(--text-secondary, #666);
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-weight: 500;
+}
+
+/* Danger outline button */
+.btn-danger-outline {
+    color: var(--color-danger, #dc3545);
+    border: 1px solid var(--color-danger, #dc3545);
+    background: transparent;
+}
+.btn-danger-outline:hover {
+    background: var(--color-danger, #dc3545);
+    color: #fff;
+}
+
+/* Modal (dialog) */
+.modal {
+    border: none;
+    border-radius: var(--radius-300, 8px);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    padding: 0;
+    max-width: 520px;
+    width: 90vw;
+}
+.modal::backdrop {
+    background: rgba(0,0,0,0.5);
+}
+.modal-content {
+    display: flex;
+    flex-direction: column;
+}
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px 0;
+}
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.125rem;
+}
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+    padding: 0 4px;
+    line-height: 1;
+}
+.modal-body {
+    padding: 20px 24px;
+}
+.modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border-color, #e5e5e5);
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+/* Divider */
+.divider-text {
+    position: relative;
+}
+.divider-text::before {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; top: 50%;
+    height: 1px;
+    background: var(--border-color, #e5e5e5);
+}
+.divider-text span {
+    position: relative;
+    z-index: 1;
+}
+
+/* Alert */
+.alert-success {
+    background: rgba(4,123,93,0.08);
+    border: 1px solid rgba(4,123,93,0.2);
+    border-radius: var(--radius-200, 6px);
+    padding: 12px 16px;
+    color: #047B5D;
+    font-size: 0.875rem;
+}
+.alert-danger {
+    background: rgba(220,53,69,0.08);
+    border: 1px solid rgba(220,53,69,0.2);
+    border-radius: var(--radius-200, 6px);
+    padding: 12px 16px;
+    color: #721c24;
+    font-size: 0.875rem;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .plugin-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .plugin-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}

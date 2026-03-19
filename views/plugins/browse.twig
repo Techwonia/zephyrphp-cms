@@ -1,0 +1,147 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Browse Plugins{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/cms">Dashboard</a> / <a href="/cms/plugins">Plugins</a> / Browse
+</div>
+
+<div class="page-header">
+    <h1>Browse Plugins</h1>
+    <div class="page-actions">
+        <a href="/cms/plugins" class="btn btn-outline">Back to Installed</a>
+    </div>
+</div>
+
+{# Search #}
+<div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card-body">
+        <form method="GET" action="/cms/plugins/browse" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 200px;">
+                <input type="text" name="search" value="{{ search }}" placeholder="Search plugins..." class="form-control">
+            </div>
+            <select name="sort" class="form-control" style="width: auto; min-width: 120px;">
+                <option value="popular" {{ sort == 'popular' ? 'selected' : '' }}>Most Popular</option>
+                <option value="newest" {{ sort == 'newest' ? 'selected' : '' }}>Newest</option>
+                <option value="rating" {{ sort == 'rating' ? 'selected' : '' }}>Top Rated</option>
+                <option value="name" {{ sort == 'name' ? 'selected' : '' }}>Name A-Z</option>
+            </select>
+            <button type="submit" class="btn btn-primary">Search</button>
+        </form>
+    </div>
+</div>
+
+{% if items|length > 0 %}
+<div class="browse-grid">
+    {% for item in items %}
+    <div class="browse-card">
+        <div class="browse-preview">
+            {% if item.preview_image is defined and item.preview_image %}
+                <img src="{{ item.preview_image }}" alt="{{ item.name }}" loading="lazy">
+            {% else %}
+                <div class="browse-preview-placeholder">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>
+                    </svg>
+                </div>
+            {% endif %}
+        </div>
+        <div class="browse-info">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                <h3 style="margin: 0; font-size: 0.95rem; font-weight: 600;">{{ item.name }}</h3>
+                <span class="badge badge-plugin">Plugin</span>
+            </div>
+            <p style="font-size: 0.8125rem; color: var(--text-secondary); margin: 4px 0 8px;">
+                {{ (item.description|default(''))|slice(0, 100) }}{% if (item.description|default(''))|length > 100 %}...{% endif %}
+            </p>
+            <div style="display: flex; gap: 12px; font-size: 0.75rem; color: var(--text-disabled); margin-bottom: 8px;">
+                {% if item.seller_name is defined %}<span>{{ item.seller_name }}</span>{% endif %}
+                {% if item.downloads is defined %}<span>{{ item.downloads }} downloads</span>{% endif %}
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 8px; border-top: 1px solid var(--border-color, #e5e5e5);">
+                <span style="font-weight: 600; font-size: 0.9rem;{% if item.pricing is defined and item.pricing == 'free' %} color: var(--color-success, #047B5D);{% endif %}">
+                    {{ item.price|default('Free') }}
+                </span>
+                {% if item.slug in installedSlugs %}
+                    <span class="badge badge-muted">Installed</span>
+                {% else %}
+                    <form method="POST" action="/cms/plugins/install" style="display: inline;">
+                        {{ csrf_field() | raw }}
+                        <input type="hidden" name="download_url" value="{{ item.download_url|default('') }}">
+                        <button type="submit" class="btn btn-sm btn-primary">Install</button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body empty-state" style="text-align: center; padding: 60px 20px;">
+        <h3 style="margin: 0 0 8px;">No plugins found</h3>
+        <p style="color: var(--text-secondary); margin: 0;">
+            {% if search %}
+                No marketplace plugins match "{{ search }}". Try a different search term.
+            {% else %}
+                The marketplace is currently empty. Check back later for new plugins.
+            {% endif %}
+        </p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block styles %}
+<style nonce="{{ csp_nonce() }}">
+.browse-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-400, 16px);
+}
+.browse-card {
+    background: var(--bg-surface, #fff);
+    border-radius: var(--radius-200, 6px);
+    box-shadow: var(--shadow-card, 0 1px 3px rgba(0,0,0,0.08));
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+}
+.browse-card:hover {
+    box-shadow: var(--shadow-card-hover, 0 3px 6px rgba(0,0,0,0.15));
+}
+.browse-preview {
+    height: 140px;
+    background: var(--bg-subdued, #f5f5f5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+.browse-preview img {
+    width: 100%; height: 100%; object-fit: cover;
+}
+.browse-preview-placeholder {
+    color: var(--text-disabled, #b5b5b5);
+}
+.browse-info {
+    padding: 12px 16px;
+}
+.badge-plugin {
+    background: rgba(0,123,255,0.1);
+    color: #0056b3;
+    border: 1px solid rgba(0,123,255,0.2);
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: var(--radius-200, 4px);
+}
+.badge-muted {
+    background: var(--bg-subdued, #f0f0f0);
+    color: var(--text-secondary, #666);
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-weight: 500;
+}
+</style>
+{% endblock %}

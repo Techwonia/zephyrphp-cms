@@ -45,11 +45,14 @@ use ZephyrPHP\Cms\Controllers\CacheSettingsController;
 use ZephyrPHP\Cms\Controllers\PermissionBuilderController;
 use ZephyrPHP\Cms\Controllers\ErrorPageController;
 use ZephyrPHP\Cms\Controllers\WorkflowVisualizerController;
+use ZephyrPHP\Cms\Controllers\AnalyticsDashboardController;
 use ZephyrPHP\Cms\Controllers\ApiAnalyticsController;
 use ZephyrPHP\Cms\Controllers\QueueMonitorController;
 use ZephyrPHP\Cms\Controllers\SystemMonitorController;
 use ZephyrPHP\Cms\Controllers\ThemeAssetController;
 use ZephyrPHP\Cms\Controllers\ThemeCodeEditorController;
+use ZephyrPHP\Cms\Controllers\PluginController;
+use ZephyrPHP\Cms\Controllers\SearchController;
 
 // CMS Admin Routes (protected by auth middleware)
 Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMiddleware::class]], function () {
@@ -230,6 +233,15 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     Route::get('/marketplace/{slug}', [MarketplaceController::class, 'show']);
     Route::post('/marketplace/{slug}/install', [MarketplaceController::class, 'install']);
 
+    // Plugins
+    Route::get('/plugins', [PluginController::class, 'index']);
+    Route::get('/plugins/browse', [PluginController::class, 'browse']);
+    Route::post('/plugins/install', [PluginController::class, 'install']);
+    Route::get('/plugins/{slug}/settings', [PluginController::class, 'settings']);
+    Route::post('/plugins/{slug}/settings', [PluginController::class, 'saveSettings']);
+    Route::post('/plugins/{slug}/uninstall', [PluginController::class, 'uninstall']);
+    Route::post('/plugins/{slug}/toggle', [PluginController::class, 'toggle']);
+
     // AI Builder
     Route::get('/ai-builder', [AiBuilderController::class, 'index']);
     Route::post('/ai-builder/generate', [AiBuilderController::class, 'generatePage']);
@@ -317,6 +329,10 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     Route::post('/system/translations/update', [TranslationManagerController::class, 'update']);
     Route::post('/system/translations/add-key', [TranslationManagerController::class, 'addKey']);
     Route::post('/system/translations/create-group', [TranslationManagerController::class, 'createGroup']);
+    Route::post('/system/translations/create-locale', [TranslationManagerController::class, 'createLocale']);
+    Route::get('/system/translations/export', [TranslationManagerController::class, 'export']);
+    Route::post('/system/translations/import', [TranslationManagerController::class, 'import']);
+    Route::post('/system/translations/delete-key', [TranslationManagerController::class, 'deleteKey']);
 
     // Scheduled Tasks
     Route::get('/system/scheduled-tasks', [ScheduledTaskController::class, 'index']);
@@ -363,8 +379,16 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     Route::post('/settings/error-pages/fields/add', [ErrorPageController::class, 'addField']);
     Route::get('/settings/error-pages/preview/{code}', [ErrorPageController::class, 'preview']);
 
-    // Workflow Visualizer
+    // Workflow Builder
     Route::get('/system/workflow', [WorkflowVisualizerController::class, 'index']);
+    Route::post('/system/workflow/enable', [WorkflowVisualizerController::class, 'enable']);
+    Route::post('/system/workflow/disable', [WorkflowVisualizerController::class, 'disable']);
+    Route::post('/system/workflow/save-stages', [WorkflowVisualizerController::class, 'saveStages']);
+    Route::post('/system/workflow/save-reviewers', [WorkflowVisualizerController::class, 'saveReviewers']);
+
+    // Site Analytics Dashboard
+    Route::get('/analytics', [AnalyticsDashboardController::class, 'index']);
+    Route::get('/analytics/data', [AnalyticsDashboardController::class, 'data']);
 
     // API Analytics
     Route::get('/system/api-analytics', [ApiAnalyticsController::class, 'index']);
@@ -379,6 +403,9 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
     // System Monitor
     Route::get('/system/monitor', [SystemMonitorController::class, 'index']);
     Route::get('/system/monitor/stats', [SystemMonitorController::class, 'stats']);
+
+    // Global Search
+    Route::get('/search', [SearchController::class, 'search']);
 });
 
 

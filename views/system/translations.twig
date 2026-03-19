@@ -7,8 +7,11 @@
     <a href="/cms">Dashboard</a> / System / Translations
 </div>
 
-<div class="page-header">
+<div class="page-header" style="display: flex; align-items: center; justify-content: space-between;">
     <h1>Translation Manager</h1>
+    <div style="display: flex; gap: var(--space-200);">
+        <a href="/cms/system/translations/progress" class="btn btn-outline btn-sm">Translation Progress</a>
+    </div>
 </div>
 
 {# Locale & Group Selector #}
@@ -54,8 +57,9 @@
     </div>
 </div>
 
-{# Create New Group #}
-<div style="display: flex; gap: var(--space-400); margin-bottom: var(--space-500);">
+{# Actions Row: Create Group, Create Locale, Export, Import #}
+<div style="display: flex; gap: var(--space-400); margin-bottom: var(--space-500); flex-wrap: wrap; align-items: flex-end;">
+    {# Create Group #}
     <form method="POST" action="/cms/system/translations/create-group" style="display: flex; gap: var(--space-200); align-items: flex-end;">
         {{ csrf_field() | raw }}
         <input type="hidden" name="locale" value="{{ selectedLocale }}">
@@ -65,6 +69,35 @@
         </div>
         <button type="submit" class="btn btn-outline btn-sm">Create Group</button>
     </form>
+
+    {# Create Locale #}
+    <form method="POST" action="/cms/system/translations/create-locale" style="display: flex; gap: var(--space-200); align-items: flex-end;">
+        {{ csrf_field() | raw }}
+        <div>
+            <label class="form-label">New Locale</label>
+            <input type="text" name="new_locale" class="form-control" placeholder="e.g. fr, pt-BR" pattern="[a-z]{2}(-[A-Z]{2})?" required style="width: 120px;">
+        </div>
+        <button type="submit" class="btn btn-outline btn-sm">Create Locale</button>
+    </form>
+
+    {# Export #}
+    {% if selectedLocale %}
+    <div style="display: flex; gap: var(--space-200); align-items: flex-end;">
+        <div>
+            <label class="form-label">Export ({{ selectedLocale }})</label>
+            <div style="display: flex; gap: var(--space-100);">
+                <a href="/cms/system/translations/export?locale={{ selectedLocale }}&format=json" class="btn btn-outline btn-sm">JSON</a>
+                <a href="/cms/system/translations/export?locale={{ selectedLocale }}&format=csv" class="btn btn-outline btn-sm">CSV</a>
+            </div>
+        </div>
+    </div>
+
+    {# Import #}
+    <div>
+        <label class="form-label">Import to {{ selectedLocale }}</label>
+        <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('importModal').style.display='flex'">Import File</button>
+    </div>
+    {% endif %}
 </div>
 
 {# Translation Editor #}
@@ -84,11 +117,12 @@
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th style="width: 35%;">Key</th>
+                            <th style="width: 30%;">Key</th>
                             <th>Value ({{ selectedLocale }})</th>
                             {% if compareLocale %}
                             <th>Value ({{ compareLocale }})</th>
                             {% endif %}
+                            <th style="width: 50px;"></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -103,9 +137,22 @@
                             </td>
                             {% if compareLocale %}
                             <td style="font-size: 0.85rem; color: var(--text-secondary);">
-                                {{ compareTranslations[key] is defined ? compareTranslations[key] : '—' }}
+                                {% if compareTranslations[key] is defined %}
+                                    {{ compareTranslations[key] }}
+                                {% else %}
+                                    <span style="color: var(--color-critical); font-size: 0.75rem;">Missing</span>
+                                {% endif %}
                             </td>
                             {% endif %}
+                            <td>
+                                <form method="POST" action="/cms/system/translations/delete-key" style="margin:0;">
+                                    {{ csrf_field() | raw }}
+                                    <input type="hidden" name="locale" value="{{ selectedLocale }}">
+                                    <input type="hidden" name="group" value="{{ selectedGroup }}">
+                                    <input type="hidden" name="key" value="{{ key }}">
+                                    <button type="submit" class="btn btn-outline btn-sm" style="color: var(--color-critical); padding: 2px 6px;" title="Delete key" onclick="return confirm('Delete key {{ key }}?')">&times;</button>
+                                </form>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -148,7 +195,7 @@
 {% elseif locales|length == 0 %}
 <div class="empty-state">
     <h3>No locales found</h3>
-    <p>Create a <code>lang/</code> directory with locale subdirectories (e.g. <code>lang/en/</code>) to get started.</p>
+    <p>Create a locale above or add a <code>lang/</code> directory with locale subdirectories (e.g. <code>lang/en/</code>) to get started.</p>
 </div>
 {% else %}
 <div class="empty-state">
@@ -157,4 +204,53 @@
 </div>
 {% endif %}
 
+{# Import Modal #}
+<div id="importModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; align-items: center; justify-content: center;">
+    <div class="card" style="max-width: 450px; width: 100%;">
+        <div class="card-header" style="display: flex; align-items: center; justify-content: space-between;">
+            <h3 style="margin: 0; font-size: 1rem;">Import Translations</h3>
+            <button type="button" onclick="document.getElementById('importModal').style.display='none'" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-secondary);">&times;</button>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="/cms/system/translations/import" enctype="multipart/form-data">
+                {{ csrf_field() | raw }}
+                <input type="hidden" name="locale" value="{{ selectedLocale }}">
+
+                <div style="margin-bottom: var(--space-400);">
+                    <label class="form-label">File (JSON or CSV)</label>
+                    <input type="file" name="file" class="form-control" accept=".json,.csv" required>
+                    <span style="font-size: 0.75rem; color: var(--text-secondary);">
+                        JSON format: <code>{"group": {"key": "value"}}</code><br>
+                        CSV format: <code>group,key,value</code> (with header row)
+                    </span>
+                </div>
+
+                <div style="margin-bottom: var(--space-400);">
+                    <label class="form-label">Import Mode</label>
+                    <select name="mode" class="form-control">
+                        <option value="merge">Merge (keep existing, add/update new)</option>
+                        <option value="overwrite">Overwrite (replace group contents)</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; gap: var(--space-200); justify-content: flex-end;">
+                    <button type="button" class="btn btn-outline" onclick="document.getElementById('importModal').style.display='none'">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Import</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ csp_nonce() }}">
+// Close modal on backdrop click
+var importModal = document.getElementById('importModal');
+if (importModal) {
+    importModal.addEventListener('click', function(e) {
+        if (e.target === this) this.style.display = 'none';
+    });
+}
+</script>
 {% endblock %}

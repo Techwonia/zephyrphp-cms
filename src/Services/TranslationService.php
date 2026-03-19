@@ -222,10 +222,10 @@ class TranslationService
             return $segments[0];
         }
 
-        // 3. Accept-Language header
+        // 3. Accept-Language header (limit length to prevent DoS)
         $acceptLanguage = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
-        if (!empty($acceptLanguage)) {
-            $preferred = self::parseAcceptLanguage($acceptLanguage);
+        if (!empty($acceptLanguage) && strlen($acceptLanguage) <= 2000) {
+            $preferred = array_slice(self::parseAcceptLanguage($acceptLanguage), 0, 10);
             foreach ($preferred as $lang) {
                 if (self::isValidLocale($lang)) {
                     return $lang;

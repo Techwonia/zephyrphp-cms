@@ -22,6 +22,10 @@ class WorkflowVisualizerController extends Controller
         'rejected'  => 'red',
     ];
 
+    private const AVAILABLE_COLORS = [
+        'gray', 'yellow', 'blue', 'green', 'red', 'purple', 'orange', 'teal', 'pink', 'indigo',
+    ];
+
     private function requirePermission(string $permission): void
     {
         if (!Auth::check()) {
@@ -90,6 +94,8 @@ class WorkflowVisualizerController extends Controller
                 }
             }
 
+            $reviewers = $collection->getWorkflowReviewers();
+
             $workflowCollections[] = [
                 'name'       => $collection->getName(),
                 'slug'       => $collection->getSlug(),
@@ -97,8 +103,12 @@ class WorkflowVisualizerController extends Controller
                 'stages'     => $stageData,
                 'total'      => $totalEntries,
                 'bottleneck' => $bottleneckStage,
+                'reviewers'  => $reviewers,
             ];
         }
+
+        // Get all collections (for the "enable workflow" dropdown)
+        $allCollections = Collection::findAll();
 
         // Get recent transitions (last 20)
         $recentTransitions = WorkflowTransition::findBy(
@@ -126,11 +136,193 @@ class WorkflowVisualizerController extends Controller
             ];
         }
 
+        // Get all users for reviewer assignment
+        $users = [];
+        try {
+            $userModel = '\\ZephyrPHP\\Auth\\Models\\User';
+            if (class_exists($userModel)) {
+                $allUsers = $userModel::findAll();
+                foreach ($allUsers as $u) {
+                    $users[] = [
+                        'id'   => $u->getId(),
+                        'name' => $u->getName(),
+                    ];
+                }
+            }
+        } catch (\Exception $e) {
+            // Users unavailable
+        }
+
         return $this->render('cms::system/workflow-visualizer', [
-            'collections'  => $workflowCollections,
-            'transitions'  => $transitions,
-            'stageColors'  => self::STAGE_COLORS,
-            'user'         => Auth::user(),
+            'collections'     => $workflowCollections,
+            'allCollections'  => $allCollections,
+            'transitions'     => $transitions,
+            'stageColors'     => self::STAGE_COLORS,
+            'availableColors' => self::AVAILABLE_COLORS,
+            'users'           => $users,
+            'user'            => Auth::user(),
         ]);
+    }
+
+    /**
+     * Enable workflow on a collection.
+     */
+    public function enable(): void
+    {
+        $this->requirePermission('entries.edit');
+
+        $slug = $this->input('slug', '');
+        if ($slug === '' || !preg_match('/^[a-z0-9_-]+$/', $slug)) {
+            $this->flash('errors', ['Invalid collection.']);
+            $this->redirect('/cms/system/workflow');
+            return;
+        }
+
+        $collection = Collection::findOneBy(['slug' => $slug]);
+        if (!$collection) {
+            $this->flash('errors', ['Collection not found.']);
+            $this->redirect('/cms/system/workflow');
+            return;
+        }
+
+        $collection->setWorkflowEnabled(true);
+
+        // Set default stages if none exist
+        if (empty($collection->getWorkflowStages())) {
+            $collection->setWorkflowStages(['draft', 'review', 'approved', 'published']);
+        }
+
+        $collection->save();
+
+        $this->flash('success', "Workflow enabled for '{$collection->getName()}'.");
+        $this->redirect('/cms/system/workflow');
+    }
+
+    /**
+     * Disable workflow on a collection.
+     */
+    public function disable(): void
+    {
+        $this->requirePermission('entries.edit');
+
+        $slug = $this->input('slug', '');
+        if ($slug === '' || !preg_match('/^[a-z0-9_-]+$/', $slug)) {
+            $this->flash('errors', ['Invalid collection.']);
+            $this->redirect('/cms/system/workflow');
+            return;
+        }
+
+        $collection = Collection::findOneBy(['slug' => $slug]);
+        if (!$collection) {
+            $this->flash('errors', ['Collection not found.']);
+            $this->redirect('/cms/system/workflow');
+            return;
+        }
+
+        $collection->setWorkflowEnabled(false);
+        $collection->save();
+
+        $this->flash('success', "Workflow disabled for '{$collection->getName()}'.");
+        $this->redirect('/cms/system/workflow');
+    }
+
+    /**
+     * Save workflow stages configuration for a collection.
+     */
+    public function saveStages(): void
+    {
+        $this->requirePermission('entries.edit');
+
+        $slug = $this->input('slug', '');
+        if ($slug === '' || !preg_match('/^[a-z0-9_-]+$/', $slug)) {
+            $this->flash('errors', ['Invalid collection.']);
+            $this->redirect('/cms/system/workflow');
+            return;
+        }
+
+        $collection = Collection::findOneBy(['slug' => $slug]);
+        if (!$collection || !$collection->isWorkflowEnabled()) {
+            $this->flash('errors', ['Collection not found or workflow not enabled.']);
+            $this->redirect('/cms/system/workflow');
+            return;
+        }
+
+        $stagesInput = $this->input('stages', []);
+        if (!is_array($stagesInput) || empty($stagesInput)) {
+            $this->flash('errors', ['At least one stage is required.']);
+            $this->redirect('/cms/system/workflow');
+            return;
+        }
+
+        // Validate and sanitize stage names
+        $stages = [];
+        foreach ($stagesInput as $stage) {
+            $stage = trim((string) $stage);
+            // Only allow alphanumeric, underscores, hyphens
+            $stage = preg_replace('/[^a-z0-9_-]/', '', strtolower($stage));
+            if ($stage !== '' && !in_array($stage, $stages, true)) {
+                $stages[] = $stage;
+            }
+        }
+
+        if (count($stages) < 2) {
+            $this->flash('errors', ['At least 2 unique stages are required.']);
+            $this->redirect('/cms/system/workflow');
+            return;
+        }
+
+        if (count($stages) > 20) {
+            $this->flash('errors', ['Maximum 20 stages allowed.']);
+            $this->redirect('/cms/system/workflow');
+            return;
+        }
+
+        $collection->setWorkflowStages($stages);
+        $collection->save();
+
+        $this->flash('success', "Workflow stages updated for '{$collection->getName()}'.");
+        $this->redirect('/cms/system/workflow');
+    }
+
+    /**
+     * Save reviewer assignments for workflow stages.
+     */
+    public function saveReviewers(): void
+    {
+        $this->requirePermission('entries.edit');
+
+        $slug = $this->input('slug', '');
+        if ($slug === '' || !preg_match('/^[a-z0-9_-]+$/', $slug)) {
+            $this->flash('errors', ['Invalid collection.']);
+            $this->redirect('/cms/system/workflow');
+            return;
+        }
+
+        $collection = Collection::findOneBy(['slug' => $slug]);
+        if (!$collection || !$collection->isWorkflowEnabled()) {
+            $this->flash('errors', ['Collection not found or workflow not enabled.']);
+            $this->redirect('/cms/system/workflow');
+            return;
+        }
+
+        $reviewersInput = $this->input('reviewers', []);
+        if (!is_array($reviewersInput)) {
+            $reviewersInput = [];
+        }
+
+        // Sanitize: reviewers is keyed by stage name, value is array of user IDs (ints)
+        $stages = $collection->getWorkflowStages();
+        $reviewers = [];
+        foreach ($stages as $stage) {
+            if (isset($reviewersInput[$stage]) && is_array($reviewersInput[$stage])) {
+                $reviewers[$stage] = array_map('intval', array_filter($reviewersInput[$stage], 'is_numeric'));
+            }
+        }
+
+        $collection->setWorkflowReviewers($reviewers);
+        $collection->save();
+
+        $this->flash('success', "Reviewers updated for '{$collection->getName()}'.");
+        $this->redirect('/cms/system/workflow');
     }
 }

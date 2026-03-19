@@ -7,6 +7,7 @@ namespace ZephyrPHP\Cms\Controllers;
 use ZephyrPHP\Core\Controllers\Controller;
 use ZephyrPHP\Cms\Models\Collection;
 use ZephyrPHP\Cms\Services\SchemaManager;
+use ZephyrPHP\Cms\Services\EntryQuery;
 use ZephyrPHP\Cms\Services\NotificationService;
 use ZephyrPHP\Security\Csrf;
 
@@ -92,11 +93,8 @@ class PublicSubmitController extends Controller
             $data['status'] = 'draft'; // Public submissions default to draft
         }
 
-        // Insert entry
-        $entryId = $this->schema->insertEntry($tableName, $data, $collection->isUuid());
-
-        // Invalidate collection cache
-        cms_invalidate_cache($collection->getSlug());
+        // Insert entry (EntryQuery handles cache invalidation)
+        $entryId = EntryQuery::collection($slug)->create($data);
 
         // Record rate limit hit
         if ($rateLimit > 0) {
@@ -247,47 +245,109 @@ class PublicSubmitController extends Controller
     }
 
 
+    /**
+     * Check rate limit using cache (IP-based, not session-based).
+     * Falls back to file-based tracking if cache is unavailable.
+     */
     private function checkRateLimit(string $slug, string $ip, int $limit): ?string
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
+        $ip = $this->resolveClientIp();
+        $key = "submit_rate:{$slug}:" . md5($ip);
+
+        // Try cache-based rate limiting first (preferred — IP-bound, not session-bound)
+        try {
+            $cache = \ZephyrPHP\Cache\CacheManager::getInstance();
+            $current = (int) $cache->get($key, 0);
+
+            if ($current >= $limit) {
+                return 'Too many submissions. Please try again later.';
+            }
+            return null;
+        } catch (\Exception $e) {
+            // Cache unavailable — use file-based fallback
         }
 
-        $key = "rate_limit_{$slug}_{$ip}";
-        $data = $_SESSION[$key] ?? null;
+        // File-based fallback (more reliable than sessions for rate limiting)
+        $rateLimitDir = (defined('BASE_PATH') ? BASE_PATH : '.') . '/storage/rate_limits';
+        if (!is_dir($rateLimitDir)) {
+            @mkdir($rateLimitDir, 0755, true);
+        }
 
-        if ($data) {
-            $windowStart = $data['window_start'] ?? 0;
-            $count = $data['count'] ?? 0;
-
-            // Reset if window expired (1 hour)
-            if (time() - $windowStart > 3600) {
-                unset($_SESSION[$key]);
-                return null;
-            }
-
-            if ($count >= $limit) {
-                return 'Too many submissions. Please try again later.';
+        $file = $rateLimitDir . '/' . md5($key) . '.json';
+        if (file_exists($file)) {
+            $data = json_decode(file_get_contents($file), true);
+            if ($data && (time() - ($data['start'] ?? 0)) <= 3600) {
+                if (($data['count'] ?? 0) >= $limit) {
+                    return 'Too many submissions. Please try again later.';
+                }
             }
         }
 
         return null;
     }
 
+    /**
+     * Record a rate limit hit using cache or file-based fallback.
+     */
     private function recordRateLimit(string $slug, string $ip): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
+        $ip = $this->resolveClientIp();
+        $key = "submit_rate:{$slug}:" . md5($ip);
+
+        // Try cache first
+        try {
+            $cache = \ZephyrPHP\Cache\CacheManager::getInstance();
+            $current = (int) $cache->get($key, 0);
+            $cache->set($key, $current + 1, 3600);
+            return;
+        } catch (\Exception $e) {
+            // Cache unavailable — use file-based fallback
         }
 
-        $key = "rate_limit_{$slug}_{$ip}";
-        $data = $_SESSION[$key] ?? null;
+        // File-based fallback
+        $rateLimitDir = (defined('BASE_PATH') ? BASE_PATH : '.') . '/storage/rate_limits';
+        if (!is_dir($rateLimitDir)) {
+            @mkdir($rateLimitDir, 0755, true);
+        }
 
-        if ($data && (time() - ($data['window_start'] ?? 0)) <= 3600) {
-            $_SESSION[$key]['count'] = ($data['count'] ?? 0) + 1;
+        $file = $rateLimitDir . '/' . md5($key) . '.json';
+        $data = null;
+        if (file_exists($file)) {
+            $data = json_decode(file_get_contents($file), true);
+        }
+
+        if ($data && (time() - ($data['start'] ?? 0)) <= 3600) {
+            $data['count'] = ($data['count'] ?? 0) + 1;
         } else {
-            $_SESSION[$key] = ['window_start' => time(), 'count' => 1];
+            $data = ['start' => time(), 'count' => 1];
         }
+
+        file_put_contents($file, json_encode($data), LOCK_EX);
+    }
+
+    /**
+     * Resolve the real client IP, handling proxies safely.
+     */
+    private function resolveClientIp(): string
+    {
+        // Prefer Cloudflare's connecting IP (cannot be spoofed if behind CF)
+        $ip = $_SERVER['HTTP_CF_CONNECTING_IP']
+            ?? $_SERVER['HTTP_X_FORWARDED_FOR']
+            ?? $_SERVER['HTTP_X_REAL_IP']
+            ?? $_SERVER['REMOTE_ADDR']
+            ?? '0.0.0.0';
+
+        // Use first IP if X-Forwarded-For contains multiple
+        if (str_contains($ip, ',')) {
+            $ip = trim(explode(',', $ip)[0]);
+        }
+
+        // Validate IP format
+        if (!filter_var($ip, FILTER_VALIDATE_IP)) {
+            $ip = '0.0.0.0';
+        }
+
+        return $ip;
     }
 
     private function sendNotification(Collection $collection, array $data, string $to): void

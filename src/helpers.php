@@ -3,6 +3,7 @@
 use ZephyrPHP\Cms\Models\Collection;
 use ZephyrPHP\Cms\Models\Field;
 use ZephyrPHP\Cms\Services\SchemaManager;
+use ZephyrPHP\Cms\Services\EntryQuery;
 use ZephyrPHP\Cms\Services\TranslationService;
 use ZephyrPHP\Cache\CacheManager;
 
@@ -10,111 +11,58 @@ if (!function_exists('collection')) {
     /**
      * Query collection/page type entries.
      *
+     * Delegates to EntryQuery for all query logic, caching, and relation resolution.
+     *
      * @param string $slug Collection slug
-     * @param array  $options Options: per_page, page, sort_by, sort_dir, filters, search, searchFields, resolve_depth
+     * @param array  $options Options: per_page, page, sort_by, sort_dir, filters, search, searchFields, resolve_depth, locale, no_cache
      * @return array{data: array, total: int, per_page: int, current_page: int, last_page: int}
      */
     function collection(string $slug, array $options = []): array
     {
         $emptyResult = ['data' => [], 'total' => 0, 'per_page' => 10, 'current_page' => 1, 'last_page' => 1];
+
         try {
-            // Cache frontend queries (60s TTL). Skip cache if 'no_cache' option is set.
-            $useCache = empty($options['no_cache']);
-            unset($options['no_cache']);
+            $query = EntryQuery::collection($slug);
 
-            if ($useCache && class_exists(CacheManager::class)) {
-                $cacheKey = 'cms.collection.' . $slug . '.' . md5(serialize($options));
-                try {
-                    $cache = CacheManager::getInstance();
-                    $cached = $cache->get($cacheKey);
-                    if ($cached !== null) {
-                        return $cached;
-                    }
-                } catch (\Throwable $e) {
-                    // Cache unavailable, continue without it
+            // Cache control
+            if (!empty($options['no_cache'])) {
+                $query->noCache();
+            }
+
+            // Sorting
+            $sortBy = $options['sort_by'] ?? 'id';
+            $sortDir = $options['sort_dir'] ?? 'DESC';
+            $query->orderBy($sortBy, $sortDir);
+
+            // Filters
+            if (!empty($options['filters'])) {
+                foreach ($options['filters'] as $field => $value) {
+                    $query->where($field, $value);
                 }
             }
 
-            $schema = new SchemaManager();
-            $tableName = null;
-            $defaultPerPage = 10;
-            $fields = [];
-
-            $coll = Collection::findOneBy(['slug' => $slug]);
-            if ($coll) {
-                $tableName = $coll->getTableName();
-                $fields = $coll->getFields()->toArray();
+            // Search
+            if (!empty($options['search'])) {
+                $searchFields = $options['searchFields'] ?? null;
+                $query->search($options['search'], $searchFields);
             }
 
-            if (!$tableName || !$schema->tableExists($tableName)) {
-                return $emptyResult;
-            }
-
-            if (!isset($options['filters'])) {
-                $options['filters'] = [];
-            }
-
-            if (isset($options['per_page'])) {
-                $options['per_page'] = (int) $options['per_page'];
-            } else {
-                $options['per_page'] = $defaultPerPage;
-            }
-
-            if (!isset($options['sort_by'])) {
-                $options['sort_by'] = 'id';
-            }
-            if (!isset($options['sort_dir'])) {
-                $options['sort_dir'] = 'DESC';
-            }
-
-            if (!isset($options['page'])) {
-                $options['page'] = max(1, (int) ($_GET['page'] ?? 1));
-            }
-
-            // Auto-populate searchFields when search is provided but searchFields is not
-            if (!empty($options['search']) && empty($options['searchFields']) && !empty($fields)) {
-                $searchableTypes = ['text', 'textarea', 'richtext', 'email', 'url', 'slug'];
-                $searchFields = [];
-                foreach ($fields as $field) {
-                    if (in_array($field->getType(), $searchableTypes)) {
-                        $searchFields[] = $field->getSlug();
-                    }
-                }
-                // Also include slug column if table has it
-                if (!in_array('slug', $searchFields)) {
-                    $searchFields[] = 'slug';
-                }
-                if (!empty($searchFields)) {
-                    $options['searchFields'] = $searchFields;
-                }
-            }
-
+            // Relation resolution
             $depth = isset($options['resolve_depth']) ? (int) $options['resolve_depth'] : 1;
-            unset($options['resolve_depth']);
-
-            $result = $schema->listEntries($tableName, $options);
-
-            // Resolve relation fields
-            if ($depth > 0 && !empty($result['data']) && !empty($fields)) {
-                $result['data'] = _cms_resolve_relations($result['data'], $fields, $tableName, $schema, $depth);
+            if ($depth > 0) {
+                $query->withRelations($depth);
             }
 
-            // Apply locale translations if requested
-            $locale = $options['locale'] ?? null;
-            if ($locale && $coll && $coll->isTranslatable() && !empty($result['data'])) {
-                $result['data'] = TranslationService::resolveEntries($result['data'], $tableName, $locale);
+            // Locale
+            if (!empty($options['locale'])) {
+                $query->locale($options['locale']);
             }
 
-            // Cache the result
-            if ($useCache && isset($cache, $cacheKey)) {
-                try {
-                    $cache->set($cacheKey, $result, 60);
-                } catch (\Throwable $e) {
-                    // Cache write failure is non-fatal
-                }
-            }
+            // Pagination
+            $perPage = isset($options['per_page']) ? (int) $options['per_page'] : 10;
+            $page = isset($options['page']) ? (int) $options['page'] : max(1, (int) ($_GET['page'] ?? 1));
 
-            return $result;
+            return $query->paginate($page, $perPage);
         } catch (\Throwable $e) {
             return $emptyResult;
         }
@@ -125,92 +73,40 @@ if (!function_exists('entry')) {
     /**
      * Fetch a single entry by slug or ID.
      *
+     * Delegates to EntryQuery for query logic, caching, and relation resolution.
+     *
      * @param string     $slug       Collection slug
      * @param string|int $identifier Entry slug (string) or ID (int)
-     * @param array      $options    Options: resolve_depth (default 1, set 0 to skip)
+     * @param array      $options    Options: resolve_depth (default 1, set 0 to skip), locale, no_cache
      * @return array|null
      */
     function entry(string $slug, string|int $identifier, array $options = []): ?array
     {
         try {
-            $useCache = empty($options['no_cache']);
-            unset($options['no_cache']);
+            $query = EntryQuery::collection($slug);
 
-            if ($useCache && class_exists(CacheManager::class)) {
-                $cacheKey = 'cms.entry.' . $slug . '.' . $identifier;
-                try {
-                    $cache = CacheManager::getInstance();
-                    $cached = $cache->get($cacheKey);
-                    if ($cached !== null) {
-                        return $cached;
-                    }
-                } catch (\Throwable $e) {
-                    // Cache unavailable
-                }
+            // Cache control
+            if (!empty($options['no_cache'])) {
+                $query->noCache();
             }
 
-            $schema = new SchemaManager();
-            $tableName = null;
-            $fields = [];
-
-            $coll = Collection::findOneBy(['slug' => $slug]);
-            if ($coll) {
-                $tableName = $coll->getTableName();
-                $fields = $coll->getFields()->toArray();
-            }
-
-            if (!$tableName || !$schema->tableExists($tableName)) {
-                return null;
-            }
-
-            $conn = $schema->getConnection();
-
-            if (is_string($identifier) && !is_numeric($identifier)) {
-                $entry = $conn->createQueryBuilder()
-                    ->select('*')
-                    ->from($tableName)
-                    ->where('slug = :slug')
-                    ->setParameter('slug', $identifier)
-                    ->executeQuery()
-                    ->fetchAssociative();
-            } else {
-                $entry = $conn->createQueryBuilder()
-                    ->select('*')
-                    ->from($tableName)
-                    ->where('id = :id')
-                    ->setParameter('id', $identifier)
-                    ->executeQuery()
-                    ->fetchAssociative();
-            }
-
-            if (!$entry) {
-                return null;
-            }
-
+            // Relation resolution
             $depth = isset($options['resolve_depth']) ? (int) $options['resolve_depth'] : 1;
-
-            // Resolve relation fields
-            if ($depth > 0 && !empty($fields)) {
-                $resolved = _cms_resolve_relations([$entry], $fields, $tableName, $schema, $depth);
-                $entry = $resolved[0];
+            if ($depth > 0) {
+                $query->withRelations($depth);
             }
 
-            // Apply locale translations if requested
-            $locale = $options['locale'] ?? null;
-            if ($locale && $coll && $coll->isTranslatable()) {
-                $entry = TranslationService::resolveEntry($entry, $tableName, $locale);
+            // Locale
+            if (!empty($options['locale'])) {
+                $query->locale($options['locale']);
             }
 
-            // Cache the result
-            if ($useCache && isset($cache, $cacheKey)) {
-                try {
-                    $cache->set($cacheKey, $entry, 60);
-                } catch (\Throwable $e) {
-                    // Cache write failure is non-fatal
-                }
+            // Find by slug (non-numeric string) or by ID
+            if (is_string($identifier) && !is_numeric($identifier)) {
+                return $query->findBySlug($identifier);
             }
 
-            return $entry;
+            return $query->find($identifier);
         } catch (\Throwable $e) {
             return null;
         }
@@ -365,8 +261,8 @@ if (!function_exists('_cms_resolve_multi')) {
             return $entries;
         }
 
-        $srcCol = "{$tableName}_id";
-        $tgtCol = "{$relTableName}_id";
+        $srcCol = SchemaManager::validateIdentifier("{$tableName}_id", 'pivot column');
+        $tgtCol = SchemaManager::validateIdentifier("{$relTableName}_id", 'pivot column');
 
         // Collect all entry IDs
         $entryIds = [];

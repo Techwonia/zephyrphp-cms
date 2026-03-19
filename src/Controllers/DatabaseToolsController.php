@@ -87,7 +87,8 @@ class DatabaseToolsController extends Controller
                 'table_count' => count($tableNames),
             ];
         } catch (\Throwable $e) {
-            $this->flash('errors', ['Database connection error: ' . $e->getMessage()]);
+            error_log('Database connection error: ' . $e->getMessage());
+            $this->flash('errors', ['A database error occurred. Please check your configuration.']);
         }
 
         $selectedTable = $this->input('table', '');
@@ -110,26 +111,44 @@ class DatabaseToolsController extends Controller
             $sm = $conn->createSchemaManager();
             $tableNames = $sm->listTableNames();
 
-            $sql = "-- ZephyrPHP Database Backup\n";
-            $sql .= "-- Generated: " . date('Y-m-d H:i:s') . "\n";
-            $sql .= "-- Database: " . ($params['dbname'] ?? '') . "\n\n";
-            $sql .= "SET FOREIGN_KEY_CHECKS=0;\n\n";
+            $filename = ($params['dbname'] ?? 'backup') . '_' . date('Y-m-d_His') . '.sql';
+
+            header('Content-Type: application/sql');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            // No Content-Length — streaming output
+
+            echo "-- ZephyrPHP Database Backup\n";
+            echo "-- Generated: " . date('Y-m-d H:i:s') . "\n";
+            echo "-- Database: " . ($params['dbname'] ?? '') . "\n\n";
+            echo "SET FOREIGN_KEY_CHECKS=0;\n\n";
+
+            $chunkSize = 500;
 
             foreach ($tableNames as $tableName) {
                 // CREATE TABLE
                 try {
                     $result = $conn->fetchAssociative("SHOW CREATE TABLE `{$tableName}`");
-                    $sql .= "DROP TABLE IF EXISTS `{$tableName}`;\n";
-                    $sql .= ($result['Create Table'] ?? '') . ";\n\n";
+                    echo "DROP TABLE IF EXISTS `{$tableName}`;\n";
+                    echo ($result['Create Table'] ?? '') . ";\n\n";
                 } catch (\Throwable $e) {
                     continue;
                 }
 
-                // INSERT rows
-                $rows = $conn->fetchAllAssociative("SELECT * FROM `{$tableName}`");
-                if (!empty($rows)) {
-                    $columns = array_keys($rows[0]);
-                    $columnList = '`' . implode('`, `', $columns) . '`';
+                // Stream rows in chunks to avoid loading entire table into memory
+                $offset = 0;
+                $columnList = null;
+                while (true) {
+                    $rows = $conn->fetchAllAssociative(
+                        "SELECT * FROM `{$tableName}` LIMIT {$chunkSize} OFFSET {$offset}"
+                    );
+                    if (empty($rows)) {
+                        break;
+                    }
+
+                    if ($columnList === null) {
+                        $columns = array_keys($rows[0]);
+                        $columnList = '`' . implode('`, `', $columns) . '`';
+                    }
 
                     foreach ($rows as $row) {
                         $values = array_map(function ($v) use ($conn) {
@@ -139,21 +158,20 @@ class DatabaseToolsController extends Controller
                             return $conn->quote((string) $v);
                         }, array_values($row));
 
-                        $sql .= "INSERT INTO `{$tableName}` ({$columnList}) VALUES (" . implode(', ', $values) . ");\n";
+                        echo "INSERT INTO `{$tableName}` ({$columnList}) VALUES (" . implode(', ', $values) . ");\n";
                     }
-                    $sql .= "\n";
+
+                    if (count($rows) < $chunkSize) {
+                        break;
+                    }
+                    $offset += $chunkSize;
+                    flush();
                 }
+
+                echo "\n";
             }
 
-            $sql .= "SET FOREIGN_KEY_CHECKS=1;\n";
-
-            // Send as download
-            $filename = ($params['dbname'] ?? 'backup') . '_' . date('Y-m-d_His') . '.sql';
-
-            header('Content-Type: application/sql');
-            header('Content-Disposition: attachment; filename="' . $filename . '"');
-            header('Content-Length: ' . strlen($sql));
-            echo $sql;
+            echo "SET FOREIGN_KEY_CHECKS=1;\n";
             exit;
         } catch (\Throwable $e) {
             $this->flash('errors', ['Backup failed: ' . $e->getMessage()]);

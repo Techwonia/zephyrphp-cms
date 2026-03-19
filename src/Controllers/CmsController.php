@@ -9,6 +9,7 @@ use ZephyrPHP\Auth\Auth;
 use ZephyrPHP\Cms\Models\Collection;
 use ZephyrPHP\Cms\Models\Media;
 use ZephyrPHP\Cms\Services\SchemaManager;
+use ZephyrPHP\Cms\Services\EntryQuery;
 use ZephyrPHP\Cms\Services\PermissionService;
 use ZephyrPHP\Cms\Services\DashboardManager;
 
@@ -37,12 +38,11 @@ class CmsController extends Controller
         $layout = $dashboard->getUserLayout($userId);
 
         $collections = Collection::findAll();
-        $schema = new SchemaManager();
 
         $stats = [];
         $totalEntries = 0;
         foreach ($collections as $collection) {
-            $count = $schema->countEntries($collection->getTableName());
+            $count = EntryQuery::collection($collection->getSlug())->noCache()->count();
             $stats[$collection->getSlug()] = $count;
             $totalEntries += $count;
         }

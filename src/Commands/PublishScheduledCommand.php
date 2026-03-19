@@ -10,6 +10,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use ZephyrPHP\Cms\Models\Collection;
 use ZephyrPHP\Cms\Services\SchemaManager;
+use ZephyrPHP\Cms\Services\EntryQuery;
 use ZephyrPHP\Cms\Services\NotificationService;
 
 #[AsCommand(
@@ -56,7 +57,7 @@ class PublishScheduledCommand extends Command
 
                     // Notify admins about scheduled publish
                     try {
-                        $full = $schema->findEntry($tableName, $entry['id']);
+                        $full = EntryQuery::collection($collection->getSlug())->noCache()->find($entry['id']);
                         $entryTitle = $full['title'] ?? $full['name'] ?? "#{$entry['id']}";
                         NotificationService::notifyAdmins(
                             'scheduled_published',

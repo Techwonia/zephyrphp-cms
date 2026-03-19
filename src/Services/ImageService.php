@@ -33,6 +33,11 @@ class ImageService
             return null;
         }
 
+        // Pre-check memory: estimate bytes needed for source + thumbnail GD images
+        if (!self::checkMemoryForImage($origWidth, $origHeight, $imageInfo['channels'] ?? 3)) {
+            return null;
+        }
+
         // Calculate new dimensions maintaining aspect ratio
         $ratio = min($maxWidth / $origWidth, $maxHeight / $origHeight);
         $newWidth = (int) round($origWidth * $ratio);
@@ -96,6 +101,11 @@ class ImageService
             return false;
         }
 
+        // Pre-check memory: estimate bytes needed for source + resized GD images
+        if (!self::checkMemoryForImage($origWidth, $origHeight, $imageInfo['channels'] ?? 3)) {
+            return false;
+        }
+
         $ratio = min($maxWidth / $origWidth, $maxHeight / $origHeight);
         $newWidth = (int) round($origWidth * $ratio);
         $newHeight = (int) round($origHeight * $ratio);
@@ -149,5 +159,54 @@ class ImageService
     private static function isGdAvailable(): bool
     {
         return extension_loaded('gd');
+    }
+
+    /**
+     * Check if there is enough memory available to process an image.
+     * Estimates memory needed for GD image resources (source + output).
+     *
+     * @param int $width  Image width in pixels
+     * @param int $height Image height in pixels
+     * @param int $channels Number of color channels (3 for RGB, 4 for RGBA)
+     * @return bool True if sufficient memory is available
+     */
+    private static function checkMemoryForImage(int $width, int $height, int $channels = 3): bool
+    {
+        $memoryLimit = self::getMemoryLimitBytes();
+        if ($memoryLimit <= 0) {
+            // Unlimited memory or unable to determine — proceed
+            return true;
+        }
+
+        // GD uses ~(width * height * channels) bytes per image, with ~1.8x overhead
+        // We need memory for both source and output images plus existing usage
+        $estimatedBytes = (int) ($width * $height * $channels * 1.8 * 2);
+        $currentUsage = memory_get_usage(true);
+        $available = $memoryLimit - $currentUsage;
+
+        // Require at least 4MB headroom beyond the estimate
+        return $available > ($estimatedBytes + 4 * 1024 * 1024);
+    }
+
+    /**
+     * Parse the PHP memory_limit into bytes.
+     */
+    private static function getMemoryLimitBytes(): int
+    {
+        $limit = ini_get('memory_limit');
+        if ($limit === false || $limit === '' || $limit === '-1') {
+            return 0; // Unlimited
+        }
+
+        $limit = trim($limit);
+        $value = (int) $limit;
+        $unit = strtolower(substr($limit, -1));
+
+        return match ($unit) {
+            'g' => $value * 1024 * 1024 * 1024,
+            'm' => $value * 1024 * 1024,
+            'k' => $value * 1024,
+            default => $value,
+        };
     }
 }

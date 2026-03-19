@@ -20,7 +20,7 @@ class FileManagerController extends Controller
     ];
 
     /** File extensions that can be edited */
-    private const EDITABLE_EXTENSIONS = ['php', 'twig', 'html', 'css', 'js', 'json', 'yaml', 'yml', 'md', 'txt', 'env', 'xml', 'ini'];
+    private const EDITABLE_EXTENSIONS = ['php', 'twig', 'html', 'css', 'js', 'json', 'yaml', 'yml', 'md', 'txt', 'xml', 'ini'];
 
     /** File extensions that are never accessible */
     private const BLOCKED_EXTENSIONS = ['phar', 'sh', 'bat', 'exe', 'dll', 'so'];

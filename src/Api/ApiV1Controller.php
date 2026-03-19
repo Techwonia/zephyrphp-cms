@@ -8,6 +8,7 @@ use ZephyrPHP\Core\Controllers\Controller;
 use ZephyrPHP\Cms\Models\Collection;
 use ZephyrPHP\Cms\Models\Theme;
 use ZephyrPHP\Cms\Services\SchemaManager;
+use ZephyrPHP\Cms\Services\EntryQuery;
 use ZephyrPHP\Cms\Services\ThemeManager;
 use ZephyrPHP\OAuth\OAuthMiddleware;
 use ZephyrPHP\Webhook\WebhookDispatcher;
@@ -20,12 +21,9 @@ use ZephyrPHP\Webhook\WebhookDispatcher;
  */
 class ApiV1Controller extends Controller
 {
-    private SchemaManager $schema;
-
     public function __construct()
     {
         parent::__construct();
-        $this->schema = new SchemaManager();
     }
 
     private function requireScope(string $scope): void
@@ -34,6 +32,30 @@ class ApiV1Controller extends Controller
             $this->json(['error' => 'insufficient_scope', 'error_description' => "Required scope: {$scope}"], 403);
             exit;
         }
+    }
+
+    /**
+     * Sanitize and whitelist input data against actual table columns.
+     * Only allows safe identifier keys that exist as columns (excludes 'id').
+     */
+    private function whitelistInput(array $input, string $slug): array
+    {
+        $schema = new SchemaManager();
+        $collection = Collection::findBySlug($slug);
+        if (!$collection) {
+            return [];
+        }
+
+        $columns = array_keys($schema->getConnection()->createSchemaManager()->listTableColumns($collection->getTableName()));
+        $data = [];
+        foreach ($input as $key => $value) {
+            if (preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $key)
+                && in_array(strtolower($key), $columns, true)
+                && $key !== 'id') {
+                $data[$key] = is_array($value) ? json_encode($value) : $value;
+            }
+        }
+        return $data;
     }
 
     // ========================================================================
@@ -84,29 +106,23 @@ class ApiV1Controller extends Controller
                 return;
             }
 
-            $table = $this->schema->getTableName($slug);
-            $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
-
-            $total = (int) $conn->fetchOne("SELECT COUNT(*) FROM `{$table}`");
-            $offset = ($page - 1) * $perPage;
-
-            $rows = $conn->fetchAllAssociative(
-                "SELECT * FROM `{$table}` ORDER BY id DESC LIMIT ? OFFSET ?",
-                [$perPage, $offset],
-                [\Doctrine\DBAL\ParameterType::INTEGER, \Doctrine\DBAL\ParameterType::INTEGER]
-            );
+            $result = EntryQuery::collection($slug)
+                ->noCache()
+                ->orderBy('id', 'DESC')
+                ->paginate($page, $perPage);
 
             $this->json([
-                'data' => $rows,
+                'data' => $result['data'],
                 'pagination' => [
-                    'total' => $total,
-                    'per_page' => $perPage,
-                    'current_page' => $page,
-                    'last_page' => (int) ceil($total / $perPage),
+                    'total' => $result['total'],
+                    'per_page' => $result['per_page'],
+                    'current_page' => $result['current_page'],
+                    'last_page' => $result['last_page'],
                 ],
             ]);
         } catch (\Exception $e) {
-            $this->json(['error' => 'server_error', 'error_description' => $e->getMessage()], 500);
+            error_log('CMS API error: ' . $e->getMessage());
+            $this->json(['error' => 'server_error', 'error_description' => 'An internal error occurred.'], 500);
         }
     }
 
@@ -132,34 +148,21 @@ class ApiV1Controller extends Controller
                 return;
             }
 
-            $table = $this->schema->getTableName($slug);
-            $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
-
-            // Only insert fields that exist as columns
-            $columns = array_keys($conn->createSchemaManager()->listTableColumns($table));
-            $data = [];
-            foreach ($input as $key => $value) {
-                if (in_array(strtolower($key), $columns, true) && $key !== 'id') {
-                    $data[$key] = is_array($value) ? json_encode($value) : $value;
-                }
-            }
-
-            $data['createdAt'] = date('Y-m-d H:i:s');
-            $data['updatedAt'] = date('Y-m-d H:i:s');
-
-            $conn->insert($table, $data);
-            $id = $conn->lastInsertId();
+            $data = $this->whitelistInput($input, $slug);
+            $entryId = EntryQuery::collection($slug)->create($data);
 
             // Dispatch webhook
             WebhookDispatcher::getInstance()->dispatch('entry.created', [
                 'collection' => $slug,
-                'id' => $id,
+                'id' => $entryId,
                 'data' => $data,
             ]);
 
-            $this->json(['data' => array_merge($data, ['id' => $id])], 201);
+            $entry = EntryQuery::collection($slug)->noCache()->find($entryId);
+            $this->json(['data' => $entry], 201);
         } catch (\Exception $e) {
-            $this->json(['error' => 'server_error', 'error_description' => $e->getMessage()], 500);
+            error_log('CMS API error: ' . $e->getMessage());
+            $this->json(['error' => 'server_error', 'error_description' => 'An internal error occurred.'], 500);
         }
     }
 
@@ -171,7 +174,6 @@ class ApiV1Controller extends Controller
         $this->requireScope('write_collections');
 
         $slug = preg_replace('/[^a-z0-9_-]/', '', strtolower($slug));
-        $id = (int) $id;
         $input = json_decode(file_get_contents('php://input'), true);
 
         if (!is_array($input)) {
@@ -180,25 +182,20 @@ class ApiV1Controller extends Controller
         }
 
         try {
-            $table = $this->schema->getTableName($slug);
-            $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
+            $collection = Collection::findBySlug($slug);
+            if (!$collection) {
+                $this->json(['error' => 'not_found'], 404);
+                return;
+            }
 
-            $existing = $conn->fetchAssociative("SELECT * FROM `{$table}` WHERE id = ?", [$id]);
+            $existing = EntryQuery::collection($slug)->noCache()->find($id);
             if (!$existing) {
                 $this->json(['error' => 'not_found'], 404);
                 return;
             }
 
-            $columns = array_keys($conn->createSchemaManager()->listTableColumns($table));
-            $data = [];
-            foreach ($input as $key => $value) {
-                if (in_array(strtolower($key), $columns, true) && $key !== 'id') {
-                    $data[$key] = is_array($value) ? json_encode($value) : $value;
-                }
-            }
-
-            $data['updatedAt'] = date('Y-m-d H:i:s');
-            $conn->update($table, $data, ['id' => $id]);
+            $data = $this->whitelistInput($input, $slug);
+            EntryQuery::collection($slug)->update($id, $data);
 
             WebhookDispatcher::getInstance()->dispatch('entry.updated', [
                 'collection' => $slug,
@@ -206,7 +203,8 @@ class ApiV1Controller extends Controller
                 'data' => $data,
             ]);
 
-            $this->json(['data' => array_merge($existing, $data)]);
+            $entry = EntryQuery::collection($slug)->noCache()->find($id);
+            $this->json(['data' => $entry]);
         } catch (\Exception $e) {
             $this->json(['error' => 'server_error'], 500);
         }
@@ -220,17 +218,21 @@ class ApiV1Controller extends Controller
         $this->requireScope('write_collections');
 
         $slug = preg_replace('/[^a-z0-9_-]/', '', strtolower($slug));
-        $id = (int) $id;
 
         try {
-            $table = $this->schema->getTableName($slug);
-            $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
-
-            $affected = $conn->delete($table, ['id' => $id]);
-            if ($affected === 0) {
+            $collection = Collection::findBySlug($slug);
+            if (!$collection) {
                 $this->json(['error' => 'not_found'], 404);
                 return;
             }
+
+            $existing = EntryQuery::collection($slug)->noCache()->find($id);
+            if (!$existing) {
+                $this->json(['error' => 'not_found'], 404);
+                return;
+            }
+
+            EntryQuery::collection($slug)->delete($id);
 
             WebhookDispatcher::getInstance()->dispatch('entry.deleted', [
                 'collection' => $slug,
@@ -324,9 +326,28 @@ class ApiV1Controller extends Controller
             return;
         }
 
+        // Validate webhook URL to prevent SSRF
+        $webhookUrl = $input['url'];
+        $parsed = parse_url($webhookUrl);
+        if (!$parsed || !in_array($parsed['scheme'] ?? '', ['http', 'https'], true)) {
+            $this->json(['error' => 'invalid_request', 'error_description' => 'Webhook URL must use http or https.'], 400);
+            return;
+        }
+        $host = $parsed['host'] ?? '';
+        $ip = gethostbyname($host);
+        if ($ip === $host && !filter_var($host, FILTER_VALIDATE_IP)) {
+            $this->json(['error' => 'invalid_request', 'error_description' => 'Could not resolve webhook URL host.'], 400);
+            return;
+        }
+        // Block private/reserved IP ranges
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+            $this->json(['error' => 'invalid_request', 'error_description' => 'Webhook URL must point to a public IP address.'], 400);
+            return;
+        }
+
         $result = WebhookDispatcher::getInstance()->subscribe(
             $input['topic'],
-            $input['url'],
+            $webhookUrl,
             $clientId,
             $input['format'] ?? 'json'
         );

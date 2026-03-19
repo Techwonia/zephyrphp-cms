@@ -154,39 +154,53 @@
                 </div>
             </div>
 
-            <h5 style="margin: var(--space-400) 0 var(--space-200); font-size: 0.8rem; color: var(--text-secondary);">Custom CSP Sources <small>(comma-separated domains)</small></h5>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
-                <div class="form-group">
-                    <label for="CSP_SCRIPT_SRC">Script Sources</label>
-                    <input type="text" id="CSP_SCRIPT_SRC" name="CSP_SCRIPT_SRC" class="form-control"
-                           value="{{ securitySettings.CSP_SCRIPT_SRC }}" placeholder="https://cdn.example.com">
-                </div>
-
-                <div class="form-group">
-                    <label for="CSP_STYLE_SRC">Style Sources</label>
-                    <input type="text" id="CSP_STYLE_SRC" name="CSP_STYLE_SRC" class="form-control"
-                           value="{{ securitySettings.CSP_STYLE_SRC }}" placeholder="https://fonts.googleapis.com">
-                </div>
-
-                <div class="form-group">
-                    <label for="CSP_IMG_SRC">Image Sources</label>
-                    <input type="text" id="CSP_IMG_SRC" name="CSP_IMG_SRC" class="form-control"
-                           value="{{ securitySettings.CSP_IMG_SRC }}" placeholder="data: https:">
-                </div>
-
-                <div class="form-group">
-                    <label for="CSP_FONT_SRC">Font Sources</label>
-                    <input type="text" id="CSP_FONT_SRC" name="CSP_FONT_SRC" class="form-control"
-                           value="{{ securitySettings.CSP_FONT_SRC }}" placeholder="https://fonts.gstatic.com">
-                </div>
-
-                <div class="form-group">
-                    <label for="CSP_CONNECT_SRC">Connect Sources (API/WebSocket)</label>
-                    <input type="text" id="CSP_CONNECT_SRC" name="CSP_CONNECT_SRC" class="form-control"
-                           value="{{ securitySettings.CSP_CONNECT_SRC }}" placeholder="https://api.example.com">
+            {# ── Quick Presets ── #}
+            <div style="margin: var(--space-500) 0 var(--space-300);">
+                <h5 style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: var(--space-200);">Quick Add — Common Services</h5>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                    <button type="button" class="csp-preset-btn" data-preset="google-fonts" title="Adds fonts.googleapis.com + fonts.gstatic.com">Google Fonts</button>
+                    <button type="button" class="csp-preset-btn" data-preset="google-analytics" title="Adds googletagmanager.com + google-analytics.com">Google Analytics</button>
+                    <button type="button" class="csp-preset-btn" data-preset="youtube" title="Adds youtube.com + youtube-nocookie.com">YouTube Embeds</button>
+                    <button type="button" class="csp-preset-btn" data-preset="cdnjs" title="Adds cdnjs.cloudflare.com">cdnjs</button>
+                    <button type="button" class="csp-preset-btn" data-preset="jsdelivr" title="Adds cdn.jsdelivr.net">jsDelivr</button>
+                    <button type="button" class="csp-preset-btn" data-preset="unpkg" title="Adds unpkg.com">unpkg</button>
+                    <button type="button" class="csp-preset-btn" data-preset="stripe" title="Adds js.stripe.com + api.stripe.com">Stripe</button>
+                    <button type="button" class="csp-preset-btn" data-preset="recaptcha" title="Adds google.com/recaptcha + gstatic.com">reCAPTCHA</button>
+                    <button type="button" class="csp-preset-btn" data-preset="vimeo" title="Adds player.vimeo.com">Vimeo</button>
+                    <button type="button" class="csp-preset-btn" data-preset="cloudinary" title="Adds res.cloudinary.com">Cloudinary</button>
                 </div>
             </div>
+
+            {# ── CSP Source Directives with Tag UI ── #}
+            <h5 style="margin: var(--space-300) 0 var(--space-200); font-size: 0.8rem; color: var(--text-secondary);">Allowed External Sources</h5>
+
+            {% set cspFields = [
+                { id: 'CSP_SCRIPT_SRC', label: 'Scripts', icon: '&lt;/&gt;', help: 'External JavaScript files (CDNs, analytics, payment)' },
+                { id: 'CSP_STYLE_SRC', label: 'Styles', icon: '&#x1f3a8;', help: 'External CSS files and font stylesheets' },
+                { id: 'CSP_IMG_SRC', label: 'Images', icon: '&#x1f5bc;', help: 'External image sources (CDN, data: for inline images)' },
+                { id: 'CSP_FONT_SRC', label: 'Fonts', icon: 'Aa', help: 'External font file downloads' },
+                { id: 'CSP_CONNECT_SRC', label: 'Connect (API/WS)', icon: '&#x21c4;', help: 'Fetch, XHR, WebSocket destinations' },
+                { id: 'CSP_FRAME_SRC', label: 'Frames (Embeds)', icon: '&#x25a3;', help: 'Allowed iframe sources (YouTube, Vimeo, maps)' },
+                { id: 'CSP_MEDIA_SRC', label: 'Media (Audio/Video)', icon: '&#x25b6;', help: 'External audio and video sources' }
+            ] %}
+
+            {% for field in cspFields %}
+            <div class="csp-directive-group" data-directive="{{ field.id }}">
+                <div class="csp-directive-header">
+                    <span class="csp-directive-icon">{{ field.icon|raw }}</span>
+                    <span class="csp-directive-label">{{ field.label }}</span>
+                    <small class="csp-directive-help">{{ field.help }}</small>
+                </div>
+                <div class="csp-tags-container" id="tags_{{ field.id }}">
+                    {# Tags populated by JS from hidden input #}
+                </div>
+                <div class="csp-add-row">
+                    <input type="text" class="csp-add-input" id="addInput_{{ field.id }}" placeholder="https://example.com" autocomplete="off">
+                    <button type="button" class="csp-add-btn" data-target="{{ field.id }}">Add</button>
+                </div>
+                <input type="hidden" id="{{ field.id }}" name="{{ field.id }}" value="{{ attribute(securitySettings, field.id) }}">
+            </div>
+            {% endfor %}
 
             <h4 style="margin: var(--space-500) 0 var(--space-300); font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Asset Configuration</h4>
 
@@ -236,4 +250,174 @@
         </div>
     </div>
 </div>
+
+<style>
+    .csp-preset-btn {
+        padding: 5px 12px; font-size: 12px; border-radius: 6px;
+        border: 1px solid var(--border-default); background: var(--bg-subdued);
+        color: var(--text-secondary); cursor: pointer; transition: all 0.15s;
+    }
+    .csp-preset-btn:hover { border-color: var(--color-primary); color: var(--color-primary); background: var(--bg); }
+    .csp-preset-btn.applied { border-color: var(--color-success); color: var(--color-success); background: rgba(4,123,93,0.06); }
+
+    .csp-directive-group {
+        background: var(--bg-subdued); border: 1px solid var(--border-default);
+        border-radius: 8px; padding: 12px 14px; margin-bottom: 8px;
+    }
+    .csp-directive-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .csp-directive-icon { font-size: 14px; width: 22px; text-align: center; opacity: 0.6; }
+    .csp-directive-label { font-weight: 600; font-size: 13px; color: var(--text); }
+    .csp-directive-help { color: var(--text-secondary); font-size: 11px; margin-left: auto; }
+
+    .csp-tags-container { display: flex; flex-wrap: wrap; gap: 6px; min-height: 28px; margin-bottom: 8px; }
+    .csp-tags-container:empty::after {
+        content: 'No external sources \2014 only self allowed'; font-size: 11px;
+        color: var(--text-secondary); font-style: italic; padding: 4px 0;
+    }
+
+    .csp-tag {
+        display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px 3px 10px;
+        background: var(--bg); border: 1px solid var(--border-default); border-radius: 5px;
+        font-size: 12px; color: var(--text); font-family: monospace;
+    }
+    .csp-tag-remove {
+        border: none; background: none; color: var(--text-secondary); cursor: pointer;
+        font-size: 14px; padding: 0 2px; line-height: 1; border-radius: 3px;
+    }
+    .csp-tag-remove:hover { color: var(--color-critical); background: rgba(215,44,13,0.08); }
+
+    .csp-add-row { display: flex; gap: 6px; }
+    .csp-add-input {
+        flex: 1; padding: 5px 10px; font-size: 12px; border-radius: 6px;
+        border: 1px solid var(--border-default); background: var(--bg); color: var(--text);
+        font-family: monospace;
+    }
+    .csp-add-input:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 2px rgba(26,123,168,0.15); }
+    .csp-add-btn {
+        padding: 5px 14px; font-size: 12px; border-radius: 6px; border: 1px solid var(--color-primary);
+        background: var(--color-primary); color: #fff; cursor: pointer; white-space: nowrap;
+    }
+    .csp-add-btn:hover { opacity: 0.9; }
+</style>
+
+<script>
+(function() {
+    var PRESETS = {
+        'google-fonts': { CSP_STYLE_SRC: ['https://fonts.googleapis.com'], CSP_FONT_SRC: ['https://fonts.gstatic.com'] },
+        'google-analytics': { CSP_SCRIPT_SRC: ['https://www.googletagmanager.com','https://www.google-analytics.com'], CSP_IMG_SRC: ['https://www.google-analytics.com'], CSP_CONNECT_SRC: ['https://www.google-analytics.com','https://analytics.google.com'] },
+        'youtube': { CSP_FRAME_SRC: ['https://www.youtube.com','https://www.youtube-nocookie.com'], CSP_IMG_SRC: ['https://img.youtube.com','https://i.ytimg.com'] },
+        'cdnjs': { CSP_SCRIPT_SRC: ['https://cdnjs.cloudflare.com'], CSP_STYLE_SRC: ['https://cdnjs.cloudflare.com'] },
+        'jsdelivr': { CSP_SCRIPT_SRC: ['https://cdn.jsdelivr.net'], CSP_STYLE_SRC: ['https://cdn.jsdelivr.net'] },
+        'unpkg': { CSP_SCRIPT_SRC: ['https://unpkg.com'], CSP_STYLE_SRC: ['https://unpkg.com'] },
+        'stripe': { CSP_SCRIPT_SRC: ['https://js.stripe.com'], CSP_FRAME_SRC: ['https://js.stripe.com'], CSP_CONNECT_SRC: ['https://api.stripe.com'] },
+        'recaptcha': { CSP_SCRIPT_SRC: ['https://www.google.com','https://www.gstatic.com'], CSP_FRAME_SRC: ['https://www.google.com'] },
+        'vimeo': { CSP_FRAME_SRC: ['https://player.vimeo.com'], CSP_IMG_SRC: ['https://i.vimeocdn.com'] },
+        'cloudinary': { CSP_IMG_SRC: ['https://res.cloudinary.com'], CSP_MEDIA_SRC: ['https://res.cloudinary.com'] }
+    };
+
+    var DIRECTIVES = ['CSP_SCRIPT_SRC','CSP_STYLE_SRC','CSP_IMG_SRC','CSP_FONT_SRC','CSP_CONNECT_SRC','CSP_FRAME_SRC','CSP_MEDIA_SRC'];
+
+    function getTags(id) {
+        var el = document.getElementById(id);
+        if (!el) return [];
+        var val = el.value.trim();
+        if (!val) return [];
+        return val.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+    }
+
+    function setTags(id, tags) {
+        var el = document.getElementById(id);
+        if (el) el.value = tags.join(',');
+        renderTags(id);
+    }
+
+    function renderTags(id) {
+        var container = document.getElementById('tags_' + id);
+        if (!container) return;
+        var tags = getTags(id);
+        container.innerHTML = '';
+        tags.forEach(function(tag) {
+            var el = document.createElement('span');
+            el.className = 'csp-tag';
+            el.textContent = tag;
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'csp-tag-remove';
+            btn.innerHTML = '&times;';
+            btn.addEventListener('click', function() {
+                var updated = getTags(id).filter(function(t) { return t !== tag; });
+                setTags(id, updated);
+                checkPresets();
+            });
+            el.appendChild(btn);
+            container.appendChild(el);
+        });
+    }
+
+    function addTag(id, value) {
+        value = value.trim();
+        if (!value) return;
+        var tags = getTags(id);
+        if (tags.indexOf(value) === -1) {
+            tags.push(value);
+            setTags(id, tags);
+        }
+    }
+
+    DIRECTIVES.forEach(function(id) { renderTags(id); });
+
+    document.querySelectorAll('.csp-add-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var targetId = btn.getAttribute('data-target');
+            var input = document.getElementById('addInput_' + targetId);
+            addTag(targetId, input.value);
+            input.value = '';
+            input.focus();
+            checkPresets();
+        });
+    });
+
+    document.querySelectorAll('.csp-add-input').forEach(function(input) {
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                var targetId = input.id.replace('addInput_', '');
+                addTag(targetId, input.value);
+                input.value = '';
+                checkPresets();
+            }
+        });
+    });
+
+    document.querySelectorAll('.csp-preset-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var preset = PRESETS[btn.getAttribute('data-preset')];
+            if (!preset) return;
+            for (var directive in preset) {
+                preset[directive].forEach(function(domain) {
+                    addTag(directive, domain);
+                });
+            }
+            checkPresets();
+        });
+    });
+
+    function checkPresets() {
+        document.querySelectorAll('.csp-preset-btn').forEach(function(btn) {
+            var key = btn.getAttribute('data-preset');
+            var preset = PRESETS[key];
+            if (!preset) return;
+            var allApplied = true;
+            for (var directive in preset) {
+                var tags = getTags(directive);
+                preset[directive].forEach(function(domain) {
+                    if (tags.indexOf(domain) === -1) allApplied = false;
+                });
+            }
+            btn.classList.toggle('applied', allApplied);
+        });
+    }
+    checkPresets();
+})();
+</script>
 {% endblock %}

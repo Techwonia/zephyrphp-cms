@@ -9,6 +9,7 @@ use ZephyrPHP\Auth\Auth;
 use ZephyrPHP\Cms\Models\Collection;
 use ZephyrPHP\Cms\Models\Field;
 use ZephyrPHP\Cms\Services\SchemaManager;
+use ZephyrPHP\Cms\Services\EntryQuery;
 use ZephyrPHP\Cms\Services\PermissionService;
 use ZephyrPHP\Cms\Services\ActivityLogger;
 
@@ -52,7 +53,7 @@ class CollectionController extends Controller
 
         $stats = [];
         foreach ($collections as $collection) {
-            $stats[$collection->getSlug()] = $this->schema->countEntries($collection->getTableName());
+            $stats[$collection->getSlug()] = EntryQuery::collection($collection->getSlug())->noCache()->count();
         }
 
         return $this->render('cms::collections/index', [
@@ -161,7 +162,7 @@ class CollectionController extends Controller
             return '';
         }
 
-        $entryCount = $this->schema->countEntries($collection->getTableName());
+        $entryCount = EntryQuery::collection($collection->getSlug())->noCache()->count();
 
         $fieldTypes = [
             'text' => 'Text',
@@ -242,16 +243,20 @@ class CollectionController extends Controller
         if ($hasSlug && !$oldHasSlug) {
             // Enabling slug: add slug column to data table
             try {
-                $conn->executeStatement("ALTER TABLE `{$tableName}` ADD COLUMN `slug` VARCHAR(255) NULL DEFAULT NULL");
-                $conn->executeStatement("ALTER TABLE `{$tableName}` ADD UNIQUE INDEX `uniq_{$tableName}_slug` (`slug`)");
+                $safeTable = SchemaManager::validateIdentifier($tableName, 'table name');
+                $safeIndex = SchemaManager::validateIdentifier("uniq_{$tableName}_slug", 'index name');
+                $conn->executeStatement("ALTER TABLE `{$safeTable}` ADD COLUMN `slug` VARCHAR(255) NULL DEFAULT NULL");
+                $conn->executeStatement("ALTER TABLE `{$safeTable}` ADD UNIQUE INDEX `{$safeIndex}` (`slug`)");
             } catch (\Exception $e) {
                 // Column may already exist
             }
         } elseif (!$hasSlug && $oldHasSlug) {
             // Disabling slug: remove slug column from data table
             try {
-                $conn->executeStatement("ALTER TABLE `{$tableName}` DROP INDEX `uniq_{$tableName}_slug`");
-                $conn->executeStatement("ALTER TABLE `{$tableName}` DROP COLUMN `slug`");
+                $safeTable = SchemaManager::validateIdentifier($tableName, 'table name');
+                $safeIndex = SchemaManager::validateIdentifier("uniq_{$tableName}_slug", 'index name');
+                $conn->executeStatement("ALTER TABLE `{$safeTable}` DROP INDEX `{$safeIndex}`");
+                $conn->executeStatement("ALTER TABLE `{$safeTable}` DROP COLUMN `slug`");
             } catch (\Exception $e) {
                 // Column or index may not exist
             }
@@ -456,9 +461,17 @@ class CollectionController extends Controller
             if (!in_array($relationType, ['one_to_one', 'one_to_many', 'many_to_many'])) {
                 $relationType = 'one_to_one';
             }
+            // Validate relation collection exists
+            $relationSlug = trim($optionsRaw);
+            $relCollection = Collection::findOneBy(['slug' => $relationSlug]);
+            if (!$relCollection) {
+                $this->flash('errors', ['field_options' => 'The specified relation collection does not exist.']);
+                $this->back();
+                return;
+            }
             $displayField = trim($this->input('field_display_field', ''));
             $options = [
-                'relation_collection' => trim($optionsRaw),
+                'relation_collection' => $relationSlug,
                 'relation_type' => $relationType,
                 'display_field' => $displayField ?: null,
             ];
@@ -548,9 +561,11 @@ class CollectionController extends Controller
             // Add slug column to the data table
             try {
                 $tableName = $collection->getTableName();
+                $safeTable = SchemaManager::validateIdentifier($tableName, 'table name');
+                $safeIndex = SchemaManager::validateIdentifier("uniq_{$tableName}_slug", 'index name');
                 $conn = $this->schema->getConnection();
-                $conn->executeStatement("ALTER TABLE `{$tableName}` ADD COLUMN `slug` VARCHAR(255) NULL DEFAULT NULL");
-                $conn->executeStatement("ALTER TABLE `{$tableName}` ADD UNIQUE INDEX `uniq_{$tableName}_slug` (`slug`)");
+                $conn->executeStatement("ALTER TABLE `{$safeTable}` ADD COLUMN `slug` VARCHAR(255) NULL DEFAULT NULL");
+                $conn->executeStatement("ALTER TABLE `{$safeTable}` ADD UNIQUE INDEX `{$safeIndex}` (`slug`)");
             } catch (\Exception $e) {
                 // Column may already exist
             }
@@ -571,7 +586,7 @@ class CollectionController extends Controller
         }
 
         $field = Field::find($id);
-        if (!$field) {
+        if (!$field || $field->getCollection()->getId() !== $collection->getId()) {
             $this->flash('errors', ['field' => 'Field not found.']);
             $this->back();
             return;
@@ -607,9 +622,17 @@ class CollectionController extends Controller
             if (!in_array($relationType, ['one_to_one', 'one_to_many', 'many_to_many'])) {
                 $relationType = 'one_to_one';
             }
+            // Validate relation collection exists
+            $relationSlug = trim($optionsRaw);
+            $relCollection = Collection::findOneBy(['slug' => $relationSlug]);
+            if (!$relCollection) {
+                $this->flash('errors', ['field_options' => 'The specified relation collection does not exist.']);
+                $this->back();
+                return;
+            }
             $displayField = trim($this->input('field_display_field', ''));
             $options = [
-                'relation_collection' => trim($optionsRaw),
+                'relation_collection' => $relationSlug,
                 'relation_type' => $relationType,
                 'display_field' => $displayField ?: null,
             ];
@@ -667,7 +690,7 @@ class CollectionController extends Controller
         }
 
         $field = Field::find($id);
-        if (!$field) {
+        if (!$field || $field->getCollection()->getId() !== $collection->getId()) {
             $this->flash('errors', ['field' => 'Field not found.']);
             $this->back();
             return;
@@ -681,9 +704,11 @@ class CollectionController extends Controller
         if ($isSlugSource) {
             try {
                 $tableName = $collection->getTableName();
+                $safeTable = SchemaManager::validateIdentifier($tableName, 'table name');
+                $safeIndex = SchemaManager::validateIdentifier("uniq_{$tableName}_slug", 'index name');
                 $conn = $this->schema->getConnection();
-                $conn->executeStatement("ALTER TABLE `{$tableName}` DROP INDEX `uniq_{$tableName}_slug`");
-                $conn->executeStatement("ALTER TABLE `{$tableName}` DROP COLUMN `slug`");
+                $conn->executeStatement("ALTER TABLE `{$safeTable}` DROP INDEX `{$safeIndex}`");
+                $conn->executeStatement("ALTER TABLE `{$safeTable}` DROP COLUMN `slug`");
             } catch (\Exception $e) {
                 // Index or column may not exist
             }

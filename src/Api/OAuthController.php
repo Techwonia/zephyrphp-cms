@@ -105,6 +105,14 @@ class OAuthController extends Controller
         $codeChallengeMethod = $this->input('code_challenge_method', 'S256');
         $approved = $this->input('approve', '') === '1';
 
+        // Validate client and redirect_uri before any redirect
+        $client = OAuthClient::findByClientId($clientId);
+        if (!$client || $client->getRedirectUri() !== $redirectUri) {
+            $this->flash('errors', ['Invalid OAuth request.']);
+            $this->redirect('/cms');
+            return;
+        }
+
         if (!$approved) {
             // User denied
             $separator = str_contains($redirectUri, '?') ? '&' : '?';
@@ -113,13 +121,6 @@ class OAuthController extends Controller
                 'error_description' => 'The user denied the authorization request.',
                 'state' => $state,
             ]));
-            return;
-        }
-
-        $client = OAuthClient::findByClientId($clientId);
-        if (!$client || $client->getRedirectUri() !== $redirectUri) {
-            $this->flash('errors', ['Invalid OAuth request.']);
-            $this->redirect('/cms');
             return;
         }
 

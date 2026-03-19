@@ -34,7 +34,7 @@
                                 <span style="font-size:18px; transition:transform 0.2s;">+</span>
                             </summary>
                             <div style="padding:16px 20px; color:{{ _text }}; line-height:1.7; border-top:1px solid {{ section.settings.border_color|default('#e3e3e3') }};">
-                                {{ block.settings.answer|raw }}
+                                {{ block.settings.answer|striptags('<p><br><strong><em><b><i><ul><ol><li><a><h1><h2><h3><h4><h5><h6><blockquote><pre><code><span><div><table><thead><tbody><tr><td><th><img><hr>') }}
                             </div>
                         </details>
                     {% endif %}

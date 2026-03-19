@@ -18,7 +18,7 @@
                     <h2 style="color:{{ section.settings.heading_color|default('#303030') }}; margin-bottom:16px;">{{ section.settings.heading }}</h2>
                 {% endif %}
                 {% if section.settings.text %}
-                    <div style="color:{{ section.settings.text_color|default('#616161') }}; line-height:1.7;">{{ section.settings.text|raw }}</div>
+                    <div style="color:{{ section.settings.text_color|default('#616161') }}; line-height:1.7;">{{ section.settings.text|striptags('<p><br><strong><em><b><i><ul><ol><li><a><h1><h2><h3><h4><h5><h6><blockquote><pre><code><span><div><table><thead><tbody><tr><td><th><img><hr>') }}</div>
                 {% endif %}
                 {% if section.settings.button_text %}
                     <a href="{{ section.settings.button_url|default('#') }}" style="display:inline-block; margin-top:20px; padding:10px 24px; background:{{ section.settings.button_color|default('#008060') }}; color:#fff; border-radius:6px; text-decoration:none;">

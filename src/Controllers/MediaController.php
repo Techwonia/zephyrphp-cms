@@ -59,40 +59,69 @@ class MediaController extends Controller
         // Get folders
         $folders = $this->getFolders();
 
-        // Build query criteria
-        $criteria = [];
-        if ($folder !== '') {
-            // Filter by folder path prefix
-            $allMedia = Media::findBy([], ['createdAt' => 'DESC']);
-            $allMedia = array_filter($allMedia, function ($m) use ($folder) {
-                $path = $m->getPath();
-                $relDir = dirname(str_replace('storage/cms/uploads/', '', $path));
-                return $relDir === $folder || str_starts_with($relDir, $folder . '/');
-            });
-        } else {
-            $allMedia = Media::findBy([], ['createdAt' => 'DESC']);
-        }
+        // Use direct DB queries with pagination to avoid loading all records
+        try {
+            $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
+            $qb = $conn->createQueryBuilder();
 
-        // Search filter
-        if ($search !== '') {
-            $searchLower = strtolower($search);
-            $allMedia = array_filter($allMedia, fn($m) => str_contains(strtolower($m->getOriginalName()), $searchLower));
-        }
+            // Base conditions
+            $conditions = [];
+            $params = [];
 
-        // Type filter
-        if ($filter === 'images') {
-            $allMedia = array_filter($allMedia, fn($m) => $m->isImage());
-        } elseif ($filter === 'documents') {
-            $allMedia = array_filter($allMedia, fn($m) => !$m->isImage() && !str_starts_with($m->getMimeType(), 'video/') && !str_starts_with($m->getMimeType(), 'audio/'));
-        } elseif ($filter === 'video') {
-            $allMedia = array_filter($allMedia, fn($m) => str_starts_with($m->getMimeType(), 'video/'));
-        } elseif ($filter === 'audio') {
-            $allMedia = array_filter($allMedia, fn($m) => str_starts_with($m->getMimeType(), 'audio/'));
-        }
+            if ($folder !== '') {
+                $conditions[] = 'path LIKE ?';
+                $params[] = 'storage/cms/uploads/' . $folder . '/%';
+            }
 
-        $allMedia = array_values($allMedia);
-        $total = count($allMedia);
-        $media = array_slice($allMedia, ($page - 1) * $perPage, $perPage);
+            if ($search !== '') {
+                $conditions[] = 'original_name LIKE ?';
+                $params[] = '%' . $search . '%';
+            }
+
+            if ($filter === 'images') {
+                $conditions[] = 'mime_type LIKE ?';
+                $params[] = 'image/%';
+            } elseif ($filter === 'video') {
+                $conditions[] = 'mime_type LIKE ?';
+                $params[] = 'video/%';
+            } elseif ($filter === 'audio') {
+                $conditions[] = 'mime_type LIKE ?';
+                $params[] = 'audio/%';
+            } elseif ($filter === 'documents') {
+                $conditions[] = 'mime_type NOT LIKE ?';
+                $conditions[] = 'mime_type NOT LIKE ?';
+                $conditions[] = 'mime_type NOT LIKE ?';
+                $params[] = 'image/%';
+                $params[] = 'video/%';
+                $params[] = 'audio/%';
+            }
+
+            $where = !empty($conditions) ? 'WHERE ' . implode(' AND ', $conditions) : '';
+
+            // Get total count
+            $total = (int) $conn->fetchOne(
+                "SELECT COUNT(*) FROM cms_media {$where}",
+                $params
+            );
+
+            // Get paginated results
+            $offset = ($page - 1) * $perPage;
+            $rows = $conn->fetchAllAssociative(
+                "SELECT id FROM cms_media {$where} ORDER BY created_at DESC LIMIT {$perPage} OFFSET {$offset}",
+                $params
+            );
+
+            $media = [];
+            foreach ($rows as $row) {
+                $item = Media::find((int) $row['id']);
+                if ($item) {
+                    $media[] = $item;
+                }
+            }
+        } catch (\Throwable $e) {
+            $media = [];
+            $total = 0;
+        }
 
         return $this->render('cms::media/index', [
             'media' => $media,
@@ -229,23 +258,48 @@ class MediaController extends Controller
         $page = max(1, (int) ($this->input('page') ?? 1));
         $perPage = 24;
         $search = $this->input('search', '');
-
-        $allMedia = Media::findBy([], ['createdAt' => 'DESC']);
-
-        // Search by original name
-        if (!empty($search)) {
-            $searchLower = strtolower($search);
-            $allMedia = array_filter($allMedia, fn($m) => str_contains(strtolower($m->getOriginalName()), $searchLower));
-        }
-
-        // Filter images only if requested
         $filter = $this->input('filter', 'all');
-        if ($filter === 'images') {
-            $allMedia = array_filter($allMedia, fn($m) => $m->isImage());
-        }
 
-        $total = count($allMedia);
-        $media = array_slice(array_values($allMedia), ($page - 1) * $perPage, $perPage);
+        try {
+            $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
+
+            $conditions = [];
+            $params = [];
+
+            if (!empty($search)) {
+                $conditions[] = 'original_name LIKE ?';
+                $params[] = '%' . $search . '%';
+            }
+
+            if ($filter === 'images') {
+                $conditions[] = 'mime_type LIKE ?';
+                $params[] = 'image/%';
+            }
+
+            $where = !empty($conditions) ? 'WHERE ' . implode(' AND ', $conditions) : '';
+
+            $total = (int) $conn->fetchOne(
+                "SELECT COUNT(*) FROM cms_media {$where}",
+                $params
+            );
+
+            $offset = ($page - 1) * $perPage;
+            $rows = $conn->fetchAllAssociative(
+                "SELECT id FROM cms_media {$where} ORDER BY created_at DESC LIMIT {$perPage} OFFSET {$offset}",
+                $params
+            );
+
+            $media = [];
+            foreach ($rows as $row) {
+                $m = Media::find((int) $row['id']);
+                if ($m) {
+                    $media[] = $m;
+                }
+            }
+        } catch (\Throwable $e) {
+            $media = [];
+            $total = 0;
+        }
 
         $items = [];
         foreach ($media as $item) {

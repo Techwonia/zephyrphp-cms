@@ -16,6 +16,20 @@ class SchemaManager
 {
     private Connection $connection;
 
+    /**
+     * SQL reserved words that cannot be used as identifiers.
+     */
+    private const RESERVED_WORDS = [
+        'add', 'all', 'alter', 'and', 'as', 'asc', 'between', 'by', 'case', 'check',
+        'column', 'constraint', 'create', 'cross', 'current', 'database', 'default',
+        'delete', 'desc', 'distinct', 'drop', 'else', 'exists', 'false', 'foreign',
+        'from', 'full', 'grant', 'group', 'having', 'in', 'index', 'inner', 'insert',
+        'into', 'is', 'join', 'key', 'left', 'like', 'limit', 'not', 'null', 'on',
+        'or', 'order', 'outer', 'primary', 'references', 'right', 'select', 'set',
+        'table', 'then', 'to', 'true', 'union', 'unique', 'update', 'using', 'values',
+        'when', 'where', 'with',
+    ];
+
     public function __construct()
     {
         $this->connection = ZephyrConnection::getInstance()->getConnection();
@@ -26,11 +40,82 @@ class SchemaManager
         return $this->connection;
     }
 
+    // ========================================================================
+    // IDENTIFIER VALIDATION (SQL injection prevention)
+    // ========================================================================
+
+    /**
+     * Validate and sanitize a SQL identifier (table name, column name, index name).
+     * Only allows alphanumeric characters and underscores. Max 64 characters (MySQL limit).
+     *
+     * @throws \InvalidArgumentException If the identifier is invalid
+     */
+    public static function validateIdentifier(string $identifier, string $context = 'identifier'): string
+    {
+        $identifier = trim($identifier);
+
+        if ($identifier === '') {
+            throw new \InvalidArgumentException("SQL {$context} cannot be empty.");
+        }
+
+        if (strlen($identifier) > 64) {
+            throw new \InvalidArgumentException("SQL {$context} exceeds maximum length of 64 characters: '{$identifier}'");
+        }
+
+        if (!preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $identifier)) {
+            throw new \InvalidArgumentException(
+                "Invalid SQL {$context}: '{$identifier}'. Only letters, digits, and underscores are allowed, and it must start with a letter or underscore."
+            );
+        }
+
+        if (in_array(strtolower($identifier), self::RESERVED_WORDS, true)) {
+            throw new \InvalidArgumentException("SQL {$context} '{$identifier}' is a reserved word.");
+        }
+
+        return $identifier;
+    }
+
+    /**
+     * Validate a table name. Applies validateIdentifier rules.
+     */
+    private function safeTable(string $tableName): string
+    {
+        return self::validateIdentifier($tableName, 'table name');
+    }
+
+    /**
+     * Validate a column name. Applies validateIdentifier rules.
+     */
+    private function safeColumn(string $columnName): string
+    {
+        return self::validateIdentifier($columnName, 'column name');
+    }
+
+    /**
+     * Validate an index name. Applies validateIdentifier rules.
+     */
+    private function safeIndex(string $indexName): string
+    {
+        return self::validateIdentifier($indexName, 'index name');
+    }
+
+    /**
+     * Get the table name for a collection slug. Validates the result.
+     */
+    public function getTableName(string $slug): string
+    {
+        $slug = preg_replace('/[^a-zA-Z0-9_]/', '', $slug);
+        $prefix = \ZephyrPHP\Config\Config::get('cms.content_prefix', 'app_');
+        $tableName = $prefix . $slug;
+        return $this->safeTable($tableName);
+    }
+
     /**
      * Drop a table by name (generic)
      */
     public function dropTable(string $tableName): void
     {
+        $tableName = $this->safeTable($tableName);
         $sm = $this->connection->createSchemaManager();
         if ($sm->tablesExist([$tableName])) {
             $this->connection->executeStatement('SET FOREIGN_KEY_CHECKS = 0');
@@ -146,12 +231,13 @@ class SchemaManager
     public function ensureFulltextIndex(string $tableName, array $fields): void
     {
         try {
+            $tableName = $this->safeTable($tableName);
             $textTypes = ['text', 'textarea', 'richtext', 'email', 'url'];
             $searchableColumns = [];
 
             foreach ($fields as $field) {
                 if ($field instanceof Field && in_array($field->getType(), $textTypes) && $field->isSearchable()) {
-                    $searchableColumns[] = $field->getSlug();
+                    $searchableColumns[] = $this->safeColumn($field->getSlug());
                 }
             }
 
@@ -159,7 +245,7 @@ class SchemaManager
                 return;
             }
 
-            $indexName = 'ft_' . $tableName;
+            $indexName = $this->safeIndex('ft_' . $tableName);
 
             // Drop existing FULLTEXT index if it exists
             try {
@@ -184,10 +270,12 @@ class SchemaManager
      */
     public function addSeoColumns(string $tableName): void
     {
+        $tableName = $this->safeTable($tableName);
         $sm = $this->connection->createSchemaManager();
         $columns = $sm->listTableColumns($tableName);
 
         foreach (SeoService::SEO_COLUMNS as $colName => $colDef) {
+            $colName = $this->safeColumn($colName);
             if (!isset($columns[$colName])) {
                 $this->connection->executeStatement("ALTER TABLE `{$tableName}` ADD COLUMN `{$colName}` {$colDef}");
             }
@@ -199,10 +287,12 @@ class SchemaManager
      */
     public function removeSeoColumns(string $tableName): void
     {
+        $tableName = $this->safeTable($tableName);
         $sm = $this->connection->createSchemaManager();
         $columns = $sm->listTableColumns($tableName);
 
         foreach (array_keys(SeoService::SEO_COLUMNS) as $colName) {
+            $colName = $this->safeColumn($colName);
             if (isset($columns[$colName])) {
                 $this->connection->executeStatement("ALTER TABLE `{$tableName}` DROP COLUMN `{$colName}`");
             }
@@ -214,14 +304,15 @@ class SchemaManager
      */
     public function addColumn(string $tableName, Field $field): void
     {
-        // Build ALTER TABLE manually for reliability
+        $tableName = $this->safeTable($tableName);
+        $colName = $this->safeColumn($field->getSlug());
         $columnDef = $this->buildColumnDefinition($field);
-        $sql = "ALTER TABLE `{$tableName}` ADD COLUMN `{$field->getSlug()}` {$columnDef}";
+        $sql = "ALTER TABLE `{$tableName}` ADD COLUMN `{$colName}` {$columnDef}";
         $this->connection->executeStatement($sql);
 
         if ($field instanceof Field && $field->isUnique()) {
-            $indexName = "uniq_{$tableName}_{$field->getSlug()}";
-            $sql = "ALTER TABLE `{$tableName}` ADD UNIQUE INDEX `{$indexName}` (`{$field->getSlug()}`)";
+            $indexName = $this->safeIndex("uniq_{$tableName}_{$colName}");
+            $sql = "ALTER TABLE `{$tableName}` ADD UNIQUE INDEX `{$indexName}` (`{$colName}`)";
             $this->connection->executeStatement($sql);
         }
     }
@@ -231,13 +322,15 @@ class SchemaManager
      */
     public function modifyColumn(string $tableName, Field $field, ?string $oldSlug = null): void
     {
+        $tableName = $this->safeTable($tableName);
+        $colName = $this->safeColumn($field->getSlug());
         $columnDef = $this->buildColumnDefinition($field);
 
         if ($oldSlug && $oldSlug !== $field->getSlug()) {
-            // Rename + modify
-            $sql = "ALTER TABLE `{$tableName}` CHANGE `{$oldSlug}` `{$field->getSlug()}` {$columnDef}";
+            $oldCol = $this->safeColumn($oldSlug);
+            $sql = "ALTER TABLE `{$tableName}` CHANGE `{$oldCol}` `{$colName}` {$columnDef}";
         } else {
-            $sql = "ALTER TABLE `{$tableName}` MODIFY COLUMN `{$field->getSlug()}` {$columnDef}";
+            $sql = "ALTER TABLE `{$tableName}` MODIFY COLUMN `{$colName}` {$columnDef}";
         }
 
         $this->connection->executeStatement($sql);
@@ -248,6 +341,8 @@ class SchemaManager
      */
     public function dropColumn(string $tableName, string $columnName): void
     {
+        $tableName = $this->safeTable($tableName);
+        $columnName = $this->safeColumn($columnName);
         $sql = "ALTER TABLE `{$tableName}` DROP COLUMN `{$columnName}`";
         $this->connection->executeStatement($sql);
     }
@@ -259,7 +354,7 @@ class SchemaManager
      */
     public function dropCollectionTableWithRelations(Collection $collection): void
     {
-        $tableName = $collection->getTableName();
+        $tableName = $this->safeTable($collection->getTableName());
 
         // 1. Drop pivot tables and FK constraints for fields in THIS collection
         foreach ($collection->getFields() as $field) {
@@ -288,19 +383,21 @@ class SchemaManager
                 if ($relSlug !== $collection->getSlug()) {
                     continue;
                 }
+                $otherTable = $this->safeTable($otherCollection->getTableName());
+                $otherCol = $this->safeColumn($field->getSlug());
                 $relationType = $field->getOptions()['relation_type'] ?? 'one_to_one';
                 if ($relationType === 'one_to_one') {
-                    $this->dropForeignKey($otherCollection->getTableName(), $field->getSlug());
+                    $this->dropForeignKey($otherTable, $otherCol);
                     // Set the column to NULL for all rows since the target is gone
                     try {
                         $this->connection->executeStatement(
-                            "UPDATE `{$otherCollection->getTableName()}` SET `{$field->getSlug()}` = NULL"
+                            "UPDATE `{$otherTable}` SET `{$otherCol}` = NULL"
                         );
                     } catch (\Exception $e) {
                         // Column may not exist yet
                     }
                 } else {
-                    $this->dropPivotTable($otherCollection->getTableName(), $field->getSlug());
+                    $this->dropPivotTable($otherTable, $field->getSlug());
                 }
             }
         }
@@ -308,7 +405,6 @@ class SchemaManager
         // 3. Now safely drop the main table
         $sm = $this->connection->createSchemaManager();
         if ($sm->tablesExist([$tableName])) {
-            // Disable FK checks temporarily to ensure clean drop
             $this->connection->executeStatement('SET FOREIGN_KEY_CHECKS = 0');
             $sm->dropTable($tableName);
             $this->connection->executeStatement('SET FOREIGN_KEY_CHECKS = 1');
@@ -320,6 +416,7 @@ class SchemaManager
      */
     public function dropCollectionTable(string $tableName): void
     {
+        $tableName = $this->safeTable($tableName);
         $sm = $this->connection->createSchemaManager();
         if ($sm->tablesExist([$tableName])) {
             $this->connection->executeStatement('SET FOREIGN_KEY_CHECKS = 0');
@@ -333,6 +430,7 @@ class SchemaManager
      */
     public function tableExists(string $tableName): bool
     {
+        $tableName = $this->safeTable($tableName);
         $sm = $this->connection->createSchemaManager();
         return $sm->tablesExist([$tableName]);
     }
@@ -369,14 +467,14 @@ class SchemaManager
         if ($field->getDefaultValue() !== null && $field->getDefaultValue() !== '') {
             $defaultVal = $field->getDefaultValue();
             if ($isNumericDefault) {
-                // Ensure numeric defaults are actually numeric to prevent injection
+                // Strict numeric validation — cast to prevent any injection
                 if (is_numeric($defaultVal)) {
-                    $default = "DEFAULT {$defaultVal}";
+                    $default = "DEFAULT " . (str_contains($defaultVal, '.') ? (float) $defaultVal : (int) $defaultVal);
                 }
             } else {
-                // Escape single quotes to prevent SQL injection
-                $escapedVal = str_replace("'", "''", $defaultVal);
-                $default = "DEFAULT '{$escapedVal}'";
+                // Use PDO quoting for proper escaping instead of manual str_replace
+                $quoted = $this->connection->quote($defaultVal);
+                $default = "DEFAULT {$quoted}";
             }
         } elseif (!$field->isRequired()) {
             $default = 'DEFAULT NULL';
@@ -410,6 +508,10 @@ class SchemaManager
      */
     public function addForeignKey(string $sourceTable, string $columnName, string $targetTable): void
     {
+        $sourceTable = $this->safeTable($sourceTable);
+        $columnName = $this->safeColumn($columnName);
+        $targetTable = $this->safeTable($targetTable);
+
         // Match the target table's primary key type
         $targetType = $this->getPrimaryKeyColumnType($targetTable);
         $this->connection->executeStatement(
@@ -417,7 +519,7 @@ class SchemaManager
         );
 
         // Add index on the FK column for performance
-        $idxName = "idx_{$sourceTable}_{$columnName}";
+        $idxName = $this->safeIndex("idx_{$sourceTable}_{$columnName}");
         try {
             $this->connection->executeStatement(
                 "ALTER TABLE `{$sourceTable}` ADD INDEX `{$idxName}` (`{$columnName}`)"
@@ -426,7 +528,7 @@ class SchemaManager
             // Index may already exist
         }
 
-        $fkName = "fk_{$sourceTable}_{$columnName}";
+        $fkName = $this->safeIndex("fk_{$sourceTable}_{$columnName}");
         $sql = "ALTER TABLE `{$sourceTable}` ADD CONSTRAINT `{$fkName}` "
              . "FOREIGN KEY (`{$columnName}`) REFERENCES `{$targetTable}`(`id`) ON DELETE SET NULL ON UPDATE CASCADE";
         $this->connection->executeStatement($sql);
@@ -437,7 +539,9 @@ class SchemaManager
      */
     public function dropForeignKey(string $sourceTable, string $columnName): void
     {
-        $fkName = "fk_{$sourceTable}_{$columnName}";
+        $sourceTable = $this->safeTable($sourceTable);
+        $columnName = $this->safeColumn($columnName);
+        $fkName = $this->safeIndex("fk_{$sourceTable}_{$columnName}");
         try {
             $sql = "ALTER TABLE `{$sourceTable}` DROP FOREIGN KEY `{$fkName}`";
             $this->connection->executeStatement($sql);
@@ -451,6 +555,8 @@ class SchemaManager
      */
     public function getPivotTableName(string $sourceTable, string $fieldSlug): string
     {
+        $sourceTable = $this->safeTable($sourceTable);
+        $fieldSlug = $this->safeColumn($fieldSlug);
         return "{$sourceTable}_to_{$fieldSlug}";
     }
 
@@ -459,6 +565,7 @@ class SchemaManager
      */
     public function getPrimaryKeyColumnType(string $tableName): string
     {
+        $tableName = $this->safeTable($tableName);
         try {
             $sm = $this->connection->createSchemaManager();
             $columns = $sm->listTableColumns($tableName);
@@ -479,20 +586,31 @@ class SchemaManager
      */
     public function createPivotTable(string $sourceTable, string $targetTable, string $fieldSlug): void
     {
-        $pivotTable = $this->getPivotTableName($sourceTable, $fieldSlug);
+        $sourceTable = $this->safeTable($sourceTable);
+        $targetTable = $this->safeTable($targetTable);
+        $fieldSlug = $this->safeColumn($fieldSlug);
+        $pivotTable = $this->safeTable("{$sourceTable}_to_{$fieldSlug}");
 
         $srcType = $this->getPrimaryKeyColumnType($sourceTable);
         $tgtType = $this->getPrimaryKeyColumnType($targetTable);
 
+        $srcIdCol = $this->safeColumn("{$sourceTable}_id");
+        $tgtIdCol = $this->safeColumn("{$targetTable}_id");
+        $idxSource = $this->safeIndex("idx_{$pivotTable}_source");
+        $idxTarget = $this->safeIndex("idx_{$pivotTable}_target");
+        $uniqKey = $this->safeIndex("uniq_{$pivotTable}");
+        $fkSource = $this->safeIndex("fk_{$pivotTable}_source");
+        $fkTarget = $this->safeIndex("fk_{$pivotTable}_target");
+
         $sql = "CREATE TABLE `{$pivotTable}` ("
              . "`id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, "
-             . "`{$sourceTable}_id` {$srcType} NOT NULL, "
-             . "`{$targetTable}_id` {$tgtType} NOT NULL, "
-             . "INDEX `idx_{$pivotTable}_source` (`{$sourceTable}_id`), "
-             . "INDEX `idx_{$pivotTable}_target` (`{$targetTable}_id`), "
-             . "UNIQUE KEY `uniq_{$pivotTable}` (`{$sourceTable}_id`, `{$targetTable}_id`), "
-             . "CONSTRAINT `fk_{$pivotTable}_source` FOREIGN KEY (`{$sourceTable}_id`) REFERENCES `{$sourceTable}`(`id`) ON DELETE CASCADE ON UPDATE CASCADE, "
-             . "CONSTRAINT `fk_{$pivotTable}_target` FOREIGN KEY (`{$targetTable}_id`) REFERENCES `{$targetTable}`(`id`) ON DELETE CASCADE ON UPDATE CASCADE"
+             . "`{$srcIdCol}` {$srcType} NOT NULL, "
+             . "`{$tgtIdCol}` {$tgtType} NOT NULL, "
+             . "INDEX `{$idxSource}` (`{$srcIdCol}`), "
+             . "INDEX `{$idxTarget}` (`{$tgtIdCol}`), "
+             . "UNIQUE KEY `{$uniqKey}` (`{$srcIdCol}`, `{$tgtIdCol}`), "
+             . "CONSTRAINT `{$fkSource}` FOREIGN KEY (`{$srcIdCol}`) REFERENCES `{$sourceTable}`(`id`) ON DELETE CASCADE ON UPDATE CASCADE, "
+             . "CONSTRAINT `{$fkTarget}` FOREIGN KEY (`{$tgtIdCol}`) REFERENCES `{$targetTable}`(`id`) ON DELETE CASCADE ON UPDATE CASCADE"
              . ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci";
 
         $this->connection->executeStatement($sql);
@@ -503,7 +621,7 @@ class SchemaManager
      */
     public function dropPivotTable(string $sourceTable, string $fieldSlug): void
     {
-        $pivotTable = $this->getPivotTableName($sourceTable, $fieldSlug);
+        $pivotTable = $this->safeTable($this->getPivotTableName($sourceTable, $fieldSlug));
         $this->connection->executeStatement("DROP TABLE IF EXISTS `{$pivotTable}`");
     }
 
@@ -512,14 +630,16 @@ class SchemaManager
      */
     public function getPivotRelations(string $sourceTable, string $fieldSlug, string $targetTable, int|string $sourceId): array
     {
+        $sourceTable = $this->safeTable($sourceTable);
+        $targetTable = $this->safeTable($targetTable);
         $pivotTable = $this->getPivotTableName($sourceTable, $fieldSlug);
 
         if (!$this->tableExists($pivotTable)) {
             return [];
         }
 
-        $srcCol = "{$sourceTable}_id";
-        $tgtCol = "{$targetTable}_id";
+        $srcCol = $this->safeColumn("{$sourceTable}_id");
+        $tgtCol = $this->safeColumn("{$targetTable}_id");
 
         $result = $this->connection->createQueryBuilder()
             ->select("`{$tgtCol}`")
@@ -536,14 +656,16 @@ class SchemaManager
      */
     public function syncPivotRelations(string $sourceTable, string $fieldSlug, string $targetTable, int|string $sourceId, array $relatedIds): void
     {
+        $sourceTable = $this->safeTable($sourceTable);
+        $targetTable = $this->safeTable($targetTable);
         $pivotTable = $this->getPivotTableName($sourceTable, $fieldSlug);
 
         if (!$this->tableExists($pivotTable)) {
             return;
         }
 
-        $srcCol = "{$sourceTable}_id";
-        $tgtCol = "{$targetTable}_id";
+        $srcCol = $this->safeColumn("{$sourceTable}_id");
+        $tgtCol = $this->safeColumn("{$targetTable}_id");
 
         // Remove existing relations
         $this->connection->delete($pivotTable, [$srcCol => $sourceId]);
@@ -577,6 +699,7 @@ class SchemaManager
      */
     public function insertEntry(string $tableName, array $data, bool $useUuid = false): int|string
     {
+        $tableName = $this->safeTable($tableName);
         $data['created_at'] = (new \DateTime())->format('Y-m-d H:i:s');
         $data['updated_at'] = (new \DateTime())->format('Y-m-d H:i:s');
 
@@ -595,6 +718,7 @@ class SchemaManager
      */
     public function updateEntry(string $tableName, int|string $id, array $data): void
     {
+        $tableName = $this->safeTable($tableName);
         $data['updated_at'] = (new \DateTime())->format('Y-m-d H:i:s');
         $this->connection->update($tableName, $data, ['id' => $id]);
     }
@@ -604,6 +728,7 @@ class SchemaManager
      */
     public function deleteEntry(string $tableName, int|string $id): void
     {
+        $tableName = $this->safeTable($tableName);
         $this->connection->delete($tableName, ['id' => $id]);
     }
 
@@ -612,6 +737,7 @@ class SchemaManager
      */
     public function findEntry(string $tableName, int|string $id): ?array
     {
+        $tableName = $this->safeTable($tableName);
         $qb = $this->connection->createQueryBuilder();
         $result = $qb->select('*')
             ->from($tableName)
@@ -628,11 +754,34 @@ class SchemaManager
      */
     public function listEntries(string $tableName, array $options = []): array
     {
+        $tableName = $this->safeTable($tableName);
         // Get actual column names from the table to whitelist against
         $validColumns = $this->getTableColumns($tableName);
 
         $qb = $this->connection->createQueryBuilder();
-        $qb->select('*')->from($tableName);
+
+        // Select specific columns or default to *
+        if (!empty($options['select'])) {
+            $selectExprs = [];
+            foreach ($options['select'] as $col) {
+                // Allow safe aggregate expressions: FUNC(col), FUNC(*), col as alias
+                if (preg_match('/^(COUNT|SUM|AVG|MIN|MAX|DATE|YEAR|MONTH|DAY)\(([a-zA-Z0-9_*]+)\)(\s+as\s+[a-zA-Z0-9_]+)?$/i', $col)) {
+                    $selectExprs[] = $col; // safe aggregate expression
+                } elseif (in_array($col, $validColumns, true)) {
+                    $selectExprs[] = "`{$col}`";
+                }
+            }
+            $qb->select(...($selectExprs ?: ['*']));
+        } else {
+            $qb->select('*');
+        }
+
+        // DISTINCT
+        if (!empty($options['distinct'])) {
+            $qb->distinct();
+        }
+
+        $qb->from($tableName);
 
         // Search — try FULLTEXT (MATCH AGAINST) first, fallback to LIKE
         if (!empty($options['search']) && !empty($options['searchFields'])) {
@@ -688,10 +837,264 @@ class SchemaManager
         if (!empty($options['filters'])) {
             foreach ($options['filters'] as $field => $value) {
                 if (!in_array($field, $validColumns, true)) {
-                    continue; // Skip invalid column names
+                    continue;
                 }
                 $qb->andWhere("`{$field}` = :filter_{$field}")
                     ->setParameter("filter_{$field}", $value);
+            }
+        }
+
+        // WHERE IN filters
+        if (!empty($options['filters_in'])) {
+            foreach ($options['filters_in'] as $field => $values) {
+                if (!in_array($field, $validColumns, true) || empty($values)) {
+                    continue;
+                }
+                $qb->andWhere("`{$field}` IN (:fin_{$field})")
+                    ->setParameter("fin_{$field}", $values, \Doctrine\DBAL\ArrayParameterType::STRING);
+            }
+        }
+
+        // WHERE NOT IN filters
+        if (!empty($options['filters_not_in'])) {
+            foreach ($options['filters_not_in'] as $field => $values) {
+                if (!in_array($field, $validColumns, true) || empty($values)) {
+                    continue;
+                }
+                $qb->andWhere("`{$field}` NOT IN (:fnin_{$field})")
+                    ->setParameter("fnin_{$field}", $values, \Doctrine\DBAL\ArrayParameterType::STRING);
+            }
+        }
+
+        // WHERE NOT filters
+        if (!empty($options['filters_not'])) {
+            foreach ($options['filters_not'] as $field => $value) {
+                if (!in_array($field, $validColumns, true)) {
+                    continue;
+                }
+                $qb->andWhere("`{$field}` != :fnot_{$field}")
+                    ->setParameter("fnot_{$field}", $value);
+            }
+        }
+
+        // WHERE BETWEEN filters
+        if (!empty($options['filters_between'])) {
+            foreach ($options['filters_between'] as $field => $range) {
+                if (!in_array($field, $validColumns, true) || !is_array($range) || count($range) !== 2) {
+                    continue;
+                }
+                $qb->andWhere("`{$field}` BETWEEN :fbtw_{$field}_min AND :fbtw_{$field}_max")
+                    ->setParameter("fbtw_{$field}_min", $range[0])
+                    ->setParameter("fbtw_{$field}_max", $range[1]);
+            }
+        }
+
+        // WHERE NOT BETWEEN filters
+        if (!empty($options['filters_not_between'])) {
+            foreach ($options['filters_not_between'] as $field => $range) {
+                if (!in_array($field, $validColumns, true) || !is_array($range) || count($range) !== 2) {
+                    continue;
+                }
+                $qb->andWhere("`{$field}` NOT BETWEEN :fnbtw_{$field}_min AND :fnbtw_{$field}_max")
+                    ->setParameter("fnbtw_{$field}_min", $range[0])
+                    ->setParameter("fnbtw_{$field}_max", $range[1]);
+            }
+        }
+
+        // WHERE NULL filters
+        $softDeleteAuto = !empty($options['_soft_delete_auto']);
+        if (!empty($options['filters_null'])) {
+            foreach ($options['filters_null'] as $field) {
+                if (!in_array($field, $validColumns, true)) {
+                    // If this is the auto-added deleted_at and column doesn't exist, skip silently
+                    continue;
+                }
+                $qb->andWhere("`{$field}` IS NULL");
+            }
+        }
+
+        // WHERE NOT NULL filters
+        if (!empty($options['filters_not_null'])) {
+            foreach ($options['filters_not_null'] as $field) {
+                if (!in_array($field, $validColumns, true)) {
+                    continue;
+                }
+                $qb->andWhere("`{$field}` IS NOT NULL");
+            }
+        }
+
+        // WHERE LIKE filters
+        if (!empty($options['filters_like'])) {
+            foreach ($options['filters_like'] as $field => $pattern) {
+                if (!in_array($field, $validColumns, true)) {
+                    continue;
+                }
+                $qb->andWhere("`{$field}` LIKE :flike_{$field}")
+                    ->setParameter("flike_{$field}", $pattern);
+            }
+        }
+
+        // WHERE NOT LIKE filters
+        if (!empty($options['filters_not_like'])) {
+            foreach ($options['filters_not_like'] as $field => $pattern) {
+                if (!in_array($field, $validColumns, true)) {
+                    continue;
+                }
+                $qb->andWhere("`{$field}` NOT LIKE :fnlike_{$field}")
+                    ->setParameter("fnlike_{$field}", $pattern);
+            }
+        }
+
+        // DATE function filters (whereDate, whereYear, whereMonth, whereDay)
+        if (!empty($options['filters_date'])) {
+            $dateIdx = 0;
+            foreach ($options['filters_date'] as $dateCond) {
+                $field = $dateCond['field'] ?? '';
+                $func = $dateCond['func'] ?? '';
+                $value = $dateCond['value'] ?? '';
+
+                if (!in_array($field, $validColumns, true)) {
+                    continue;
+                }
+                if (!in_array($func, ['DATE', 'YEAR', 'MONTH', 'DAY'], true)) {
+                    continue;
+                }
+
+                $p = "fdate_{$dateIdx}";
+                $qb->andWhere("{$func}(`{$field}`) = :{$p}")
+                    ->setParameter($p, $value);
+                $dateIdx++;
+            }
+        }
+
+        // Raw WHERE conditions
+        if (!empty($options['raw_conditions'])) {
+            foreach ($options['raw_conditions'] as $raw) {
+                $expr = $raw['expr'] ?? '';
+                $bindings = $raw['bindings'] ?? [];
+
+                if (empty($expr)) {
+                    continue;
+                }
+
+                $qb->andWhere($expr);
+                foreach ($bindings as $paramName => $paramValue) {
+                    $qb->setParameter($paramName, $paramValue);
+                }
+            }
+        }
+
+        // Comparison filters (>, <, >=, <=)
+        if (!empty($options['filters_compare'])) {
+            $cmpIdx = 0;
+            foreach ($options['filters_compare'] as $cmp) {
+                $field = $cmp['field'] ?? '';
+                $operator = $cmp['operator'] ?? '=';
+                $value = $cmp['value'] ?? '';
+
+                if (!in_array($field, $validColumns, true)) {
+                    continue;
+                }
+                if (!in_array($operator, ['>', '<', '>=', '<=', '=', '!='], true)) {
+                    continue;
+                }
+
+                $p = "fcmp_{$cmpIdx}";
+                $qb->andWhere("`{$field}` {$operator} :{$p}")
+                    ->setParameter($p, $value);
+                $cmpIdx++;
+            }
+        }
+
+        // Column comparison filters (col1 > col2)
+        if (!empty($options['filters_column'])) {
+            foreach ($options['filters_column'] as $colCmp) {
+                $col1 = $colCmp['col1'] ?? '';
+                $operator = $colCmp['operator'] ?? '=';
+                $col2 = $colCmp['col2'] ?? '';
+
+                if (!in_array($col1, $validColumns, true) || !in_array($col2, $validColumns, true)) {
+                    continue;
+                }
+                if (!in_array($operator, ['>', '<', '>=', '<=', '=', '!='], true)) {
+                    continue;
+                }
+
+                $qb->andWhere("`{$col1}` {$operator} `{$col2}`");
+            }
+        }
+
+        // JSON contains filters
+        if (!empty($options['filters_json_contains'])) {
+            $jsonIdx = 0;
+            foreach ($options['filters_json_contains'] as $jsonCond) {
+                $field = $jsonCond['field'] ?? '';
+                $value = $jsonCond['value'] ?? '';
+
+                if (!in_array($field, $validColumns, true)) {
+                    continue;
+                }
+
+                $p = "fjson_{$jsonIdx}";
+                $jsonValue = json_encode($value);
+                $qb->andWhere("JSON_CONTAINS(`{$field}`, :{$p})")
+                    ->setParameter($p, $jsonValue);
+                $jsonIdx++;
+            }
+        }
+
+        // Compound AND/OR condition groups
+        if (!empty($options['condition_groups'])) {
+            $this->applyConditionGroups($qb, $options['condition_groups'], $validColumns);
+        }
+
+        // GROUP BY
+        if (!empty($options['group_by'])) {
+            $groupCols = [];
+            foreach ($options['group_by'] as $col) {
+                if (in_array($col, $validColumns, true)) {
+                    $groupCols[] = "`{$col}`";
+                }
+            }
+            if (!empty($groupCols)) {
+                $qb->groupBy(...$groupCols);
+            }
+        }
+
+        // HAVING (requires GROUP BY)
+        if (!empty($options['having']) && !empty($options['group_by'])) {
+            $havingIdx = 0;
+            $allowedAggFuncs = ['COUNT', 'SUM', 'AVG', 'MIN', 'MAX'];
+            foreach ($options['having'] as $hCond) {
+                $expr = $hCond['expr'] ?? '';
+                $operator = $hCond['operator'] ?? '=';
+                $value = $hCond['value'] ?? '';
+
+                if (!in_array($operator, ['=', '!=', '>', '<', '>=', '<='], true)) {
+                    continue;
+                }
+
+                // Validate expression: must be FUNC(col), FUNC(*), or a whitelisted column
+                if (!preg_match('/^([A-Z]+)\(([a-zA-Z0-9_*]+)\)$/', $expr, $m)) {
+                    // Not an aggregate function — check if it's a plain column name
+                    if (!in_array($expr, $validColumns, true)) {
+                        continue; // reject unrecognized expressions
+                    }
+                } else {
+                    // Validate aggregate function name
+                    if (!in_array($m[1], $allowedAggFuncs, true)) {
+                        continue;
+                    }
+                    // Validate inner column (allow * for COUNT(*))
+                    if ($m[2] !== '*' && !in_array($m[2], $validColumns, true)) {
+                        continue;
+                    }
+                }
+
+                $p = "having_{$havingIdx}";
+                $qb->andHaving("{$expr} {$operator} :{$p}")
+                    ->setParameter($p, $value);
+                $havingIdx++;
             }
         }
 
@@ -702,19 +1105,41 @@ class SchemaManager
 
         // Sort — whitelist sort_by against actual columns to prevent SQL injection
         $sortBy = $options['sort_by'] ?? 'id';
-        if (!in_array($sortBy, $validColumns, true)) {
-            $sortBy = 'id';
+        if ($sortBy === 'RAND()') {
+            $qb->orderBy('RAND()');
+        } else {
+            if (!in_array($sortBy, $validColumns, true)) {
+                $sortBy = 'id';
+            }
+            $sortDir = strtoupper($options['sort_dir'] ?? 'DESC');
+            if (!in_array($sortDir, ['ASC', 'DESC'])) {
+                $sortDir = 'DESC';
+            }
+            $qb->orderBy("`{$sortBy}`", $sortDir);
+
+            // Additional sort columns
+            if (!empty($options['additional_sorts'])) {
+                foreach ($options['additional_sorts'] as $addSort) {
+                    $addField = $addSort['field'] ?? '';
+                    $addDir = strtoupper($addSort['dir'] ?? 'ASC');
+                    if (in_array($addField, $validColumns, true) && in_array($addDir, ['ASC', 'DESC'], true)) {
+                        $qb->addOrderBy("`{$addField}`", $addDir);
+                    }
+                }
+            }
         }
-        $sortDir = strtoupper($options['sort_dir'] ?? 'DESC');
-        if (!in_array($sortDir, ['ASC', 'DESC'])) {
-            $sortDir = 'DESC';
-        }
-        $qb->orderBy("`{$sortBy}`", $sortDir);
 
         // Paginate
         $page = max(1, (int) ($options['page'] ?? 1));
         $perPage = max(1, (int) ($options['per_page'] ?? 20));
-        $qb->setFirstResult(($page - 1) * $perPage)
+        $firstResult = ($page - 1) * $perPage;
+
+        // Manual offset override (from EntryQuery::offset())
+        if (isset($options['offset']) && is_int($options['offset']) && $options['offset'] >= 0) {
+            $firstResult = $options['offset'];
+        }
+
+        $qb->setFirstResult($firstResult)
             ->setMaxResults($perPage);
 
         $items = $qb->executeQuery()->fetchAllAssociative();
@@ -726,6 +1151,138 @@ class SchemaManager
             'current_page' => $page,
             'last_page' => max(1, (int) ceil($total / $perPage)),
         ];
+    }
+
+    /**
+     * Apply compound AND/OR condition groups to a query builder.
+     *
+     * Each group is either:
+     *   - A simple condition: {boolean, type, field, value/values/min/max}
+     *   - A nested group:     {boolean, type: 'nested', conditions: [...]}
+     *
+     * Simple OR conditions use $qb->orWhere().
+     * Nested groups produce parenthesized sub-expressions.
+     *
+     * SQL precedence note:
+     *   ->where('a', 1)->where('b', 2)->orWhere('c', 3)
+     *   Produces: WHERE a = 1 AND b = 2 OR c = 3
+     *   SQL reads: (a = 1 AND b = 2) OR (c = 3)
+     *
+     *   For explicit grouping, use closures:
+     *   ->where('a', 1)->where(fn($q) => $q->where('b', 2)->orWhere('c', 3))
+     *   Produces: WHERE a = 1 AND (b = 2 OR c = 3)
+     */
+    private function applyConditionGroups($qb, array $groups, array $validColumns): void
+    {
+        static $paramCounter = 0;
+
+        foreach ($groups as $group) {
+            $boolean = strtoupper($group['boolean'] ?? 'AND');
+            if (!in_array($boolean, ['AND', 'OR'], true)) {
+                $boolean = 'AND';
+            }
+
+            if (($group['type'] ?? '') === 'nested' && !empty($group['conditions'])) {
+                // Build a parenthesized sub-expression from child conditions
+                $subParts = [];
+                foreach ($group['conditions'] as $cond) {
+                    $expr = $this->buildConditionExpr($qb, $cond, $validColumns, $paramCounter);
+                    if ($expr === null) {
+                        continue;
+                    }
+
+                    $condBoolean = strtoupper($cond['boolean'] ?? 'AND');
+                    if (empty($subParts)) {
+                        $subParts[] = $expr;
+                    } else {
+                        $subParts[] = ($condBoolean === 'OR' ? ' OR ' : ' AND ') . $expr;
+                    }
+                }
+
+                if (!empty($subParts)) {
+                    $subExpr = '(' . implode('', $subParts) . ')';
+                    if ($boolean === 'OR') {
+                        $qb->orWhere($subExpr);
+                    } else {
+                        $qb->andWhere($subExpr);
+                    }
+                }
+            } else {
+                // Simple top-level OR/AND condition
+                $expr = $this->buildConditionExpr($qb, $group, $validColumns, $paramCounter);
+                if ($expr === null) {
+                    continue;
+                }
+
+                if ($boolean === 'OR') {
+                    $qb->orWhere($expr);
+                } else {
+                    $qb->andWhere($expr);
+                }
+            }
+        }
+    }
+
+    /**
+     * Build a single condition SQL expression and bind its parameters.
+     *
+     * Returns null if the field is not in the valid columns whitelist.
+     */
+    private function buildConditionExpr($qb, array $cond, array $validColumns, int &$paramCounter): ?string
+    {
+        $type = $cond['type'] ?? '';
+        $field = $cond['field'] ?? '';
+
+        // Validate field exists in table (SQL injection prevention)
+        if (!empty($field) && !in_array($field, $validColumns, true)) {
+            return null;
+        }
+
+        $paramCounter++;
+        $p = "cg_{$paramCounter}";
+
+        switch ($type) {
+            case 'eq':
+            case 'basic':
+                $qb->setParameter($p, $cond['value']);
+                return "`{$field}` = :{$p}";
+
+            case 'neq':
+                $qb->setParameter($p, $cond['value']);
+                return "`{$field}` != :{$p}";
+
+            case 'in':
+                $values = $cond['values'] ?? [];
+                if (empty($values)) {
+                    return null;
+                }
+                $qb->setParameter($p, $values, \Doctrine\DBAL\ArrayParameterType::STRING);
+                return "`{$field}` IN (:{$p})";
+
+            case 'between':
+                $pMin = "cg_{$paramCounter}_min";
+                $pMax = "cg_{$paramCounter}_max";
+                $qb->setParameter($pMin, $cond['min']);
+                $qb->setParameter($pMax, $cond['max']);
+                return "`{$field}` BETWEEN :{$pMin} AND :{$pMax}";
+
+            case 'like':
+                $qb->setParameter($p, $cond['value']);
+                return "`{$field}` LIKE :{$p}";
+
+            case 'not_like':
+                $qb->setParameter($p, $cond['value']);
+                return "`{$field}` NOT LIKE :{$p}";
+
+            case 'null':
+                return "`{$field}` IS NULL";
+
+            case 'not_null':
+                return "`{$field}` IS NOT NULL";
+
+            default:
+                return null;
+        }
     }
 
     /**
@@ -755,6 +1312,7 @@ class SchemaManager
      */
     public function countEntries(string $tableName): int
     {
+        $tableName = $this->safeTable($tableName);
         if (!$this->tableExists($tableName)) {
             return 0;
         }
@@ -765,5 +1323,526 @@ class SchemaManager
             ->executeQuery();
 
         return (int) $result->fetchOne();
+    }
+
+    // ========================================================================
+    // AGGREGATE QUERIES
+    // ========================================================================
+
+    /**
+     * Execute an aggregate query with the same filter options as listEntries().
+     * The 'select' option should contain the aggregate expression.
+     *
+     * @return mixed The aggregate result value
+     */
+    public function aggregateQuery(string $tableName, array $options = []): mixed
+    {
+        $tableName = $this->safeTable($tableName);
+        $validColumns = $this->getTableColumns($tableName);
+        $qb = $this->buildFilteredQueryBuilder($tableName, $options, $validColumns);
+
+        return $qb->executeQuery()->fetchOne();
+    }
+
+    // ========================================================================
+    // BULK OPERATIONS
+    // ========================================================================
+
+    /**
+     * Update all rows matching the filter conditions.
+     * Returns the number of affected rows.
+     */
+    public function bulkUpdate(string $tableName, array $data, array $options = []): int
+    {
+        $tableName = $this->safeTable($tableName);
+        $validColumns = $this->getTableColumns($tableName);
+
+        // Whitelist update data against valid columns
+        $safeData = [];
+        foreach ($data as $key => $value) {
+            if (in_array($key, $validColumns, true) && $key !== 'id') {
+                $safeData[$key] = $value;
+            }
+        }
+        if (empty($safeData)) {
+            return 0;
+        }
+
+        // Build a filtered SELECT to get matching IDs
+        $options['select'] = ['id'];
+        $qb = $this->buildFilteredQueryBuilder($tableName, $options, $validColumns);
+        $qb->setMaxResults(100000);
+        $ids = $qb->executeQuery()->fetchFirstColumn();
+
+        if (empty($ids)) {
+            return 0;
+        }
+
+        // Bulk update using IN clause
+        $updateQb = $this->connection->createQueryBuilder();
+        $updateQb->update($tableName);
+
+        $paramIdx = 0;
+        foreach ($safeData as $col => $val) {
+            $p = "bu_{$paramIdx}";
+            $updateQb->set("`{$col}`", ":{$p}");
+            $updateQb->setParameter($p, $val);
+            $paramIdx++;
+        }
+
+        $updateQb->where('id IN (:bu_ids)')
+            ->setParameter('bu_ids', $ids, \Doctrine\DBAL\ArrayParameterType::STRING);
+
+        return $updateQb->executeStatement();
+    }
+
+    /**
+     * Delete all rows matching the filter conditions.
+     * Returns the number of deleted rows.
+     */
+    public function bulkDelete(string $tableName, array $options = []): int
+    {
+        $tableName = $this->safeTable($tableName);
+        $validColumns = $this->getTableColumns($tableName);
+
+        // Build a filtered SELECT to get matching IDs
+        $options['select'] = ['id'];
+        $qb = $this->buildFilteredQueryBuilder($tableName, $options, $validColumns);
+        $qb->setMaxResults(100000);
+        $ids = $qb->executeQuery()->fetchFirstColumn();
+
+        if (empty($ids)) {
+            return 0;
+        }
+
+        // Bulk delete using IN clause
+        $deleteQb = $this->connection->createQueryBuilder();
+        $deleteQb->delete($tableName)
+            ->where('id IN (:bd_ids)')
+            ->setParameter('bd_ids', $ids, \Doctrine\DBAL\ArrayParameterType::STRING);
+
+        return $deleteQb->executeStatement();
+    }
+
+    // ========================================================================
+    // QUERY DEBUGGING
+    // ========================================================================
+
+    /**
+     * Build and return the SQL string without executing.
+     */
+    public function buildSql(string $tableName, array $options = []): string
+    {
+        $tableName = $this->safeTable($tableName);
+        $validColumns = $this->getTableColumns($tableName);
+        $qb = $this->buildFilteredQueryBuilder($tableName, $options, $validColumns);
+
+        // Apply sort
+        $sortBy = $options['sort_by'] ?? 'id';
+        if ($sortBy === 'RAND()') {
+            $qb->orderBy('RAND()');
+        } else {
+            if (!in_array($sortBy, $validColumns, true)) {
+                $sortBy = 'id';
+            }
+            $sortDir = strtoupper($options['sort_dir'] ?? 'DESC');
+            if (!in_array($sortDir, ['ASC', 'DESC'])) {
+                $sortDir = 'DESC';
+            }
+            $qb->orderBy("`{$sortBy}`", $sortDir);
+
+            // Additional sort columns
+            if (!empty($options['additional_sorts'])) {
+                foreach ($options['additional_sorts'] as $addSort) {
+                    $addField = $addSort['field'] ?? '';
+                    $addDir = strtoupper($addSort['dir'] ?? 'ASC');
+                    if (in_array($addField, $validColumns, true) && in_array($addDir, ['ASC', 'DESC'], true)) {
+                        $qb->addOrderBy("`{$addField}`", $addDir);
+                    }
+                }
+            }
+        }
+
+        // Apply pagination
+        $page = max(1, (int) ($options['page'] ?? 1));
+        $perPage = max(1, (int) ($options['per_page'] ?? 20));
+        $firstResult = ($page - 1) * $perPage;
+
+        if (isset($options['offset']) && is_int($options['offset']) && $options['offset'] >= 0) {
+            $firstResult = $options['offset'];
+        }
+
+        $qb->setFirstResult($firstResult)->setMaxResults($perPage);
+
+        $sql = $qb->getSQL();
+
+        // Inline parameters for readability
+        $params = $qb->getParameters();
+        foreach ($params as $key => $val) {
+            $display = is_array($val) ? implode("', '", $val) : (string) $val;
+            $sql = str_replace(":{$key}", "'" . addslashes($display) . "'", $sql);
+        }
+
+        return $sql;
+    }
+
+    // ========================================================================
+    // INTERNAL: SHARED QUERY BUILDER
+    // ========================================================================
+
+    /**
+     * Build a QueryBuilder with all filter options applied.
+     * Shared by listEntries, aggregateQuery, bulkUpdate, bulkDelete, buildSql.
+     */
+    private function buildFilteredQueryBuilder(string $tableName, array $options, array $validColumns): \Doctrine\DBAL\Query\QueryBuilder
+    {
+        $qb = $this->connection->createQueryBuilder();
+
+        // Select
+        if (!empty($options['select'])) {
+            $selectExprs = [];
+            foreach ($options['select'] as $col) {
+                // Allow safe aggregate expressions: FUNC(col), FUNC(*), col as alias
+                if (preg_match('/^(COUNT|SUM|AVG|MIN|MAX|DATE|YEAR|MONTH|DAY)\(([a-zA-Z0-9_*]+)\)(\s+as\s+[a-zA-Z0-9_]+)?$/i', $col)) {
+                    $selectExprs[] = $col; // safe aggregate expression
+                } elseif (in_array($col, $validColumns, true)) {
+                    $selectExprs[] = "`{$col}`";
+                }
+            }
+            $qb->select(...($selectExprs ?: ['*']));
+        } else {
+            $qb->select('*');
+        }
+
+        // DISTINCT
+        if (!empty($options['distinct'])) {
+            $qb->distinct();
+        }
+
+        $qb->from($tableName);
+
+        // Search
+        if (!empty($options['search']) && !empty($options['searchFields'])) {
+            $searchTerm = $options['search'];
+            $validSearchFields = array_filter($options['searchFields'], fn($f) => in_array($f, $validColumns, true));
+
+            if (!empty($validSearchFields)) {
+                $orConditions = [];
+                $paramIndex = 0;
+                foreach ($validSearchFields as $field) {
+                    $orConditions[] = "`{$field}` LIKE :bfq_search{$paramIndex}";
+                    $qb->setParameter("bfq_search{$paramIndex}", '%' . $searchTerm . '%');
+                    $paramIndex++;
+                }
+                if (!empty($orConditions)) {
+                    $qb->andWhere('(' . implode(' OR ', $orConditions) . ')');
+                }
+            }
+        }
+
+        // Equality filters
+        if (!empty($options['filters'])) {
+            foreach ($options['filters'] as $field => $value) {
+                if (in_array($field, $validColumns, true)) {
+                    $qb->andWhere("`{$field}` = :bfq_f_{$field}")
+                        ->setParameter("bfq_f_{$field}", $value);
+                }
+            }
+        }
+
+        // IN filters
+        if (!empty($options['filters_in'])) {
+            foreach ($options['filters_in'] as $field => $values) {
+                if (in_array($field, $validColumns, true) && !empty($values)) {
+                    $qb->andWhere("`{$field}` IN (:bfq_fin_{$field})")
+                        ->setParameter("bfq_fin_{$field}", $values, \Doctrine\DBAL\ArrayParameterType::STRING);
+                }
+            }
+        }
+
+        // NOT IN filters
+        if (!empty($options['filters_not_in'])) {
+            foreach ($options['filters_not_in'] as $field => $values) {
+                if (in_array($field, $validColumns, true) && !empty($values)) {
+                    $qb->andWhere("`{$field}` NOT IN (:bfq_fnin_{$field})")
+                        ->setParameter("bfq_fnin_{$field}", $values, \Doctrine\DBAL\ArrayParameterType::STRING);
+                }
+            }
+        }
+
+        // NOT filters
+        if (!empty($options['filters_not'])) {
+            foreach ($options['filters_not'] as $field => $value) {
+                if (in_array($field, $validColumns, true)) {
+                    $qb->andWhere("`{$field}` != :bfq_fnot_{$field}")
+                        ->setParameter("bfq_fnot_{$field}", $value);
+                }
+            }
+        }
+
+        // BETWEEN filters
+        if (!empty($options['filters_between'])) {
+            foreach ($options['filters_between'] as $field => $range) {
+                if (in_array($field, $validColumns, true) && is_array($range) && count($range) === 2) {
+                    $qb->andWhere("`{$field}` BETWEEN :bfq_btw_{$field}_min AND :bfq_btw_{$field}_max")
+                        ->setParameter("bfq_btw_{$field}_min", $range[0])
+                        ->setParameter("bfq_btw_{$field}_max", $range[1]);
+                }
+            }
+        }
+
+        // NOT BETWEEN filters
+        if (!empty($options['filters_not_between'])) {
+            foreach ($options['filters_not_between'] as $field => $range) {
+                if (in_array($field, $validColumns, true) && is_array($range) && count($range) === 2) {
+                    $qb->andWhere("`{$field}` NOT BETWEEN :bfq_nbtw_{$field}_min AND :bfq_nbtw_{$field}_max")
+                        ->setParameter("bfq_nbtw_{$field}_min", $range[0])
+                        ->setParameter("bfq_nbtw_{$field}_max", $range[1]);
+                }
+            }
+        }
+
+        // NULL filters (skip deleted_at if column doesn't exist and it's auto-added)
+        if (!empty($options['filters_null'])) {
+            foreach ($options['filters_null'] as $field) {
+                if (!in_array($field, $validColumns, true)) {
+                    continue;
+                }
+                $qb->andWhere("`{$field}` IS NULL");
+            }
+        }
+
+        // NOT NULL filters
+        if (!empty($options['filters_not_null'])) {
+            foreach ($options['filters_not_null'] as $field) {
+                if (in_array($field, $validColumns, true)) {
+                    $qb->andWhere("`{$field}` IS NOT NULL");
+                }
+            }
+        }
+
+        // LIKE filters
+        if (!empty($options['filters_like'])) {
+            foreach ($options['filters_like'] as $field => $pattern) {
+                if (in_array($field, $validColumns, true)) {
+                    $qb->andWhere("`{$field}` LIKE :bfq_like_{$field}")
+                        ->setParameter("bfq_like_{$field}", $pattern);
+                }
+            }
+        }
+
+        // NOT LIKE filters
+        if (!empty($options['filters_not_like'])) {
+            foreach ($options['filters_not_like'] as $field => $pattern) {
+                if (in_array($field, $validColumns, true)) {
+                    $qb->andWhere("`{$field}` NOT LIKE :bfq_nlike_{$field}")
+                        ->setParameter("bfq_nlike_{$field}", $pattern);
+                }
+            }
+        }
+
+        // DATE filters
+        if (!empty($options['filters_date'])) {
+            $dateIdx = 0;
+            foreach ($options['filters_date'] as $dateCond) {
+                $field = $dateCond['field'] ?? '';
+                $func = $dateCond['func'] ?? '';
+                $value = $dateCond['value'] ?? '';
+                if (in_array($field, $validColumns, true) && in_array($func, ['DATE', 'YEAR', 'MONTH', 'DAY'], true)) {
+                    $p = "bfq_date_{$dateIdx}";
+                    $qb->andWhere("{$func}(`{$field}`) = :{$p}")
+                        ->setParameter($p, $value);
+                    $dateIdx++;
+                }
+            }
+        }
+
+        // Raw conditions
+        if (!empty($options['raw_conditions'])) {
+            foreach ($options['raw_conditions'] as $raw) {
+                $expr = $raw['expr'] ?? '';
+                if (!empty($expr)) {
+                    $qb->andWhere($expr);
+                    foreach ($raw['bindings'] ?? [] as $paramName => $paramValue) {
+                        $qb->setParameter($paramName, $paramValue);
+                    }
+                }
+            }
+        }
+
+        // Comparison filters (>, <, >=, <=)
+        if (!empty($options['filters_compare'])) {
+            $cmpIdx = 0;
+            foreach ($options['filters_compare'] as $cmp) {
+                $field = $cmp['field'] ?? '';
+                $operator = $cmp['operator'] ?? '=';
+                if (in_array($field, $validColumns, true) && in_array($operator, ['>', '<', '>=', '<=', '=', '!='], true)) {
+                    $p = "bfq_cmp_{$cmpIdx}";
+                    $qb->andWhere("`{$field}` {$operator} :{$p}")
+                        ->setParameter($p, $cmp['value']);
+                    $cmpIdx++;
+                }
+            }
+        }
+
+        // Column comparison filters
+        if (!empty($options['filters_column'])) {
+            foreach ($options['filters_column'] as $colCmp) {
+                $col1 = $colCmp['col1'] ?? '';
+                $operator = $colCmp['operator'] ?? '=';
+                $col2 = $colCmp['col2'] ?? '';
+                if (in_array($col1, $validColumns, true) && in_array($col2, $validColumns, true)
+                    && in_array($operator, ['>', '<', '>=', '<=', '=', '!='], true)) {
+                    $qb->andWhere("`{$col1}` {$operator} `{$col2}`");
+                }
+            }
+        }
+
+        // JSON contains filters
+        if (!empty($options['filters_json_contains'])) {
+            $jsonIdx = 0;
+            foreach ($options['filters_json_contains'] as $jsonCond) {
+                $field = $jsonCond['field'] ?? '';
+                if (in_array($field, $validColumns, true)) {
+                    $p = "bfq_json_{$jsonIdx}";
+                    $qb->andWhere("JSON_CONTAINS(`{$field}`, :{$p})")
+                        ->setParameter($p, json_encode($jsonCond['value']));
+                    $jsonIdx++;
+                }
+            }
+        }
+
+        // Condition groups
+        if (!empty($options['condition_groups'])) {
+            $this->applyConditionGroups($qb, $options['condition_groups'], $validColumns);
+        }
+
+        // GROUP BY
+        if (!empty($options['group_by'])) {
+            $groupCols = [];
+            foreach ($options['group_by'] as $col) {
+                if (in_array($col, $validColumns, true)) {
+                    $groupCols[] = "`{$col}`";
+                }
+            }
+            if (!empty($groupCols)) {
+                $qb->groupBy(...$groupCols);
+            }
+        }
+
+        // HAVING
+        if (!empty($options['having']) && !empty($options['group_by'])) {
+            $havingIdx = 0;
+            $allowedAggFuncs = ['COUNT', 'SUM', 'AVG', 'MIN', 'MAX'];
+            foreach ($options['having'] as $hCond) {
+                $expr = $hCond['expr'] ?? '';
+                $operator = $hCond['operator'] ?? '=';
+                if (!in_array($operator, ['=', '!=', '>', '<', '>=', '<='], true)) {
+                    continue;
+                }
+
+                // Validate expression: FUNC(col), FUNC(*), or whitelisted column
+                if (!preg_match('/^([A-Z]+)\(([a-zA-Z0-9_*]+)\)$/', $expr, $m)) {
+                    if (!in_array($expr, $validColumns, true)) {
+                        continue;
+                    }
+                } else {
+                    if (!in_array($m[1], $allowedAggFuncs, true)) {
+                        continue;
+                    }
+                    if ($m[2] !== '*' && !in_array($m[2], $validColumns, true)) {
+                        continue;
+                    }
+                }
+
+                $p = "bfq_having_{$havingIdx}";
+                $qb->andHaving("{$expr} {$operator} :{$p}")
+                    ->setParameter($p, $hCond['value']);
+                $havingIdx++;
+            }
+        }
+
+        return $qb;
+    }
+
+    // ========================================================================
+    // ATOMIC COLUMN OPERATIONS
+    // ========================================================================
+
+    /**
+     * Atomically increment (or decrement with negative amount) a numeric column.
+     */
+    public function incrementColumn(string $tableName, int|string $id, string $column, int $amount): void
+    {
+        $tableName = $this->safeTable($tableName);
+        $validColumns = $this->getTableColumns($tableName);
+
+        if (!in_array($column, $validColumns, true)) {
+            throw new \InvalidArgumentException("Column '{$column}' does not exist in table '{$tableName}'.");
+        }
+
+        $sign = $amount >= 0 ? '+' : '-';
+        $absAmount = abs($amount);
+
+        $this->connection->executeStatement(
+            "UPDATE `{$tableName}` SET `{$column}` = `{$column}` {$sign} :amount, `updated_at` = :now WHERE `id` = :id",
+            ['amount' => $absAmount, 'now' => (new \DateTime())->format('Y-m-d H:i:s'), 'id' => $id]
+        );
+    }
+
+    // ========================================================================
+    // UPSERT (INSERT OR UPDATE)
+    // ========================================================================
+
+    /**
+     * Insert a new entry or update if a matching entry exists.
+     * The $match array defines which columns to match against.
+     * Returns the entry ID.
+     */
+    public function upsertEntry(string $tableName, array $match, array $data, bool $useUuid = false): int|string
+    {
+        $tableName = $this->safeTable($tableName);
+        $validColumns = $this->getTableColumns($tableName);
+
+        // Validate match columns
+        foreach (array_keys($match) as $col) {
+            if (!in_array($col, $validColumns, true)) {
+                throw new \InvalidArgumentException("Match column '{$col}' does not exist in table '{$tableName}'.");
+            }
+        }
+
+        // Find existing entry by match criteria
+        $qb = $this->connection->createQueryBuilder()
+            ->select('id')
+            ->from($tableName);
+
+        $idx = 0;
+        foreach ($match as $col => $val) {
+            $p = "ups_m_{$idx}";
+            $qb->andWhere("`{$col}` = :{$p}")
+                ->setParameter($p, $val);
+            $idx++;
+        }
+
+        $existing = $qb->executeQuery()->fetchAssociative();
+
+        if ($existing) {
+            // Update existing
+            $updateData = array_merge($data, ['updated_at' => (new \DateTime())->format('Y-m-d H:i:s')]);
+            $safeData = [];
+            foreach ($updateData as $key => $value) {
+                if (in_array($key, $validColumns, true) && $key !== 'id') {
+                    $safeData[$key] = $value;
+                }
+            }
+            if (!empty($safeData)) {
+                $this->connection->update($tableName, $safeData, ['id' => $existing['id']]);
+            }
+            return $existing['id'];
+        }
+
+        // Insert new
+        $insertData = array_merge($match, $data);
+        return $this->insertEntry($tableName, $insertData, $useUuid);
     }
 }

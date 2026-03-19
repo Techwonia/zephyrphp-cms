@@ -13,6 +13,7 @@ use ZephyrPHP\Cms\Services\DashboardManager;
 use ZephyrPHP\Cms\Services\SettingsManager;
 use ZephyrPHP\Cms\Services\ThemeInstaller;
 use ZephyrPHP\Cms\Services\AssetBundler;
+use ZephyrPHP\Cms\Services\EntryQuery;
 use ZephyrPHP\Cms\Extensions\ThemeAssetExtension;
 use ZephyrPHP\Database\EntityManager;
 
@@ -96,6 +97,20 @@ class CmsServiceProvider
         // Load CMS global helper functions (entry, collection)
         require_once __DIR__ . '/helpers.php';
 
+        // Register default query scopes for common CMS patterns
+        EntryQuery::addScope('published', function (EntryQuery $q) {
+            $q->where('status', 'published');
+        });
+        EntryQuery::addScope('draft', function (EntryQuery $q) {
+            $q->where('status', 'draft');
+        });
+        EntryQuery::addScope('recent', function (EntryQuery $q, int $days = 7) {
+            $q->whereRaw('`created_at` >= DATE_SUB(NOW(), INTERVAL :_recent_days DAY)', ['_recent_days' => $days]);
+        });
+        EntryQuery::addScope('featured', function (EntryQuery $q) {
+            $q->where('featured', 1);
+        });
+
         // Initialize sidebar with default CMS items
         $sidebar = SidebarManager::getInstance();
         $sidebar->registerDefaults();
@@ -107,6 +122,16 @@ class CmsServiceProvider
             'url' => '/cms/marketplace',
             'icon' => 'store',
             'match' => 'prefix:/cms/marketplace',
+        ]);
+
+        // Add Plugins sidebar item
+        $sidebar->addItem('content', [
+            'id' => 'plugins',
+            'label' => 'Plugins',
+            'url' => '/cms/plugins',
+            'icon' => 'puzzle',
+            'permission' => 'apps.view',
+            'match' => 'prefix:/cms/plugins',
         ]);
 
         // Add Activity Log sidebar item
@@ -422,6 +447,11 @@ class CmsServiceProvider
 
         $view->addFunction('entry', function (string $ptSlug, string|int $identifier) {
             return entry($ptSlug, $identifier);
+        });
+
+        // entry_query('blog') — returns an EntryQuery builder for use in templates
+        $view->addFunction('entry_query', function (string $slug) {
+            return EntryQuery::collection($slug);
         });
 
         // Asset functions (assets_head, assets_footer, assets_csp, etc.) are provided
