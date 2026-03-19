@@ -32,7 +32,6 @@ use ZephyrPHP\Cms\Controllers\CacheController;
 use ZephyrPHP\Cms\Controllers\MailSettingsController;
 use ZephyrPHP\Cms\Controllers\WebhookController;
 use ZephyrPHP\Cms\Controllers\RouteViewerController;
-use ZephyrPHP\Cms\Controllers\ModuleManagerController;
 use ZephyrPHP\Cms\Controllers\DatabaseToolsController;
 use ZephyrPHP\Cms\Controllers\BackupController;
 use ZephyrPHP\Cms\Controllers\FileManagerController;
@@ -54,8 +53,8 @@ use ZephyrPHP\Cms\Controllers\ThemeCodeEditorController;
 use ZephyrPHP\Cms\Controllers\PluginController;
 use ZephyrPHP\Cms\Controllers\SearchController;
 
-// CMS Admin Routes (protected by auth middleware)
-Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMiddleware::class]], function () {
+// CMS Admin Routes (protected by auth middleware, with auto scheduled publishing)
+Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMiddleware::class, \ZephyrPHP\Cms\Middleware\ScheduledPublishMiddleware::class]], function () {
     // Dashboard
     Route::get('/', [CmsController::class, 'dashboard']);
     Route::post('/dashboard/layout', [CmsController::class, 'saveLayout']);
@@ -303,10 +302,6 @@ Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMid
 
     // Route Viewer
     Route::get('/system/routes', [RouteViewerController::class, 'index']);
-
-    // Module Manager
-    Route::get('/system/modules', [ModuleManagerController::class, 'index']);
-    Route::post('/system/modules/{name}/toggle', [ModuleManagerController::class, 'toggle']);
 
     // Database Tools
     Route::get('/system/database', [DatabaseToolsController::class, 'index']);

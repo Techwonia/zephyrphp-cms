@@ -2,40 +2,70 @@
 
 declare(strict_types=1);
 
-namespace ZephyrPHP\Cms\Commands;
+namespace ZephyrPHP\Cms\Middleware;
 
-use Symfony\Component\Console\Attribute\AsCommand;
-use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
 use ZephyrPHP\Cms\Models\Collection;
 use ZephyrPHP\Cms\Services\SchemaManager;
 use ZephyrPHP\Cms\Services\EntryQuery;
 use ZephyrPHP\Cms\Services\NotificationService;
 
-#[AsCommand(
-    name: 'cms:publish-scheduled',
-    description: 'Publish all scheduled entries whose publish time has arrived'
-)]
-class PublishScheduledCommand extends Command
+/**
+ * Lightweight middleware that checks for overdue scheduled entries
+ * and publishes them automatically on each CMS request.
+ *
+ * Replaces the need for a cron-based cms:publish-scheduled command.
+ * Uses a file-based throttle to avoid running on every single request.
+ */
+class ScheduledPublishMiddleware
 {
-    protected function execute(InputInterface $input, OutputInterface $output): int
-    {
-        $schema = new SchemaManager();
-        $conn = $schema->getConnection();
-        $now = (new \DateTime())->format('Y-m-d H:i:s');
-        $totalPublished = 0;
+    private const THROTTLE_SECONDS = 60;
 
-        // Process collections
+    public function handle(callable $next): mixed
+    {
+        // Run the check in the background (non-blocking)
+        $this->publishOverdueEntries();
+
+        return $next();
+    }
+
+    private function publishOverdueEntries(): void
+    {
+        // Throttle: only check once per minute
+        $lockFile = $this->getLockPath();
+        if ($lockFile && file_exists($lockFile)) {
+            $lastRun = (int) file_get_contents($lockFile);
+            if (time() - $lastRun < self::THROTTLE_SECONDS) {
+                return;
+            }
+        }
+
+        // Update throttle timestamp
+        if ($lockFile) {
+            $dir = dirname($lockFile);
+            if (!is_dir($dir)) {
+                mkdir($dir, 0755, true);
+            }
+            file_put_contents($lockFile, (string) time(), LOCK_EX);
+        }
+
         try {
+            $schema = new SchemaManager();
+            $conn = $schema->getConnection();
+            $now = (new \DateTime())->format('Y-m-d H:i:s');
+
             $collections = Collection::findBy(['isPublishable' => true]);
+
             foreach ($collections as $collection) {
                 $tableName = $collection->getTableName();
-                if (!$schema->tableExists($tableName)) continue;
+                if (!$schema->tableExists($tableName)) {
+                    continue;
+                }
 
                 $sm = $conn->createSchemaManager();
                 $columns = $sm->listTableColumns($tableName);
-                if (!isset($columns['scheduled_at'])) continue;
+                if (!isset($columns['scheduled_at'])) {
+                    continue;
+                }
 
                 $entries = $conn->createQueryBuilder()
                     ->select('id')
@@ -53,9 +83,8 @@ class PublishScheduledCommand extends Command
                         'status' => 'published',
                         'published_at' => $now,
                     ], ['id' => $entry['id']]);
-                    $totalPublished++;
 
-                    // Notify admins about scheduled publish
+                    // Notify admins
                     try {
                         $full = EntryQuery::collection($collection->getSlug())->noCache()->find($entry['id']);
                         $entryTitle = $full['title'] ?? $full['name'] ?? "#{$entry['id']}";
@@ -71,25 +100,22 @@ class PublishScheduledCommand extends Command
                                 'entry_url' => rtrim($_ENV['APP_URL'] ?? '', '/') . "/cms/collections/{$collection->getSlug()}/entries/{$entry['id']}",
                             ]
                         );
-                    } catch (\Exception $ne) {
-                        // Notification failure should not break scheduled publishing
+                    } catch (\Exception $e) {
+                        // Notification failure should not break publishing
                     }
-                }
-
-                if (count($entries) > 0) {
-                    $output->writeln("  Published " . count($entries) . " entries in {$collection->getName()}");
                 }
             }
         } catch (\Exception $e) {
-            $output->writeln("<error>Error processing collections: {$e->getMessage()}</error>");
+            // Silently fail — scheduled publishing should not break the request
         }
+    }
 
-        if ($totalPublished > 0) {
-            $output->writeln("<info>Total published: {$totalPublished} entries</info>");
-        } else {
-            $output->writeln("No scheduled entries to publish.");
+    private function getLockPath(): ?string
+    {
+        $basePath = defined('BASE_PATH') ? BASE_PATH : null;
+        if (!$basePath) {
+            return null;
         }
-
-        return Command::SUCCESS;
+        return $basePath . '/storage/cms/.scheduled-publish-lock';
     }
 }

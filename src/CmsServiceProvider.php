@@ -337,15 +337,6 @@ class CmsServiceProvider
         ]);
 
         $sidebar->addItem('system', [
-            'id' => 'system-modules',
-            'label' => 'Modules',
-            'url' => '/cms/system/modules',
-            'icon' => 'package',
-            'match' => 'exact:/cms/system/modules',
-            'permission' => 'settings.view',
-        ]);
-
-        $sidebar->addItem('system', [
             'id' => 'system-scheduled-tasks',
             'label' => 'Scheduled Tasks',
             'url' => '/cms/system/scheduled-tasks',
