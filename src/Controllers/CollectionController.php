@@ -233,7 +233,22 @@ class CollectionController extends Controller
         $isApiEnabled = $this->boolean('is_api_enabled');
         $isPublishable = $this->boolean('is_publishable');
         $hasSlug = $this->boolean('has_slug');
-        $slugSourceField = $this->input('slug_source_field', '');
+
+        // Auto-detect slug source from fields with type "slug"
+        $slugSourceField = '';
+        if ($hasSlug) {
+            $fields = $collection->getFields();
+            foreach ($fields as $field) {
+                if ($field->getType() === 'slug') {
+                    $slugSourceField = $field->getSlug();
+                    break;
+                }
+            }
+            // Keep existing source if no slug-type field found
+            if (empty($slugSourceField)) {
+                $slugSourceField = $collection->getSlugSourceField() ?? '';
+            }
+        }
         $primaryKeyType = $this->input('primary_key_type', $collection->getPrimaryKeyType());
 
         $errors = [];

@@ -95,21 +95,13 @@
                 </div>
 
                 <div id="slug-source-group" style="{% if not collection.hasSlug() %}display:none;{% endif %}">
-                    <div class="form-group">
-                        <label for="slug_source_field">Generate Slug From</label>
-                        <select name="slug_source_field" id="slug_source_field" class="form-control">
-                            <option value="">-- Select field --</option>
-                            {% for field in fields %}
-                                {% if field.getType() in ['text', 'email', 'url'] %}
-                                <option value="{{ field.getSlug() }}"
-                                        {% if collection.getSlugSourceField() == field.getSlug() %}selected{% endif %}>
-                                    {{ field.getName() }} ({{ field.getSlug() }})
-                                </option>
-                                {% endif %}
-                            {% endfor %}
-                        </select>
-                        <p class="text-muted">Which text field to auto-generate slugs from. Leave empty to require manual slugs.</p>
-                    </div>
+                    <p class="text-muted" style="padding:8px 0;">
+                        {% if collection.getSlugSourceField() %}
+                            Slug is auto-generated from the <strong>{{ collection.getSlugSourceField() }}</strong> field.
+                        {% else %}
+                            Add a field with type <strong>slug</strong> to auto-generate URL-friendly slugs for entries.
+                        {% endif %}
+                    </p>
                 </div>
 
                 <hr style="margin: var(--space-400) 0;">
@@ -246,7 +238,7 @@
                 </div>
                 {% if not collection.getSlugSourceField() %}
                 <div style="padding:8px 12px; margin:4px 0 8px; background:#fff3cd; border:1px solid #ffc107; border-radius:6px; font-size:12px; color:#856404; line-height:1.5;">
-                    <strong>Slug source not set.</strong> Go to the <strong>Settings</strong> tab and select a text field under "Generate Slug From" to auto-generate URL-friendly slugs for entries.
+                    <strong>Slug source not set.</strong> Add a field with type <strong>slug</strong> below to auto-generate URL-friendly slugs from that field's value.
                 </div>
                 {% endif %}
                 {% endif %}
