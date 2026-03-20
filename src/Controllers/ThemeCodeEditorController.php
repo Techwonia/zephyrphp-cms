@@ -916,6 +916,12 @@ class ThemeCodeEditorController extends Controller
     private function isAllowedExtension(string $path): bool
     {
         $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-        return in_array($ext, ['twig', 'json', 'css', 'js', 'php', 'html', 'txt', 'svg', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'ico', 'woff', 'woff2', 'ttf', 'eot'], true);
+
+        // PHP files are only allowed inside controllers/ directory
+        if ($ext === 'php') {
+            return str_starts_with($path, 'controllers/') && !str_contains($path, '/..') && substr_count($path, '/') === 1;
+        }
+
+        return in_array($ext, ['twig', 'json', 'css', 'js', 'html', 'txt', 'svg', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'ico', 'woff', 'woff2', 'ttf', 'eot'], true);
     }
 }
