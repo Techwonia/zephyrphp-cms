@@ -320,6 +320,12 @@
             letter-spacing: 0.05em;
             color: var(--text-secondary);
         }
+        .ref-panel-refresh {
+            margin-left: auto;
+            background: none; border: none; color: var(--text-disabled);
+            cursor: pointer; font-size: 16px; line-height: 1; padding: 2px 4px; border-radius: 4px;
+        }
+        .ref-panel-refresh:hover { color: #fff; background: rgba(255,255,255,0.08); }
         .ref-panel-close {
             background: none; border: none; color: var(--text-disabled);
             cursor: pointer; font-size: 18px; line-height: 1; padding: 0 2px;
@@ -986,6 +992,7 @@
             <div class="ref-panel" id="refPanel" style="display:none;">
                 <div class="ref-panel-header">
                     <span class="ref-panel-title">Reference</span>
+                    <button class="ref-panel-refresh" id="refPanelRefresh" title="Refresh">&#8635;</button>
                     <button class="ref-panel-close" id="refPanelClose">&times;</button>
                 </div>
                 <div class="ref-panel-body" id="refPanelBody">
@@ -2094,6 +2101,15 @@
 
     $('refPanelClose').addEventListener('click', function() { toggleRefPanel(false); });
     $('btnRefPanel').addEventListener('click', function() { toggleRefPanel(!_refPanelOpen); });
+    $('refPanelRefresh').addEventListener('click', function() {
+        _refCache = {};
+        _pagesConfig = null;
+        if (state.activeTab) {
+            var tab = state.openTabs.find(function(t) { return t.path === state.activeTab; });
+            if (tab) updateRefPanel(state.activeTab, tab.content);
+        }
+        showToast('Reference refreshed');
+    });
 
     function toggleRefPanel(show) {
         _refPanelOpen = show;
