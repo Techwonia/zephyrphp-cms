@@ -834,7 +834,7 @@ class ThemeCodeEditorController extends Controller
         }
 
         // Target subdirectory within public/ (e.g. "css", "js", "fonts", "images")
-        $subdir = $_POST['subdir'] ?? '';
+        $subdir = $this->input('subdir', '');
         $subdir = trim(str_replace('\\', '/', $subdir), '/');
 
         if (str_contains($subdir, '..')) {

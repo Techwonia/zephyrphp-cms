@@ -231,7 +231,7 @@ class AssetSettingsController extends Controller
         $this->requirePermission('settings.edit');
         header('Content-Type: application/json');
 
-        $category = $_POST['category'] ?? 'css';
+        $category = $this->input('category', 'css');
         $allowedCategories = ['css', 'js', 'fonts'];
         if (!in_array($category, $allowedCategories, true)) {
             http_response_code(400);
@@ -298,7 +298,7 @@ class AssetSettingsController extends Controller
 
         $targetPath = $targetDir . '/' . $safeName;
 
-        if (file_exists($targetPath) && empty($_POST['overwrite'])) {
+        if (file_exists($targetPath) && !$this->boolean('overwrite')) {
             http_response_code(409);
             echo json_encode(['error' => 'File already exists. Set overwrite=1 to replace.']);
             return;

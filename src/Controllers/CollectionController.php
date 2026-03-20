@@ -795,7 +795,7 @@ class CollectionController extends Controller
             return;
         }
 
-        $permsInput = $_POST['perms'] ?? [];
+        $permsInput = $this->input('perms', []);
         $validActions = ['view', 'create', 'edit', 'delete', 'publish'];
         $permissions = [];
 

@@ -133,42 +133,8 @@ class ThemeController extends Controller
 
     public function edit(string $slug): string
     {
-        // Redirect to the code editor — the old edit page is removed
         $this->redirect(admin_url('themes/' . urlencode($slug) . '/code'));
         return '';
-
-        $files = $this->themeManager->listFiles($slug);
-        $config = $this->themeManager->getThemeConfig($slug);
-        $pages = $this->themeManager->getPages($slug);
-        $layouts = $this->themeManager->getLayoutFiles($slug);
-
-        // Load first file content for editor
-        $activeFile = $this->input('file', '');
-        $fileContent = '';
-        if ($activeFile) {
-            $fileContent = $this->themeManager->readFile($activeFile, $slug) ?? '';
-        }
-
-        // Load available collections for the schema editor collection picker
-        $collections = [];
-        try {
-            $cmsCollections = Collection::findAll();
-            foreach ($cmsCollections as $col) {
-                $collections[] = ['slug' => $col->getSlug(), 'name' => $col->getName()];
-            }
-        } catch (\Exception $e) {}
-
-        return $this->render('cms::themes/edit', [
-            'theme' => $theme,
-            'files' => $files,
-            'config' => $config,
-            'pages' => $pages,
-            'layouts' => $layouts,
-            'activeFile' => $activeFile,
-            'fileContent' => $fileContent,
-            'collections' => $collections,
-            'user' => Auth::user(),
-        ]);
     }
 
     public function update(string $slug): void
