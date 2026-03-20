@@ -1079,7 +1079,8 @@
             "@codemirror/lang-javascript":"https://esm.sh/@codemirror/lang-javascript@6.2.2?external=@codemirror/state,@codemirror/view,@codemirror/language,@codemirror/autocomplete,@lezer/common,@lezer/highlight,@lezer/javascript",
             "@codemirror/lang-json":   "https://esm.sh/@codemirror/lang-json@6.0.1?external=@codemirror/state,@codemirror/language,@lezer/common,@lezer/highlight,@lezer/json",
             "@lezer/php":              "https://esm.sh/@lezer/php@1.0.2?external=@lezer/common,@lezer/lr,@lezer/highlight,@lezer/html,@lezer/javascript",
-            "@codemirror/lang-php":    "https://esm.sh/@codemirror/lang-php@6.0.1?external=@codemirror/state,@codemirror/view,@codemirror/language,@lezer/common,@lezer/highlight,@lezer/php,@codemirror/lang-html,@codemirror/lang-css,@codemirror/lang-javascript"
+            "@codemirror/lang-php":    "https://esm.sh/@codemirror/lang-php@6.0.1?external=@codemirror/state,@codemirror/view,@codemirror/language,@lezer/common,@lezer/highlight,@lezer/php,@codemirror/lang-html,@codemirror/lang-css,@codemirror/lang-javascript",
+            "@emmetio/codemirror6-plugin": "https://esm.sh/@emmetio/codemirror6-plugin@0.4.0?external=@codemirror/state,@codemirror/view,@codemirror/language,@codemirror/autocomplete,@codemirror/commands,@codemirror/lang-html,@codemirror/lang-css"
         }
     }
     </script>
@@ -1141,12 +1142,12 @@
 
     // ── Load CodeMirror ──
     let EditorView, EditorState, basicSetup, keymap, langHtml, langJson, langCss, langJs, langPhp, indentWithTab;
-    let oneDark;
+    let oneDark, emmetExt;
     let twigTheme, twigHighlighter;
 
     try {
         // Load all CodeMirror modules in parallel for faster startup
-        const [cmView, cmState, cmLang, cmCommands, cmSearch, cmAutocomplete, cmLint, cmHtml, cmJson, cmCss, cmJs, cmPhp, cmTheme] = await Promise.all([
+        const [cmView, cmState, cmLang, cmCommands, cmSearch, cmAutocomplete, cmLint, cmHtml, cmJson, cmCss, cmJs, cmPhp, cmEmmet, cmTheme] = await Promise.all([
             import('@codemirror/view'),
             import('@codemirror/state'),
             import('@codemirror/language'),
@@ -1159,6 +1160,7 @@
             import('@codemirror/lang-css'),
             import('@codemirror/lang-javascript'),
             import('@codemirror/lang-php'),
+            import('@emmetio/codemirror6-plugin'),
             import('@codemirror/theme-one-dark'),
         ]);
 
@@ -1170,6 +1172,10 @@
         langCss = cmCss.css;
         langJs = cmJs.javascript;
         langPhp = cmPhp.php;
+        emmetExt = [
+            cmEmmet.abbreviationTracker(),
+            keymap.of([{ key: 'Tab', run: cmEmmet.expandAbbreviation }]),
+        ];
         indentWithTab = cmCommands.indentWithTab;
         oneDark = cmTheme.oneDark;
 
@@ -1757,11 +1763,14 @@
             }
             if (langExt) extensions.push(langExt);
 
-            // Add Twig overlay highlighting for .twig files
+            // Add Twig overlay highlighting and Emmet for applicable files
             const fileExt = (path || '').split('.').pop().toLowerCase();
             if (fileExt === 'twig' || fileExt === 'html') {
                 extensions.push(twigTheme);
                 extensions.push(twigHighlighter);
+            }
+            if (emmetExt && ['twig', 'html', 'htm', 'css', 'php'].includes(fileExt)) {
+                extensions.push(...emmetExt);
             }
 
             const view = new EditorView({
