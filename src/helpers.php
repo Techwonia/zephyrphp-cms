@@ -45,21 +45,21 @@ if (!function_exists('admin_path')) {
 
 if (!function_exists('login_url')) {
     /**
-     * Get the login URL.
+     * Get the login URL from config or env.
      */
     function login_url(): string
     {
-        return '/zephyrphp/auth/login';
+        return \ZephyrPHP\Config\Config::get('auth.routes.login', env('AUTH_LOGIN_URL', '/zephyrphp/auth/login'));
     }
 }
 
 if (!function_exists('logout_url')) {
     /**
-     * Get the logout URL.
+     * Get the logout URL from config or env.
      */
     function logout_url(): string
     {
-        return '/zephyrphp/auth/logout';
+        return \ZephyrPHP\Config\Config::get('auth.routes.logout', env('AUTH_LOGOUT_URL', '/zephyrphp/auth/logout'));
     }
 }
 
