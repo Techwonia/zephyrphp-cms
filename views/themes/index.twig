@@ -67,34 +67,42 @@
     {% endif %}
 {% endfor %}
 
-{# ── Theme Grid ── #}
-<div class="th-grid">
-    {% if liveTheme %}
-    <div class="th-card th-card--active">
-        <a href="{{ admin_url('themes/' ~ liveTheme.getSlug() ~ '/customize') }}" class="th-card-thumb">
-            <div class="th-thumb-inner">
-                <iframe src="/?theme_preview={{ liveTheme.getSlug() }}" class="th-thumb-iframe" loading="lazy" scrolling="no" tabindex="-1"></iframe>
-            </div>
-            <div class="th-thumb-hover">
-                <span class="th-thumb-hover-btn">Customize</span>
-            </div>
-            <span class="th-badge-active">Active</span>
-        </a>
-        <div class="th-card-body">
-            <div class="th-card-info">
-                <h3 class="th-card-name">{{ liveTheme.getName() }}</h3>
-                {% if themeConfigs[liveTheme.getSlug()] is defined %}
-                <span class="th-card-version">v{{ themeConfigs[liveTheme.getSlug()].version }}</span>
-                {% endif %}
-            </div>
-            <div class="th-card-actions">
-                <a href="{{ admin_url('themes/' ~ liveTheme.getSlug() ~ '/customize') }}" class="btn btn-primary btn-sm">Customize</a>
-                <a href="{{ admin_url('themes/' ~ liveTheme.getSlug() ~ '/code') }}" class="btn btn-outline btn-sm">Edit code</a>
-            </div>
+{# ── Active Theme (full width) ── #}
+{% if liveTheme %}
+<div class="th-card th-card--active th-card--full">
+    <a href="{{ admin_url('themes/' ~ liveTheme.getSlug() ~ '/customize') }}" class="th-card-thumb">
+        <div class="th-thumb-inner">
+            <iframe src="/?theme_preview={{ liveTheme.getSlug() }}" class="th-thumb-iframe" loading="lazy" scrolling="no" tabindex="-1"></iframe>
+        </div>
+        <div class="th-thumb-hover">
+            <span class="th-thumb-hover-btn">Customize</span>
+        </div>
+        <span class="th-badge-active">Active</span>
+    </a>
+    <div class="th-card-body">
+        <div class="th-card-info">
+            <h3 class="th-card-name">{{ liveTheme.getName() }}</h3>
+            {% if themeConfigs[liveTheme.getSlug()] is defined %}
+            <span class="th-card-version">v{{ themeConfigs[liveTheme.getSlug()].version }}</span>
+            {% endif %}
+            {% if themeConfigs[liveTheme.getSlug()] is defined and themeConfigs[liveTheme.getSlug()].layouts|length > 0 %}
+            <span class="th-card-meta">{{ themeConfigs[liveTheme.getSlug()].layouts|length }} layout{{ themeConfigs[liveTheme.getSlug()].layouts|length > 1 ? 's' : '' }}</span>
+            {% endif %}
+        </div>
+        <div class="th-card-actions">
+            <a href="{{ admin_url('themes/' ~ liveTheme.getSlug() ~ '/customize') }}" class="btn btn-primary btn-sm">Customize</a>
+            <a href="{{ admin_url('themes/' ~ liveTheme.getSlug() ~ '/preview') }}" class="btn btn-outline btn-sm">Preview</a>
+            <a href="{{ admin_url('themes/' ~ liveTheme.getSlug() ~ '/code') }}" class="btn btn-outline btn-sm">Edit code</a>
         </div>
     </div>
-    {% endif %}
+</div>
+{% endif %}
 
+{# ── Theme Library Grid ── #}
+{% if draftThemes|length > 0 %}
+<h2 class="th-section-title">Theme library</h2>
+{% endif %}
+<div class="th-grid">
     {% for theme in draftThemes %}
     <div class="th-card">
         <a href="{{ admin_url('themes/' ~ theme.getSlug() ~ '/customize') }}" class="th-card-thumb">
@@ -166,6 +174,35 @@
 
 {% block styles %}
 <style nonce="{{ csp_nonce() }}">
+/* ── Full-width active card ── */
+.th-card--full {
+    margin-bottom: 28px;
+}
+.th-card--full .th-card-thumb {
+    aspect-ratio: 16 / 6;
+}
+.th-card--full .th-card-body {
+    padding: 16px 20px;
+}
+.th-card--full .th-card-name {
+    font-size: 16px;
+}
+.th-card-meta {
+    font-size: 11px;
+    color: var(--text-secondary, #999);
+    padding: 2px 8px;
+    background: var(--bg-subdued, #f5f5f5);
+    border-radius: 4px;
+}
+.th-section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary, #666);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 0 0 14px;
+}
+
 /* ── Grid ── */
 .th-grid {
     display: grid;
