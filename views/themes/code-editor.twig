@@ -295,6 +295,63 @@
             font-weight: 500;
         }
 
+        /* ── Collection Reference Bar ── */
+        .col-ref-bar {
+            background: #1b2533;
+            border-bottom: 1px solid var(--border);
+            font-size: 12px;
+        }
+        .col-ref-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .col-ref-close {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: var(--text-disabled);
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+            padding: 0 4px;
+        }
+        .col-ref-close:hover { color: #fff; }
+        .col-ref-fields {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            padding: 0 12px 8px;
+        }
+        .col-ref-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 4px;
+            color: #c9d1d9;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .col-ref-tag:hover { background: rgba(255,255,255,0.12); }
+        .col-ref-tag-type {
+            font-size: 9px;
+            color: #7ee787;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .col-ref-tag-system .col-ref-tag-type { color: #f0883e; }
+
         /* ── Editor Area (supports split) ── */
         .editor-area {
             flex: 1; display: flex; min-height: 0; position: relative;
@@ -836,6 +893,16 @@
                 <div class="toolbar-spacer"></div>
                 <span class="toolbar-info" id="toolbarLineCol"></span>
                 <span class="toolbar-lang" id="toolbarLang"></span>
+            </div>
+
+            <!-- Collection Reference Bar -->
+            <div class="col-ref-bar" id="colRefBar" style="display:none;">
+                <div class="col-ref-header">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
+                    <span id="colRefTitle">Collection Fields</span>
+                    <button class="col-ref-close" id="colRefClose" title="Close">&times;</button>
+                </div>
+                <div class="col-ref-fields" id="colRefFields"></div>
             </div>
 
             <!-- Editor Area (split-capable) -->
@@ -1721,6 +1788,7 @@
         updateUnsavedState();
         updateToolbarInfo(path);
         updateToolbarActions(path);
+        updateCollectionRef(tab.content);
     }
 
     function createEditor(container, content, path, role) {
@@ -1861,6 +1929,87 @@
         if (!isSection && state.schemaPanelOpen) {
             _switchSchemaView('code');
         }
+    }
+
+    // ── Collection Reference Panel ──
+    var _colRefCache = {};
+    var _colRefVisible = true;
+    $('colRefClose').addEventListener('click', function() {
+        $('colRefBar').style.display = 'none';
+        _colRefVisible = false;
+    });
+
+    function detectCollections(content) {
+        // Detect collection('slug') or entry('slug') in PHP/Twig
+        var slugs = new Set();
+        var re = /(?:collection|entry|collection_meta|entry_query)\s*\(\s*['"]([a-z0-9_-]+)['"]/gi;
+        var m;
+        while ((m = re.exec(content)) !== null) {
+            slugs.add(m[1]);
+        }
+        // Also detect from schema: "collection" setting with value
+        var schemaRe = /"collection"\s*,\s*"id"\s*:\s*"collection"/;
+        // Check section.settings.collection references
+        var settingsRe = /section\.settings\.collection/;
+        return Array.from(slugs);
+    }
+
+    async function updateCollectionRef(content) {
+        if (!_colRefVisible) { $('colRefBar').style.display = 'none'; return; }
+        var slugs = detectCollections(content);
+        if (slugs.length === 0) {
+            $('colRefBar').style.display = 'none';
+            return;
+        }
+
+        var allFields = [];
+        for (var slug of slugs) {
+            if (!_colRefCache[slug]) {
+                try {
+                    var res = await fetch('/admin/collections/' + slug + '/fields-json', {
+                        headers: { 'X-CSRF-TOKEN': CSRF_TOKEN }
+                    });
+                    _colRefCache[slug] = await res.json();
+                } catch(e) {
+                    _colRefCache[slug] = { fields: [] };
+                }
+            }
+            var data = _colRefCache[slug];
+            allFields.push({ slug: slug, fields: data.fields || [] });
+        }
+
+        var html = '';
+        for (var col of allFields) {
+            // System fields always present
+            var systemFields = [
+                { slug: 'id', type: 'id', system: true },
+                { slug: 'slug', type: 'string', system: true },
+                { slug: 'created_at', type: 'datetime', system: true },
+                { slug: 'updated_at', type: 'datetime', system: true },
+            ];
+            for (var sf of systemFields) {
+                html += '<span class="col-ref-tag col-ref-tag-system" title="System field: ' + sf.slug + ' (' + sf.type + ') — click to copy" data-copy="item.' + sf.slug + '">' +
+                    sf.slug + ' <span class="col-ref-tag-type">' + sf.type + '</span></span>';
+            }
+            for (var f of col.fields) {
+                html += '<span class="col-ref-tag" title="' + f.name + ' (' + f.type + ') — click to copy" data-copy="item.' + f.slug + '">' +
+                    f.slug + ' <span class="col-ref-tag-type">' + f.type + '</span></span>';
+            }
+        }
+
+        $('colRefTitle').textContent = slugs.length === 1 ? slugs[0] + ' fields' : 'Collection Fields';
+        $('colRefFields').innerHTML = html;
+        $('colRefBar').style.display = '';
+
+        // Click to copy field reference
+        $('colRefFields').querySelectorAll('[data-copy]').forEach(function(el) {
+            el.addEventListener('click', function() {
+                var text = this.dataset.copy;
+                navigator.clipboard.writeText(text).then(function() {
+                    showToast('Copied: ' + text);
+                });
+            });
+        });
     }
 
     function updateUnsavedState() {
