@@ -1390,7 +1390,7 @@
         // Parse section schema settings
         function parseSectionSettings(content) {
             _sectionSettings = [];
-            var schemaStart = content.indexOf('{% schema %}');
+            var schemaStart = content.indexOf(_ob + '% schema %' + _cb);
             if (schemaStart === -1) {
                 // Try without Twig delimiters (in case content is raw)
                 schemaStart = content.indexOf('"settings"');
