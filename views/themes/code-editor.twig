@@ -2414,7 +2414,6 @@
         const result = [];
 
         // Normalize: put each tag on its own line, but protect Twig expressions first
-        // Replace Twig {{ }}, {% %}, {# #} with placeholders so their contents aren't split
         var twigPlaceholders = [];
         var _ob = String.fromCharCode(123); // {
         var _cb = String.fromCharCode(125); // }
