@@ -1134,25 +1134,33 @@
     const $toolbarLang = $('toolbarLang');
     // Schema button removed — view tabs handle switching
 
+    // Start file tree fetch early (runs in parallel with CodeMirror loading)
+    const _fileTreePromise = fetch(`${BASE_URL}/files`, {
+        headers: { 'X-CSRF-TOKEN': CSRF_TOKEN }
+    }).then(r => r.json()).catch(() => ({ files: {} }));
+
     // ── Load CodeMirror ──
     let EditorView, EditorState, basicSetup, keymap, langHtml, langJson, langCss, langJs, langPhp, indentWithTab;
     let oneDark;
     let twigTheme, twigHighlighter;
 
     try {
-        const cmView = await import('@codemirror/view');
-        const cmState = await import('@codemirror/state');
-        const cmLang = await import('@codemirror/language');
-        const cmCommands = await import('@codemirror/commands');
-        const cmSearch = await import('@codemirror/search');
-        const cmAutocomplete = await import('@codemirror/autocomplete');
-        const cmLint = await import('@codemirror/lint');
-        const cmHtml = await import('@codemirror/lang-html');
-        const cmJson = await import('@codemirror/lang-json');
-        const cmCss = await import('@codemirror/lang-css');
-        const cmJs = await import('@codemirror/lang-javascript');
-        const cmPhp = await import('@codemirror/lang-php');
-        const cmTheme = await import('@codemirror/theme-one-dark');
+        // Load all CodeMirror modules in parallel for faster startup
+        const [cmView, cmState, cmLang, cmCommands, cmSearch, cmAutocomplete, cmLint, cmHtml, cmJson, cmCss, cmJs, cmPhp, cmTheme] = await Promise.all([
+            import('@codemirror/view'),
+            import('@codemirror/state'),
+            import('@codemirror/language'),
+            import('@codemirror/commands'),
+            import('@codemirror/search'),
+            import('@codemirror/autocomplete'),
+            import('@codemirror/lint'),
+            import('@codemirror/lang-html'),
+            import('@codemirror/lang-json'),
+            import('@codemirror/lang-css'),
+            import('@codemirror/lang-javascript'),
+            import('@codemirror/lang-php'),
+            import('@codemirror/theme-one-dark'),
+        ]);
 
         EditorView = cmView.EditorView;
         EditorState = cmState.EditorState;
@@ -3451,7 +3459,11 @@
     // INIT
     // ══════════════════════════════════════════════
 
-    await loadFileTree();
+    // Use pre-fetched file tree data (started before CodeMirror loaded)
+    const _prefetchedFiles = await _fileTreePromise;
+    state.files = _prefetchedFiles.files || {};
+    buildAllFilePaths();
+    renderFileTree();
 
     // Auto-open file from URL ?file= parameter
     const urlFile = new URLSearchParams(window.location.search).get('file');
