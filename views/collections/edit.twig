@@ -10,7 +10,7 @@
 <div class="page-header">
     <h1>{{ collection.getName() }}</h1>
     <div class="page-actions">
-        <a href="{{ admin_url('collections/{{ collection.getSlug() }}/entries') }}" class="btn btn-outline">View Entries ({{ entryCount }})</a>
+        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="btn btn-outline">View Entries ({{ entryCount }})</a>
     </div>
 </div>
 
@@ -25,7 +25,7 @@
 <div id="tab-settings" class="tab-panel active">
     <div class="card">
         <div class="card-body">
-            <form method="POST" action="{{ admin_url('collections/{{ collection.getSlug() }}') }}">
+            <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug()) }}">
                 {{ csrf_field() | raw }}
 
                 <div class="form-group">
@@ -335,7 +335,7 @@
                         </div>
                     </div>
                     <div>
-                        <form method="POST" action="{{ admin_url('collections/{{ collection.getSlug() }}/fields/{{ field.getId() }}/delete') }}"
+                        <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/fields/' ~ field.getId() ~ '/delete') }}"
                               style="display:inline"
                               class="confirm-delete"
                               data-message="{% if collection.hasSlug() and collection.getSlugSourceField() == field.getSlug() %}WARNING: This field is the slug source. Deleting it will also remove the slug column and all slug data from entries. Continue?{% else %}Delete field {{ field.getName() }}? Column data will be lost!{% endif %}">
@@ -354,7 +354,7 @@
             {# ADD FIELD FORM #}
             <div class="add-field-form">
                 <h4>Add New Field</h4>
-                <form method="POST" action="{{ admin_url('collections/{{ collection.getSlug() }}/fields') }}">
+                <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/fields') }}">
                     {{ csrf_field() | raw }}
 
                     <div class="form-row">
@@ -457,7 +457,7 @@
                 Leave unchecked to use global permissions. Admin role always has full access.
             </p>
 
-            <form method="POST" action="{{ admin_url('collections/{{ collection.getSlug() }}') }}">
+            <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug()) }}">
                 {{ csrf_field() | raw }}
                 <input type="hidden" name="_save_permissions" value="1">
 
@@ -528,7 +528,7 @@
                 The entry's status field becomes the workflow stage name.
             </p>
 
-            <form method="POST" action="{{ admin_url('collections/{{ collection.getSlug() }}') }}">
+            <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug()) }}">
                 {{ csrf_field() | raw }}
                 <input type="hidden" name="_save_workflow" value="1">
 

@@ -60,8 +60,8 @@
                         <td>{{ backup.created }}</td>
                         <td>
                             <div style="display: flex; gap: var(--space-200);">
-                                <a href="{{ admin_url('system/backups/{{ backup.name }}/download') }}" class="btn btn-outline btn-sm">Download</a>
-                                <form method="POST" action="{{ admin_url('system/backups/{{ backup.name }}/delete') }}" style="display: inline;" onsubmit="return confirm('Delete this backup?')">
+                                <a href="{{ admin_url('system/backups/' ~ backup.name ~ '/download') }}" class="btn btn-outline btn-sm">Download</a>
+                                <form method="POST" action="{{ admin_url('system/backups/' ~ backup.name ~ '/delete') }}" style="display: inline;" onsubmit="return confirm('Delete this backup?')">
                                     {{ csrf_field() | raw }}
                                     <button type="submit" class="btn btn-danger btn-sm">Delete</button>
                                 </form>

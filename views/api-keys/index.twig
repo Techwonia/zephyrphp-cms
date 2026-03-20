@@ -74,13 +74,13 @@
                             {% endif %}
                         </td>
                         <td class="actions-cell">
-                            <form method="POST" action="{{ admin_url('api-keys/{{ key.getId() }}/toggle') }}" style="display:inline">
+                            <form method="POST" action="{{ admin_url('api-keys/' ~ key.getId() ~ '/toggle') }}" style="display:inline">
                                 {{ csrf_field() | raw }}
                                 <button type="submit" class="btn btn-sm btn-outline">
                                     {{ key.isActive() ? 'Deactivate' : 'Activate' }}
                                 </button>
                             </form>
-                            <form method="POST" action="{{ admin_url('api-keys/{{ key.getId() }}/delete') }}"
+                            <form method="POST" action="{{ admin_url('api-keys/' ~ key.getId() ~ '/delete') }}"
                                   style="display:inline" class="confirm-delete" data-message="Delete this API key?">
                                 {{ csrf_field() | raw }}
                                 <button type="submit" class="btn btn-sm btn-danger">Delete</button>

@@ -32,8 +32,8 @@
                     {% endif %}
                 </td>
                 <td style="text-align: right;">
-                    <a href="{{ admin_url('email-templates/{{ template.getId() }}') }}" class="btn btn-outline btn-sm">Edit</a>
-                    <a href="{{ admin_url('email-templates/{{ template.getId() }}/preview') }}" target="_blank" class="btn btn-outline btn-sm">Preview</a>
+                    <a href="{{ admin_url('email-templates/' ~ template.getId()) }}" class="btn btn-outline btn-sm">Edit</a>
+                    <a href="{{ admin_url('email-templates/' ~ template.getId() ~ '/preview') }}" target="_blank" class="btn btn-outline btn-sm">Preview</a>
                     <button onclick="testSend({{ template.getId() }})" class="btn btn-outline btn-sm">Test Send</button>
                 </td>
             </tr>

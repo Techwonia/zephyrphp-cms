@@ -1,7 +1,7 @@
 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
     <a href="{{ admin_url('collections/create') }}" class="btn btn-primary btn-sm">New Collection</a>
     {% for collection in collections %}
-    <a href="{{ admin_url('collections/{{ collection.getSlug() }}/entries/create') }}" class="btn btn-outline btn-sm">
+    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/create') }}" class="btn btn-outline btn-sm">
         + {{ collection.getName() }}
     </a>
     {% endfor %}

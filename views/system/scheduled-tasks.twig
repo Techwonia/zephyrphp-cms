@@ -121,15 +121,15 @@
                         </td>
                         <td>
                             <div style="display: flex; gap: var(--space-200); flex-wrap: wrap;">
-                                <form method="POST" action="{{ admin_url('system/scheduled-tasks/{{ task.id }}/run') }}" style="display: inline;">
+                                <form method="POST" action="{{ admin_url('system/scheduled-tasks/' ~ task.id ~ '/run') }}" style="display: inline;">
                                     {{ csrf_field() | raw }}
                                     <button type="submit" class="btn btn-outline btn-sm">Run</button>
                                 </form>
-                                <form method="POST" action="{{ admin_url('system/scheduled-tasks/{{ task.id }}/toggle') }}" style="display: inline;">
+                                <form method="POST" action="{{ admin_url('system/scheduled-tasks/' ~ task.id ~ '/toggle') }}" style="display: inline;">
                                     {{ csrf_field() | raw }}
                                     <button type="submit" class="btn btn-outline btn-sm">{{ task.is_active ? 'Disable' : 'Enable' }}</button>
                                 </form>
-                                <form method="POST" action="{{ admin_url('system/scheduled-tasks/{{ task.id }}/delete') }}" style="display: inline;" onsubmit="return confirm('Delete this task?')">
+                                <form method="POST" action="{{ admin_url('system/scheduled-tasks/' ~ task.id ~ '/delete') }}" style="display: inline;" onsubmit="return confirm('Delete this task?')">
                                     {{ csrf_field() | raw }}
                                     <button type="submit" class="btn btn-danger btn-sm">Delete</button>
                                 </form>

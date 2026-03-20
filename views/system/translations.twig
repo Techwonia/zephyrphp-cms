@@ -86,8 +86,8 @@
         <div>
             <label class="form-label">Export ({{ selectedLocale }})</label>
             <div style="display: flex; gap: var(--space-100);">
-                <a href="{{ admin_url('system/translations/export?locale={{ selectedLocale }}&format=json') }}" class="btn btn-outline btn-sm">JSON</a>
-                <a href="{{ admin_url('system/translations/export?locale={{ selectedLocale }}&format=csv') }}" class="btn btn-outline btn-sm">CSV</a>
+                <a href="{{ admin_url('system/translations/export?locale=' ~ selectedLocale ~ '&format=json') }}" class="btn btn-outline btn-sm">JSON</a>
+                <a href="{{ admin_url('system/translations/export?locale=' ~ selectedLocale ~ '&format=csv') }}" class="btn btn-outline btn-sm">CSV</a>
             </div>
         </div>
     </div>

@@ -118,8 +118,8 @@
                         {% endif %}
                     </td>
                     <td class="actions-cell">
-                        <a href="{{ admin_url('collections/{{ collection.getSlug() }}/entries') }}" class="btn btn-sm btn-outline">Entries</a>
-                        <a href="{{ admin_url('collections/{{ collection.getSlug() }}') }}" class="btn btn-sm btn-outline">Edit</a>
+                        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="btn btn-sm btn-outline">Entries</a>
+                        <a href="{{ admin_url('collections/' ~ collection.getSlug()) }}" class="btn btn-sm btn-outline">Edit</a>
                     </td>
                 </tr>
                 {% endfor %}

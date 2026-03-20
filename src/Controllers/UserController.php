@@ -34,21 +34,59 @@ class UserController extends Controller
         }
     }
 
-    private function getUserModel(): string
+    private function getUserModel(): ?string
     {
-        return Config::get('auth.providers.users.model', 'App\\Models\\User');
+        // 1. Check auth config
+        $model = Config::get('auth.providers.users.model');
+        if ($model && class_exists($model)) {
+            return $model;
+        }
+
+        // 2. Auto-detect from composer.json PSR-4 mapping
+        $basePath = defined('BASE_PATH') ? BASE_PATH : getcwd();
+        $composerFile = $basePath . '/composer.json';
+        if (file_exists($composerFile)) {
+            $composer = json_decode(file_get_contents($composerFile), true);
+            $psr4 = $composer['autoload']['psr-4'] ?? [];
+            foreach ($psr4 as $namespace => $path) {
+                $userFile = $basePath . '/' . rtrim($path, '/') . '/Models/User.php';
+                if (file_exists($userFile)) {
+                    $detected = rtrim($namespace, '\\') . '\\Models\\User';
+                    if (class_exists($detected)) {
+                        return $detected;
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
-    private function getRoleModel(): string
+    private function getRoleModel(): ?string
     {
         $userModel = $this->getUserModel();
+        if (!$userModel) {
+            return null;
+        }
         $namespace = substr($userModel, 0, strrpos($userModel, '\\'));
-        return $namespace . '\\Role';
+        $roleClass = $namespace . '\\Role';
+        return class_exists($roleClass) ? $roleClass : null;
+    }
+
+    private function ensureModelsExist(): bool
+    {
+        if (!$this->getUserModel()) {
+            $this->flash('errors', ['config' => 'User model not found. Please ensure the auth module is installed and enabled, and that your User model exists in your app/Models/ directory.']);
+            $this->redirect(admin_url());
+            return false;
+        }
+        return true;
     }
 
     public function index(): string
     {
         $this->requirePermission('users.view');
+        if (!$this->ensureModelsExist()) return '';
 
         $userModel = $this->getUserModel();
         $users = $userModel::findAll();
@@ -62,6 +100,7 @@ class UserController extends Controller
     public function create(): string
     {
         $this->requirePermission('users.manage');
+        if (!$this->ensureModelsExist()) return '';
 
         $roleModel = $this->getRoleModel();
         $roles = $roleModel::findAll();
@@ -75,6 +114,7 @@ class UserController extends Controller
     public function store(): void
     {
         $this->requirePermission('users.manage');
+        if (!$this->ensureModelsExist()) return;
 
         $name = trim($this->input('name', ''));
         $email = trim($this->input('email', ''));
@@ -144,6 +184,7 @@ class UserController extends Controller
     public function edit(int $id): string
     {
         $this->requirePermission('users.manage');
+        if (!$this->ensureModelsExist()) return '';
 
         $userModel = $this->getUserModel();
         $editUser = $userModel::find($id);
@@ -173,6 +214,7 @@ class UserController extends Controller
     public function update(int $id): void
     {
         $this->requirePermission('users.manage');
+        if (!$this->ensureModelsExist()) return;
 
         $userModel = $this->getUserModel();
         $editUser = $userModel::find($id);

@@ -42,9 +42,9 @@
                         </td>
                         <td>{{ u.getCreatedAt() ? u.getCreatedAt()|date('M d, Y') : '&mdash;' }}</td>
                         <td class="actions-cell">
-                            <a href="{{ admin_url('users/{{ u.getId() }}') }}" class="btn btn-sm btn-outline">Edit</a>
+                            <a href="{{ admin_url('users/' ~ u.getId()) }}" class="btn btn-sm btn-outline">Edit</a>
                             {% if u.getId() != user.getId() %}
-                            <form method="POST" action="{{ admin_url('users/{{ u.getId() }}/delete') }}"
+                            <form method="POST" action="{{ admin_url('users/' ~ u.getId() ~ '/delete') }}"
                                   style="display:inline" class="confirm-delete" data-message="Delete user {{ u.getName() }}?">
                                 {{ csrf_field() | raw }}
                                 <button type="submit" class="btn btn-sm btn-danger">Delete</button>

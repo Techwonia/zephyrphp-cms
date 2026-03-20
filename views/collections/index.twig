@@ -40,9 +40,9 @@
                         <td>{% if collection.isApiEnabled() %}<span class="badge badge-info">API</span>{% else %}<span class="text-muted">&mdash;</span>{% endif %}</td>
                         <td>{% if collection.isPublishable() %}<span class="badge badge-success">Yes</span>{% else %}<span class="text-muted">&mdash;</span>{% endif %}</td>
                         <td class="actions-cell">
-                            <a href="{{ admin_url('collections/{{ collection.getSlug() }}/entries') }}" class="btn btn-sm btn-outline">Entries</a>
-                            <a href="{{ admin_url('collections/{{ collection.getSlug() }}') }}" class="btn btn-sm btn-outline">Edit</a>
-                            <form method="POST" action="{{ admin_url('collections/{{ collection.getSlug() }}/delete') }}"
+                            <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="btn btn-sm btn-outline">Entries</a>
+                            <a href="{{ admin_url('collections/' ~ collection.getSlug()) }}" class="btn btn-sm btn-outline">Edit</a>
+                            <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/delete') }}"
                                   style="display:inline" class="confirm-delete" data-message="Delete collection {{ collection.getName() }}? This will drop the table and all data!">
                                 {{ csrf_field() | raw }}
                                 <button type="submit" class="btn btn-sm btn-danger">Delete</button>

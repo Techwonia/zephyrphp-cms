@@ -26,7 +26,7 @@
                 <div style="padding: var(--space-400); color: var(--text-secondary);">No log files found.</div>
             {% else %}
                 {% for file in files %}
-                <a href="{{ admin_url('system/logs?file={{ file.name|url_encode }}') }}"
+                <a href="{{ admin_url('system/logs?file=' ~ file.name|url_encode) }}"
                    style="display: block; padding: 10px 16px; border-bottom: 1px solid var(--border); text-decoration: none; color: var(--text-primary); {% if selectedFile == file.name %}background: var(--bg-active);{% endif %}">
                     <div style="font-weight: 600; font-size: 0.85rem;">{{ file.name }}</div>
                     <div style="font-size: 0.75rem; color: var(--text-secondary);">{{ file.size }} &middot; {{ file.modified }}</div>
@@ -43,7 +43,7 @@
             <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
                 <h3 style="margin:0; font-size:1rem;">{{ selectedFile }} <span style="color: var(--text-secondary); font-weight: 400;">({{ totalLines }} lines)</span></h3>
                 <div style="display: flex; gap: var(--space-200);">
-                    <a href="{{ admin_url('system/logs/download?file={{ selectedFile|url_encode }}') }}" class="btn btn-outline btn-sm">Download</a>
+                    <a href="{{ admin_url('system/logs/download?file=' ~ selectedFile|url_encode) }}" class="btn btn-outline btn-sm">Download</a>
                     <form method="POST" action="{{ admin_url('system/logs/clear') }}" style="display: inline;" onsubmit="return confirm('Delete this log file?')">
                         {{ csrf_field() | raw }}
                         <input type="hidden" name="file" value="{{ selectedFile }}">

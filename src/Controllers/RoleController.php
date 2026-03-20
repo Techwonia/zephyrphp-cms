@@ -33,16 +33,57 @@ class RoleController extends Controller
         }
     }
 
-    private function getRoleModel(): string
+    private function detectUserModel(): ?string
     {
-        $userModel = Config::get('auth.providers.users.model', 'App\\Models\\User');
+        $model = Config::get('auth.providers.users.model');
+        if ($model && class_exists($model)) {
+            return $model;
+        }
+
+        $basePath = defined('BASE_PATH') ? BASE_PATH : getcwd();
+        $composerFile = $basePath . '/composer.json';
+        if (file_exists($composerFile)) {
+            $composer = json_decode(file_get_contents($composerFile), true);
+            $psr4 = $composer['autoload']['psr-4'] ?? [];
+            foreach ($psr4 as $namespace => $path) {
+                $userFile = $basePath . '/' . rtrim($path, '/') . '/Models/User.php';
+                if (file_exists($userFile)) {
+                    $detected = rtrim($namespace, '\\') . '\\Models\\User';
+                    if (class_exists($detected)) {
+                        return $detected;
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private function getRoleModel(): ?string
+    {
+        $userModel = $this->detectUserModel();
+        if (!$userModel) {
+            return null;
+        }
         $namespace = substr($userModel, 0, strrpos($userModel, '\\'));
-        return $namespace . '\\Role';
+        $roleClass = $namespace . '\\Role';
+        return class_exists($roleClass) ? $roleClass : null;
+    }
+
+    private function ensureModelsExist(): bool
+    {
+        if (!$this->getRoleModel()) {
+            $this->flash('errors', ['config' => 'Role model not found. Please ensure the auth module is installed and enabled, and that your Role model exists in your app/Models/ directory.']);
+            $this->redirect(admin_url());
+            return false;
+        }
+        return true;
     }
 
     public function index(): string
     {
         $this->requirePermission('roles.manage');
+        if (!$this->ensureModelsExist()) return '';
 
         $roleModel = $this->getRoleModel();
         $roles = $roleModel::findAll();
@@ -56,6 +97,7 @@ class RoleController extends Controller
     public function create(): string
     {
         $this->requirePermission('roles.manage');
+        if (!$this->ensureModelsExist()) return '';
 
         return $this->render('cms::roles/create', [
             'user' => Auth::user(),
@@ -65,6 +107,7 @@ class RoleController extends Controller
     public function store(): void
     {
         $this->requirePermission('roles.manage');
+        if (!$this->ensureModelsExist()) return;
 
         $name = trim($this->input('name', ''));
         $slug = trim($this->input('slug', ''));
@@ -113,6 +156,7 @@ class RoleController extends Controller
     public function edit(int $id): string
     {
         $this->requirePermission('roles.manage');
+        if (!$this->ensureModelsExist()) return '';
 
         $roleModel = $this->getRoleModel();
         $role = $roleModel::find($id);
@@ -137,6 +181,7 @@ class RoleController extends Controller
     public function update(int $id): void
     {
         $this->requirePermission('roles.manage');
+        if (!$this->ensureModelsExist()) return;
 
         $roleModel = $this->getRoleModel();
         $role = $roleModel::find($id);
@@ -194,6 +239,7 @@ class RoleController extends Controller
     public function destroy(int $id): void
     {
         $this->requirePermission('roles.manage');
+        if (!$this->ensureModelsExist()) return;
 
         $roleModel = $this->getRoleModel();
         $role = $roleModel::find($id);

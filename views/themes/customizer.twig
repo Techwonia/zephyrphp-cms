@@ -291,10 +291,10 @@
         }
         .tree-item-menu-btn:hover { color: var(--text); background: var(--bg-hover); }
         .context-menu {
-            position: absolute; right: 8px; top: 100%;
+            position: fixed;
             background: var(--bg-surface); border: 1px solid var(--border);
             border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-            min-width: 160px; z-index: 50; padding: 4px;
+            min-width: 160px; z-index: 9999; padding: 4px;
             display: none;
         }
         .context-menu.open { display: block; }
@@ -1005,7 +1005,7 @@
                     </button>
                     <div style="border-top:1px solid var(--border); padding-top:12px; margin-top:8px;">
                         <div class="ab-panel-subheader">Theme Info</div>
-                        <form method="POST" action="{{ admin_url('themes/{{ theme.getSlug() }}') }}" id="themeInfoForm">
+                        <form method="POST" action="{{ admin_url('themes/' ~ theme.getSlug()) }}" id="themeInfoForm">
                             {{ csrf_field() | raw }}
                             <div style="margin-bottom:10px;">
                                 <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Name</label>
@@ -1411,7 +1411,13 @@
             e.stopPropagation();
             closeAllContextMenus();
             var cm = menuWrap.querySelector('.context-menu');
-            if (cm) cm.classList.toggle('open');
+            if (cm) {
+                var rect = menuBtn.getBoundingClientRect();
+                cm.style.top = (rect.bottom + 4) + 'px';
+                cm.style.right = (window.innerWidth - rect.right) + 'px';
+                cm.style.left = 'auto';
+                cm.classList.toggle('open');
+            }
         });
         menuWrap.appendChild(menuBtn);
 

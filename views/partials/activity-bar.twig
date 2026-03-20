@@ -100,12 +100,12 @@
             {% include '@cms/partials/sidebar-icon.twig' with {icon: 'palette'} only %}
         </button>
         {% else %}
-        <a href="{{ admin_url('themes/{{ theme_slug }}/customize') }}" class="ab-item" data-tooltip="Customize">
+        <a href="{{ admin_url('themes/' ~ theme_slug ~ '/customize') }}" class="ab-item" data-tooltip="Customize">
             {% include '@cms/partials/sidebar-icon.twig' with {icon: 'palette'} only %}
         </a>
         {% endif %}
 
-        <a href="{{ admin_url('themes/{{ theme_slug }}/code') }}" class="ab-item{% if ab_context == 'code-editor' %} active{% endif %}" data-tooltip="Code Editor">
+        <a href="{{ admin_url('themes/' ~ theme_slug ~ '/code') }}" class="ab-item{% if ab_context == 'code-editor' %} active{% endif %}" data-tooltip="Code Editor">
             {% include '@cms/partials/sidebar-icon.twig' with {icon: 'code'} only %}
         </a>
 

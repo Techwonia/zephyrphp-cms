@@ -5,17 +5,17 @@
 {% block content %}
 <div class="breadcrumb">
     <a href="{{ admin_url('collections') }}">Collections</a> /
-    <a href="{{ admin_url('collections/{{ collection.getSlug() }}') }}">{{ collection.getName() }}</a> / Entries
+    <a href="{{ admin_url('collections/' ~ collection.getSlug()) }}">{{ collection.getName() }}</a> / Entries
 </div>
 
 <div class="page-header">
     <h1>{{ collection.getName() }}</h1>
     <div class="page-actions">
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <a href="{{ admin_url('collections/{{ collection.getSlug() }}/export?format=csv') }}" class="btn btn-outline" title="Export CSV">Export CSV</a>
-            <a href="{{ admin_url('collections/{{ collection.getSlug() }}/export?format=json') }}" class="btn btn-outline" title="Export JSON">Export JSON</a>
+            <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/export?format=csv') }}" class="btn btn-outline" title="Export CSV">Export CSV</a>
+            <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/export?format=json') }}" class="btn btn-outline" title="Export JSON">Export JSON</a>
             <button class="btn btn-outline" id="toggle-import-btn">Import</button>
-            <a href="{{ admin_url('collections/{{ collection.getSlug() }}/entries/create') }}" class="btn btn-primary">+ New Entry</a>
+            <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/create') }}" class="btn btn-primary">+ New Entry</a>
         </div>
     </div>
 </div>
@@ -23,7 +23,7 @@
 {# Import Form #}
 <div id="import-form" class="card" style="display: none; margin-bottom: 16px;">
     <div class="card-body">
-        <form method="POST" action="{{ admin_url('collections/{{ collection.getSlug() }}/import/preview') }}" enctype="multipart/form-data">
+        <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/import/preview') }}" enctype="multipart/form-data">
             {{ csrf_field() | raw }}
             <div style="display: flex; gap: 12px; align-items: flex-end;">
                 <div class="form-group" style="flex: 1; margin-bottom: 0;">
@@ -39,10 +39,10 @@
 
 {% if savedViews is defined and savedViews|length > 0 %}
 <div class="saved-views-bar" style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items: center;">
-    <a href="{{ admin_url('collections/{{ collection.getSlug() }}/entries') }}"
+    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}"
        class="btn btn-sm {% if activeViewSlug is empty %}btn-primary{% else %}btn-outline{% endif %}">All</a>
     {% for sv in savedViews %}
-        <a href="{{ admin_url('collections/{{ collection.getSlug() }}/entries?view={{ sv.getSlug() }}') }}"
+        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?view=' ~ sv.getSlug()) }}"
            class="btn btn-sm {% if activeViewSlug == sv.getSlug() %}btn-primary{% else %}btn-outline{% endif %}"
            title="{{ sv.getFilters()|length }} filter(s){% if sv.isDefault() %} (default){% endif %}">
             {{ sv.getName() }}{% if sv.isDefault() %} *{% endif %}
@@ -59,7 +59,7 @@
 {# Save View Form #}
 <div id="save-view-form" class="card" style="display: none; margin-bottom: 16px;">
     <div class="card-body">
-        <form method="POST" action="{{ admin_url('collections/{{ collection.getSlug() }}/views') }}">
+        <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/views') }}">
             {{ csrf_field() | raw }}
             <h4 style="margin-bottom: 12px;">Save Current View</h4>
             <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
@@ -118,7 +118,7 @@
         {% if sv.getSlug() == activeViewSlug %}
         <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
             <span class="text-muted">Viewing: <strong>{{ sv.getName() }}</strong></span>
-            <form method="POST" action="{{ admin_url('collections/{{ collection.getSlug() }}/views/{{ sv.getId() }}/delete') }}" style="display:inline;">
+            <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/views/' ~ sv.getId() ~ '/delete') }}" style="display:inline;">
                 {{ csrf_field() | raw }}
                 <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this saved view?')">Delete View</button>
             </form>
@@ -129,11 +129,11 @@
 
 {% if listableFields|length > 0 %}
 <div class="search-bar">
-    <form method="GET" action="{{ admin_url('collections/{{ collection.getSlug() }}/entries') }}" class="search-form">
+    <form method="GET" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="search-form">
         <input type="text" name="search" class="form-control" placeholder="Search..." value="{{ search }}">
         <button type="submit" class="btn btn-outline">Search</button>
         {% if search %}
-            <a href="{{ admin_url('collections/{{ collection.getSlug() }}/entries') }}" class="btn btn-outline">Clear</a>
+            <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="btn btn-outline">Clear</a>
         {% endif %}
     </form>
 </div>
@@ -143,7 +143,7 @@
 {# Bulk Actions Bar #}
 <div id="bulk-bar" style="display: none; margin-bottom: 12px; padding: 10px 16px; background: #e8f5e9; border-radius: 8px; align-items: center; gap: 12px;">
     <span id="bulk-count">0</span> selected
-    <form method="POST" action="{{ admin_url('collections/{{ collection.getSlug() }}/entries/bulk') }}" style="display: inline; margin-left: 12px;">
+    <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/bulk') }}" style="display: inline; margin-left: 12px;">
         {{ csrf_field() | raw }}
         <input type="hidden" name="selected_ids" id="bulk-ids" value="">
         <select name="bulk_action" class="form-control" style="display: inline-block; width: auto;">
@@ -168,7 +168,7 @@
                         <th>ID</th>
                         {% for field in listableFields %}
                         <th>
-                            <a href="{{ admin_url('collections/{{ collection.getSlug() }}/entries?sort_by={{ field.getSlug() }}&sort_dir={% if sortBy == field.getSlug() and sortDir == 'ASC' %}DESC{% else %}ASC{% endif %}&search={{ search }}') }}"
+                            <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?sort_by=' ~ field.getSlug() ~ '&sort_dir=' ~ (sortBy == field.getSlug() and sortDir == 'ASC' ? 'DESC' : 'ASC') ~ '&search=' ~ search) }}"
                                class="sort-link">
                                 {{ field.getName() }}
                                 {% if sortBy == field.getSlug() %}
@@ -214,8 +214,8 @@
                         </td>
                         {% endif %}
                         <td class="actions-cell">
-                            <a href="{{ admin_url('collections/{{ collection.getSlug() }}/entries/{{ entry.id }}') }}" class="btn btn-sm btn-outline">Edit</a>
-                            <form method="POST" action="{{ admin_url('collections/{{ collection.getSlug() }}/entries/{{ entry.id }}/delete') }}"
+                            <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id) }}" class="btn btn-sm btn-outline">Edit</a>
+                            <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/delete') }}"
                                   style="display:inline" class="confirm-delete" data-message="Delete this entry?">
                                 {{ csrf_field() | raw }}
                                 <button type="submit" class="btn btn-sm btn-danger">Delete</button>
@@ -231,19 +231,19 @@
         {% if entries.last_page > 1 %}
         <div class="pagination">
             {% if entries.current_page > 1 %}
-                <a href="{{ admin_url('collections/{{ collection.getSlug() }}/entries?page={{ entries.current_page - 1 }}&search={{ search }}&sort_by={{ sortBy }}&sort_dir={{ sortDir }}') }}">&laquo; Prev</a>
+                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?page=' ~ (entries.current_page - 1) ~ '&search=' ~ search ~ '&sort_by=' ~ sortBy ~ '&sort_dir=' ~ sortDir) }}">&laquo; Prev</a>
             {% endif %}
 
             {% for p in 1..entries.last_page %}
                 {% if p == entries.current_page %}
                     <span class="active">{{ p }}</span>
                 {% else %}
-                    <a href="{{ admin_url('collections/{{ collection.getSlug() }}/entries?page={{ p }}&search={{ search }}&sort_by={{ sortBy }}&sort_dir={{ sortDir }}') }}">{{ p }}</a>
+                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?page=' ~ p ~ '&search=' ~ search ~ '&sort_by=' ~ sortBy ~ '&sort_dir=' ~ sortDir) }}">{{ p }}</a>
                 {% endif %}
             {% endfor %}
 
             {% if entries.current_page < entries.last_page %}
-                <a href="{{ admin_url('collections/{{ collection.getSlug() }}/entries?page={{ entries.current_page + 1 }}&search={{ search }}&sort_by={{ sortBy }}&sort_dir={{ sortDir }}') }}">Next &raquo;</a>
+                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?page=' ~ (entries.current_page + 1) ~ '&search=' ~ search ~ '&sort_by=' ~ sortBy ~ '&sort_dir=' ~ sortDir) }}">Next &raquo;</a>
             {% endif %}
         </div>
         {% endif %}
@@ -253,7 +253,7 @@
 <div class="empty-state">
     <h3>No entries yet</h3>
     <p>Create your first entry for this collection.</p>
-    <a href="{{ admin_url('collections/{{ collection.getSlug() }}/entries/create') }}" class="btn btn-primary">+ Create Entry</a>
+    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/create') }}" class="btn btn-primary">+ Create Entry</a>
 </div>
 {% endif %}
 

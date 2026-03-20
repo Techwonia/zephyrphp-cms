@@ -30,13 +30,13 @@
     <div class="card-body">
         <div class="plugin-toolbar">
             <div class="plugin-tabs">
-                <a href="{{ admin_url('plugins?filter=all&search={{ search|url_encode }}') }}" class="plugin-tab {{ filter == 'all' ? 'active' : '' }}">
+                <a href="{{ admin_url('plugins?filter=all&search=' ~ search|url_encode) }}" class="plugin-tab {{ filter == 'all' ? 'active' : '' }}">
                     All <span class="tab-count">{{ counts.all }}</span>
                 </a>
-                <a href="{{ admin_url('plugins?filter=active&search={{ search|url_encode }}') }}" class="plugin-tab {{ filter == 'active' ? 'active' : '' }}">
+                <a href="{{ admin_url('plugins?filter=active&search=' ~ search|url_encode) }}" class="plugin-tab {{ filter == 'active' ? 'active' : '' }}">
                     Active <span class="tab-count">{{ counts.active }}</span>
                 </a>
-                <a href="{{ admin_url('plugins?filter=inactive&search={{ search|url_encode }}') }}" class="plugin-tab {{ filter == 'inactive' ? 'active' : '' }}">
+                <a href="{{ admin_url('plugins?filter=inactive&search=' ~ search|url_encode) }}" class="plugin-tab {{ filter == 'inactive' ? 'active' : '' }}">
                     Inactive <span class="tab-count">{{ counts.inactive }}</span>
                 </a>
             </div>
@@ -83,7 +83,7 @@
 
         <div class="plugin-card-footer">
             <div class="plugin-actions">
-                <form method="POST" action="{{ admin_url('plugins/{{ plugin.slug }}/toggle') }}" style="display: inline;">
+                <form method="POST" action="{{ admin_url('plugins/' ~ plugin.slug ~ '/toggle') }}" style="display: inline;">
                     {{ csrf_field() | raw }}
                     <button type="submit" class="btn btn-sm {{ plugin.enabled ? 'btn-outline' : 'btn-primary' }}">
                         {{ plugin.enabled ? 'Disable' : 'Enable' }}
@@ -91,10 +91,10 @@
                 </form>
 
                 {% if plugin.has_settings and plugin.enabled %}
-                <a href="{{ admin_url('plugins/{{ plugin.slug }}/settings') }}" class="btn btn-sm btn-outline">Settings</a>
+                <a href="{{ admin_url('plugins/' ~ plugin.slug ~ '/settings') }}" class="btn btn-sm btn-outline">Settings</a>
                 {% endif %}
 
-                <form method="POST" action="{{ admin_url('plugins/{{ plugin.slug }}/uninstall') }}"
+                <form method="POST" action="{{ admin_url('plugins/' ~ plugin.slug ~ '/uninstall') }}"
                       onsubmit="return confirm('Are you sure you want to uninstall {{ m.name|e('js') }}? This will remove all plugin files.')"
                       style="display: inline;">
                     {{ csrf_field() | raw }}

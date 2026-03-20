@@ -82,15 +82,15 @@
                         </td>
                         <td>
                             <div style="display: flex; gap: var(--space-200);">
-                                <form method="POST" action="{{ admin_url('webhooks/{{ webhook.id }}/test') }}" style="display: inline;">
+                                <form method="POST" action="{{ admin_url('webhooks/' ~ webhook.id ~ '/test') }}" style="display: inline;">
                                     {{ csrf_field() | raw }}
                                     <button type="submit" class="btn btn-outline btn-sm">Test</button>
                                 </form>
-                                <form method="POST" action="{{ admin_url('webhooks/{{ webhook.id }}/toggle') }}" style="display: inline;">
+                                <form method="POST" action="{{ admin_url('webhooks/' ~ webhook.id ~ '/toggle') }}" style="display: inline;">
                                     {{ csrf_field() | raw }}
                                     <button type="submit" class="btn btn-outline btn-sm">{{ webhook.is_active ? 'Disable' : 'Enable' }}</button>
                                 </form>
-                                <form method="POST" action="{{ admin_url('webhooks/{{ webhook.id }}/delete') }}" style="display: inline;" onsubmit="return confirm('Delete this webhook?')">
+                                <form method="POST" action="{{ admin_url('webhooks/' ~ webhook.id ~ '/delete') }}" style="display: inline;" onsubmit="return confirm('Delete this webhook?')">
                                     {{ csrf_field() | raw }}
                                     <button type="submit" class="btn btn-danger btn-sm">Delete</button>
                                 </form>

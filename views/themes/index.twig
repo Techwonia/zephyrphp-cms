@@ -96,17 +96,17 @@
                 {% endif %}
             </div>
             <div class="theme-card-actions">
-                <a href="{{ admin_url('themes/{{ liveTheme.getSlug() }}/customize') }}" class="btn btn-primary btn-sm">Customize</a>
+                <a href="{{ admin_url('themes/' ~ liveTheme.getSlug() ~ '/customize') }}" class="btn btn-primary btn-sm">Customize</a>
                 <div class="dropdown">
                     <button type="button" class="btn-icon" data-dropdown="live-menu">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
                     </button>
                     <div class="dropdown-menu dropdown-menu--right" id="live-menu">
-                        <a href="{{ admin_url('themes/{{ liveTheme.getSlug() }}/preview') }}" class="dropdown-item">
+                        <a href="{{ admin_url('themes/' ~ liveTheme.getSlug() ~ '/preview') }}" class="dropdown-item">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                             Preview
                         </a>
-                        <a href="{{ admin_url('themes/{{ liveTheme.getSlug() }}/code') }}" class="dropdown-item">
+                        <a href="{{ admin_url('themes/' ~ liveTheme.getSlug() ~ '/code') }}" class="dropdown-item">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
                             Edit code
                         </a>
@@ -153,21 +153,21 @@
                     {% endif %}
                 </div>
                 <div class="theme-card-actions">
-                    <a href="{{ admin_url('themes/{{ theme.getSlug() }}/customize') }}" class="btn btn-outline btn-sm">Customize</a>
+                    <a href="{{ admin_url('themes/' ~ theme.getSlug() ~ '/customize') }}" class="btn btn-outline btn-sm">Customize</a>
                     <div class="dropdown">
                         <button type="button" class="btn-icon" data-dropdown="menu-{{ theme.getSlug() }}">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
                         </button>
                         <div class="dropdown-menu dropdown-menu--right" id="menu-{{ theme.getSlug() }}">
-                            <a href="{{ admin_url('themes/{{ theme.getSlug() }}/preview') }}" class="dropdown-item">
+                            <a href="{{ admin_url('themes/' ~ theme.getSlug() ~ '/preview') }}" class="dropdown-item">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                                 Preview
                             </a>
-                            <a href="{{ admin_url('themes/{{ theme.getSlug() }}/code') }}" class="dropdown-item">
+                            <a href="{{ admin_url('themes/' ~ theme.getSlug() ~ '/code') }}" class="dropdown-item">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
                                 Edit code
                             </a>
-                            <form method="POST" action="{{ admin_url('themes/{{ theme.getSlug() }}/publish') }}" style="display:contents">
+                            <form method="POST" action="{{ admin_url('themes/' ~ theme.getSlug() ~ '/publish') }}" style="display:contents">
                                 {{ csrf_field() | raw }}
                                 <button type="submit" class="dropdown-item">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -175,14 +175,14 @@
                                 </button>
                             </form>
                             <div class="dropdown-divider"></div>
-                            <form method="POST" action="{{ admin_url('themes/{{ theme.getSlug() }}/delete') }}" class="confirm-delete" data-message="Delete theme '{{ theme.getName() }}'? This cannot be undone.">
+                            <form method="POST" action="{{ admin_url('themes/' ~ theme.getSlug() ~ '/delete') }}" class="confirm-delete" data-message="Delete theme '{{ theme.getName() }}'? This cannot be undone.">
                                 {{ csrf_field() | raw }}
                                 <button type="submit" class="dropdown-item dropdown-item--danger">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
                                     Delete
                                 </button>
                             </form>
-                            <form method="POST" action="{{ admin_url('themes/{{ theme.getSlug() }}/uninstall') }}" class="confirm-delete" data-message="Uninstall theme '{{ theme.getName() }}'? This removes all theme files.">
+                            <form method="POST" action="{{ admin_url('themes/' ~ theme.getSlug() ~ '/uninstall') }}" class="confirm-delete" data-message="Uninstall theme '{{ theme.getName() }}'? This removes all theme files.">
                                 {{ csrf_field() | raw }}
                                 <button type="submit" class="dropdown-item dropdown-item--danger">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>

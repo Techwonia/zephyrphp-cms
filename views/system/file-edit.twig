@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="{{ admin_url() }}">Dashboard</a> / <a href="{{ admin_url('system/files?root={{ root }}') }}">Files</a> / {{ filename }}
+    <a href="{{ admin_url() }}">Dashboard</a> / <a href="{{ admin_url('system/files?root=' ~ root) }}">Files</a> / {{ filename }}
 </div>
 
 <div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
@@ -35,7 +35,7 @@
             Last modified: {{ modified }}
         </div>
         <div style="display: flex; gap: var(--space-200);">
-            <a href="{{ admin_url('system/files?root={{ root }}') }}" class="btn btn-outline">Cancel</a>
+            <a href="{{ admin_url('system/files?root=' ~ root) }}" class="btn btn-outline">Cancel</a>
             <button type="submit" class="btn btn-primary">Save File</button>
         </div>
     </div>
@@ -51,7 +51,7 @@
     <div style="font-size: 0.85rem; color: var(--text-secondary);">
         Last modified: {{ modified }}
     </div>
-    <a href="{{ admin_url('system/files?root={{ root }}') }}" class="btn btn-outline">Back</a>
+    <a href="{{ admin_url('system/files?root=' ~ root) }}" class="btn btn-outline">Back</a>
 </div>
 {% endif %}
 

@@ -1,7 +1,7 @@
 {% if data.reviews is defined and data.reviews|length > 0 %}
 <div class="widget-list">
     {% for review in data.reviews %}
-    <a href="{{ admin_url('collections/{{ review.collection_slug }}/entries/{{ review.entry_id }}') }}" class="widget-list-item">
+    <a href="{{ admin_url('collections/' ~ review.collection_slug ~ '/entries/' ~ review.entry_id) }}" class="widget-list-item">
         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
             <div>
                 <span class="widget-list-title">{{ review.entry_title ?? '#' ~ review.entry_id }}</span>

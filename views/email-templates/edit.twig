@@ -9,13 +9,13 @@
         <p style="color: var(--text-secondary); margin: var(--space-100) 0 0;">Slug: <code style="font-size: var(--font-xs); background: var(--bg-subdued); padding: 2px 6px; border-radius: var(--radius-100);">{{ template.getSlug() }}</code></p>
     </div>
     <div style="display: flex; gap: var(--space-200);">
-        <a href="{{ admin_url('email-templates/{{ template.getId() }}/preview') }}" target="_blank" class="btn btn-outline btn-sm">Preview</a>
+        <a href="{{ admin_url('email-templates/' ~ template.getId() ~ '/preview') }}" target="_blank" class="btn btn-outline btn-sm">Preview</a>
         <button onclick="testSend({{ template.getId() }})" class="btn btn-outline btn-sm">Test Send</button>
         <a href="{{ admin_url('email-templates') }}" class="btn btn-outline btn-sm">Back</a>
     </div>
 </div>
 
-<form method="POST" action="{{ admin_url('email-templates/{{ template.getId() }}') }}" class="card">
+<form method="POST" action="{{ admin_url('email-templates/' ~ template.getId()) }}" class="card">
     <input type="hidden" name="_token" value="{{ csrf_token() }}">
 
     <div style="padding: var(--space-500);">

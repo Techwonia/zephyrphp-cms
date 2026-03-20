@@ -71,7 +71,7 @@
                             {% endfor %}
                         </div>
                         <div style="margin-top: var(--space-200);">
-                            <a href="{{ admin_url('system/translations?locale={{ locale }}&group={{ group }}') }}" class="btn btn-outline btn-sm">Edit</a>
+                            <a href="{{ admin_url('system/translations?locale=' ~ locale ~ '&group=' ~ group) }}" class="btn btn-outline btn-sm">Edit</a>
                         </div>
                     </div>
                     {% endfor %}

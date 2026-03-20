@@ -71,7 +71,7 @@
             </div>
             <div class="mp-footer">
                 <span class="mp-price {{ item.pricing == 'free' ? 'mp-free' : '' }}">{{ item.price }}</span>
-                <form method="POST" action="{{ admin_url('marketplace/{{ item.slug }}/install') }}" style="display:inline">
+                <form method="POST" action="{{ admin_url('marketplace/' ~ item.slug ~ '/install') }}" style="display:inline">
                     {{ csrf_field() | raw }}
                     <button type="submit" class="btn btn-sm btn-primary">Install</button>
                 </form>
@@ -88,7 +88,7 @@
         {% if p == pagination.current_page %}
             <span class="btn btn-sm btn-primary">{{ p }}</span>
         {% else %}
-            <a href="{{ admin_url('marketplace?page={{ p }}&type={{ filters.type }}&search={{ filters.search }}&sort={{ filters.sort }}') }}" class="btn btn-sm btn-outline">{{ p }}</a>
+            <a href="{{ admin_url('marketplace?page=' ~ p ~ '&type=' ~ filters.type ~ '&search=' ~ filters.search ~ '&sort=' ~ filters.sort) }}" class="btn btn-sm btn-outline">{{ p }}</a>
         {% endif %}
     {% endfor %}
 </div>

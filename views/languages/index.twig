@@ -76,7 +76,7 @@
                 <td style="text-align: right;">
                     <button onclick="editLanguage({{ lang.getId() }}, '{{ lang.getName()|e('js') }}', '{{ lang.getNativeName()|e('js') }}', {{ lang.isActive() ? 'true' : 'false' }}, {{ lang.isDefault() ? 'true' : 'false' }})" class="btn btn-outline btn-sm">Edit</button>
                     {% if not lang.isDefault() %}
-                    <form method="POST" action="{{ admin_url('languages/{{ lang.getId() }}/delete') }}" style="display: inline;" class="confirm-delete" data-message="Delete this language and all its translations?">
+                    <form method="POST" action="{{ admin_url('languages/' ~ lang.getId() ~ '/delete') }}" style="display: inline;" class="confirm-delete" data-message="Delete this language and all its translations?">
                         <input type="hidden" name="_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-danger btn-sm">Delete</button>
                     </form>

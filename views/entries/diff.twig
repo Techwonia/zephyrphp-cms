@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="{{ admin_url() }}">Dashboard</a> / <a href="{{ admin_url('collections') }}">Collections</a> / <a href="{{ admin_url('collections/{{ collection.slug }}/entries') }}">{{ collection.name }}</a> / <a href="{{ admin_url('collections/{{ collection.slug }}/entries/{{ entry.id }}/history') }}">History</a> / Diff
+    <a href="{{ admin_url() }}">Dashboard</a> / <a href="{{ admin_url('collections') }}">Collections</a> / <a href="{{ admin_url('collections/' ~ collection.slug ~ '/entries') }}">{{ collection.name }}</a> / <a href="{{ admin_url('collections/' ~ collection.slug ~ '/entries/' ~ entry.id ~ '/history') }}">History</a> / Diff
 </div>
 
 <div class="page-header">
@@ -14,7 +14,7 @@
 {# Revision Selector #}
 <div class="card" style="margin-bottom: var(--space-500);">
     <div class="card-body">
-        <form method="GET" action="{{ admin_url('collections/{{ collection.slug }}/entries/{{ entry.id }}/diff') }}" style="display: flex; gap: var(--space-300); align-items: flex-end;">
+        <form method="GET" action="{{ admin_url('collections/' ~ collection.slug ~ '/entries/' ~ entry.id ~ '/diff') }}" style="display: flex; gap: var(--space-300); align-items: flex-end;">
             <div style="flex: 1;">
                 <label class="form-label">From (Older)</label>
                 <select name="a" class="form-control">
@@ -80,9 +80,9 @@
 </div>
 
 <div style="margin-top: var(--space-400); display: flex; gap: var(--space-300);">
-    <a href="{{ admin_url('collections/{{ collection.slug }}/entries/{{ entry.id }}/history') }}" class="btn btn-outline">Back to History</a>
+    <a href="{{ admin_url('collections/' ~ collection.slug ~ '/entries/' ~ entry.id ~ '/history') }}" class="btn btn-outline">Back to History</a>
     {% if revisionA %}
-    <form method="POST" action="{{ admin_url('collections/{{ collection.slug }}/entries/{{ entry.id }}/restore/{{ revisionA }}') }}" onsubmit="return confirm('Restore to revision #{{ revisionA }}?')">
+    <form method="POST" action="{{ admin_url('collections/' ~ collection.slug ~ '/entries/' ~ entry.id ~ '/restore/' ~ revisionA) }}" onsubmit="return confirm('Restore to revision #{{ revisionA }}?')">
         {{ csrf_field() | raw }}
         <button type="submit" class="btn btn-outline">Restore to #{{ revisionA }}</button>
     </form>

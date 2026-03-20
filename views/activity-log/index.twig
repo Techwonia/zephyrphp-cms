@@ -92,17 +92,17 @@
         {% if logs.last_page > 1 %}
         <div class="pagination">
             {% if logs.current_page > 1 %}
-                <a href="{{ admin_url('activity-log?page={{ logs.current_page - 1 }}&search={{ filters.search }}&action={{ filters.action }}&resource_type={{ filters.resource_type }}') }}">&laquo; Prev</a>
+                <a href="{{ admin_url('activity-log?page=' ~ (logs.current_page - 1) ~ '&search=' ~ filters.search ~ '&action=' ~ filters.action ~ '&resource_type=' ~ filters.resource_type) }}">&laquo; Prev</a>
             {% endif %}
             {% for p in 1..logs.last_page %}
                 {% if p == logs.current_page %}
                     <span class="active">{{ p }}</span>
                 {% else %}
-                    <a href="{{ admin_url('activity-log?page={{ p }}&search={{ filters.search }}&action={{ filters.action }}&resource_type={{ filters.resource_type }}') }}">{{ p }}</a>
+                    <a href="{{ admin_url('activity-log?page=' ~ p ~ '&search=' ~ filters.search ~ '&action=' ~ filters.action ~ '&resource_type=' ~ filters.resource_type) }}">{{ p }}</a>
                 {% endif %}
             {% endfor %}
             {% if logs.current_page < logs.last_page %}
-                <a href="{{ admin_url('activity-log?page={{ logs.current_page + 1 }}&search={{ filters.search }}&action={{ filters.action }}&resource_type={{ filters.resource_type }}') }}">Next &raquo;</a>
+                <a href="{{ admin_url('activity-log?page=' ~ (logs.current_page + 1) ~ '&search=' ~ filters.search ~ '&action=' ~ filters.action ~ '&resource_type=' ~ filters.resource_type) }}">Next &raquo;</a>
             {% endif %}
         </div>
         {% endif %}

@@ -5,9 +5,9 @@
 {% block content %}
 <div class="breadcrumb">
     <a href="{{ admin_url('collections') }}">Collections</a> /
-    <a href="{{ admin_url('collections/{{ collection.getSlug() }}') }}">{{ collection.getName() }}</a> /
-    <a href="{{ admin_url('collections/{{ collection.getSlug() }}/entries') }}">Entries</a> /
-    <a href="{{ admin_url('collections/{{ collection.getSlug() }}/entries/{{ entry.id }}') }}">{{ entry.id }}</a> /
+    <a href="{{ admin_url('collections/' ~ collection.getSlug()) }}">{{ collection.getName() }}</a> /
+    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}">Entries</a> /
+    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id) }}">{{ entry.id }}</a> /
     Translate
 </div>
 
@@ -29,11 +29,11 @@
                 {% endif %}
             {% endfor %}
         </select>
-        <a href="{{ admin_url('collections/{{ collection.getSlug() }}/entries/{{ entry.id }}') }}" class="btn btn-outline btn-sm">Back to Entry</a>
+        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id) }}" class="btn btn-outline btn-sm">Back to Entry</a>
     </div>
 </div>
 
-<form method="POST" action="{{ admin_url('collections/{{ collection.getSlug() }}/entries/{{ entry.id }}/translate/{{ locale }}') }}">
+<form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/translate/' ~ locale) }}">
     {{ csrf_field() | raw }}
 
     {% if translatableFields|length == 0 %}
@@ -94,7 +94,7 @@
 
     <div style="margin-top: var(--space-400); display: flex; gap: var(--space-200);">
         <button type="submit" class="btn btn-primary">Save Translations</button>
-        <a href="{{ admin_url('collections/{{ collection.getSlug() }}/entries/{{ entry.id }}') }}" class="btn btn-outline">Cancel</a>
+        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id) }}" class="btn btn-outline">Cancel</a>
     </div>
     {% endif %}
 </form>

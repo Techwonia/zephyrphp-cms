@@ -46,7 +46,7 @@
                         <td style="font-size: 0.85rem;">{{ log.duration_ms }}ms</td>
                         <td style="font-size: 0.85rem;">{{ log.created_at }}</td>
                         <td>
-                            <form method="POST" action="{{ admin_url('webhooks/{{ webhook.id }}/retry/{{ log.id }}') }}" style="display: inline;">
+                            <form method="POST" action="{{ admin_url('webhooks/' ~ webhook.id ~ '/retry/' ~ log.id) }}" style="display: inline;">
                                 {{ csrf_field() | raw }}
                                 <button type="submit" class="btn btn-outline btn-sm">Retry</button>
                             </form>

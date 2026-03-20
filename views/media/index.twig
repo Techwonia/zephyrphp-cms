@@ -10,7 +10,7 @@
         {% set pathSoFar = '' %}
         {% for part in parts %}
             {% set pathSoFar = pathSoFar ? pathSoFar ~ '/' ~ part : part %}
-            / <a href="{{ admin_url('media?folder={{ pathSoFar }}') }}">{{ part }}</a>
+            / <a href="{{ admin_url('media?folder=' ~ pathSoFar) }}">{{ part }}</a>
         {% endfor %}
     {% endif %}
 </div>
@@ -84,7 +84,7 @@
             </div>
             <button type="submit" class="btn btn-outline">Filter</button>
             {% if search or currentFilter != 'all' %}
-                <a href="{{ admin_url('media{% if currentFolder %}?folder={{ currentFolder }}{% endif %}') }}" class="btn btn-outline">Clear</a>
+                <a href="{{ admin_url('media' ~ (currentFolder ? '?folder=' ~ currentFolder : '')) }}" class="btn btn-outline">Clear</a>
             {% endif %}
         </form>
     </div>
@@ -95,7 +95,7 @@
 <div style="display: flex; gap: var(--space-200); flex-wrap: wrap; margin-bottom: var(--space-400);">
     {% if currentFolder %}
         {% set parentFolder = currentFolder|split('/')|slice(0, -1)|join('/') %}
-        <a href="{{ admin_url('media{% if parentFolder %}?folder={{ parentFolder }}{% endif %}') }}" class="btn btn-outline btn-sm" style="display: inline-flex; align-items: center; gap: 4px;">
+        <a href="{{ admin_url('media' ~ (parentFolder ? '?folder=' ~ parentFolder : '')) }}" class="btn btn-outline btn-sm" style="display: inline-flex; align-items: center; gap: 4px;">
             &larr; Up
         </a>
     {% endif %}
@@ -104,7 +104,7 @@
         {% set isChild = currentFolder ? (folder starts with currentFolder ~ '/' and folder|split('/')|length == currentFolder|split('/')|length + 1) : (folder|split('/')|length == 1) %}
         {% if isChild %}
         <div style="display: inline-flex; align-items: center; gap: 0;">
-            <a href="{{ admin_url('media?folder={{ folder }}') }}" class="btn btn-outline btn-sm" style="border-radius: 4px 0 0 4px;">
+            <a href="{{ admin_url('media?folder=' ~ folder) }}" class="btn btn-outline btn-sm" style="border-radius: 4px 0 0 4px;">
                 &#128193; {{ folderName }}
             </a>
             <div style="position: relative; display: inline-block;">
@@ -157,7 +157,7 @@
         <div style="position: absolute; top: 8px; left: 8px; z-index: 2;">
             <input type="checkbox" name="ids[]" value="{{ item.getId() }}" class="media-checkbox">
         </div>
-        <a href="{{ admin_url('media/{{ item.getId() }}') }}" style="text-decoration: none; color: inherit;">
+        <a href="{{ admin_url('media/' ~ item.getId()) }}" style="text-decoration: none; color: inherit;">
             <div class="media-preview">
                 {% if item.isImage() %}
                     <img src="{{ item.getThumbnailUrl() ?: item.getUrl() }}" alt="{{ item.getOriginalName() }}" loading="lazy">
@@ -172,7 +172,7 @@
         </a>
         <div class="media-actions" style="padding: 0 var(--space-200) var(--space-200);">
             <button class="btn btn-sm btn-outline copy-url-btn" data-url="{{ item.getUrl() }}" title="Copy URL">Copy URL</button>
-            <form method="POST" action="{{ admin_url('media/{{ item.getId() }}/delete') }}"
+            <form method="POST" action="{{ admin_url('media/' ~ item.getId() ~ '/delete') }}"
                   style="display:inline" onsubmit="return confirm('Delete this file?')">
                 {{ csrf_field() | raw }}
                 <button type="submit" class="btn btn-sm btn-danger">Delete</button>
@@ -184,21 +184,25 @@
 
 {# Pagination #}
 {% if lastPage > 1 %}
+{% set _pq = '' %}
+{% if currentFolder %}{% set _pq = _pq ~ '&folder=' ~ currentFolder %}{% endif %}
+{% if currentFilter != 'all' %}{% set _pq = _pq ~ '&filter=' ~ currentFilter %}{% endif %}
+{% if search %}{% set _pq = _pq ~ '&search=' ~ search %}{% endif %}
 <div class="pagination">
     {% if currentPage > 1 %}
-        <a href="{{ admin_url('media?page={{ currentPage - 1 }}{% if currentFolder %}&folder={{ currentFolder }}{% endif %}{% if currentFilter != 'all' %}&filter={{ currentFilter }}{% endif %}{% if search %}&search={{ search }}{% endif %}') }}">&laquo; Prev</a>
+        <a href="{{ admin_url('media?page=' ~ (currentPage - 1) ~ _pq) }}">&laquo; Prev</a>
     {% endif %}
 
     {% for p in 1..lastPage %}
         {% if p == currentPage %}
             <span class="active">{{ p }}</span>
         {% else %}
-            <a href="{{ admin_url('media?page={{ p }}{% if currentFolder %}&folder={{ currentFolder }}{% endif %}{% if currentFilter != 'all' %}&filter={{ currentFilter }}{% endif %}{% if search %}&search={{ search }}{% endif %}') }}">{{ p }}</a>
+            <a href="{{ admin_url('media?page=' ~ p ~ _pq) }}">{{ p }}</a>
         {% endif %}
     {% endfor %}
 
     {% if currentPage < lastPage %}
-        <a href="{{ admin_url('media?page={{ currentPage + 1 }}{% if currentFolder %}&folder={{ currentFolder }}{% endif %}{% if currentFilter != 'all' %}&filter={{ currentFilter }}{% endif %}{% if search %}&search={{ search }}{% endif %}') }}">Next &raquo;</a>
+        <a href="{{ admin_url('media?page=' ~ (currentPage + 1) ~ _pq) }}">Next &raquo;</a>
     {% endif %}
 </div>
 {% endif %}

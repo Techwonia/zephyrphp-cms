@@ -5,8 +5,8 @@
 {% block content %}
 <div class="breadcrumb">
     <a href="{{ admin_url('collections') }}">Collections</a> /
-    <a href="{{ admin_url('collections/{{ collection.getSlug() }}') }}">{{ collection.getName() }}</a> /
-    <a href="{{ admin_url('collections/{{ collection.getSlug() }}/entries') }}">Entries</a> / New
+    <a href="{{ admin_url('collections/' ~ collection.getSlug()) }}">{{ collection.getName() }}</a> /
+    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}">Entries</a> / New
 </div>
 
 <div class="page-header">
@@ -15,7 +15,7 @@
 
 <div class="card">
     <div class="card-body">
-        <form method="POST" action="{{ admin_url('collections/{{ collection.getSlug() }}/entries') }}" enctype="multipart/form-data">
+        <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" enctype="multipart/form-data">
             {{ csrf_field() | raw }}
 
             {% if collection.hasSlug() %}
@@ -199,7 +199,7 @@
 
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Create Entry</button>
-                <a href="{{ admin_url('collections/{{ collection.getSlug() }}/entries') }}" class="btn btn-outline">Cancel</a>
+                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="btn btn-outline">Cancel</a>
             </div>
         </form>
     </div>
