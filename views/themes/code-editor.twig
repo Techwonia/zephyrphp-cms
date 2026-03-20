@@ -280,6 +280,7 @@
             transition: all 0.1s; white-space: nowrap; flex-shrink: 0;
         }
         .toolbar-btn:hover { background: var(--bg-hover); color: var(--text); }
+        .toolbar-btn.active { background: rgba(0,91,211,0.15); color: var(--primary); }
         .toolbar-btn.active { background: var(--primary-bg); color: var(--primary); }
         .toolbar-btn svg { width: 13px; height: 13px; }
         .toolbar-separator {
@@ -295,62 +296,98 @@
             font-weight: 500;
         }
 
-        /* ── Collection Reference Bar ── */
-        .col-ref-bar {
-            background: #1b2533;
-            border-bottom: 1px solid var(--border);
-            font-size: 12px;
+        /* ── Reference Panel (right side) ── */
+        .ref-panel {
+            width: 260px;
+            flex-shrink: 0;
+            background: #1a1e24;
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
-        .col-ref-header {
+        .ref-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border);
+        }
+        .ref-panel-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+        }
+        .ref-panel-close {
+            background: none; border: none; color: var(--text-disabled);
+            cursor: pointer; font-size: 18px; line-height: 1; padding: 0 2px;
+        }
+        .ref-panel-close:hover { color: #fff; }
+        .ref-panel-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0;
+        }
+        .ref-empty {
+            padding: 24px 14px;
+            color: var(--text-disabled);
+            font-size: 12px;
+            text-align: center;
+        }
+        .ref-group {
+            border-bottom: 1px solid var(--border);
+        }
+        .ref-group-header {
             display: flex;
             align-items: center;
             gap: 6px;
-            padding: 6px 12px;
-            color: var(--text-secondary);
-            font-weight: 600;
+            padding: 8px 14px;
+            cursor: pointer;
             font-size: 11px;
+            font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.04em;
+            color: var(--text-secondary);
+            user-select: none;
         }
-        .col-ref-close {
-            margin-left: auto;
-            background: none;
-            border: none;
-            color: var(--text-disabled);
-            cursor: pointer;
-            font-size: 16px;
-            line-height: 1;
-            padding: 0 4px;
+        .ref-group-header:hover { color: #fff; }
+        .ref-group-chevron {
+            font-size: 9px;
+            transition: transform 0.15s;
         }
-        .col-ref-close:hover { color: #fff; }
-        .col-ref-fields {
+        .ref-group.open .ref-group-chevron { transform: rotate(90deg); }
+        .ref-group-body {
+            display: none;
+            padding: 0 10px 8px;
+        }
+        .ref-group.open .ref-group-body { display: block; }
+        .ref-item {
             display: flex;
-            flex-wrap: wrap;
-            gap: 4px;
-            padding: 0 12px 8px;
-        }
-        .col-ref-tag {
-            display: inline-flex;
             align-items: center;
-            gap: 4px;
-            padding: 3px 8px;
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.1);
+            gap: 6px;
+            padding: 4px 6px;
             border-radius: 4px;
-            color: #c9d1d9;
+            cursor: pointer;
             font-family: var(--font-mono);
             font-size: 11px;
-            cursor: pointer;
+            color: #c9d1d9;
             transition: background 0.1s;
         }
-        .col-ref-tag:hover { background: rgba(255,255,255,0.12); }
-        .col-ref-tag-type {
+        .ref-item:hover { background: rgba(255,255,255,0.08); }
+        .ref-item-type {
             font-size: 9px;
-            color: #7ee787;
             font-weight: 600;
             text-transform: uppercase;
+            padding: 1px 4px;
+            border-radius: 3px;
+            flex-shrink: 0;
         }
-        .col-ref-tag-system .col-ref-tag-type { color: #f0883e; }
+        .ref-item-type--field { color: #7ee787; background: rgba(126,231,135,0.1); }
+        .ref-item-type--system { color: #f0883e; background: rgba(240,136,62,0.1); }
+        .ref-item-type--func { color: #79c0ff; background: rgba(121,192,255,0.1); }
+        .ref-item-type--snippet { color: #d2a8ff; background: rgba(210,168,255,0.1); }
 
         /* ── Editor Area (supports split) ── */
         .editor-area {
@@ -891,18 +928,12 @@
                     Delete
                 </button>
                 <div class="toolbar-spacer"></div>
+                <button class="toolbar-btn" id="btnRefPanel" title="Toggle Reference Panel" style="display:none;">
+                    <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="1" width="14" height="14" rx="2"/><line x1="10" y1="1" x2="10" y2="15"/></svg>
+                    Reference
+                </button>
                 <span class="toolbar-info" id="toolbarLineCol"></span>
                 <span class="toolbar-lang" id="toolbarLang"></span>
-            </div>
-
-            <!-- Collection Reference Bar -->
-            <div class="col-ref-bar" id="colRefBar" style="display:none;">
-                <div class="col-ref-header">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
-                    <span id="colRefTitle">Collection Fields</span>
-                    <button class="col-ref-close" id="colRefClose" title="Close">&times;</button>
-                </div>
-                <div class="col-ref-fields" id="colRefFields"></div>
             </div>
 
             <!-- Editor Area (split-capable) -->
@@ -941,6 +972,17 @@
                             <select id="splitFileSelect" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:var(--font);color:var(--text);background:var(--bg-surface);min-width:200px;"></select>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Reference Panel (right side) -->
+            <div class="ref-panel" id="refPanel" style="display:none;">
+                <div class="ref-panel-header">
+                    <span class="ref-panel-title">Reference</span>
+                    <button class="ref-panel-close" id="refPanelClose">&times;</button>
+                </div>
+                <div class="ref-panel-body" id="refPanelBody">
+                    <div class="ref-empty">Open a file to see references</div>
                 </div>
             </div>
 
@@ -1788,7 +1830,7 @@
         updateUnsavedState();
         updateToolbarInfo(path);
         updateToolbarActions(path);
-        updateCollectionRef(tab.content);
+        updateRefPanel(path, tab.content);
     }
 
     function createEditor(container, content, path, role) {
@@ -1931,83 +1973,208 @@
         }
     }
 
-    // ── Collection Reference Panel ──
-    var _colRefCache = {};
-    var _colRefVisible = true;
-    $('colRefClose').addEventListener('click', function() {
-        $('colRefBar').style.display = 'none';
-        _colRefVisible = false;
-    });
+    // ── Reference Panel (right side) ──
+    var _refCache = {};
+    var _refPanelOpen = false;
+    var _pagesConfig = null;
 
-    function detectCollections(content) {
-        // Detect collection('slug') or entry('slug') in PHP/Twig
-        var slugs = new Set();
-        var re = /(?:collection|entry|collection_meta|entry_query)\s*\(\s*['"]([a-z0-9_-]+)['"]/gi;
-        var m;
-        while ((m = re.exec(content)) !== null) {
-            slugs.add(m[1]);
+    $('refPanelClose').addEventListener('click', function() { toggleRefPanel(false); });
+    $('btnRefPanel').addEventListener('click', function() { toggleRefPanel(!_refPanelOpen); });
+
+    function toggleRefPanel(show) {
+        _refPanelOpen = show;
+        $('refPanel').style.display = show ? '' : 'none';
+        $('btnRefPanel').classList.toggle('active', show);
+        if (show && state.activeTab) {
+            var tab = state.openTabs.find(function(t) { return t.path === state.activeTab; });
+            if (tab) updateRefPanel(state.activeTab, tab.content);
         }
-        // Also detect from schema: "collection" setting with value
-        var schemaRe = /"collection"\s*,\s*"id"\s*:\s*"collection"/;
-        // Check section.settings.collection references
-        var settingsRe = /section\.settings\.collection/;
-        return Array.from(slugs);
     }
 
-    async function updateCollectionRef(content) {
-        if (!_colRefVisible) { $('colRefBar').style.display = 'none'; return; }
-        var slugs = detectCollections(content);
-        if (slugs.length === 0) {
-            $('colRefBar').style.display = 'none';
-            return;
+    // Load pages.json to map templates/controllers to collections
+    async function loadPagesConfig() {
+        if (_pagesConfig) return _pagesConfig;
+        try {
+            var data = await apiFetch(BASE_URL + '/file?path=pages.json');
+            _pagesConfig = JSON.parse(data.content || '{}');
+        } catch(e) {
+            _pagesConfig = { pages: [] };
         }
+        return _pagesConfig;
+    }
 
-        var allFields = [];
-        for (var slug of slugs) {
-            if (!_colRefCache[slug]) {
-                try {
-                    var res = await fetch('/admin/collections/' + slug + '/fields-json', {
-                        headers: { 'X-CSRF-TOKEN': CSRF_TOKEN }
-                    });
-                    _colRefCache[slug] = await res.json();
-                } catch(e) {
-                    _colRefCache[slug] = { fields: [] };
+    function findCollectionForFile(path, content) {
+        var slugs = new Set();
+        // 1. From code: collection(), entry(), entry_query()
+        var re = /(?:collection|entry|collection_meta|entry_query)\s*\(\s*['"]([a-z0-9_-]+)['"]/gi;
+        var m;
+        while ((m = re.exec(content)) !== null) slugs.add(m[1]);
+        // 2. From pages.json: match template or controller name
+        if (_pagesConfig && _pagesConfig.pages) {
+            var fileName = path.split('/').pop().replace(/\.(twig|php)$/, '');
+            for (var p of _pagesConfig.pages) {
+                if ((p.template === fileName || p.controller === fileName) && p.collection) {
+                    slugs.add(p.collection);
                 }
             }
-            var data = _colRefCache[slug];
-            allFields.push({ slug: slug, fields: data.fields || [] });
         }
+        // 3. From section schema: collection setting
+        var schemaMatch = content.match(/"collection"\s*,\s*"id"\s*:\s*"collection"/);
+        if (schemaMatch) slugs.add('__dynamic__');
+        return Array.from(slugs).filter(function(s) { return s !== '__dynamic__'; });
+    }
 
+    async function fetchCollectionFields(slug) {
+        if (_refCache[slug]) return _refCache[slug];
+        try {
+            var res = await fetch('/admin/collections/' + slug + '/fields-json', {
+                headers: { 'X-CSRF-TOKEN': CSRF_TOKEN }
+            });
+            _refCache[slug] = await res.json();
+        } catch(e) {
+            _refCache[slug] = { fields: [] };
+        }
+        return _refCache[slug];
+    }
+
+    async function updateRefPanel(path, content) {
+        if (!_refPanelOpen) return;
+        var ext = path.split('.').pop().toLowerCase();
+        var isTwig = ext === 'twig' || ext === 'html';
+        var isPhp = ext === 'php';
+        var isCss = ext === 'css';
+        var isJs = ext === 'js';
+
+        await loadPagesConfig();
+        var collSlugs = findCollectionForFile(path, content);
         var html = '';
-        for (var col of allFields) {
-            // System fields always present
-            var systemFields = [
-                { slug: 'id', type: 'id', system: true },
-                { slug: 'slug', type: 'string', system: true },
-                { slug: 'created_at', type: 'datetime', system: true },
-                { slug: 'updated_at', type: 'datetime', system: true },
-            ];
-            for (var sf of systemFields) {
-                html += '<span class="col-ref-tag col-ref-tag-system" title="System field: ' + sf.slug + ' (' + sf.type + ') — click to copy" data-copy="item.' + sf.slug + '">' +
-                    sf.slug + ' <span class="col-ref-tag-type">' + sf.type + '</span></span>';
-            }
-            for (var f of col.fields) {
-                html += '<span class="col-ref-tag" title="' + f.name + ' (' + f.type + ') — click to copy" data-copy="item.' + f.slug + '">' +
-                    f.slug + ' <span class="col-ref-tag-type">' + f.type + '</span></span>';
+
+        // ── Fields Group (if collection detected) ──
+        if (collSlugs.length > 0) {
+            for (var slug of collSlugs) {
+                var data = await fetchCollectionFields(slug);
+                var fields = data.fields || [];
+                html += '<div class="ref-group open">';
+                html += '<div class="ref-group-header"><span class="ref-group-chevron">&#9654;</span> ' + slug + ' fields</div>';
+                html += '<div class="ref-group-body">';
+                // System fields
+                var sysFields = [
+                    { slug: 'id', type: 'id' }, { slug: 'slug', type: 'string' },
+                    { slug: 'created_at', type: 'datetime' }, { slug: 'updated_at', type: 'datetime' }
+                ];
+                for (var sf of sysFields) {
+                    var copyVal = isTwig ? 'item.' + sf.slug : "$item['" + sf.slug + "']";
+                    html += '<div class="ref-item" data-copy="' + copyVal + '" title="Click to copy">' +
+                        sf.slug + ' <span class="ref-item-type ref-item-type--system">' + sf.type + '</span></div>';
+                }
+                for (var f of fields) {
+                    var copyVal = isTwig ? 'item.' + f.slug : "$item['" + f.slug + "']";
+                    html += '<div class="ref-item" data-copy="' + copyVal + '" title="' + f.name + ' — click to copy">' +
+                        f.slug + ' <span class="ref-item-type ref-item-type--field">' + f.type + '</span></div>';
+                }
+                html += '</div></div>';
             }
         }
 
-        $('colRefTitle').textContent = slugs.length === 1 ? slugs[0] + ' fields' : 'Collection Fields';
-        $('colRefFields').innerHTML = html;
-        $('colRefBar').style.display = '';
+        // ── Snippets Group ──
+        html += '<div class="ref-group open">';
+        html += '<div class="ref-group-header"><span class="ref-group-chevron">&#9654;</span> Snippets</div>';
+        html += '<div class="ref-group-body">';
+        if (isTwig) {
+            var twigSnippets = [
+                ['for loop', "{% for item in items.data %}\n    {{ item.title }}\n{% endfor %}"],
+                ['if/else', "{% if condition %}\n    ...\n{% else %}\n    ...\n{% endif %}"],
+                ['set variable', "{% set myVar = 'value' %}"],
+                ['include', "{% include '@theme/snippets/name.twig' %}"],
+                ['block', "{% block content %}{% endblock %}"],
+                ['extends', '{% extends "@theme/layouts/base.twig" %}'],
+                ['raw', "{% raw %}...{% endraw %}"],
+                ['collection loop', "{% set items = collection('" + (collSlugs[0] || 'slug') + "', {per_page: 10}) %}\n{% for item in items.data %}\n    {{ item.title }}\n{% endfor %}"],
+            ];
+            for (var s of twigSnippets) {
+                html += '<div class="ref-item" data-copy="' + s[1].replace(/"/g, '&quot;') + '" title="Click to copy">' +
+                    s[0] + ' <span class="ref-item-type ref-item-type--snippet">twig</span></div>';
+            }
+        } else if (isPhp) {
+            var phpSnippets = [
+                ['collection()', "collection('" + (collSlugs[0] || 'slug') + "', ['per_page' => 10, 'page' => 1])"],
+                ['entry()', "entry('" + (collSlugs[0] || 'slug') + "', $params['slug'])"],
+                ['abort 404', "if (!$item) {\n    abort(404);\n}"],
+                ['return data', "return [\n    'items' => $items,\n];"],
+            ];
+            for (var s of phpSnippets) {
+                html += '<div class="ref-item" data-copy="' + s[1].replace(/"/g, '&quot;') + '" title="Click to copy">' +
+                    s[0] + ' <span class="ref-item-type ref-item-type--snippet">php</span></div>';
+            }
+        } else if (isCss) {
+            var cssSnippets = [
+                ['media query', "@media (max-width: 768px) {\n    \n}"],
+                ['flex center', "display: flex;\nalign-items: center;\njustify-content: center;"],
+                ['grid auto', "display: grid;\ngrid-template-columns: repeat(auto-fill, minmax(280px, 1fr));\ngap: 20px;"],
+                ['container', "max-width: 1200px;\nmargin: 0 auto;\npadding: 0 24px;"],
+            ];
+            for (var s of cssSnippets) {
+                html += '<div class="ref-item" data-copy="' + s[1].replace(/"/g, '&quot;') + '" title="Click to copy">' +
+                    s[0] + ' <span class="ref-item-type ref-item-type--snippet">css</span></div>';
+            }
+        }
+        html += '</div></div>';
 
-        // Click to copy field reference
-        $('colRefFields').querySelectorAll('[data-copy]').forEach(function(el) {
+        // ── Helper Functions Group ──
+        html += '<div class="ref-group open">';
+        html += '<div class="ref-group-header"><span class="ref-group-chevron">&#9654;</span> Helper Functions</div>';
+        html += '<div class="ref-group-body">';
+        if (isTwig) {
+            var twigFuncs = [
+                ['admin_url()', "admin_url('path')"],
+                ['collection()', "collection('slug', {per_page: 10})"],
+                ['entry()', "entry('slug', identifier)"],
+                ['collection_meta()', "collection_meta('slug')"],
+                ['entry_query()', "entry_query('slug')"],
+                ['csrf_field()', "csrf_field() | raw"],
+                ['asset()', "asset('css/style.css')"],
+                ['theme_settings()', "theme_settings()"],
+                ['seo_meta()', "seo_meta(item, 'collection')"],
+                ['date filter', "item.created_at|date('M d, Y')"],
+                ['striptags', "item.content|striptags|slice(0, 120)"],
+                ['url_encode', "value|url_encode"],
+                ['default', "variable|default('fallback')"],
+                ['raw', "content|raw"],
+            ];
+            for (var f of twigFuncs) {
+                html += '<div class="ref-item" data-copy="' + f[1].replace(/"/g, '&quot;') + '" title="Click to copy">' +
+                    f[0] + ' <span class="ref-item-type ref-item-type--func">fn</span></div>';
+            }
+        } else if (isPhp) {
+            var phpFuncs = [
+                ['collection()', "collection('slug', ['per_page' => 10])"],
+                ['entry()', "entry('slug', $identifier)"],
+                ['abort()', "abort(404)"],
+                ['env()', "env('KEY', 'default')"],
+                ['$params[slug]', "$params['slug']"],
+                ['$params[query]', "$params['_query']['page'] ?? 1"],
+            ];
+            for (var f of phpFuncs) {
+                html += '<div class="ref-item" data-copy="' + f[1].replace(/"/g, '&quot;') + '" title="Click to copy">' +
+                    f[0] + ' <span class="ref-item-type ref-item-type--func">fn</span></div>';
+            }
+        }
+        html += '</div></div>';
+
+        $('refPanelBody').innerHTML = html || '<div class="ref-empty">No references for this file type</div>';
+        $('btnRefPanel').style.display = '';
+
+        // Bind click-to-copy and group toggle
+        $('refPanelBody').querySelectorAll('[data-copy]').forEach(function(el) {
             el.addEventListener('click', function() {
-                var text = this.dataset.copy;
-                navigator.clipboard.writeText(text).then(function() {
-                    showToast('Copied: ' + text);
+                navigator.clipboard.writeText(this.dataset.copy).then(function() {
+                    showToast('Copied to clipboard');
                 });
+            });
+        });
+        $('refPanelBody').querySelectorAll('.ref-group-header').forEach(function(hdr) {
+            hdr.addEventListener('click', function() {
+                this.parentElement.classList.toggle('open');
             });
         });
     }
