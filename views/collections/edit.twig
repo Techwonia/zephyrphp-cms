@@ -235,11 +235,20 @@
                             <code>slug</code>
                             &middot; <span class="field-badge">string (255)</span>
                             <span class="field-badge unique">unique</span>
-                            <span class="field-badge">auto-generated{% if collection.getSlugSourceField() %} from {{ collection.getSlugSourceField() }}{% endif %}</span>
+                            {% if collection.getSlugSourceField() %}
+                                <span class="field-badge" style="background:var(--color-primary,#047B5D);color:#fff;">source: {{ collection.getSlugSourceField() }}</span>
+                            {% else %}
+                                <span class="field-badge" style="background:#dc3545;color:#fff;">no source set</span>
+                            {% endif %}
                         </div>
                     </div>
                     <div><span class="field-badge" style="opacity: 0.5;">system</span></div>
                 </div>
+                {% if not collection.getSlugSourceField() %}
+                <div style="padding:8px 12px; margin:4px 0 8px; background:#fff3cd; border:1px solid #ffc107; border-radius:6px; font-size:12px; color:#856404; line-height:1.5;">
+                    <strong>Slug source not set.</strong> Go to the <strong>Settings</strong> tab and select a text field under "Generate Slug From" to auto-generate URL-friendly slugs for entries.
+                </div>
+                {% endif %}
                 {% endif %}
 
                 <div class="field-row field-system">
