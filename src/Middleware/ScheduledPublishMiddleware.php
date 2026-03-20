@@ -20,12 +20,12 @@ class ScheduledPublishMiddleware
 {
     private const THROTTLE_SECONDS = 60;
 
-    public function handle(callable $next): mixed
+    public function handle($request, callable $next)
     {
         // Run the check in the background (non-blocking)
         $this->publishOverdueEntries();
 
-        return $next();
+        return $next($request);
     }
 
     private function publishOverdueEntries(): void

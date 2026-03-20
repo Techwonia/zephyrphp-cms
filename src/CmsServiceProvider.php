@@ -1009,13 +1009,25 @@ class CmsServiceProvider
                     UNIQUE KEY `uniq_theme_slug` (`slug`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
-                // Seed default theme if themes dir exists
+                // Seed first available theme as live
                 $themeManager = new ThemeManager();
-                $defaultPath = $themeManager->getThemesBasePath() . '/default';
-                if (is_dir($defaultPath)) {
-                    $conn->executeStatement(
-                        "INSERT INTO `cms_themes` (`name`, `slug`, `status`, `createdAt`, `updatedAt`) VALUES ('Default', 'default', 'live', NOW(), NOW())"
-                    );
+                $themesBase = $themeManager->getThemesBasePath();
+                if (is_dir($themesBase)) {
+                    $themeDirs = array_filter(glob($themesBase . '/*'), 'is_dir');
+                    foreach ($themeDirs as $themeDir) {
+                        $slug = basename($themeDir);
+                        if (file_exists($themeDir . '/theme.json')) {
+                            $themeConfig = json_decode(file_get_contents($themeDir . '/theme.json'), true);
+                            $name = $themeConfig['name'] ?? ucfirst($slug);
+                            $safeSlug = preg_replace('/[^a-z0-9_-]/', '', strtolower($slug));
+                            $safeName = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
+                            $conn->executeStatement(
+                                "INSERT INTO `cms_themes` (`name`, `slug`, `status`, `createdAt`, `updatedAt`) VALUES (?, ?, 'live', NOW(), NOW())",
+                                [$safeName, $safeSlug]
+                            );
+                            break; // Only seed the first theme as live
+                        }
+                    }
                 }
             }
 
