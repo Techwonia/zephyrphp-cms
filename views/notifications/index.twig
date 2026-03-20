@@ -12,12 +12,12 @@
     </div>
     <div style="display: flex; gap: var(--space-200);">
         {% if unreadCount > 0 %}
-        <form method="POST" action="/cms/notifications/read-all" style="margin: 0;">
+        <form method="POST" action="{{ admin_url('notifications/read-all') }}" style="margin: 0;">
             <input type="hidden" name="_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-outline btn-sm">Mark all as read</button>
         </form>
         {% endif %}
-        <a href="/cms/notifications/preferences" class="btn btn-outline btn-sm">Preferences</a>
+        <a href="{{ admin_url('notifications/preferences') }}" class="btn btn-outline btn-sm">Preferences</a>
     </div>
 </div>
 
@@ -55,7 +55,7 @@
                 </div>
             </div>
             {% if not notification.isRead() %}
-            <form method="POST" action="/cms/notifications/{{ notification.getId() }}/read" style="margin: 0; flex-shrink: 0;">
+            <form method="POST" action="{{ admin_url('notifications/{{ notification.getId() }}/read') }}" style="margin: 0; flex-shrink: 0;">
                 <input type="hidden" name="_token" value="{{ csrf_token() }}">
                 <button type="submit" class="btn btn-outline btn-sm" title="Mark as read" style="padding: 4px 8px; font-size: var(--font-xs);">
                     Mark read
@@ -69,7 +69,7 @@
 
 {% if notifications|length >= 20 %}
 <div style="text-align: center; margin-top: var(--space-600);">
-    <a href="/cms/notifications?page={{ page + 1 }}" class="btn btn-outline btn-sm">Load more</a>
+    <a href="{{ admin_url('notifications?page={{ page + 1 }}') }}" class="btn btn-outline btn-sm">Load more</a>
 </div>
 {% endif %}
 

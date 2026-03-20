@@ -18,7 +18,7 @@ class MailSettingsController extends Controller
         }
         if (!PermissionService::can($permission)) {
             $this->flash('errors', ['You do not have permission to perform this action.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
         }
     }
 
@@ -78,7 +78,7 @@ class MailSettingsController extends Controller
         }
 
         $this->flash('success', 'Mail settings updated successfully.');
-        $this->redirect('/cms/settings/mail');
+        $this->redirect(admin_url('settings/mail'));
     }
 
     public function testSend(): void
@@ -88,7 +88,7 @@ class MailSettingsController extends Controller
         $to = trim($this->input('test_email', ''));
         if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
             $this->flash('errors', ['Please provide a valid email address.']);
-            $this->redirect('/cms/settings/mail');
+            $this->redirect(admin_url('settings/mail'));
             return;
         }
 
@@ -117,7 +117,7 @@ class MailSettingsController extends Controller
             $this->flash('errors', ['Failed to send test email: ' . $e->getMessage()]);
         }
 
-        $this->redirect('/cms/settings/mail');
+        $this->redirect(admin_url('settings/mail'));
     }
 
     private function sendSmtp(string $to, string $from, string $fromName, string $subject, string $body): void

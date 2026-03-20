@@ -18,7 +18,7 @@ class TranslationManagerController extends Controller
         }
         if (!PermissionService::can($permission)) {
             $this->flash('errors', ['You do not have permission to perform this action.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
         }
     }
 
@@ -76,21 +76,21 @@ class TranslationManagerController extends Controller
 
         if ($locale === '' || $group === '' || !is_array($keys) || !is_array($values)) {
             $this->flash('errors', ['Invalid request.']);
-            $this->redirect('/cms/system/translations');
+            $this->redirect(admin_url('system/translations'));
             return;
         }
 
         // Validate group name (prevent directory traversal)
         if (!preg_match('/^[a-z0-9_-]+$/i', $group)) {
             $this->flash('errors', ['Invalid group name.']);
-            $this->redirect('/cms/system/translations');
+            $this->redirect(admin_url('system/translations'));
             return;
         }
 
         // Validate locale name (prevent directory traversal)
         if (!preg_match('/^[a-z]{2}(-[A-Z]{2})?$/', $locale)) {
             $this->flash('errors', ['Invalid locale.']);
-            $this->redirect('/cms/system/translations');
+            $this->redirect(admin_url('system/translations'));
             return;
         }
 
@@ -115,7 +115,7 @@ class TranslationManagerController extends Controller
         file_put_contents($filePath, $content, LOCK_EX);
 
         $this->flash('success', "Translations for '{$group}' ({$locale}) saved.");
-        $this->redirect('/cms/system/translations?locale=' . $locale . '&group=' . $group);
+        $this->redirect(admin_url('system/translations') . '?locale=' . $locale . '&group=' . $group);
     }
 
     public function addKey(): void
@@ -129,14 +129,14 @@ class TranslationManagerController extends Controller
 
         if ($locale === '' || $group === '' || $key === '') {
             $this->flash('errors', ['Key is required.']);
-            $this->redirect('/cms/system/translations?locale=' . $locale . '&group=' . $group);
+            $this->redirect(admin_url('system/translations') . '?locale=' . $locale . '&group=' . $group);
             return;
         }
 
         // Validate group name (prevent directory traversal)
         if (!preg_match('/^[a-z0-9_-]+$/i', $group)) {
             $this->flash('errors', ['Invalid group name.']);
-            $this->redirect('/cms/system/translations?locale=' . $locale);
+            $this->redirect(admin_url('system/translations') . '?locale=' . $locale);
             return;
         }
 
@@ -154,7 +154,7 @@ class TranslationManagerController extends Controller
         file_put_contents($filePath, $content, LOCK_EX);
 
         $this->flash('success', "Key '{$key}' added.");
-        $this->redirect('/cms/system/translations?locale=' . $locale . '&group=' . $group);
+        $this->redirect(admin_url('system/translations') . '?locale=' . $locale . '&group=' . $group);
     }
 
     public function createGroup(): void
@@ -166,14 +166,14 @@ class TranslationManagerController extends Controller
 
         if ($locale === '' || $group === '') {
             $this->flash('errors', ['Group name is required.']);
-            $this->redirect('/cms/system/translations');
+            $this->redirect(admin_url('system/translations'));
             return;
         }
 
         // Validate group name
         if (!preg_match('/^[a-z0-9_-]+$/', $group)) {
             $this->flash('errors', ['Group name can only contain lowercase letters, numbers, hyphens, and underscores.']);
-            $this->redirect('/cms/system/translations?locale=' . $locale);
+            $this->redirect(admin_url('system/translations') . '?locale=' . $locale);
             return;
         }
 
@@ -190,7 +190,7 @@ class TranslationManagerController extends Controller
         }
 
         $this->flash('success', "Translation group '{$group}' created.");
-        $this->redirect('/cms/system/translations?locale=' . $locale . '&group=' . $group);
+        $this->redirect(admin_url('system/translations') . '?locale=' . $locale . '&group=' . $group);
     }
 
     public function progress(): string
@@ -269,7 +269,7 @@ class TranslationManagerController extends Controller
 
         if (!preg_match('/^[a-z]{2}(-[A-Z]{2})?$/', $locale)) {
             $this->flash('errors', ['Invalid locale.']);
-            $this->redirect('/cms/system/translations');
+            $this->redirect(admin_url('system/translations'));
             return;
         }
 
@@ -328,7 +328,7 @@ class TranslationManagerController extends Controller
 
         if (!preg_match('/^[a-z]{2}(-[A-Z]{2})?$/', $locale)) {
             $this->flash('errors', ['Invalid locale.']);
-            $this->redirect('/cms/system/translations');
+            $this->redirect(admin_url('system/translations'));
             return;
         }
 
@@ -338,7 +338,7 @@ class TranslationManagerController extends Controller
 
         if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
             $this->flash('errors', ['No file uploaded or upload error.']);
-            $this->redirect('/cms/system/translations?locale=' . $locale);
+            $this->redirect(admin_url('system/translations') . '?locale=' . $locale);
             return;
         }
 
@@ -347,21 +347,21 @@ class TranslationManagerController extends Controller
         // Validate file size (max 2MB)
         if ($file['size'] > 2 * 1024 * 1024) {
             $this->flash('errors', ['File too large. Maximum 2MB.']);
-            $this->redirect('/cms/system/translations?locale=' . $locale);
+            $this->redirect(admin_url('system/translations') . '?locale=' . $locale);
             return;
         }
 
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
         if (!in_array($ext, ['json', 'csv'], true)) {
             $this->flash('errors', ['Only JSON and CSV files are supported.']);
-            $this->redirect('/cms/system/translations?locale=' . $locale);
+            $this->redirect(admin_url('system/translations') . '?locale=' . $locale);
             return;
         }
 
         $content = file_get_contents($file['tmp_name']);
         if ($content === false || $content === '') {
             $this->flash('errors', ['Could not read uploaded file.']);
-            $this->redirect('/cms/system/translations?locale=' . $locale);
+            $this->redirect(admin_url('system/translations') . '?locale=' . $locale);
             return;
         }
 
@@ -372,7 +372,7 @@ class TranslationManagerController extends Controller
             $data = json_decode($content, true);
             if (!is_array($data)) {
                 $this->flash('errors', ['Invalid JSON format. Expected: {"group": {"key": "value", ...}}']);
-                $this->redirect('/cms/system/translations?locale=' . $locale);
+                $this->redirect(admin_url('system/translations') . '?locale=' . $locale);
                 return;
             }
 
@@ -429,7 +429,7 @@ class TranslationManagerController extends Controller
         }
 
         $this->flash('success', "Imported {$imported} translation keys for '{$locale}'.");
-        $this->redirect('/cms/system/translations?locale=' . $locale);
+        $this->redirect(admin_url('system/translations') . '?locale=' . $locale);
     }
 
     /**
@@ -445,7 +445,7 @@ class TranslationManagerController extends Controller
 
         if (!preg_match('/^[a-z]{2}(-[A-Z]{2})?$/', $locale) || !preg_match('/^[a-z0-9_-]+$/i', $group) || $key === '') {
             $this->flash('errors', ['Invalid parameters.']);
-            $this->redirect('/cms/system/translations');
+            $this->redirect(admin_url('system/translations'));
             return;
         }
 
@@ -454,7 +454,7 @@ class TranslationManagerController extends Controller
 
         if (!isset($translations[$key])) {
             $this->flash('errors', ['Key not found.']);
-            $this->redirect('/cms/system/translations?locale=' . $locale . '&group=' . $group);
+            $this->redirect(admin_url('system/translations') . '?locale=' . $locale . '&group=' . $group);
             return;
         }
 
@@ -462,7 +462,7 @@ class TranslationManagerController extends Controller
         $this->saveTranslationFile($langPath, $locale, $group, $translations);
 
         $this->flash('success', "Key '{$key}' deleted.");
-        $this->redirect('/cms/system/translations?locale=' . $locale . '&group=' . $group);
+        $this->redirect(admin_url('system/translations') . '?locale=' . $locale . '&group=' . $group);
     }
 
     /**
@@ -476,7 +476,7 @@ class TranslationManagerController extends Controller
 
         if (!preg_match('/^[a-z]{2}(-[A-Z]{2})?$/', $locale)) {
             $this->flash('errors', ['Invalid locale format. Use format: en, fr, pt-BR, etc.']);
-            $this->redirect('/cms/system/translations');
+            $this->redirect(admin_url('system/translations'));
             return;
         }
 
@@ -485,18 +485,18 @@ class TranslationManagerController extends Controller
 
         if (is_dir($dir)) {
             $this->flash('errors', ['Locale already exists.']);
-            $this->redirect('/cms/system/translations?locale=' . $locale);
+            $this->redirect(admin_url('system/translations') . '?locale=' . $locale);
             return;
         }
 
         if (!mkdir($dir, 0755, true)) {
             $this->flash('errors', ['Could not create locale directory.']);
-            $this->redirect('/cms/system/translations');
+            $this->redirect(admin_url('system/translations'));
             return;
         }
 
         $this->flash('success', "Locale '{$locale}' created.");
-        $this->redirect('/cms/system/translations?locale=' . $locale);
+        $this->redirect(admin_url('system/translations') . '?locale=' . $locale);
     }
 
     private function saveTranslationFile(string $langPath, string $locale, string $group, array $translations): void

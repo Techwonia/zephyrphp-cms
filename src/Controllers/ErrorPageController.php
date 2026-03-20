@@ -18,7 +18,7 @@ class ErrorPageController extends Controller
         }
         if (!PermissionService::can($permission)) {
             $this->flash('errors', ['You do not have permission to perform this action.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
         }
     }
 
@@ -83,7 +83,7 @@ class ErrorPageController extends Controller
 
         $this->saveExceptionConfig($config);
         $this->flash('success', 'HTTP error messages updated.');
-        $this->redirect('/cms/settings/error-pages');
+        $this->redirect(admin_url('settings/error-pages'));
     }
 
     public function updateDatabase(): void
@@ -104,7 +104,7 @@ class ErrorPageController extends Controller
 
         $this->saveExceptionConfig($config);
         $this->flash('success', 'Database error messages updated.');
-        $this->redirect('/cms/settings/error-pages');
+        $this->redirect(admin_url('settings/error-pages'));
     }
 
     public function updateFields(): void
@@ -134,7 +134,7 @@ class ErrorPageController extends Controller
 
         $this->saveExceptionConfig($config);
         $this->flash('success', 'Field-specific messages updated.');
-        $this->redirect('/cms/settings/error-pages');
+        $this->redirect(admin_url('settings/error-pages'));
     }
 
     public function addField(): void
@@ -147,14 +147,14 @@ class ErrorPageController extends Controller
 
         if ($fieldName === '' || $errorType === '' || $message === '') {
             $this->flash('errors', ['All fields are required.']);
-            $this->redirect('/cms/settings/error-pages');
+            $this->redirect(admin_url('settings/error-pages'));
             return;
         }
 
         $safeName = preg_replace('/[^a-zA-Z0-9_]/', '', $fieldName);
         if ($safeName === '' || !preg_match('/^[a-z_]+$/', $errorType)) {
             $this->flash('errors', ['Invalid field name or error type.']);
-            $this->redirect('/cms/settings/error-pages');
+            $this->redirect(admin_url('settings/error-pages'));
             return;
         }
 
@@ -169,7 +169,7 @@ class ErrorPageController extends Controller
 
         $this->saveExceptionConfig($config);
         $this->flash('success', "Field message added for '{$safeName}.{$errorType}'.");
-        $this->redirect('/cms/settings/error-pages');
+        $this->redirect(admin_url('settings/error-pages'));
     }
 
     public function preview(string $code): string
@@ -232,7 +232,7 @@ class ErrorPageController extends Controller
         <h1 class="error-title">{$title}</h1>
         <p class="error-message">{$message}</p>
         <a href="/" class="error-link">Go Home</a>
-        <a href="/cms/settings/error-pages" class="back-link">Back to Error Page Settings</a>
+        <a href=admin_url("settings/error-pages") class="back-link">Back to Error Page Settings</a>
     </div>
 </body>
 </html>

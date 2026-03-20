@@ -95,6 +95,6 @@ class ProfileController extends Controller
         $currentUser->save();
 
         $this->flash('success', 'Profile updated successfully.');
-        $this->redirect('/cms/settings/profile');
+        $this->redirect(admin_url('settings/profile'));
     }
 }

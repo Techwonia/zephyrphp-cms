@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms">Dashboard</a> / Settings / Mail
+    <a href="{{ admin_url() }}">Dashboard</a> / Settings / Mail
 </div>
 
 <div class="page-header">
@@ -14,7 +14,7 @@
 <div class="card" style="margin-bottom: var(--space-500);">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">Mail Configuration</h3></div>
     <div class="card-body">
-        <form method="POST" action="/cms/settings/mail">
+        <form method="POST" action="{{ admin_url('settings/mail') }}">
             {{ csrf_field() | raw }}
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
@@ -77,7 +77,7 @@
 <div class="card">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">Send Test Email</h3></div>
     <div class="card-body">
-        <form method="POST" action="/cms/settings/mail/test" style="display: flex; gap: var(--space-200); align-items: end;">
+        <form method="POST" action="{{ admin_url('settings/mail/test') }}" style="display: flex; gap: var(--space-200); align-items: end;">
             {{ csrf_field() | raw }}
             <div class="form-group" style="flex: 1; margin-bottom: 0;">
                 <label for="test_email">Recipient Email</label>

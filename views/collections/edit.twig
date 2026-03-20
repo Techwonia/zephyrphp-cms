@@ -4,13 +4,13 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms/collections">Collections</a> / {{ collection.getName() }}
+    <a href="{{ admin_url('collections') }}">Collections</a> / {{ collection.getName() }}
 </div>
 
 <div class="page-header">
     <h1>{{ collection.getName() }}</h1>
     <div class="page-actions">
-        <a href="/cms/collections/{{ collection.getSlug() }}/entries" class="btn btn-outline">View Entries ({{ entryCount }})</a>
+        <a href="{{ admin_url('collections/{{ collection.getSlug() }}/entries') }}" class="btn btn-outline">View Entries ({{ entryCount }})</a>
     </div>
 </div>
 
@@ -25,7 +25,7 @@
 <div id="tab-settings" class="tab-panel active">
     <div class="card">
         <div class="card-body">
-            <form method="POST" action="/cms/collections/{{ collection.getSlug() }}">
+            <form method="POST" action="{{ admin_url('collections/{{ collection.getSlug() }}') }}">
                 {{ csrf_field() | raw }}
 
                 <div class="form-group">
@@ -134,7 +134,7 @@
                     <label for="api_rate_limit">API Rate Limit (requests per minute)</label>
                     <input type="number" id="api_rate_limit" name="api_rate_limit" class="form-control"
                            value="{{ collection.getApiRateLimit() }}" min="0">
-                    <p class="text-muted">0 = no limit. Applies to <code>/api/cms/{{ collection.getSlug() }}</code> endpoints. Recommended: 60-120 for public APIs.</p>
+                    <p class="text-muted">0 = no limit. Applies to <code>/api/admin/{{ collection.getSlug() }}</code> endpoints. Recommended: 60-120 for public APIs.</p>
                 </div>
 
                 <div id="submit-settings-group" style="{% if not collection.isSubmittable() %}display:none;{% endif %}">
@@ -335,7 +335,7 @@
                         </div>
                     </div>
                     <div>
-                        <form method="POST" action="/cms/collections/{{ collection.getSlug() }}/fields/{{ field.getId() }}/delete"
+                        <form method="POST" action="{{ admin_url('collections/{{ collection.getSlug() }}/fields/{{ field.getId() }}/delete') }}"
                               style="display:inline"
                               class="confirm-delete"
                               data-message="{% if collection.hasSlug() and collection.getSlugSourceField() == field.getSlug() %}WARNING: This field is the slug source. Deleting it will also remove the slug column and all slug data from entries. Continue?{% else %}Delete field {{ field.getName() }}? Column data will be lost!{% endif %}">
@@ -354,7 +354,7 @@
             {# ADD FIELD FORM #}
             <div class="add-field-form">
                 <h4>Add New Field</h4>
-                <form method="POST" action="/cms/collections/{{ collection.getSlug() }}/fields">
+                <form method="POST" action="{{ admin_url('collections/{{ collection.getSlug() }}/fields') }}">
                     {{ csrf_field() | raw }}
 
                     <div class="form-row">
@@ -457,7 +457,7 @@
                 Leave unchecked to use global permissions. Admin role always has full access.
             </p>
 
-            <form method="POST" action="/cms/collections/{{ collection.getSlug() }}">
+            <form method="POST" action="{{ admin_url('collections/{{ collection.getSlug() }}') }}">
                 {{ csrf_field() | raw }}
                 <input type="hidden" name="_save_permissions" value="1">
 
@@ -504,7 +504,7 @@
                         </tbody>
                     </table>
                     {% else %}
-                        <p class="text-muted">No roles found. Create roles in <a href="/cms/roles">Roles</a> first.</p>
+                        <p class="text-muted">No roles found. Create roles in <a href="{{ admin_url('roles') }}">Roles</a> first.</p>
                     {% endif %}
                 </div>
 
@@ -528,7 +528,7 @@
                 The entry's status field becomes the workflow stage name.
             </p>
 
-            <form method="POST" action="/cms/collections/{{ collection.getSlug() }}">
+            <form method="POST" action="{{ admin_url('collections/{{ collection.getSlug() }}') }}">
                 {{ csrf_field() | raw }}
                 <input type="hidden" name="_save_workflow" value="1">
 
@@ -650,7 +650,7 @@ if (relCollSelect && displayFieldSelect) {
             displayFieldSelect.innerHTML = '<option value="">-- Select collection first --</option>';
             return;
         }
-        fetch('/cms/collections/' + collSlug + '/fields-json')
+        fetch('/admin/collections/' + collSlug + '/fields-json')
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 displayFieldSelect.innerHTML = '<option value="">-- Auto-detect --</option>';

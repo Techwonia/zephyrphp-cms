@@ -18,7 +18,7 @@ class DatabaseToolsController extends Controller
         }
         if (!PermissionService::can($permission)) {
             $this->flash('errors', ['You do not have permission to perform this action.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
         }
     }
 
@@ -175,7 +175,7 @@ class DatabaseToolsController extends Controller
             exit;
         } catch (\Throwable $e) {
             $this->flash('errors', ['Backup failed: ' . $e->getMessage()]);
-            $this->redirect('/cms/system/database');
+            $this->redirect(admin_url('system/database'));
         }
     }
 
@@ -196,7 +196,7 @@ class DatabaseToolsController extends Controller
             $sm = $conn->createSchemaManager();
             if (!in_array($table, $sm->listTableNames(), true)) {
                 $this->flash('errors', ['Table not found.']);
-                $this->redirect('/cms/system/database');
+                $this->redirect(admin_url('system/database'));
                 return '';
             }
 

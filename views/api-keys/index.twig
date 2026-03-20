@@ -4,13 +4,13 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms">Dashboard</a> / API Keys
+    <a href="{{ admin_url() }}">Dashboard</a> / API Keys
 </div>
 
 <div class="page-header">
     <h1>API Keys</h1>
     <div class="page-actions">
-        <a href="/cms/api-keys/create" class="btn btn-primary">+ New API Key</a>
+        <a href="{{ admin_url('api-keys/create') }}" class="btn btn-primary">+ New API Key</a>
     </div>
 </div>
 
@@ -74,13 +74,13 @@
                             {% endif %}
                         </td>
                         <td class="actions-cell">
-                            <form method="POST" action="/cms/api-keys/{{ key.getId() }}/toggle" style="display:inline">
+                            <form method="POST" action="{{ admin_url('api-keys/{{ key.getId() }}/toggle') }}" style="display:inline">
                                 {{ csrf_field() | raw }}
                                 <button type="submit" class="btn btn-sm btn-outline">
                                     {{ key.isActive() ? 'Deactivate' : 'Activate' }}
                                 </button>
                             </form>
-                            <form method="POST" action="/cms/api-keys/{{ key.getId() }}/delete"
+                            <form method="POST" action="{{ admin_url('api-keys/{{ key.getId() }}/delete') }}"
                                   style="display:inline" class="confirm-delete" data-message="Delete this API key?">
                                 {{ csrf_field() | raw }}
                                 <button type="submit" class="btn btn-sm btn-danger">Delete</button>
@@ -97,7 +97,7 @@
 <div class="empty-state">
     <h3>No API keys yet</h3>
     <p>Create an API key to authenticate external API requests.</p>
-    <a href="/cms/api-keys/create" class="btn btn-primary">+ Create API Key</a>
+    <a href="{{ admin_url('api-keys/create') }}" class="btn btn-primary">+ Create API Key</a>
 </div>
 {% endif %}
 
@@ -107,17 +107,17 @@
         <p>Use your API key with the <code>Authorization</code> header or <code>X-API-Key</code> header:</p>
         <pre style="background: #f8f9fa; padding: 12px; border-radius: 6px; font-size: 0.85rem;">
 # Using Authorization header
-curl -H "Authorization: Bearer YOUR_API_KEY" {{ url('/api/cms/your-collection') }}
+curl -H "Authorization: Bearer YOUR_API_KEY" {{ url('/api/admin/your-collection') }}
 
 # Using X-API-Key header
-curl -H "X-API-Key: YOUR_API_KEY" {{ url('/api/cms/your-collection') }}
+curl -H "X-API-Key: YOUR_API_KEY" {{ url('/api/admin/your-collection') }}
 
 # Endpoints
-GET    /api/cms/{collection}         List entries
-GET    /api/cms/{collection}/{id}    Get single entry
-POST   /api/cms/{collection}         Create entry (requires write permission)
-POST   /api/cms/{collection}/{id}    Update entry (requires write permission)
-POST   /api/cms/{collection}/{id}/delete  Delete entry (requires delete/full permission)</pre>
+GET    /api/admin/{collection}         List entries
+GET    /api/admin/{collection}/{id}    Get single entry
+POST   /api/admin/{collection}         Create entry (requires write permission)
+POST   /api/admin/{collection}/{id}    Update entry (requires write permission)
+POST   /api/admin/{collection}/{id}/delete  Delete entry (requires delete/full permission)</pre>
     </div>
 </div>
 {% endblock %}

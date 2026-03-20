@@ -44,7 +44,7 @@ class ThemeController extends Controller
         $this->requireCmsAccess();
         if (!PermissionService::can($permission)) {
             $this->flash('errors', ['auth' => 'You do not have permission to perform this action.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
         }
     }
 
@@ -115,7 +115,7 @@ class ThemeController extends Controller
         if (!empty($errors)) {
             $this->flash('errors', $errors);
             $this->flash('_old_input', ['name' => $name, 'slug' => $slug, 'description' => $description]);
-            $this->redirect('/cms/themes/create');
+            $this->redirect(admin_url('themes/create'));
             return;
         }
 
@@ -128,13 +128,13 @@ class ThemeController extends Controller
 
         ActivityLogger::log('created', 'theme', $slug, $name);
         $this->flash('success', "Theme \"{$name}\" created successfully.");
-        $this->redirect('/cms/themes');
+        $this->redirect(admin_url('themes'));
     }
 
     public function edit(string $slug): string
     {
         // Redirect to the code editor — the old edit page is removed
-        $this->redirect('/cms/themes/' . urlencode($slug) . '/code');
+        $this->redirect(admin_url('themes/' . urlencode($slug) . '/code'));
         return '';
 
         $files = $this->themeManager->listFiles($slug);
@@ -178,7 +178,7 @@ class ThemeController extends Controller
         $theme = Theme::findOneBy(['slug' => $slug]);
         if (!$theme) {
             $this->flash('errors', ['Theme not found.']);
-            $this->redirect('/cms/themes');
+            $this->redirect(admin_url('themes'));
             return;
         }
 
@@ -187,7 +187,7 @@ class ThemeController extends Controller
 
         if (empty($name)) {
             $this->flash('errors', ['Theme name is required.']);
-            $this->redirect('/cms/themes');
+            $this->redirect(admin_url('themes'));
             return;
         }
 
@@ -202,7 +202,7 @@ class ThemeController extends Controller
         file_put_contents($configPath, json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 
         $this->flash('success', 'Theme updated successfully.');
-        $this->redirect('/cms/themes');
+        $this->redirect(admin_url('themes'));
     }
 
     public function publish(string $slug): void
@@ -212,7 +212,7 @@ class ThemeController extends Controller
         $theme = Theme::findOneBy(['slug' => $slug]);
         if (!$theme) {
             $this->flash('errors', ['Theme not found.']);
-            $this->redirect('/cms/themes');
+            $this->redirect(admin_url('themes'));
             return;
         }
 
@@ -227,7 +227,7 @@ class ThemeController extends Controller
             $this->flash('errors', [$result['error'] ?? 'Failed to publish theme.']);
         }
 
-        $this->redirect('/cms/themes');
+        $this->redirect(admin_url('themes'));
     }
 
     public function destroy(string $slug): void
@@ -237,13 +237,13 @@ class ThemeController extends Controller
         $theme = Theme::findOneBy(['slug' => $slug]);
         if (!$theme) {
             $this->flash('errors', ['Theme not found.']);
-            $this->redirect('/cms/themes');
+            $this->redirect(admin_url('themes'));
             return;
         }
 
         if ($theme->isLive()) {
             $this->flash('errors', ['Cannot delete the live theme. Publish another theme first.']);
-            $this->redirect('/cms/themes');
+            $this->redirect(admin_url('themes'));
             return;
         }
 
@@ -254,7 +254,7 @@ class ThemeController extends Controller
             $this->flash('errors', ['Failed to delete theme.']);
         }
 
-        $this->redirect('/cms/themes');
+        $this->redirect(admin_url('themes'));
     }
 
     public function preview(string $slug): void
@@ -264,7 +264,7 @@ class ThemeController extends Controller
         $theme = Theme::findOneBy(['slug' => $slug]);
         if (!$theme) {
             $this->flash('errors', ['Theme not found.']);
-            $this->redirect('/cms/themes');
+            $this->redirect(admin_url('themes'));
             return;
         }
 
@@ -627,7 +627,7 @@ class ThemeController extends Controller
             ];
             $code = $file['error'] ?? UPLOAD_ERR_NO_FILE;
             $this->flash('errors', [$errorMessages[$code] ?? 'Upload error (code: ' . $code . ')']);
-            $this->redirect('/cms/themes');
+            $this->redirect(admin_url('themes'));
             return;
         }
 
@@ -637,7 +637,7 @@ class ThemeController extends Controller
         $allowedMimes = ['application/zip', 'application/x-zip-compressed', 'application/x-zip', 'application/octet-stream'];
         if (!in_array($mime, $allowedMimes, true)) {
             $this->flash('errors', ['Only ZIP files are allowed. Detected: ' . $mime]);
-            $this->redirect('/cms/themes');
+            $this->redirect(admin_url('themes'));
             return;
         }
 
@@ -645,14 +645,14 @@ class ThemeController extends Controller
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
         if ($ext !== 'zip') {
             $this->flash('errors', ['Only .zip files are allowed.']);
-            $this->redirect('/cms/themes');
+            $this->redirect(admin_url('themes'));
             return;
         }
 
         // Check file size (max 50MB)
         if ($file['size'] > 50 * 1024 * 1024) {
             $this->flash('errors', ['ZIP file exceeds maximum size of 50MB.']);
-            $this->redirect('/cms/themes');
+            $this->redirect(admin_url('themes'));
             return;
         }
 
@@ -667,7 +667,7 @@ class ThemeController extends Controller
             $this->flash('errors', [$result['error']]);
         }
 
-        $this->redirect('/cms/themes');
+        $this->redirect(admin_url('themes'));
     }
 
     /**
@@ -680,20 +680,20 @@ class ThemeController extends Controller
         // Validate slug format
         if (!preg_match('/^[a-z0-9_-]+$/', $slug)) {
             $this->flash('errors', ['Invalid theme slug.']);
-            $this->redirect('/cms/themes');
+            $this->redirect(admin_url('themes'));
             return;
         }
 
         $theme = Theme::findOneBy(['slug' => $slug]);
         if (!$theme) {
             $this->flash('errors', ['Theme not found.']);
-            $this->redirect('/cms/themes');
+            $this->redirect(admin_url('themes'));
             return;
         }
 
         if ($theme->isLive()) {
             $this->flash('errors', ['Cannot uninstall the active (live) theme. Publish another theme first.']);
-            $this->redirect('/cms/themes');
+            $this->redirect(admin_url('themes'));
             return;
         }
 
@@ -707,7 +707,7 @@ class ThemeController extends Controller
             $this->flash('errors', [$result['error'] ?? 'Failed to uninstall theme.']);
         }
 
-        $this->redirect('/cms/themes');
+        $this->redirect(admin_url('themes'));
     }
 
     private function generateSlug(string $text): string

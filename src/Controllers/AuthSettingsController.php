@@ -18,7 +18,7 @@ class AuthSettingsController extends Controller
         }
         if (!PermissionService::can($permission)) {
             $this->flash('errors', ['You do not have permission to perform this action.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
         }
     }
 
@@ -152,7 +152,7 @@ class AuthSettingsController extends Controller
         $envPath = $this->getEnvPath();
         if (!$envPath || !is_writable($envPath)) {
             $this->flash('errors', ['.env file not found or not writable.']);
-            $this->redirect('/cms/settings/auth');
+            $this->redirect(admin_url('settings/auth'));
             return;
         }
 
@@ -164,7 +164,7 @@ class AuthSettingsController extends Controller
         }
 
         $this->flash('success', 'Authentication settings updated successfully.');
-        $this->redirect('/cms/settings/auth');
+        $this->redirect(admin_url('settings/auth'));
     }
 
     public function updateOAuth(): void
@@ -176,7 +176,7 @@ class AuthSettingsController extends Controller
 
         if (!in_array($provider, $allowed, true)) {
             $this->flash('errors', ['Invalid OAuth provider.']);
-            $this->redirect('/cms/settings/auth');
+            $this->redirect(admin_url('settings/auth'));
             return;
         }
 
@@ -195,7 +195,7 @@ class AuthSettingsController extends Controller
         $envPath = $this->getEnvPath();
         if (!$envPath || !is_writable($envPath)) {
             $this->flash('errors', ['.env file not found or not writable.']);
-            $this->redirect('/cms/settings/auth');
+            $this->redirect(admin_url('settings/auth'));
             return;
         }
 
@@ -207,7 +207,7 @@ class AuthSettingsController extends Controller
         }
 
         $this->flash('success', ucfirst($provider) . ' OAuth settings updated.');
-        $this->redirect('/cms/settings/auth');
+        $this->redirect(admin_url('settings/auth'));
     }
 
     private function getEnvPath(): ?string

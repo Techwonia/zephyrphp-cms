@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms">Dashboard</a> / <a href="/cms/users">Users</a> / Edit
+    <a href="{{ admin_url() }}">Dashboard</a> / <a href="{{ admin_url('users') }}">Users</a> / Edit
 </div>
 
 <div class="page-header">
@@ -13,7 +13,7 @@
 
 <div class="card">
     <div class="card-body">
-        <form method="POST" action="/cms/users/{{ editUser.getId() }}">
+        <form method="POST" action="{{ admin_url('users/{{ editUser.getId() }}') }}">
             {{ csrf_field() | raw }}
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
@@ -65,7 +65,7 @@
 
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Save Changes</button>
-                <a href="/cms/users" class="btn btn-outline">Cancel</a>
+                <a href="{{ admin_url('users') }}" class="btn btn-outline">Cancel</a>
             </div>
         </form>
     </div>

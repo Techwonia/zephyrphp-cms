@@ -30,7 +30,7 @@ class UserController extends Controller
         $this->requireCmsAccess();
         if (!PermissionService::can($permission)) {
             $this->flash('errors', ['auth' => 'You do not have permission to perform this action.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
         }
     }
 
@@ -138,7 +138,7 @@ class UserController extends Controller
         }
 
         $this->flash('success', 'User created successfully.');
-        $this->redirect('/cms/users');
+        $this->redirect(admin_url('users'));
     }
 
     public function edit(int $id): string
@@ -150,7 +150,7 @@ class UserController extends Controller
 
         if (!$editUser) {
             $this->flash('errors', ['user' => 'User not found.']);
-            $this->redirect('/cms/users');
+            $this->redirect(admin_url('users'));
             return '';
         }
 
@@ -179,7 +179,7 @@ class UserController extends Controller
 
         if (!$editUser) {
             $this->flash('errors', ['user' => 'User not found.']);
-            $this->redirect('/cms/users');
+            $this->redirect(admin_url('users'));
             return;
         }
 
@@ -243,7 +243,7 @@ class UserController extends Controller
         $editUser->save();
 
         $this->flash('success', 'User updated successfully.');
-        $this->redirect('/cms/users');
+        $this->redirect(admin_url('users'));
     }
 
     public function destroy(int $id): void
@@ -253,7 +253,7 @@ class UserController extends Controller
         // Prevent self-delete
         if (Auth::user()->getId() === $id) {
             $this->flash('errors', ['user' => 'You cannot delete your own account.']);
-            $this->redirect('/cms/users');
+            $this->redirect(admin_url('users'));
             return;
         }
 
@@ -265,6 +265,6 @@ class UserController extends Controller
             $this->flash('success', 'User deleted successfully.');
         }
 
-        $this->redirect('/cms/users');
+        $this->redirect(admin_url('users'));
     }
 }

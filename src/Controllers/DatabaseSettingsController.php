@@ -29,7 +29,7 @@ class DatabaseSettingsController extends Controller
         $this->requireCmsAccess();
         if (!PermissionService::can($permission)) {
             $this->flash('errors', ['auth' => 'You do not have permission to perform this action.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
         }
     }
 
@@ -100,7 +100,7 @@ class DatabaseSettingsController extends Controller
         }
 
         $this->flash('success', 'Database settings updated successfully. Backup saved as .env.backup');
-        $this->redirect('/cms/settings/database');
+        $this->redirect(admin_url('settings/database'));
     }
 
     public function test(): string

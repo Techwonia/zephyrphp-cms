@@ -18,7 +18,7 @@ class MaintenanceController extends Controller
         }
         if (!PermissionService::can($permission)) {
             $this->flash('errors', ['You do not have permission to perform this action.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
         }
     }
 
@@ -79,7 +79,7 @@ class MaintenanceController extends Controller
         file_put_contents($this->getDownFilePath(), $json, LOCK_EX);
 
         $this->flash('success', 'Application is now in maintenance mode.');
-        $this->redirect('/cms/system/maintenance');
+        $this->redirect(admin_url('system/maintenance'));
     }
 
     public function deactivate(): void
@@ -92,7 +92,7 @@ class MaintenanceController extends Controller
         }
 
         $this->flash('success', 'Application is now live.');
-        $this->redirect('/cms/system/maintenance');
+        $this->redirect(admin_url('system/maintenance'));
     }
 
     private function getDownFilePath(): string

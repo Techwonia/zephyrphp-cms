@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms">Dashboard</a> / System / <a href="/cms/system/translations">Translations</a> / Progress
+    <a href="{{ admin_url() }}">Dashboard</a> / System / <a href="{{ admin_url('system/translations') }}">Translations</a> / Progress
 </div>
 
 <div class="page-header">
@@ -71,7 +71,7 @@
                             {% endfor %}
                         </div>
                         <div style="margin-top: var(--space-200);">
-                            <a href="/cms/system/translations?locale={{ locale }}&group={{ group }}" class="btn btn-outline btn-sm">Edit</a>
+                            <a href="{{ admin_url('system/translations?locale={{ locale }}&group={{ group }}') }}" class="btn btn-outline btn-sm">Edit</a>
                         </div>
                     </div>
                     {% endfor %}

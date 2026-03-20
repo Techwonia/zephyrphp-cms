@@ -83,7 +83,7 @@ class SearchController extends Controller
                             'type'  => 'entry',
                             'title' => mb_substr((string) $title, 0, 100),
                             'meta'  => $collection->getName(),
-                            'url'   => "/cms/collections/{$collection->getSlug()}/entries/{$entry['id']}",
+                            'url'   => admin_url("collections/{$collection->getSlug()}/entries/{$entry['id']}"),
                             'icon'  => $collection->getIcon() ?: 'file',
                         ];
 
@@ -125,7 +125,7 @@ class SearchController extends Controller
                     'type'  => 'media',
                     'title' => mb_substr($row['original_name'] ?: $row['filename'], 0, 100),
                     'meta'  => $row['mime_type'] ?? 'File',
-                    'url'   => "/cms/media/{$row['id']}",
+                    'url'   => admin_url("media/{$row['id']}"),
                     'icon'  => 'image',
                 ];
             }
@@ -153,7 +153,7 @@ class SearchController extends Controller
                         'type'  => 'collection',
                         'title' => $collection->getName(),
                         'meta'  => 'Collection',
-                        'url'   => "/cms/collections/{$collection->getSlug()}/entries",
+                        'url'   => admin_url("collections/{$collection->getSlug()}/entries"),
                         'icon'  => $collection->getIcon() ?: 'folder',
                     ];
 

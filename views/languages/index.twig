@@ -11,7 +11,7 @@
 <div class="card" style="margin-bottom: var(--space-600);">
     <div style="padding: var(--space-400) var(--space-500); border-bottom: 1px solid var(--border); font-weight: 600;">Add Language</div>
     <div style="padding: var(--space-500);">
-        <form method="POST" action="/cms/languages" style="display: flex; gap: var(--space-300); flex-wrap: wrap; align-items: flex-end;">
+        <form method="POST" action="{{ admin_url('languages') }}" style="display: flex; gap: var(--space-300); flex-wrap: wrap; align-items: flex-end;">
             <input type="hidden" name="_token" value="{{ csrf_token() }}">
             <div class="form-group" style="flex: 0 0 100px;">
                 <label class="form-label">Code</label>
@@ -76,7 +76,7 @@
                 <td style="text-align: right;">
                     <button onclick="editLanguage({{ lang.getId() }}, '{{ lang.getName()|e('js') }}', '{{ lang.getNativeName()|e('js') }}', {{ lang.isActive() ? 'true' : 'false' }}, {{ lang.isDefault() ? 'true' : 'false' }})" class="btn btn-outline btn-sm">Edit</button>
                     {% if not lang.isDefault() %}
-                    <form method="POST" action="/cms/languages/{{ lang.getId() }}/delete" style="display: inline;" class="confirm-delete" data-message="Delete this language and all its translations?">
+                    <form method="POST" action="{{ admin_url('languages/{{ lang.getId() }}/delete') }}" style="display: inline;" class="confirm-delete" data-message="Delete this language and all its translations?">
                         <input type="hidden" name="_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-danger btn-sm">Delete</button>
                     </form>
@@ -125,7 +125,7 @@
 
 <script nonce="{{ csp_nonce() }}">
 function editLanguage(id, name, native, active, isDefault) {
-    document.getElementById('edit-form').action = '/cms/languages/' + id;
+    document.getElementById('edit-form').action = '/admin/languages/' + id;
     document.getElementById('edit-name').value = name;
     document.getElementById('edit-native').value = native;
     document.getElementById('edit-active').checked = active;

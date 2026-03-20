@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms">Dashboard</a> / OAuth Clients
+    <a href="{{ admin_url() }}">Dashboard</a> / OAuth Clients
 </div>
 
 <div class="page-header">
@@ -30,7 +30,7 @@
             <h3>Register OAuth App</h3>
             <button type="button" class="modal-close" onclick="document.getElementById('create-modal').style.display='none'">&times;</button>
         </div>
-        <form method="POST" action="/cms/oauth-clients">
+        <form method="POST" action="{{ admin_url('oauth-clients') }}">
             {{ csrf_field() | raw }}
             <div class="modal-body">
                 <div class="form-group">
@@ -94,7 +94,7 @@
                     {% endif %}
                 </td>
                 <td>
-                    <form method="POST" action="/cms/oauth-clients/{{ client.getId() }}/delete" style="display:inline" class="confirm-delete" data-message="Remove OAuth client '{{ client.getName() }}'? All tokens will be revoked.">
+                    <form method="POST" action="{{ admin_url('oauth-clients/{{ client.getId() }}/delete') }}" style="display:inline" class="confirm-delete" data-message="Remove OAuth client '{{ client.getName() }}'? All tokens will be revoked.">
                         {{ csrf_field() | raw }}
                         <button type="submit" class="btn btn-sm btn-danger">Remove</button>
                     </form>

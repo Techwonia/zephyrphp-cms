@@ -18,7 +18,7 @@ class ApiSettingsController extends Controller
         }
         if (!PermissionService::can($permission)) {
             $this->flash('errors', ['You do not have permission to perform this action.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
         }
     }
 
@@ -73,7 +73,7 @@ class ApiSettingsController extends Controller
         $envPath = $this->getEnvPath();
         if (!$envPath || !is_writable($envPath)) {
             $this->flash('errors', ['.env file not found or not writable.']);
-            $this->redirect('/cms/settings/api');
+            $this->redirect(admin_url('settings/api'));
             return;
         }
 
@@ -85,7 +85,7 @@ class ApiSettingsController extends Controller
         }
 
         $this->flash('success', 'API settings updated successfully.');
-        $this->redirect('/cms/settings/api');
+        $this->redirect(admin_url('settings/api'));
     }
 
     private function getEnvPath(): ?string

@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms">Dashboard</a> / System / Files
+    <a href="{{ admin_url() }}">Dashboard</a> / System / Files
 </div>
 
 <div class="page-header">
@@ -14,7 +14,7 @@
 {# Root selector #}
 <div style="display: flex; gap: var(--space-200); margin-bottom: var(--space-400);">
     {% for r in roots %}
-    <a href="/cms/system/files?root={{ r }}" class="btn {{ root == r ? 'btn-primary' : 'btn-outline' }} btn-sm">{{ r|title }}</a>
+    <a href="{{ admin_url('system/files?root={{ r }}') }}" class="btn {{ root == r ? 'btn-primary' : 'btn-outline' }} btn-sm">{{ r|title }}</a>
     {% endfor %}
 </div>
 
@@ -48,7 +48,7 @@
                     <tr>
                         <td colspan="4">
                             {% set parentPath = path|split('/')|slice(0, -1)|join('/') %}
-                            <a href="/cms/system/files?root={{ root }}&path={{ parentPath|url_encode }}" style="font-weight: 600;">..</a>
+                            <a href="{{ admin_url('system/files?root={{ root }}&path={{ parentPath|url_encode }}') }}" style="font-weight: 600;">..</a>
                         </td>
                     </tr>
                     {% endif %}
@@ -57,11 +57,11 @@
                         <td>
                             {% if item.is_dir %}
                                 {% set itemPath = path ? path ~ '/' ~ item.name : item.name %}
-                                <a href="/cms/system/files?root={{ root }}&path={{ itemPath|url_encode }}" style="font-weight: 600;">{{ item.name }}/</a>
+                                <a href="{{ admin_url('system/files?root={{ root }}&path={{ itemPath|url_encode }}') }}" style="font-weight: 600;">{{ item.name }}/</a>
                             {% else %}
                                 {% if item.editable %}
                                     {% set filePath = path ? path ~ '/' ~ item.name : item.name %}
-                                    <a href="/cms/system/files/edit?root={{ root }}&file={{ filePath|url_encode }}">{{ item.name }}</a>
+                                    <a href="{{ admin_url('system/files/edit?root={{ root }}&file={{ filePath|url_encode }}') }}">{{ item.name }}</a>
                                 {% else %}
                                     {{ item.name }}
                                 {% endif %}
@@ -75,7 +75,7 @@
                         <td>
                             {% if item.editable %}
                                 {% set filePath = path ? path ~ '/' ~ item.name : item.name %}
-                                <a href="/cms/system/files/edit?root={{ root }}&file={{ filePath|url_encode }}" class="btn btn-outline btn-sm">Edit</a>
+                                <a href="{{ admin_url('system/files/edit?root={{ root }}&file={{ filePath|url_encode }}') }}" class="btn btn-outline btn-sm">Edit</a>
                             {% endif %}
                         </td>
                     </tr>

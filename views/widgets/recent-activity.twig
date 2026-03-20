@@ -22,7 +22,7 @@
     {% endfor %}
 </div>
 <div style="margin-top: 8px;">
-    <a href="/cms/activity-log" style="font-size: 0.85em;">View all activity &rarr;</a>
+    <a href="{{ admin_url('activity-log') }}" style="font-size: 0.85em;">View all activity &rarr;</a>
 </div>
 {% else %}
 <p class="text-muted">No activity recorded yet.</p>

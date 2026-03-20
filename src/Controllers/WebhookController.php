@@ -18,7 +18,7 @@ class WebhookController extends Controller
         }
         if (!PermissionService::can($permission)) {
             $this->flash('errors', ['You do not have permission to perform this action.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
         }
     }
 
@@ -45,25 +45,25 @@ class WebhookController extends Controller
 
         if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL)) {
             $this->flash('errors', ['Please provide a valid webhook URL.']);
-            $this->redirect('/cms/webhooks');
+            $this->redirect(admin_url('webhooks'));
             return;
         }
 
         if (!str_starts_with($url, 'https://')) {
             $this->flash('errors', ['Webhook URL must use HTTPS.']);
-            $this->redirect('/cms/webhooks');
+            $this->redirect(admin_url('webhooks'));
             return;
         }
 
         if (!$this->isUrlSafe($url)) {
             $this->flash('errors', ['Webhook URL must not point to a private or reserved IP address.']);
-            $this->redirect('/cms/webhooks');
+            $this->redirect(admin_url('webhooks'));
             return;
         }
 
         if (empty($events) || !is_array($events)) {
             $this->flash('errors', ['Please select at least one event.']);
-            $this->redirect('/cms/webhooks');
+            $this->redirect(admin_url('webhooks'));
             return;
         }
 
@@ -88,7 +88,7 @@ class WebhookController extends Controller
             $this->flash('errors', ['Failed to create webhook. Please try again.']);
         }
 
-        $this->redirect('/cms/webhooks');
+        $this->redirect(admin_url('webhooks'));
     }
 
     public function toggle(string $id): void
@@ -101,7 +101,7 @@ class WebhookController extends Controller
 
             if (!$webhook) {
                 $this->flash('errors', ['Webhook not found.']);
-                $this->redirect('/cms/webhooks');
+                $this->redirect(admin_url('webhooks'));
                 return;
             }
 
@@ -114,7 +114,7 @@ class WebhookController extends Controller
             $this->flash('errors', ['Failed to toggle webhook.']);
         }
 
-        $this->redirect('/cms/webhooks');
+        $this->redirect(admin_url('webhooks'));
     }
 
     public function destroy(string $id): void
@@ -129,7 +129,7 @@ class WebhookController extends Controller
             $this->flash('errors', ['Failed to delete webhook.']);
         }
 
-        $this->redirect('/cms/webhooks');
+        $this->redirect(admin_url('webhooks'));
     }
 
     public function test(string $id): void
@@ -143,7 +143,7 @@ class WebhookController extends Controller
 
             if (!$webhook) {
                 $this->flash('errors', ['Webhook not found.']);
-                $this->redirect('/cms/webhooks');
+                $this->redirect(admin_url('webhooks'));
                 return;
             }
 
@@ -185,7 +185,7 @@ class WebhookController extends Controller
             $this->flash('errors', ['Webhook test failed. Please try again.']);
         }
 
-        $this->redirect('/cms/webhooks');
+        $this->redirect(admin_url('webhooks'));
     }
 
     public function logs(string $id): string
@@ -198,7 +198,7 @@ class WebhookController extends Controller
         $webhook = $conn->fetchAssociative('SELECT * FROM cms_webhooks WHERE id = ?', [(int) $id]);
         if (!$webhook) {
             $this->flash('errors', ['Webhook not found.']);
-            $this->redirect('/cms/webhooks');
+            $this->redirect(admin_url('webhooks'));
             return '';
         }
 
@@ -228,14 +228,14 @@ class WebhookController extends Controller
 
         if (!$delivery) {
             $this->flash('errors', ['Delivery not found.']);
-            $this->redirect('/cms/webhooks/' . $id . '/logs');
+            $this->redirect(admin_url('webhooks/' . $id . '/logs'));
             return;
         }
 
         $webhook = $conn->fetchAssociative('SELECT * FROM cms_webhooks WHERE id = ?', [(int) $id]);
         if (!$webhook) {
             $this->flash('errors', ['Webhook not found.']);
-            $this->redirect('/cms/webhooks');
+            $this->redirect(admin_url('webhooks'));
             return;
         }
 
@@ -258,7 +258,7 @@ class WebhookController extends Controller
             $this->flash('errors', ['Retry failed: ' . ($result['error'] ?: 'HTTP ' . $result['status_code'])]);
         }
 
-        $this->redirect('/cms/webhooks/' . $id . '/logs');
+        $this->redirect(admin_url('webhooks/' . $id . '/logs'));
     }
 
     private function sendWebhook(array $webhook, string $event, string $payload): array

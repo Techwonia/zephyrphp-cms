@@ -18,7 +18,7 @@ class QueueMonitorController extends Controller
         }
         if (!PermissionService::can('settings.edit')) {
             $this->flash('errors', ['You do not have permission to perform this action.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
         }
     }
 
@@ -104,7 +104,7 @@ class QueueMonitorController extends Controller
 
         if (!$job) {
             $this->flash('errors', ['Failed job not found.']);
-            $this->redirect('/cms/system/queue');
+            $this->redirect(admin_url('system/queue'));
             return;
         }
 
@@ -117,7 +117,7 @@ class QueueMonitorController extends Controller
         ], ['id' => (int) $id]);
 
         $this->flash('success', "Job #{$id} queued for retry.");
-        $this->redirect('/cms/system/queue');
+        $this->redirect(admin_url('system/queue'));
     }
 
     public function retryAll(): void
@@ -131,7 +131,7 @@ class QueueMonitorController extends Controller
         );
 
         $this->flash('success', "{$affected} failed job(s) queued for retry.");
-        $this->redirect('/cms/system/queue');
+        $this->redirect(admin_url('system/queue'));
     }
 
     public function delete(string $id): void
@@ -149,7 +149,7 @@ class QueueMonitorController extends Controller
             $this->flash('errors', ['Job not found.']);
         }
 
-        $this->redirect('/cms/system/queue');
+        $this->redirect(admin_url('system/queue'));
     }
 
     public function purge(): void
@@ -165,7 +165,7 @@ class QueueMonitorController extends Controller
         );
 
         $this->flash('success', "{$affected} completed job(s) older than 7 days purged.");
-        $this->redirect('/cms/system/queue');
+        $this->redirect(admin_url('system/queue'));
     }
 
     private function ensureTable(): void

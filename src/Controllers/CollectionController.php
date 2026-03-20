@@ -41,7 +41,7 @@ class CollectionController extends Controller
         $this->requireCmsAccess();
         if (!PermissionService::can($permission)) {
             $this->flash('errors', ['auth' => 'You do not have permission to perform this action.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
         }
     }
 
@@ -99,6 +99,18 @@ class CollectionController extends Controller
             $errors['slug'] = 'Collection slug is required.';
         }
 
+        // Check reserved slugs (system paths that would conflict with CMS routes)
+        $reservedSlugs = [
+            admin_path(), 'api', 'login', 'logout', 'register', 'setup',
+            'storage', 'uploads', 'themes', 'plugins', 'assets',
+            'sitemap', 'robots', 'feed', 'rss', 'search',
+            'user', 'account', 'profile', 'settings', 'dashboard',
+            'admin', 'panel', 'manage', 'console',
+        ];
+        if (in_array($slug, $reservedSlugs, true)) {
+            $errors['slug'] = "'{$slug}' is a reserved system path and cannot be used as a collection slug.";
+        }
+
         // Check slug uniqueness
         if (empty($errors['slug'])) {
             $existing = Collection::findOneBy(['slug' => $slug]);
@@ -148,7 +160,7 @@ class CollectionController extends Controller
         ActivityLogger::log('created', 'collection', $collection->getSlug(), $name);
 
         $this->flash('success', "Collection \"{$name}\" created successfully.");
-        $this->redirect("/cms/collections/{$slug}");
+        $this->redirect(admin_url("collections/{$slug}"));
     }
 
     public function edit(string $slug): string
@@ -158,7 +170,7 @@ class CollectionController extends Controller
         $collection = Collection::findOneBy(['slug' => $slug]);
         if (!$collection) {
             $this->flash('errors', ['collection' => 'Collection not found.']);
-            $this->redirect('/cms/collections');
+            $this->redirect(admin_url('collections'));
             return '';
         }
 
@@ -206,7 +218,7 @@ class CollectionController extends Controller
         $collection = Collection::findOneBy(['slug' => $slug]);
         if (!$collection) {
             $this->flash('errors', ['collection' => 'Collection not found.']);
-            $this->redirect('/cms/collections');
+            $this->redirect(admin_url('collections'));
             return;
         }
 
@@ -369,7 +381,7 @@ class CollectionController extends Controller
         $collection = Collection::findOneBy(['slug' => $slug]);
         if (!$collection) {
             $this->flash('errors', ['collection' => 'Collection not found.']);
-            $this->redirect('/cms/collections');
+            $this->redirect(admin_url('collections'));
             return;
         }
 
@@ -384,7 +396,7 @@ class CollectionController extends Controller
         ActivityLogger::log('deleted', 'collection', $slug, $collectionName);
 
         $this->flash('success', "Collection \"{$collectionName}\" deleted.");
-        $this->redirect('/cms/collections');
+        $this->redirect(admin_url('collections'));
     }
 
     // ========================================================================
@@ -398,7 +410,7 @@ class CollectionController extends Controller
         $collection = Collection::findOneBy(['slug' => $slug]);
         if (!$collection) {
             $this->flash('errors', ['collection' => 'Collection not found.']);
-            $this->redirect('/cms/collections');
+            $this->redirect(admin_url('collections'));
             return;
         }
 
@@ -572,7 +584,7 @@ class CollectionController extends Controller
         }
 
         $this->flash('success', "Field \"{$name}\" added successfully.");
-        $this->redirect("/cms/collections/{$slug}");
+        $this->redirect(admin_url("collections/{$slug}"));
     }
 
     public function updateField(string $slug, int $id): void
@@ -581,7 +593,7 @@ class CollectionController extends Controller
 
         $collection = Collection::findOneBy(['slug' => $slug]);
         if (!$collection) {
-            $this->redirect('/cms/collections');
+            $this->redirect(admin_url('collections'));
             return;
         }
 
@@ -676,7 +688,7 @@ class CollectionController extends Controller
         }
 
         $this->flash('success', "Field \"{$name}\" updated.");
-        $this->redirect("/cms/collections/{$slug}");
+        $this->redirect(admin_url("collections/{$slug}"));
     }
 
     public function deleteField(string $slug, int $id): void
@@ -685,7 +697,7 @@ class CollectionController extends Controller
 
         $collection = Collection::findOneBy(['slug' => $slug]);
         if (!$collection) {
-            $this->redirect('/cms/collections');
+            $this->redirect(admin_url('collections'));
             return;
         }
 
@@ -734,7 +746,7 @@ class CollectionController extends Controller
         $field->delete();
 
         $this->flash('success', "Field \"{$fieldName}\" deleted.");
-        $this->redirect("/cms/collections/{$slug}");
+        $this->redirect(admin_url("collections/{$slug}"));
     }
 
     /**

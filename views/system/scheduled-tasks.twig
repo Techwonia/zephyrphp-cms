@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms">Dashboard</a> / System / Scheduled Tasks
+    <a href="{{ admin_url() }}">Dashboard</a> / System / Scheduled Tasks
 </div>
 
 <div class="page-header">
@@ -15,7 +15,7 @@
 <div class="card" style="margin-bottom: var(--space-500);">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">Add New Task</h3></div>
     <div class="card-body">
-        <form method="POST" action="/cms/system/scheduled-tasks">
+        <form method="POST" action="{{ admin_url('system/scheduled-tasks') }}">
             {{ csrf_field() | raw }}
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-300); margin-bottom: var(--space-300);">
                 <div>
@@ -121,15 +121,15 @@
                         </td>
                         <td>
                             <div style="display: flex; gap: var(--space-200); flex-wrap: wrap;">
-                                <form method="POST" action="/cms/system/scheduled-tasks/{{ task.id }}/run" style="display: inline;">
+                                <form method="POST" action="{{ admin_url('system/scheduled-tasks/{{ task.id }}/run') }}" style="display: inline;">
                                     {{ csrf_field() | raw }}
                                     <button type="submit" class="btn btn-outline btn-sm">Run</button>
                                 </form>
-                                <form method="POST" action="/cms/system/scheduled-tasks/{{ task.id }}/toggle" style="display: inline;">
+                                <form method="POST" action="{{ admin_url('system/scheduled-tasks/{{ task.id }}/toggle') }}" style="display: inline;">
                                     {{ csrf_field() | raw }}
                                     <button type="submit" class="btn btn-outline btn-sm">{{ task.is_active ? 'Disable' : 'Enable' }}</button>
                                 </form>
-                                <form method="POST" action="/cms/system/scheduled-tasks/{{ task.id }}/delete" style="display: inline;" onsubmit="return confirm('Delete this task?')">
+                                <form method="POST" action="{{ admin_url('system/scheduled-tasks/{{ task.id }}/delete') }}" style="display: inline;" onsubmit="return confirm('Delete this task?')">
                                     {{ csrf_field() | raw }}
                                     <button type="submit" class="btn btn-danger btn-sm">Delete</button>
                                 </form>

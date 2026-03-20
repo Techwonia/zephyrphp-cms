@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms">Dashboard</a> / System / Workflow Builder
+    <a href="{{ admin_url() }}">Dashboard</a> / System / Workflow Builder
 </div>
 
 <div class="page-header" style="display: flex; align-items: center; justify-content: space-between;">
@@ -37,7 +37,7 @@
                 </span>
                 <button class="btn btn-outline btn-sm" onclick="toggleEditPanel('{{ collection.slug }}')">Edit Stages</button>
                 <button class="btn btn-outline btn-sm" onclick="toggleReviewerPanel('{{ collection.slug }}')">Reviewers</button>
-                <form method="POST" action="/cms/system/workflow/disable" style="margin:0;" onsubmit="return confirm('Disable workflow for {{ collection.name }}?')">
+                <form method="POST" action="{{ admin_url('system/workflow/disable') }}" style="margin:0;" onsubmit="return confirm('Disable workflow for {{ collection.name }}?')">
                     {{ csrf_field() | raw }}
                     <input type="hidden" name="slug" value="{{ collection.slug }}">
                     <button type="submit" class="btn btn-outline btn-sm" style="color: var(--color-critical); border-color: var(--color-critical);">Disable</button>
@@ -146,7 +146,7 @@
         {# Edit Stages Panel (hidden by default) #}
         <div class="card-body" id="editPanel_{{ collection.slug }}" style="display: none; border-top: 1px solid var(--border); background: var(--bg-subdued);">
             <h4 style="font-size: 0.9rem; margin-bottom: var(--space-300);">Edit Workflow Stages</h4>
-            <form method="POST" action="/cms/system/workflow/save-stages">
+            <form method="POST" action="{{ admin_url('system/workflow/save-stages') }}">
                 {{ csrf_field() | raw }}
                 <input type="hidden" name="slug" value="{{ collection.slug }}">
 
@@ -174,7 +174,7 @@
             <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: var(--space-300);">
                 Assign users who can advance entries from each stage. Leave empty to allow any authenticated user.
             </p>
-            <form method="POST" action="/cms/system/workflow/save-reviewers">
+            <form method="POST" action="{{ admin_url('system/workflow/save-reviewers') }}">
                 {{ csrf_field() | raw }}
                 <input type="hidden" name="slug" value="{{ collection.slug }}">
 
@@ -271,7 +271,7 @@
             <button type="button" onclick="document.getElementById('enableModal').style.display='none'" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-secondary);">&times;</button>
         </div>
         <div class="card-body">
-            <form method="POST" action="/cms/system/workflow/enable">
+            <form method="POST" action="{{ admin_url('system/workflow/enable') }}">
                 {{ csrf_field() | raw }}
                 <div style="margin-bottom: var(--space-400);">
                     <label class="form-label">Select Collection</label>

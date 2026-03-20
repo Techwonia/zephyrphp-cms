@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms">Dashboard</a> / Marketplace
+    <a href="{{ admin_url() }}">Dashboard</a> / Marketplace
 </div>
 
 <div class="page-header">
@@ -16,7 +16,7 @@
 {# Search & Filters #}
 <div class="card" style="margin-bottom:var(--space-500);">
     <div class="card-body">
-        <form method="GET" action="/cms/marketplace" class="mp-filters">
+        <form method="GET" action="{{ admin_url('marketplace') }}" class="mp-filters">
             <div class="mp-search">
                 <input type="text" name="search" value="{{ filters.search }}" placeholder="Search themes..." class="form-control">
             </div>
@@ -71,7 +71,7 @@
             </div>
             <div class="mp-footer">
                 <span class="mp-price {{ item.pricing == 'free' ? 'mp-free' : '' }}">{{ item.price }}</span>
-                <form method="POST" action="/cms/marketplace/{{ item.slug }}/install" style="display:inline">
+                <form method="POST" action="{{ admin_url('marketplace/{{ item.slug }}/install') }}" style="display:inline">
                     {{ csrf_field() | raw }}
                     <button type="submit" class="btn btn-sm btn-primary">Install</button>
                 </form>
@@ -88,7 +88,7 @@
         {% if p == pagination.current_page %}
             <span class="btn btn-sm btn-primary">{{ p }}</span>
         {% else %}
-            <a href="/cms/marketplace?page={{ p }}&type={{ filters.type }}&search={{ filters.search }}&sort={{ filters.sort }}" class="btn btn-sm btn-outline">{{ p }}</a>
+            <a href="{{ admin_url('marketplace?page={{ p }}&type={{ filters.type }}&search={{ filters.search }}&sort={{ filters.sort }}') }}" class="btn btn-sm btn-outline">{{ p }}</a>
         {% endif %}
     {% endfor %}
 </div>

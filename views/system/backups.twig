@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms">Dashboard</a> / System / Backups
+    <a href="{{ admin_url() }}">Dashboard</a> / System / Backups
 </div>
 
 <div class="page-header">
@@ -16,17 +16,17 @@
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">Create New Backup</h3></div>
     <div class="card-body">
         <div style="display: flex; gap: var(--space-300);">
-            <form method="POST" action="/cms/system/backups/create" style="display: inline;">
+            <form method="POST" action="{{ admin_url('system/backups/create') }}" style="display: inline;">
                 {{ csrf_field() | raw }}
                 <input type="hidden" name="type" value="full">
                 <button type="submit" class="btn btn-primary">Full Backup</button>
             </form>
-            <form method="POST" action="/cms/system/backups/create" style="display: inline;">
+            <form method="POST" action="{{ admin_url('system/backups/create') }}" style="display: inline;">
                 {{ csrf_field() | raw }}
                 <input type="hidden" name="type" value="database">
                 <button type="submit" class="btn btn-outline">Database Only</button>
             </form>
-            <form method="POST" action="/cms/system/backups/create" style="display: inline;">
+            <form method="POST" action="{{ admin_url('system/backups/create') }}" style="display: inline;">
                 {{ csrf_field() | raw }}
                 <input type="hidden" name="type" value="files">
                 <button type="submit" class="btn btn-outline">Files Only</button>
@@ -60,8 +60,8 @@
                         <td>{{ backup.created }}</td>
                         <td>
                             <div style="display: flex; gap: var(--space-200);">
-                                <a href="/cms/system/backups/{{ backup.name }}/download" class="btn btn-outline btn-sm">Download</a>
-                                <form method="POST" action="/cms/system/backups/{{ backup.name }}/delete" style="display: inline;" onsubmit="return confirm('Delete this backup?')">
+                                <a href="{{ admin_url('system/backups/{{ backup.name }}/download') }}" class="btn btn-outline btn-sm">Download</a>
+                                <form method="POST" action="{{ admin_url('system/backups/{{ backup.name }}/delete') }}" style="display: inline;" onsubmit="return confirm('Delete this backup?')">
                                     {{ csrf_field() | raw }}
                                     <button type="submit" class="btn btn-danger btn-sm">Delete</button>
                                 </form>

@@ -29,7 +29,7 @@ class ApiKeyController extends Controller
         $this->requireCmsAccess();
         if (!PermissionService::can($permission)) {
             $this->flash('errors', ['auth' => 'You do not have permission to perform this action.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
         }
     }
 
@@ -93,7 +93,7 @@ class ApiKeyController extends Controller
         // Flash the raw key so user can copy it (shown only once)
         $this->flash('success', 'API key created. Copy it now — it won\'t be shown again.');
         $this->flash('new_api_key', $rawKey);
-        $this->redirect('/cms/api-keys');
+        $this->redirect(admin_url('api-keys'));
     }
 
     public function toggleStatus(int $id): void
@@ -103,7 +103,7 @@ class ApiKeyController extends Controller
         $key = ApiKey::find($id);
         if (!$key) {
             $this->flash('errors', ['key' => 'API key not found.']);
-            $this->redirect('/cms/api-keys');
+            $this->redirect(admin_url('api-keys'));
             return;
         }
 
@@ -111,7 +111,7 @@ class ApiKeyController extends Controller
         $key->save();
 
         $this->flash('success', 'API key ' . ($key->isActive() ? 'activated' : 'deactivated') . '.');
-        $this->redirect('/cms/api-keys');
+        $this->redirect(admin_url('api-keys'));
     }
 
     public function destroy(int $id): void
@@ -121,13 +121,13 @@ class ApiKeyController extends Controller
         $key = ApiKey::find($id);
         if (!$key) {
             $this->flash('errors', ['key' => 'API key not found.']);
-            $this->redirect('/cms/api-keys');
+            $this->redirect(admin_url('api-keys'));
             return;
         }
 
         $key->delete();
 
         $this->flash('success', 'API key deleted.');
-        $this->redirect('/cms/api-keys');
+        $this->redirect(admin_url('api-keys'));
     }
 }

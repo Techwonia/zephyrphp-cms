@@ -19,7 +19,7 @@ class LanguageController extends Controller
         }
         if (!PermissionService::can('cms.settings')) {
             $this->flash('errors', ['auth' => 'Access denied.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
         }
     }
 
@@ -105,7 +105,7 @@ class LanguageController extends Controller
         $language->save();
 
         $this->flash('success', "Language \"{$name}\" added.");
-        $this->redirect('/cms/languages');
+        $this->redirect(admin_url('languages'));
     }
 
     /**
@@ -118,7 +118,7 @@ class LanguageController extends Controller
         $language = Language::find((int) $id);
         if (!$language) {
             $this->flash('errors', ['language' => 'Language not found.']);
-            $this->redirect('/cms/languages');
+            $this->redirect(admin_url('languages'));
             return;
         }
 
@@ -151,7 +151,7 @@ class LanguageController extends Controller
         $language->save();
 
         $this->flash('success', "Language \"{$name}\" updated.");
-        $this->redirect('/cms/languages');
+        $this->redirect(admin_url('languages'));
     }
 
     /**
@@ -164,13 +164,13 @@ class LanguageController extends Controller
         $language = Language::find((int) $id);
         if (!$language) {
             $this->flash('errors', ['language' => 'Language not found.']);
-            $this->redirect('/cms/languages');
+            $this->redirect(admin_url('languages'));
             return;
         }
 
         if ($language->isDefault()) {
             $this->flash('errors', ['language' => 'Cannot delete the default language.']);
-            $this->redirect('/cms/languages');
+            $this->redirect(admin_url('languages'));
             return;
         }
 
@@ -189,7 +189,7 @@ class LanguageController extends Controller
         $language->delete();
 
         $this->flash('success', "Language \"{$name}\" deleted.");
-        $this->redirect('/cms/languages');
+        $this->redirect(admin_url('languages'));
     }
 
     /**

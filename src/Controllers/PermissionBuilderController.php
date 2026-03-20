@@ -19,7 +19,7 @@ class PermissionBuilderController extends Controller
         }
         if (!PermissionService::can($permission)) {
             $this->flash('errors', ['You do not have permission to perform this action.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
         }
     }
 
@@ -77,7 +77,7 @@ class PermissionBuilderController extends Controller
         $matrix = $this->input('permissions', []);
         if (!is_array($matrix)) {
             $this->flash('errors', ['Invalid data.']);
-            $this->redirect('/cms/permissions');
+            $this->redirect(admin_url('permissions'));
             return;
         }
 
@@ -93,7 +93,7 @@ class PermissionBuilderController extends Controller
         }
 
         $this->flash('success', 'Permission matrix saved.');
-        $this->redirect('/cms/permissions');
+        $this->redirect(admin_url('permissions'));
     }
 
     /**
@@ -106,7 +106,7 @@ class PermissionBuilderController extends Controller
         $collectionPerms = $this->input('collection_permissions', []);
         if (!is_array($collectionPerms)) {
             $this->flash('errors', ['Invalid data.']);
-            $this->redirect('/cms/permissions');
+            $this->redirect(admin_url('permissions'));
             return;
         }
 
@@ -141,7 +141,7 @@ class PermissionBuilderController extends Controller
             $this->flash('errors', ['Failed to save collection permissions: ' . $e->getMessage()]);
         }
 
-        $this->redirect('/cms/permissions');
+        $this->redirect(admin_url('permissions'));
     }
 
     /**
@@ -157,14 +157,14 @@ class PermissionBuilderController extends Controller
 
         if ($key === '' || $label === '') {
             $this->flash('errors', ['Permission key and label are required.']);
-            $this->redirect('/cms/permissions');
+            $this->redirect(admin_url('permissions'));
             return;
         }
 
         // Validate key format: lowercase, dots, hyphens
         if (!preg_match('/^[a-z][a-z0-9_\.\-]*$/', $key)) {
             $this->flash('errors', ['Permission key must start with a letter and contain only lowercase letters, numbers, dots, hyphens, and underscores.']);
-            $this->redirect('/cms/permissions');
+            $this->redirect(admin_url('permissions'));
             return;
         }
 
@@ -176,7 +176,7 @@ class PermissionBuilderController extends Controller
         foreach ($builtIn as $perms) {
             if (isset($perms[$key])) {
                 $this->flash('errors', ['This permission key already exists as a built-in permission.']);
-                $this->redirect('/cms/permissions');
+                $this->redirect(admin_url('permissions'));
                 return;
             }
         }
@@ -189,7 +189,7 @@ class PermissionBuilderController extends Controller
             $exists = $conn->fetchOne('SELECT COUNT(*) FROM cms_custom_permissions WHERE permission_key = ?', [$key]);
             if ((int) $exists > 0) {
                 $this->flash('errors', ['This permission key already exists.']);
-                $this->redirect('/cms/permissions');
+                $this->redirect(admin_url('permissions'));
                 return;
             }
 
@@ -205,7 +205,7 @@ class PermissionBuilderController extends Controller
             $this->flash('errors', ['Failed to add permission: ' . $e->getMessage()]);
         }
 
-        $this->redirect('/cms/permissions');
+        $this->redirect(admin_url('permissions'));
     }
 
     /**
@@ -223,7 +223,7 @@ class PermissionBuilderController extends Controller
             $this->flash('errors', ['Failed to delete permission.']);
         }
 
-        $this->redirect('/cms/permissions');
+        $this->redirect(admin_url('permissions'));
     }
 
     // ─── Private helpers ────────────────────────────────────────

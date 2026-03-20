@@ -227,7 +227,7 @@ class SidebarManager
         $this->addItem('home', [
             'id' => 'home',
             'label' => 'Home',
-            'url' => '/cms',
+            'url' => admin_url(),
             'icon' => 'home',
             'position' => 1,
             'match' => 'exact:/cms',
@@ -238,18 +238,18 @@ class SidebarManager
         $this->addItem('content', [
             'id' => 'collections',
             'label' => 'Collections',
-            'url' => '/cms/collections',
+            'url' => admin_url('collections'),
             'icon' => 'folder',
             'position' => 1,
-            'match' => 'prefix:/cms/collections',
+            'match' => 'prefix:' . admin_url('collections'),
         ]);
         $this->addItem('content', [
             'id' => 'media',
             'label' => 'Media',
-            'url' => '/cms/media',
+            'url' => admin_url('media'),
             'icon' => 'image',
             'position' => 10,
-            'match' => 'prefix:/cms/media',
+            'match' => 'prefix:' . admin_url('media'),
         ]);
 
         // --- Design ---
@@ -257,10 +257,10 @@ class SidebarManager
         $this->addItem('design', [
             'id' => 'themes',
             'label' => 'Themes',
-            'url' => '/cms/themes',
+            'url' => admin_url('themes'),
             'icon' => 'palette',
             'position' => 1,
-            'match' => 'prefix:/cms/themes',
+            'match' => 'prefix:' . admin_url('themes'),
         ]);
 
         // --- Admin ---
@@ -268,29 +268,29 @@ class SidebarManager
         $this->addItem('admin', [
             'id' => 'users',
             'label' => 'Users',
-            'url' => '/cms/users',
+            'url' => admin_url('users'),
             'icon' => 'users',
             'permission' => 'users.view',
             'position' => 1,
-            'match' => 'prefix:/cms/users',
+            'match' => 'prefix:' . admin_url('users'),
         ]);
         $this->addItem('admin', [
             'id' => 'roles',
             'label' => 'Roles',
-            'url' => '/cms/roles',
+            'url' => admin_url('roles'),
             'icon' => 'shield',
             'permission' => 'roles.manage',
             'position' => 2,
-            'match' => 'prefix:/cms/roles',
+            'match' => 'prefix:' . admin_url('roles'),
         ]);
         $this->addItem('admin', [
             'id' => 'api-keys',
             'label' => 'API Keys',
-            'url' => '/cms/api-keys',
+            'url' => admin_url('api-keys'),
             'icon' => 'key',
             'permission' => 'api-keys.manage',
             'position' => 3,
-            'match' => 'prefix:/cms/api-keys',
+            'match' => 'prefix:' . admin_url('api-keys'),
         ]);
 
         // --- Settings ---
@@ -298,37 +298,37 @@ class SidebarManager
         $this->addItem('settings', [
             'id' => 'profile',
             'label' => 'Profile',
-            'url' => '/cms/settings/profile',
+            'url' => admin_url('settings/profile'),
             'icon' => 'user',
             'position' => 1,
-            'match' => 'prefix:/cms/settings/profile',
+            'match' => 'prefix:' . admin_url('settings/profile'),
         ]);
         $this->addItem('settings', [
             'id' => 'database',
             'label' => 'Database',
-            'url' => '/cms/settings/database',
+            'url' => admin_url('settings/database'),
             'icon' => 'database',
             'permission' => 'settings.view',
             'position' => 2,
-            'match' => 'prefix:/cms/settings/database',
+            'match' => 'prefix:' . admin_url('settings/database'),
         ]);
         $this->addItem('settings', [
             'id' => 'system',
             'label' => 'System',
-            'url' => '/cms/settings/system',
+            'url' => admin_url('settings/system'),
             'icon' => 'settings',
             'permission' => 'settings.view',
             'position' => 3,
-            'match' => 'prefix:/cms/settings/system',
+            'match' => 'prefix:' . admin_url('settings/system'),
         ]);
         $this->addItem('settings', [
             'id' => 'assets',
             'label' => 'Assets',
-            'url' => '/cms/settings/assets',
+            'url' => admin_url('settings/assets'),
             'icon' => 'file',
             'permission' => 'settings.view',
             'position' => 4,
-            'match' => 'prefix:/cms/settings/assets',
+            'match' => 'prefix:' . admin_url('settings/assets'),
         ]);
 
         // --- Footer (Back to site) ---

@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms">Dashboard</a> / <a href="/cms/roles">Roles</a> / Create
+    <a href="{{ admin_url() }}">Dashboard</a> / <a href="{{ admin_url('roles') }}">Roles</a> / Create
 </div>
 
 <div class="page-header">
@@ -13,7 +13,7 @@
 
 <div class="card">
     <div class="card-body">
-        <form method="POST" action="/cms/roles">
+        <form method="POST" action="{{ admin_url('roles') }}">
             {{ csrf_field() | raw }}
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
@@ -47,7 +47,7 @@
 
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Create Role</button>
-                <a href="/cms/roles" class="btn btn-outline">Cancel</a>
+                <a href="{{ admin_url('roles') }}" class="btn btn-outline">Cancel</a>
             </div>
         </form>
     </div>

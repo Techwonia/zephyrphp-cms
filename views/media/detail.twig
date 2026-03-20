@@ -4,13 +4,13 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms">Dashboard</a> / <a href="/cms/media">Media</a> / Detail
+    <a href="{{ admin_url() }}">Dashboard</a> / <a href="{{ admin_url('media') }}">Media</a> / Detail
 </div>
 
 <div class="page-header">
     <h1>{{ item.getOriginalName() }}</h1>
     <div class="page-actions">
-        <a href="/cms/media" class="btn btn-outline">Back to Library</a>
+        <a href="{{ admin_url('media') }}" class="btn btn-outline">Back to Library</a>
     </div>
 </div>
 
@@ -59,7 +59,7 @@
         <div class="card" style="margin-bottom: var(--space-400);">
             <div class="card-header"><h3 style="margin:0; font-size:1rem;">Edit Metadata</h3></div>
             <div class="card-body">
-                <form method="POST" action="/cms/media/{{ item.getId() }}/update">
+                <form method="POST" action="{{ admin_url('media/{{ item.getId() }}/update') }}">
                     {{ csrf_field() | raw }}
                     <div class="form-group">
                         <label for="original_name">Display Name</label>
@@ -84,7 +84,7 @@
                     <ul style="list-style: none; padding: 0; margin: 0;">
                         {% for ref in usage %}
                         <li style="padding: 6px 0; border-bottom: 1px solid var(--border-color);">
-                            <a href="/cms/collections/{{ ref.collection_slug }}/entries/{{ ref.entry_id }}/edit">
+                            <a href="{{ admin_url('collections/{{ ref.collection_slug }}/entries/{{ ref.entry_id }}/edit') }}">
                                 {{ ref.collection }} #{{ ref.entry_id }}
                             </a>
                         </li>
@@ -99,7 +99,7 @@
         {# Danger Zone #}
         <div class="card" style="border-color: var(--danger);">
             <div class="card-body">
-                <form method="POST" action="/cms/media/{{ item.getId() }}/delete" onsubmit="return confirm('Permanently delete this file?')">
+                <form method="POST" action="{{ admin_url('media/{{ item.getId() }}/delete') }}" onsubmit="return confirm('Permanently delete this file?')">
                     {{ csrf_field() | raw }}
                     <button type="submit" class="btn btn-danger">Delete File</button>
                     {% if usage|length > 0 %}

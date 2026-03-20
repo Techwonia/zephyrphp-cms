@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms">Dashboard</a> / Settings / System
+    <a href="{{ admin_url() }}">Dashboard</a> / Settings / System
 </div>
 
 <div class="page-header">
@@ -17,7 +17,7 @@
         <h3 style="margin: 0; font-size: 1rem;">Application Settings</h3>
     </div>
     <div class="card-body">
-        <form method="POST" action="/cms/settings/system">
+        <form method="POST" action="{{ admin_url('settings/system') }}">
             {{ csrf_field() | raw }}
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
@@ -206,7 +206,7 @@
 
             <div style="background: var(--bg-subdued); border: 1px solid var(--border-default); border-radius: 8px; padding: 16px; margin-bottom: 16px;">
                 <p style="margin: 0 0 8px; font-size: 0.875rem;">Manage asset collections, preloads, preconnects, CDN, and versioning in the dedicated Asset Settings page.</p>
-                <a href="/cms/settings/assets" class="btn btn-sm btn-primary">Open Asset Settings</a>
+                <a href="{{ admin_url('settings/assets') }}" class="btn btn-sm btn-primary">Open Asset Settings</a>
             </div>
 
             <div class="form-actions">

@@ -4,8 +4,8 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms">Dashboard</a> /
-    <a href="/cms/api-keys">API Keys</a> / New
+    <a href="{{ admin_url() }}">Dashboard</a> /
+    <a href="{{ admin_url('api-keys') }}">API Keys</a> / New
 </div>
 
 <div class="page-header">
@@ -14,7 +14,7 @@
 
 <div class="card">
     <div class="card-body">
-        <form method="POST" action="/cms/api-keys">
+        <form method="POST" action="{{ admin_url('api-keys') }}">
             {{ csrf_field() | raw }}
 
             <div class="form-group">
@@ -43,7 +43,7 @@
 
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Generate API Key</button>
-                <a href="/cms/api-keys" class="btn btn-outline">Cancel</a>
+                <a href="{{ admin_url('api-keys') }}" class="btn btn-outline">Cancel</a>
             </div>
         </form>
     </div>

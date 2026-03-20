@@ -20,7 +20,7 @@ class EmailTemplateController extends Controller
         }
         if (!PermissionService::can('cms.settings')) {
             $this->flash('errors', ['auth' => 'Access denied.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
         }
     }
 
@@ -49,7 +49,7 @@ class EmailTemplateController extends Controller
         $template = EmailTemplate::find((int) $id);
         if (!$template) {
             $this->flash('errors', ['template' => 'Template not found.']);
-            $this->redirect('/cms/email-templates');
+            $this->redirect(admin_url('email-templates'));
             return '';
         }
 
@@ -69,7 +69,7 @@ class EmailTemplateController extends Controller
         $template = EmailTemplate::find((int) $id);
         if (!$template) {
             $this->flash('errors', ['template' => 'Template not found.']);
-            $this->redirect('/cms/email-templates');
+            $this->redirect(admin_url('email-templates'));
             return;
         }
 
@@ -105,7 +105,7 @@ class EmailTemplateController extends Controller
         $template->save();
 
         $this->flash('success', 'Email template updated.');
-        $this->redirect('/cms/email-templates');
+        $this->redirect(admin_url('email-templates'));
     }
 
     /**
@@ -126,8 +126,8 @@ class EmailTemplateController extends Controller
             'app_name' => $_ENV['APP_NAME'] ?? 'CMS',
             'entry_title' => 'Sample Entry Title',
             'collection_name' => 'Blog Posts',
-            'entry_url' => '/cms/collections/blog/entries/1',
-            'admin_url' => '/cms',
+            'entry_url' => admin_url('collections/blog/entries/1'),
+            'admin_url' => admin_url(),
             'user_name' => 'John Doe',
             'user_email' => 'john@example.com',
             'fields' => ['Name' => 'Jane', 'Email' => 'jane@example.com', 'Message' => 'Hello!'],
@@ -172,8 +172,8 @@ class EmailTemplateController extends Controller
             'app_name' => $_ENV['APP_NAME'] ?? 'CMS',
             'entry_title' => 'Test Entry',
             'collection_name' => 'Test Collection',
-            'entry_url' => rtrim($_ENV['APP_URL'] ?? '', '/') . '/cms',
-            'admin_url' => rtrim($_ENV['APP_URL'] ?? '', '/') . '/cms',
+            'entry_url' => rtrim($_ENV['APP_URL'] ?? '', '/') . admin_url(),
+            'admin_url' => rtrim($_ENV['APP_URL'] ?? '', '/') . admin_url(),
             'user_name' => Auth::user()?->getName() ?? 'Test User',
             'user_email' => $toEmail,
         ];

@@ -14,13 +14,13 @@ use ZephyrPHP\Cms\Services\HookManager;
  * PluginController — CMS admin panel for managing plugins.
  *
  * Routes:
- *   GET  /cms/plugins              — List installed plugins
- *   GET  /cms/plugins/browse       — Browse marketplace plugins
- *   POST /cms/plugins/install      — Install from URL or upload
- *   POST /cms/plugins/{slug}/uninstall — Uninstall a plugin
- *   POST /cms/plugins/{slug}/toggle    — Enable/disable a plugin
- *   GET  /cms/plugins/{slug}/settings  — Plugin settings page
- *   POST /cms/plugins/{slug}/settings  — Save plugin settings
+ *   GET  /admin/plugins              — List installed plugins
+ *   GET  /admin/plugins/browse       — Browse marketplace plugins
+ *   POST /admin/plugins/install      — Install from URL or upload
+ *   POST /admin/plugins/{slug}/uninstall — Uninstall a plugin
+ *   POST /admin/plugins/{slug}/toggle    — Enable/disable a plugin
+ *   GET  /admin/plugins/{slug}/settings  — Plugin settings page
+ *   POST /admin/plugins/{slug}/settings  — Save plugin settings
  */
 class PluginController extends Controller
 {
@@ -40,12 +40,12 @@ class PluginController extends Controller
         }
         if (!PermissionService::can($permission)) {
             $this->flash('errors', ['You do not have permission to perform this action.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
         }
     }
 
     /**
-     * GET /cms/plugins — List installed plugins.
+     * GET /admin/plugins — List installed plugins.
      */
     public function index(): string
     {
@@ -90,7 +90,7 @@ class PluginController extends Controller
     }
 
     /**
-     * GET /cms/plugins/browse — Browse marketplace for available plugins.
+     * GET /admin/plugins/browse — Browse marketplace for available plugins.
      */
     public function browse(): string
     {
@@ -132,7 +132,7 @@ class PluginController extends Controller
     }
 
     /**
-     * POST /cms/plugins/install — Install a plugin from URL or ZIP upload.
+     * POST /admin/plugins/install — Install a plugin from URL or ZIP upload.
      */
     public function install(): void
     {
@@ -154,12 +154,12 @@ class PluginController extends Controller
             } else {
                 $this->flash('errors', [$result['error'] ?? 'Installation failed.']);
             }
-            $this->redirect('/cms/plugins');
+            $this->redirect(admin_url('plugins'));
             return;
         }
 
         $this->flash('errors', ['Please provide a download URL or upload a ZIP file.']);
-        $this->redirect('/cms/plugins');
+        $this->redirect(admin_url('plugins'));
     }
 
     /**
@@ -176,7 +176,7 @@ class PluginController extends Controller
 
         if (!in_array($mimeType, $allowedMimes, true)) {
             $this->flash('errors', ['Only ZIP files are allowed.']);
-            $this->redirect('/cms/plugins');
+            $this->redirect(admin_url('plugins'));
             return;
         }
 
@@ -184,14 +184,14 @@ class PluginController extends Controller
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
         if ($ext !== 'zip') {
             $this->flash('errors', ['Only .zip files are allowed.']);
-            $this->redirect('/cms/plugins');
+            $this->redirect(admin_url('plugins'));
             return;
         }
 
         // Validate file size (50 MB max)
         if ($file['size'] > 50 * 1024 * 1024) {
             $this->flash('errors', ['Plugin archive exceeds maximum size (50 MB).']);
-            $this->redirect('/cms/plugins');
+            $this->redirect(admin_url('plugins'));
             return;
         }
 
@@ -199,7 +199,7 @@ class PluginController extends Controller
         $tempPath = sys_get_temp_dir() . '/zephyr_plugin_upload_' . bin2hex(random_bytes(8)) . '.zip';
         if (!move_uploaded_file($file['tmp_name'], $tempPath)) {
             $this->flash('errors', ['Failed to process uploaded file.']);
-            $this->redirect('/cms/plugins');
+            $this->redirect(admin_url('plugins'));
             return;
         }
 
@@ -216,11 +216,11 @@ class PluginController extends Controller
             $this->flash('errors', [$result['error'] ?? 'Installation failed.']);
         }
 
-        $this->redirect('/cms/plugins');
+        $this->redirect(admin_url('plugins'));
     }
 
     /**
-     * POST /cms/plugins/{slug}/uninstall — Remove a plugin.
+     * POST /admin/plugins/{slug}/uninstall — Remove a plugin.
      */
     public function uninstall(string $slug): void
     {
@@ -234,11 +234,11 @@ class PluginController extends Controller
             $this->flash('errors', [$result['error'] ?? 'Failed to uninstall plugin.']);
         }
 
-        $this->redirect('/cms/plugins');
+        $this->redirect(admin_url('plugins'));
     }
 
     /**
-     * POST /cms/plugins/{slug}/toggle — Enable or disable a plugin.
+     * POST /admin/plugins/{slug}/toggle — Enable or disable a plugin.
      */
     public function toggle(string $slug): void
     {
@@ -253,11 +253,11 @@ class PluginController extends Controller
             $this->flash('errors', [$result['error'] ?? 'Failed to toggle plugin.']);
         }
 
-        $this->redirect('/cms/plugins');
+        $this->redirect(admin_url('plugins'));
     }
 
     /**
-     * GET /cms/plugins/{slug}/settings — Plugin settings page.
+     * GET /admin/plugins/{slug}/settings — Plugin settings page.
      */
     public function settings(string $slug): string
     {
@@ -266,7 +266,7 @@ class PluginController extends Controller
         $manifest = $this->pluginManager->readManifest($slug);
         if (!$manifest) {
             $this->flash('errors', ['Plugin not found.']);
-            $this->redirect('/cms/plugins');
+            $this->redirect(admin_url('plugins'));
             return '';
         }
 
@@ -283,7 +283,7 @@ class PluginController extends Controller
     }
 
     /**
-     * POST /cms/plugins/{slug}/settings — Save plugin settings.
+     * POST /admin/plugins/{slug}/settings — Save plugin settings.
      */
     public function saveSettings(string $slug): void
     {
@@ -292,7 +292,7 @@ class PluginController extends Controller
         $manifest = $this->pluginManager->readManifest($slug);
         if (!$manifest) {
             $this->flash('errors', ['Plugin not found.']);
-            $this->redirect('/cms/plugins');
+            $this->redirect(admin_url('plugins'));
             return;
         }
 
@@ -327,6 +327,6 @@ class PluginController extends Controller
         HookManager::doAction('plugin.settings_saved', $slug, $settings);
 
         $this->flash('success', 'Plugin settings saved.');
-        $this->redirect('/cms/plugins/' . urlencode($slug) . '/settings');
+        $this->redirect(admin_url('plugins/' . urlencode($slug) . '/settings'));
     }
 }

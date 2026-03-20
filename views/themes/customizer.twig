@@ -908,7 +908,7 @@
 <!-- Top Bar -->
 <div class="topbar">
     <div class="topbar-left">
-        <a href="/cms/themes" class="topbar-back">
+        <a href="{{ admin_url('themes') }}" class="topbar-back">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
         </a>
         <span class="topbar-title">{{ theme.getName() }}</span>
@@ -1005,7 +1005,7 @@
                     </button>
                     <div style="border-top:1px solid var(--border); padding-top:12px; margin-top:8px;">
                         <div class="ab-panel-subheader">Theme Info</div>
-                        <form method="POST" action="/cms/themes/{{ theme.getSlug() }}" id="themeInfoForm">
+                        <form method="POST" action="{{ admin_url('themes/{{ theme.getSlug() }}') }}" id="themeInfoForm">
                             {{ csrf_field() | raw }}
                             <div style="margin-bottom:10px;">
                                 <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Name</label>
@@ -1028,7 +1028,7 @@
     <!-- Preview -->
     <div class="preview-panel">
         <div class="preview-wrapper desktop" id="previewWrapper">
-            <iframe class="preview-frame" id="previewFrame" src="/cms/themes/{{ theme.getSlug() }}/customize/preview?page={{ currentPage }}"></iframe>
+            <iframe class="preview-frame" id="previewFrame" src="/admin/themes/{{ theme.getSlug() }}/customize/preview?page={{ currentPage }}"></iframe>
         </div>
     </div>
 
@@ -1295,7 +1295,7 @@
     function fetchCollectionFields(collectionSlug) {
         if (!collectionSlug) return Promise.resolve([]);
         if (collectionFieldsCache[collectionSlug]) return Promise.resolve(collectionFieldsCache[collectionSlug]);
-        return fetch('/cms/themes/' + THEME_SLUG + '/customize/collection-fields/' + encodeURIComponent(collectionSlug))
+        return fetch('/admin/themes/' + THEME_SLUG + '/customize/collection-fields/' + encodeURIComponent(collectionSlug))
             .then(function(r) { return r.json(); })
             .then(function(data) { collectionFieldsCache[collectionSlug] = data.fields || []; return collectionFieldsCache[collectionSlug]; })
             .catch(function() { return []; });
@@ -2130,7 +2130,7 @@
         function loadMedia(page) {
             currentPage = page || 1;
             body.innerHTML = '<div class="media-browser-empty">Loading...</div>';
-            var url = '/cms/media/browse?filter=' + encodeURIComponent(filter) + '&per_page=24&page=' + currentPage;
+            var url = '/admin/media/browse?filter=' + encodeURIComponent(filter) + '&per_page=24&page=' + currentPage;
             if (searchTerm) url += '&search=' + encodeURIComponent(searchTerm);
             fetch(url)
             .then(function(r) { return r.json(); })
@@ -2191,7 +2191,7 @@
             var fd = new FormData();
             fd.append('file', this.files[0]);
             body.innerHTML = '<div class="media-browser-uploading">Uploading...</div>';
-            fetch('/cms/media/upload', {
+            fetch('/admin/media/upload', {
                 method: 'POST',
                 headers: { 'X-CSRF-TOKEN': CSRF_TOKEN },
                 body: fd
@@ -2417,7 +2417,7 @@
                 fd.append('file', this.files[0]);
                 uploadBtn.textContent = 'Uploading...';
                 uploadBtn.disabled = true;
-                fetch('/cms/media/upload', {
+                fetch('/admin/media/upload', {
                     method: 'POST',
                     headers: { 'X-CSRF-TOKEN': CSRF_TOKEN },
                     body: fd
@@ -2632,7 +2632,7 @@
 
         function loadCollectionEntries(col) {
             content.innerHTML = '<div style="padding:16px;color:var(--text-disabled);font-size:13px;">Loading...</div>';
-            fetch('/cms/themes/' + THEME_SLUG + '/customize/collections/' + encodeURIComponent(col.slug), {
+            fetch('/admin/themes/' + THEME_SLUG + '/customize/collections/' + encodeURIComponent(col.slug), {
                 headers: { 'X-CSRF-TOKEN': CSRF_TOKEN }
             })
             .then(function(r) { return r.json(); })
@@ -2810,7 +2810,7 @@
             var btn = this;
             btn.disabled = true; btn.textContent = 'Creating...';
 
-            fetch('/cms/themes/' + THEME_SLUG + '/sections/create', {
+            fetch('/admin/themes/' + THEME_SLUG + '/sections/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN },
                 body: JSON.stringify({ name: name })
@@ -2818,7 +2818,7 @@
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (data.success) {
-                    return fetch('/cms/themes/' + THEME_SLUG + '/customize/sections')
+                    return fetch('/admin/themes/' + THEME_SLUG + '/customize/sections')
                         .then(function(r) { return r.json(); })
                         .then(function(result) {
                             state.availableSections = result.sections || result;
@@ -2934,7 +2934,7 @@
             var scrollY = 0;
             try { scrollY = frame.contentWindow.scrollY || 0; } catch(e) {}
 
-            fetch('/cms/themes/' + THEME_SLUG + '/customize/preview?page=' + state.currentPage, {
+            fetch('/admin/themes/' + THEME_SLUG + '/customize/preview?page=' + state.currentPage, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN },
                 body: JSON.stringify(state.settingsData)
@@ -2982,7 +2982,7 @@
         }
 
         // POST state and get full HTML
-        fetch('/cms/themes/' + THEME_SLUG + '/customize/preview?page=' + state.currentPage, {
+        fetch('/admin/themes/' + THEME_SLUG + '/customize/preview?page=' + state.currentPage, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN },
             body: JSON.stringify(state.settingsData)
@@ -3938,7 +3938,7 @@
         var btn = document.getElementById('saveBtn');
         btn.disabled = true; btn.textContent = 'Saving...';
 
-        fetch('/cms/themes/' + THEME_SLUG + '/customize/save', {
+        fetch('/admin/themes/' + THEME_SLUG + '/customize/save', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN },
             body: JSON.stringify(state.settingsData)
@@ -4070,7 +4070,7 @@
         if (!title || !slug) { alert('Title and URL are required'); return; }
         btn.disabled = true;
         btn.textContent = 'Creating...';
-        fetch('/cms/themes/' + THEME_SLUG + '/pages/add', {
+        fetch('/admin/themes/' + THEME_SLUG + '/pages/add', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN },
             body: JSON.stringify({ title: title, slug: slug, layout: layout, collection: collection })
@@ -4102,7 +4102,7 @@
         // Full page switch uses GET for initial load
         var frame = document.getElementById('previewFrame');
         frame.removeAttribute('srcdoc');
-        frame.src = '/cms/themes/' + THEME_SLUG + '/customize/preview?page=' + state.currentPage;
+        frame.src = '/admin/themes/' + THEME_SLUG + '/customize/preview?page=' + state.currentPage;
     });
 
     // ── Event Bindings ──

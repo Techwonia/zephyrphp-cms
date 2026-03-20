@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms">Dashboard</a> / Settings / Error Pages
+    <a href="{{ admin_url() }}">Dashboard</a> / Settings / Error Pages
 </div>
 
 <div class="page-header">
@@ -18,7 +18,7 @@
 <div class="card" style="margin-bottom: var(--space-500);">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">HTTP Error Pages</h3></div>
     <div class="card-body" style="padding: 0;">
-        <form method="POST" action="/cms/settings/error-pages/http">
+        <form method="POST" action="{{ admin_url('settings/error-pages/http') }}">
             {{ csrf_field() | raw }}
             <div class="table-responsive">
                 <table class="data-table" style="font-size: 0.85rem;">
@@ -49,7 +49,7 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <a href="/cms/settings/error-pages/preview/{{ code }}" target="_blank" class="btn btn-outline btn-sm">View</a>
+                                <a href="{{ admin_url('settings/error-pages/preview/{{ code }}') }}" target="_blank" class="btn btn-outline btn-sm">View</a>
                             </td>
                         </tr>
                         {% endfor %}
@@ -72,7 +72,7 @@
         </p>
     </div>
     <div class="card-body" style="padding: 0;">
-        <form method="POST" action="/cms/settings/error-pages/database">
+        <form method="POST" action="{{ admin_url('settings/error-pages/database') }}">
             {{ csrf_field() | raw }}
             <div class="table-responsive">
                 <table class="data-table" style="font-size: 0.85rem;">
@@ -116,7 +116,7 @@
     </div>
     <div class="card-body">
         {# Add new field message #}
-        <form method="POST" action="/cms/settings/error-pages/fields/add" style="margin-bottom: var(--space-400);">
+        <form method="POST" action="{{ admin_url('settings/error-pages/fields/add') }}" style="margin-bottom: var(--space-400);">
             {{ csrf_field() | raw }}
             <div style="display: grid; grid-template-columns: 1fr 1fr 2fr auto; gap: var(--space-300); align-items: flex-end;">
                 <div class="form-group" style="margin-bottom: 0;">
@@ -141,7 +141,7 @@
 
         {# Existing field messages #}
         {% if config.fields is defined and config.fields|length > 0 %}
-        <form method="POST" action="/cms/settings/error-pages/fields">
+        <form method="POST" action="{{ admin_url('settings/error-pages/fields') }}">
             {{ csrf_field() | raw }}
             <div class="table-responsive">
                 <table class="data-table" style="font-size: 0.85rem;">

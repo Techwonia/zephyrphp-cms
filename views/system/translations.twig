@@ -4,20 +4,20 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms">Dashboard</a> / System / Translations
+    <a href="{{ admin_url() }}">Dashboard</a> / System / Translations
 </div>
 
 <div class="page-header" style="display: flex; align-items: center; justify-content: space-between;">
     <h1>Translation Manager</h1>
     <div style="display: flex; gap: var(--space-200);">
-        <a href="/cms/system/translations/progress" class="btn btn-outline btn-sm">Translation Progress</a>
+        <a href="{{ admin_url('system/translations/progress') }}" class="btn btn-outline btn-sm">Translation Progress</a>
     </div>
 </div>
 
 {# Locale & Group Selector #}
 <div class="card" style="margin-bottom: var(--space-500);">
     <div class="card-body">
-        <form method="GET" action="/cms/system/translations" style="display: flex; gap: var(--space-300); align-items: flex-end; flex-wrap: wrap;">
+        <form method="GET" action="{{ admin_url('system/translations') }}" style="display: flex; gap: var(--space-300); align-items: flex-end; flex-wrap: wrap;">
             <div>
                 <label class="form-label">Locale</label>
                 <select name="locale" class="form-control" style="min-width: 120px;" onchange="this.form.submit()">
@@ -60,7 +60,7 @@
 {# Actions Row: Create Group, Create Locale, Export, Import #}
 <div style="display: flex; gap: var(--space-400); margin-bottom: var(--space-500); flex-wrap: wrap; align-items: flex-end;">
     {# Create Group #}
-    <form method="POST" action="/cms/system/translations/create-group" style="display: flex; gap: var(--space-200); align-items: flex-end;">
+    <form method="POST" action="{{ admin_url('system/translations/create-group') }}" style="display: flex; gap: var(--space-200); align-items: flex-end;">
         {{ csrf_field() | raw }}
         <input type="hidden" name="locale" value="{{ selectedLocale }}">
         <div>
@@ -71,7 +71,7 @@
     </form>
 
     {# Create Locale #}
-    <form method="POST" action="/cms/system/translations/create-locale" style="display: flex; gap: var(--space-200); align-items: flex-end;">
+    <form method="POST" action="{{ admin_url('system/translations/create-locale') }}" style="display: flex; gap: var(--space-200); align-items: flex-end;">
         {{ csrf_field() | raw }}
         <div>
             <label class="form-label">New Locale</label>
@@ -86,8 +86,8 @@
         <div>
             <label class="form-label">Export ({{ selectedLocale }})</label>
             <div style="display: flex; gap: var(--space-100);">
-                <a href="/cms/system/translations/export?locale={{ selectedLocale }}&format=json" class="btn btn-outline btn-sm">JSON</a>
-                <a href="/cms/system/translations/export?locale={{ selectedLocale }}&format=csv" class="btn btn-outline btn-sm">CSV</a>
+                <a href="{{ admin_url('system/translations/export?locale={{ selectedLocale }}&format=json') }}" class="btn btn-outline btn-sm">JSON</a>
+                <a href="{{ admin_url('system/translations/export?locale={{ selectedLocale }}&format=csv') }}" class="btn btn-outline btn-sm">CSV</a>
             </div>
         </div>
     </div>
@@ -102,7 +102,7 @@
 
 {# Translation Editor #}
 {% if selectedGroup %}
-<form method="POST" action="/cms/system/translations/update">
+<form method="POST" action="{{ admin_url('system/translations/update') }}">
     {{ csrf_field() | raw }}
     <input type="hidden" name="locale" value="{{ selectedLocale }}">
     <input type="hidden" name="group" value="{{ selectedGroup }}">
@@ -145,7 +145,7 @@
                             </td>
                             {% endif %}
                             <td>
-                                <form method="POST" action="/cms/system/translations/delete-key" style="margin:0;">
+                                <form method="POST" action="{{ admin_url('system/translations/delete-key') }}" style="margin:0;">
                                     {{ csrf_field() | raw }}
                                     <input type="hidden" name="locale" value="{{ selectedLocale }}">
                                     <input type="hidden" name="group" value="{{ selectedGroup }}">
@@ -175,7 +175,7 @@
 <div class="card">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">Add New Key</h3></div>
     <div class="card-body">
-        <form method="POST" action="/cms/system/translations/add-key" style="display: flex; gap: var(--space-300); align-items: flex-end;">
+        <form method="POST" action="{{ admin_url('system/translations/add-key') }}" style="display: flex; gap: var(--space-300); align-items: flex-end;">
             {{ csrf_field() | raw }}
             <input type="hidden" name="locale" value="{{ selectedLocale }}">
             <input type="hidden" name="group" value="{{ selectedGroup }}">
@@ -212,7 +212,7 @@
             <button type="button" onclick="document.getElementById('importModal').style.display='none'" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-secondary);">&times;</button>
         </div>
         <div class="card-body">
-            <form method="POST" action="/cms/system/translations/import" enctype="multipart/form-data">
+            <form method="POST" action="{{ admin_url('system/translations/import') }}" enctype="multipart/form-data">
                 {{ csrf_field() | raw }}
                 <input type="hidden" name="locale" value="{{ selectedLocale }}">
 

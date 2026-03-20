@@ -32,7 +32,7 @@ class ThemeCustomizerController extends Controller
         }
         if (!PermissionService::can('themes.edit')) {
             $this->flash('errors', ['auth' => 'You do not have permission to perform this action.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
             return false;
         }
         return true;
@@ -48,7 +48,7 @@ class ThemeCustomizerController extends Controller
         $theme = Theme::findOneBy(['slug' => $slug]);
         if (!$theme) {
             $this->flash('errors', ['Theme not found.']);
-            $this->redirect('/cms/themes');
+            $this->redirect(admin_url('themes'));
             return '';
         }
 

@@ -28,12 +28,12 @@ class OAuthClientController extends Controller
         }
         if (!PermissionService::can($permission)) {
             $this->flash('errors', ['You do not have permission to perform this action.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
         }
     }
 
     /**
-     * GET /cms/oauth-clients — List all registered OAuth clients.
+     * GET /admin/oauth-clients — List all registered OAuth clients.
      */
     public function index(): string
     {
@@ -49,7 +49,7 @@ class OAuthClientController extends Controller
     }
 
     /**
-     * POST /cms/oauth-clients — Register a new OAuth client.
+     * POST /admin/oauth-clients — Register a new OAuth client.
      */
     public function store(): void
     {
@@ -61,13 +61,13 @@ class OAuthClientController extends Controller
 
         if (empty($name)) {
             $this->flash('errors', ['App name is required.']);
-            $this->redirect('/cms/oauth-clients');
+            $this->redirect(admin_url('oauth-clients'));
             return;
         }
 
         if (empty($redirectUri) || !filter_var($redirectUri, FILTER_VALIDATE_URL)) {
             $this->flash('errors', ['A valid redirect URI is required.']);
-            $this->redirect('/cms/oauth-clients');
+            $this->redirect(admin_url('oauth-clients'));
             return;
         }
 
@@ -93,11 +93,11 @@ class OAuthClientController extends Controller
             $this->flash('errors', ['Failed to create OAuth client: ' . $e->getMessage()]);
         }
 
-        $this->redirect('/cms/oauth-clients');
+        $this->redirect(admin_url('oauth-clients'));
     }
 
     /**
-     * POST /cms/oauth-clients/{id}/delete — Delete an OAuth client.
+     * POST /admin/oauth-clients/{id}/delete — Delete an OAuth client.
      */
     public function destroy(string $id): void
     {
@@ -106,7 +106,7 @@ class OAuthClientController extends Controller
         $client = OAuthClient::findById((int) $id);
         if (!$client) {
             $this->flash('errors', ['OAuth client not found.']);
-            $this->redirect('/cms/oauth-clients');
+            $this->redirect(admin_url('oauth-clients'));
             return;
         }
 
@@ -118,6 +118,6 @@ class OAuthClientController extends Controller
         $client->delete();
 
         $this->flash('success', "OAuth client \"{$name}\" has been removed and all tokens revoked.");
-        $this->redirect('/cms/oauth-clients');
+        $this->redirect(admin_url('oauth-clients'));
     }
 }

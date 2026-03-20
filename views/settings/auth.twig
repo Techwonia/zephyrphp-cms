@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms">Dashboard</a> / Settings / Authentication
+    <a href="{{ admin_url() }}">Dashboard</a> / Settings / Authentication
 </div>
 
 <div class="page-header">
@@ -12,7 +12,7 @@
 </div>
 
 {# Feature Toggles #}
-<form method="POST" action="/cms/settings/auth">
+<form method="POST" action="{{ admin_url('settings/auth') }}">
     {{ csrf_field() | raw }}
 
     <div class="card" style="margin-bottom: var(--space-500);">
@@ -190,7 +190,7 @@
                 {% endif %}
             </summary>
             <div style="padding: 0 var(--space-400) var(--space-400);">
-                <form method="POST" action="/cms/settings/auth/oauth">
+                <form method="POST" action="{{ admin_url('settings/auth/oauth') }}">
                     {{ csrf_field() | raw }}
                     <input type="hidden" name="provider" value="{{ provider }}">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-300);">

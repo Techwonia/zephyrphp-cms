@@ -10,7 +10,7 @@ namespace ZephyrPHP\Cms\Services;
  * Allows plugins to register their own settings pages
  * that appear under the Settings section in the CMS sidebar.
  *
- * Each registered settings page gets a route at /cms/settings/{slug}
+ * Each registered settings page gets a route at /admin/settings/{slug}
  * and a sidebar item under the Settings section.
  *
  * Security:
@@ -37,7 +37,7 @@ class SettingsManager
     /**
      * Register a settings page.
      *
-     * @param string $slug URL slug (e.g., 'seo' → /cms/settings/seo)
+     * @param string $slug URL slug (e.g., 'seo' → /admin/settings/seo)
      * @param array{
      *   label: string,
      *   template: string,
@@ -163,11 +163,11 @@ class SettingsManager
             $sidebar->addItem('settings', [
                 'id' => 'settings-' . $slug,
                 'label' => $config['label'],
-                'url' => '/cms/settings/' . $slug,
+                'url' => admin_url('settings/') . $slug,
                 'icon' => $config['icon'] ?? 'settings',
                 'permission' => $config['permission'] ?? 'settings.view',
                 'position' => $config['position'] ?? 50,
-                'match' => 'prefix:/cms/settings/' . $slug,
+                'match' => 'prefix:' . admin_url('settings/') . $slug,
             ]);
         }
     }

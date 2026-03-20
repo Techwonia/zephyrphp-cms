@@ -23,7 +23,7 @@ class AnalyticsDashboardController extends Controller
         }
         if (!PermissionService::can('analytics.view')) {
             $this->flash('errors', ['You do not have permission to view analytics.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
         }
     }
 

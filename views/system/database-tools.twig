@@ -4,12 +4,12 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms">Dashboard</a> / System / Database Tools
+    <a href="{{ admin_url() }}">Dashboard</a> / System / Database Tools
 </div>
 
 <div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
     <h1>Database Tools</h1>
-    <form method="POST" action="/cms/system/database/backup">
+    <form method="POST" action="{{ admin_url('system/database/backup') }}">
         {{ csrf_field() | raw }}
         <button type="submit" class="btn btn-primary">Download Backup</button>
     </form>
@@ -57,12 +57,12 @@
                     {% for table in tables %}
                     <tr>
                         <td>
-                            <a href="/cms/system/database/browse/{{ table.name }}" style="font-weight: 600;">{{ table.name }}</a>
+                            <a href="{{ admin_url('system/database/browse/{{ table.name }}') }}" style="font-weight: 600;">{{ table.name }}</a>
                         </td>
                         <td>{{ table.column_count }}</td>
                         <td>{{ table.row_count }}</td>
                         <td>
-                            <a href="/cms/system/database/browse/{{ table.name }}" class="btn btn-outline btn-sm">Browse</a>
+                            <a href="{{ admin_url('system/database/browse/{{ table.name }}') }}" class="btn btn-outline btn-sm">Browse</a>
                         </td>
                     </tr>
                     {% endfor %}

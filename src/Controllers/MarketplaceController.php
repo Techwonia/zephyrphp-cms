@@ -31,12 +31,12 @@ class MarketplaceController extends Controller
         }
         if (!PermissionService::can($permission)) {
             $this->flash('errors', ['You do not have permission to perform this action.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
         }
     }
 
     /**
-     * GET /cms/marketplace — Browse marketplace items.
+     * GET /admin/marketplace — Browse marketplace items.
      */
     public function index(): string
     {
@@ -62,7 +62,7 @@ class MarketplaceController extends Controller
     }
 
     /**
-     * GET /cms/marketplace/{slug} — View item details.
+     * GET /admin/marketplace/{slug} — View item details.
      */
     public function show(string $slug): string
     {
@@ -72,7 +72,7 @@ class MarketplaceController extends Controller
 
         if (!$item) {
             $this->flash('errors', ['Item not found on marketplace.']);
-            $this->redirect('/cms/marketplace');
+            $this->redirect(admin_url('marketplace'));
             return '';
         }
 
@@ -86,7 +86,7 @@ class MarketplaceController extends Controller
     }
 
     /**
-     * POST /cms/marketplace/{slug}/install — Install item from marketplace.
+     * POST /admin/marketplace/{slug}/install — Install item from marketplace.
      */
     public function install(string $slug): void
     {
@@ -102,6 +102,6 @@ class MarketplaceController extends Controller
             $this->flash('errors', [$result['error'] ?? 'Failed to install from marketplace.']);
         }
 
-        $this->redirect('/cms/marketplace');
+        $this->redirect(admin_url('marketplace'));
     }
 }

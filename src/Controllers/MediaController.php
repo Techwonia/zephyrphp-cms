@@ -31,7 +31,7 @@ class MediaController extends Controller
         $this->requireCmsAccess();
         if (!PermissionService::can($permission)) {
             $this->flash('errors', ['auth' => 'You do not have permission to perform this action.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
         }
     }
 
@@ -379,7 +379,7 @@ class MediaController extends Controller
         $media = Media::find($id);
         if (!$media) {
             $this->flash('errors', ['media' => 'File not found.']);
-            $this->redirect('/cms/media');
+            $this->redirect(admin_url('media'));
             return '';
         }
 

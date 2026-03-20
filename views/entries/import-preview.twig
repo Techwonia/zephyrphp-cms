@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms">Dashboard</a> / <a href="/cms/collections">Collections</a> / <a href="/cms/collections/{{ collection.slug }}/entries">{{ collection.name }}</a> / Import
+    <a href="{{ admin_url() }}">Dashboard</a> / <a href="{{ admin_url('collections') }}">Collections</a> / <a href="{{ admin_url('collections/{{ collection.slug }}/entries') }}">{{ collection.name }}</a> / Import
 </div>
 
 <div class="page-header">
@@ -14,7 +14,7 @@
     </p>
 </div>
 
-<form method="POST" action="/cms/collections/{{ collection.slug }}/import">
+<form method="POST" action="{{ admin_url('collections/{{ collection.slug }}/import') }}">
     {{ csrf_field() | raw }}
     <input type="hidden" name="temp_file" value="{{ tempFile }}">
 
@@ -99,7 +99,7 @@
         <button type="submit" class="btn btn-primary" onclick="return confirm('Import {{ totalRows }} entries into {{ collection.name }}?')">
             Import {{ totalRows }} Entries
         </button>
-        <a href="/cms/collections/{{ collection.slug }}/entries" class="btn btn-outline">Cancel</a>
+        <a href="{{ admin_url('collections/{{ collection.slug }}/entries') }}" class="btn btn-outline">Cancel</a>
         <span style="color: var(--text-secondary); font-size: 0.85rem;">
             Columns mapped to "Skip" will be ignored. Unmapped columns will also be skipped.
         </span>

@@ -51,7 +51,7 @@ class EntryController extends Controller
         $this->requireCmsAccess();
         if (!PermissionService::can($permission)) {
             $this->flash('errors', ['auth' => 'You do not have permission to perform this action.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
         }
     }
 
@@ -64,7 +64,7 @@ class EntryController extends Controller
         $this->requireCmsAccess();
         if (!PermissionService::canForCollection($action, $collection)) {
             $this->flash('errors', ['auth' => 'You do not have permission to perform this action.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
         }
     }
 
@@ -73,7 +73,7 @@ class EntryController extends Controller
         $collection = Collection::findOneBy(['slug' => $slug]);
         if (!$collection) {
             $this->flash('errors', ['collection' => 'Collection not found.']);
-            $this->redirect('/cms/collections');
+            $this->redirect(admin_url('collections'));
             return null;
         }
         return $collection;
@@ -273,18 +273,18 @@ class EntryController extends Controller
                 'entry_published',
                 "Entry published: {$entryTitle}",
                 "The entry \"{$entryTitle}\" in {$collection->getName()} has been published.",
-                "/cms/collections/{$slug}/entries/{$entryId}",
+                admin_url("collections/{$slug}/entries/{$entryId}"),
                 ['collection' => $slug, 'entry_id' => $entryId],
                 [
                     'entry_title' => $entryTitle,
                     'collection_name' => $collection->getName(),
-                    'entry_url' => rtrim($_ENV['APP_URL'] ?? '', '/') . "/cms/collections/{$slug}/entries/{$entryId}",
+                    'entry_url' => rtrim($_ENV['APP_URL'] ?? '', '/') . admin_url("collections/{$slug}/entries/{$entryId}"),
                 ]
             );
         }
 
         $this->flash('success', 'Entry created successfully.');
-        $this->redirect("/cms/collections/{$slug}/entries");
+        $this->redirect(admin_url("collections/{$slug}/entries"));
     }
 
     public function edit(string $slug, string $id): string
@@ -296,7 +296,7 @@ class EntryController extends Controller
         $entry = EntryQuery::collection($slug)->noCache()->withRelations(1)->find($id);
         if (!$entry) {
             $this->flash('errors', ['entry' => 'Entry not found.']);
-            $this->redirect("/cms/collections/{$slug}/entries");
+            $this->redirect(admin_url("collections/{$slug}/entries"));
             return '';
         }
 
@@ -336,7 +336,7 @@ class EntryController extends Controller
         $entry = EntryQuery::collection($slug)->noCache()->find($id);
         if (!$entry) {
             $this->flash('errors', ['entry' => 'Entry not found.']);
-            $this->redirect("/cms/collections/{$slug}/entries");
+            $this->redirect(admin_url("collections/{$slug}/entries"));
             return;
         }
 
@@ -424,18 +424,18 @@ class EntryController extends Controller
                 'entry_published',
                 "Entry published: {$entryTitle}",
                 "The entry \"{$entryTitle}\" in {$collection->getName()} has been published.",
-                "/cms/collections/{$slug}/entries/{$id}",
+                admin_url("collections/{$slug}/entries/{$id}"),
                 ['collection' => $slug, 'entry_id' => $id],
                 [
                     'entry_title' => $entryTitle,
                     'collection_name' => $collection->getName(),
-                    'entry_url' => rtrim($_ENV['APP_URL'] ?? '', '/') . "/cms/collections/{$slug}/entries/{$id}",
+                    'entry_url' => rtrim($_ENV['APP_URL'] ?? '', '/') . admin_url("collections/{$slug}/entries/{$id}"),
                 ]
             );
         }
 
         $this->flash('success', 'Entry updated successfully.');
-        $this->redirect("/cms/collections/{$slug}/entries");
+        $this->redirect(admin_url("collections/{$slug}/entries"));
     }
 
     public function destroy(string $slug, string $id): void
@@ -455,7 +455,7 @@ class EntryController extends Controller
         ActivityLogger::log('deleted', 'entry', (string) $id, null, ['collection' => $slug]);
 
         $this->flash('success', 'Entry deleted.');
-        $this->redirect("/cms/collections/{$slug}/entries");
+        $this->redirect(admin_url("collections/{$slug}/entries"));
     }
 
     /**
@@ -495,21 +495,21 @@ class EntryController extends Controller
 
         if (!$collection->isTranslatable()) {
             $this->flash('errors', ['translation' => 'Translations are not enabled for this collection.']);
-            $this->redirect("/cms/collections/{$slug}/entries/{$id}");
+            $this->redirect(admin_url("collections/{$slug}/entries/{$id}"));
             return '';
         }
 
         $entry = EntryQuery::collection($slug)->noCache()->find($id);
         if (!$entry) {
             $this->flash('errors', ['entry' => 'Entry not found.']);
-            $this->redirect("/cms/collections/{$slug}/entries");
+            $this->redirect(admin_url("collections/{$slug}/entries"));
             return '';
         }
 
         $language = Language::findOneBy(['code' => $locale, 'isActive' => true]);
         if (!$language) {
             $this->flash('errors', ['locale' => 'Language not found.']);
-            $this->redirect("/cms/collections/{$slug}/entries/{$id}");
+            $this->redirect(admin_url("collections/{$slug}/entries/{$id}"));
             return '';
         }
 
@@ -549,7 +549,7 @@ class EntryController extends Controller
         $entry = EntryQuery::collection($slug)->noCache()->find($id);
         if (!$entry) {
             $this->flash('errors', ['entry' => 'Entry not found.']);
-            $this->redirect("/cms/collections/{$slug}/entries");
+            $this->redirect(admin_url("collections/{$slug}/entries"));
             return;
         }
 
@@ -575,7 +575,7 @@ class EntryController extends Controller
         TranslationService::saveTranslations($collection->getTableName(), $id, $locale, $fieldValues);
 
         $this->flash('success', "Translations saved for {$locale}.");
-        $this->redirect("/cms/collections/{$slug}/entries/{$id}/translate/{$locale}");
+        $this->redirect(admin_url("collections/{$slug}/entries/{$id}/translate/{$locale}"));
     }
 
     /**
@@ -613,12 +613,12 @@ class EntryController extends Controller
                 'entry_published',
                 "Workflow: \"{$entryTitle}\" moved to {$newStage}",
                 "{$userName} advanced \"{$entryTitle}\" to the \"{$newStage}\" stage in {$collection->getName()}.",
-                "/cms/collections/{$slug}/entries/{$id}",
+                admin_url("collections/{$slug}/entries/{$id}"),
                 ['collection' => $slug, 'entry_id' => $id, 'stage' => $newStage],
                 [
                     'entry_title' => $entryTitle,
                     'collection_name' => $collection->getName(),
-                    'entry_url' => rtrim($_ENV['APP_URL'] ?? '', '/') . "/cms/collections/{$slug}/entries/{$id}",
+                    'entry_url' => rtrim($_ENV['APP_URL'] ?? '', '/') . admin_url("collections/{$slug}/entries/{$id}"),
                 ]
             );
 
@@ -627,7 +627,7 @@ class EntryController extends Controller
             $this->flash('errors', ['workflow' => 'Cannot advance. You may not have permission or the entry is at the final stage.']);
         }
 
-        $this->redirect("/cms/collections/{$slug}/entries/{$id}");
+        $this->redirect(admin_url("collections/{$slug}/entries/{$id}"));
     }
 
     /**
@@ -664,12 +664,12 @@ class EntryController extends Controller
                 'entry_published',
                 "Workflow: \"{$entryTitle}\" sent back to {$newStage}",
                 "{$userName} rejected \"{$entryTitle}\" back to the \"{$newStage}\" stage in {$collection->getName()}.",
-                "/cms/collections/{$slug}/entries/{$id}",
+                admin_url("collections/{$slug}/entries/{$id}"),
                 ['collection' => $slug, 'entry_id' => $id, 'stage' => $newStage],
                 [
                     'entry_title' => $entryTitle,
                     'collection_name' => $collection->getName(),
-                    'entry_url' => rtrim($_ENV['APP_URL'] ?? '', '/') . "/cms/collections/{$slug}/entries/{$id}",
+                    'entry_url' => rtrim($_ENV['APP_URL'] ?? '', '/') . admin_url("collections/{$slug}/entries/{$id}"),
                 ]
             );
 
@@ -678,7 +678,7 @@ class EntryController extends Controller
             $this->flash('errors', ['workflow' => 'Cannot reject. You may not have permission or the entry is at the first stage.']);
         }
 
-        $this->redirect("/cms/collections/{$slug}/entries/{$id}");
+        $this->redirect(admin_url("collections/{$slug}/entries/{$id}"));
     }
 
     /**
@@ -693,7 +693,7 @@ class EntryController extends Controller
         $entry = EntryQuery::collection($slug)->noCache()->find($id);
         if (!$entry) {
             $this->flash('errors', ['entry' => 'Entry not found.']);
-            $this->redirect("/cms/collections/{$slug}/entries");
+            $this->redirect(admin_url("collections/{$slug}/entries"));
             return '';
         }
 
@@ -733,7 +733,7 @@ class EntryController extends Controller
         Revision::record($collection->getTableName(), $id, $data, 'update', ['_restored_from_revision' => $revisionId]);
 
         $this->flash('success', 'Entry restored to revision #' . $revisionId . '.');
-        $this->redirect("/cms/collections/{$slug}/entries/{$id}");
+        $this->redirect(admin_url("collections/{$slug}/entries/{$id}"));
     }
 
     /**
@@ -748,7 +748,7 @@ class EntryController extends Controller
         $entry = EntryQuery::collection($slug)->noCache()->find($id);
         if (!$entry) {
             $this->flash('errors', ['Entry not found.']);
-            $this->redirect("/cms/collections/{$slug}/entries");
+            $this->redirect(admin_url("collections/{$slug}/entries"));
             return '';
         }
 
@@ -841,7 +841,7 @@ class EntryController extends Controller
         $requiredAction = $actionMap[$action] ?? 'delete';
         if (!PermissionService::canForCollection($requiredAction, $collection)) {
             $this->flash('errors', ['auth' => 'You do not have permission to perform this action.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
             return;
         }
         $ids = $this->input('selected_ids');
@@ -894,7 +894,7 @@ class EntryController extends Controller
         ActivityLogger::log("bulk_{$action}", 'entry', null, "{$count} entries", ['collection' => $slug, 'count' => $count]);
 
         $this->flash('success', "{$count} entries {$actionLabel}.");
-        $this->redirect("/cms/collections/{$slug}/entries");
+        $this->redirect(admin_url("collections/{$slug}/entries"));
     }
 
     /**
@@ -949,7 +949,7 @@ class EntryController extends Controller
         $file = $_FILES['import_file'] ?? null;
         if (!$file || $file['error'] !== UPLOAD_ERR_OK) {
             $this->flash('errors', ['import' => 'File upload failed.']);
-            $this->redirect("/cms/collections/{$slug}/entries");
+            $this->redirect(admin_url("collections/{$slug}/entries"));
             return '';
         }
 
@@ -957,21 +957,21 @@ class EntryController extends Controller
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
         if (!in_array($ext, ['csv', 'json'])) {
             $this->flash('errors', ['import' => 'Only CSV and JSON files are supported.']);
-            $this->redirect("/cms/collections/{$slug}/entries");
+            $this->redirect(admin_url("collections/{$slug}/entries"));
             return '';
         }
 
         $content = file_get_contents($file['tmp_name']);
         if ($content === false || strlen($content) === 0) {
             $this->flash('errors', ['import' => 'File is empty.']);
-            $this->redirect("/cms/collections/{$slug}/entries");
+            $this->redirect(admin_url("collections/{$slug}/entries"));
             return '';
         }
 
         // Cap file size at 5MB for preview
         if (strlen($content) > 5 * 1024 * 1024) {
             $this->flash('errors', ['import' => 'File too large. Maximum 5MB.']);
-            $this->redirect("/cms/collections/{$slug}/entries");
+            $this->redirect(admin_url("collections/{$slug}/entries"));
             return '';
         }
 
@@ -979,7 +979,7 @@ class EntryController extends Controller
 
         if (empty($entries)) {
             $this->flash('errors', ['import' => 'No valid entries found in the file.']);
-            $this->redirect("/cms/collections/{$slug}/entries");
+            $this->redirect(admin_url("collections/{$slug}/entries"));
             return '';
         }
 
@@ -1054,7 +1054,7 @@ class EntryController extends Controller
         // Validate temp filename — prevent directory traversal
         if ($tempFilename === '' || !preg_match('/^import_[a-f0-9]+\.(csv|json)$/', $tempFilename)) {
             $this->flash('errors', ['import' => 'Invalid import session. Please re-upload the file.']);
-            $this->redirect("/cms/collections/{$slug}/entries");
+            $this->redirect(admin_url("collections/{$slug}/entries"));
             return;
         }
 
@@ -1063,7 +1063,7 @@ class EntryController extends Controller
 
         if (!file_exists($tempFile)) {
             $this->flash('errors', ['import' => 'Import session expired. Please re-upload the file.']);
-            $this->redirect("/cms/collections/{$slug}/entries");
+            $this->redirect(admin_url("collections/{$slug}/entries"));
             return;
         }
 
@@ -1076,7 +1076,7 @@ class EntryController extends Controller
 
         if (empty($entries)) {
             $this->flash('errors', ['import' => 'No valid entries found.']);
-            $this->redirect("/cms/collections/{$slug}/entries");
+            $this->redirect(admin_url("collections/{$slug}/entries"));
             return;
         }
 
@@ -1084,7 +1084,7 @@ class EntryController extends Controller
         $mapping = $this->input('mapping', []);
         if (!is_array($mapping) || empty(array_filter($mapping))) {
             $this->flash('errors', ['import' => 'No columns mapped. Please map at least one column.']);
-            $this->redirect("/cms/collections/{$slug}/entries");
+            $this->redirect(admin_url("collections/{$slug}/entries"));
             return;
         }
 
@@ -1155,7 +1155,7 @@ class EntryController extends Controller
         }
 
         $this->flash('success', $msg);
-        $this->redirect("/cms/collections/{$slug}/entries");
+        $this->redirect(admin_url("collections/{$slug}/entries"));
     }
 
     /**
@@ -1504,7 +1504,7 @@ class EntryController extends Controller
     // ========================================================================
 
     /**
-     * POST /cms/collections/{slug}/views — Create or update a saved view.
+     * POST /admin/collections/{slug}/views — Create or update a saved view.
      */
     public function saveView(string $slug): void
     {
@@ -1576,11 +1576,11 @@ class EntryController extends Controller
             $this->flash('success', "View \"{$name}\" created.");
         }
 
-        $this->redirect("/cms/collections/{$slug}/entries");
+        $this->redirect(admin_url("collections/{$slug}/entries"));
     }
 
     /**
-     * POST /cms/collections/{slug}/views/{viewId}/delete — Delete a saved view.
+     * POST /admin/collections/{slug}/views/{viewId}/delete — Delete a saved view.
      */
     public function deleteView(string $slug, int $viewId): void
     {
@@ -1595,6 +1595,6 @@ class EntryController extends Controller
             $this->flash('success', "View \"{$viewName}\" deleted.");
         }
 
-        $this->redirect("/cms/collections/{$slug}/entries");
+        $this->redirect(admin_url("collections/{$slug}/entries"));
     }
 }

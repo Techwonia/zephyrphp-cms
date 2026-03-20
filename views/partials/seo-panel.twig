@@ -80,7 +80,7 @@ function updateSeoCounter(el, counterId, recommended) {
 (function() {
     var slug = '{{ collection_slug }}';
     var entryId = '{{ entry.id }}';
-    fetch('/cms/collections/' + slug + '/entries/' + entryId + '/seo-score')
+    fetch('/admin/collections/' + slug + '/entries/' + entryId + '/seo-score')
         .then(function(r) { return r.json(); })
         .then(function(data) {
             var badge = document.getElementById('seo-score-badge');

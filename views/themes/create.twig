@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms">Dashboard</a> / <a href="/cms/themes">Themes</a> / Create
+    <a href="{{ admin_url() }}">Dashboard</a> / <a href="{{ admin_url('themes') }}">Themes</a> / Create
 </div>
 
 <div class="page-header">
@@ -13,7 +13,7 @@
 
 <div class="card">
     <div class="card-body">
-        <form method="POST" action="/cms/themes">
+        <form method="POST" action="{{ admin_url('themes') }}">
             {{ csrf_field() | raw }}
 
             <div class="form-group">
@@ -50,7 +50,7 @@
 
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Create Theme</button>
-                <a href="/cms/themes" class="btn btn-outline">Cancel</a>
+                <a href="{{ admin_url('themes') }}" class="btn btn-outline">Cancel</a>
             </div>
         </form>
     </div>

@@ -12,7 +12,7 @@
             {% for entry in entries %}
             <tr>
                 <td>
-                    <a href="/cms/collections/{{ entry.collection_slug }}/entries/{{ entry.id }}">
+                    <a href="{{ admin_url('collections/{{ entry.collection_slug }}/entries/{{ entry.id }}') }}">
                         {{ entry.label|length > 40 ? entry.label[:40] ~ '...' : entry.label }}
                     </a>
                 </td>

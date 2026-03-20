@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms">Dashboard</a> / <a href="/cms/webhooks">Webhooks</a> / Delivery Logs
+    <a href="{{ admin_url() }}">Dashboard</a> / <a href="{{ admin_url('webhooks') }}">Webhooks</a> / Delivery Logs
 </div>
 
 <div class="page-header">
@@ -46,7 +46,7 @@
                         <td style="font-size: 0.85rem;">{{ log.duration_ms }}ms</td>
                         <td style="font-size: 0.85rem;">{{ log.created_at }}</td>
                         <td>
-                            <form method="POST" action="/cms/webhooks/{{ webhook.id }}/retry/{{ log.id }}" style="display: inline;">
+                            <form method="POST" action="{{ admin_url('webhooks/{{ webhook.id }}/retry/{{ log.id }}') }}" style="display: inline;">
                                 {{ csrf_field() | raw }}
                                 <button type="submit" class="btn btn-outline btn-sm">Retry</button>
                             </form>
@@ -78,7 +78,7 @@
 {% endif %}
 
 <div style="margin-top: var(--space-400);">
-    <a href="/cms/webhooks" class="btn btn-outline">Back to Webhooks</a>
+    <a href="{{ admin_url('webhooks') }}" class="btn btn-outline">Back to Webhooks</a>
 </div>
 
 {% endblock %}

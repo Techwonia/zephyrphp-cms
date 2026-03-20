@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms">Dashboard</a> / Database Settings
+    <a href="{{ admin_url() }}">Dashboard</a> / Database Settings
 </div>
 
 <div class="page-header">
@@ -28,7 +28,7 @@
 
 <div class="card">
     <div class="card-body">
-        <form method="POST" action="/cms/settings/database" id="db-settings-form">
+        <form method="POST" action="{{ admin_url('settings/database') }}" id="db-settings-form">
             {{ csrf_field() | raw }}
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
@@ -114,7 +114,7 @@
                 <button type="submit" class="btn btn-primary" id="save-btn">
                     Save Settings
                 </button>
-                <a href="/cms" class="btn btn-outline">Cancel</a>
+                <a href="{{ admin_url() }}" class="btn btn-outline">Cancel</a>
             </div>
 
             <p class="text-muted" style="margin-top: var(--space-200);">
@@ -158,7 +158,7 @@
 
         var formData = new FormData(form);
 
-        fetch('/cms/settings/database/test', {
+        fetch('/admin/settings/database/test', {
             method: 'POST',
             body: formData,
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -192,7 +192,7 @@
 
         var formData = new FormData(form);
 
-        fetch('/cms/settings/database/list', {
+        fetch('/admin/settings/database/list', {
             method: 'POST',
             body: formData,
             headers: { 'X-Requested-With': 'XMLHttpRequest' }

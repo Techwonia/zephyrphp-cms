@@ -118,8 +118,8 @@
                         {% endif %}
                     </td>
                     <td class="actions-cell">
-                        <a href="/cms/collections/{{ collection.getSlug() }}/entries" class="btn btn-sm btn-outline">Entries</a>
-                        <a href="/cms/collections/{{ collection.getSlug() }}" class="btn btn-sm btn-outline">Edit</a>
+                        <a href="{{ admin_url('collections/{{ collection.getSlug() }}/entries') }}" class="btn btn-sm btn-outline">Entries</a>
+                        <a href="{{ admin_url('collections/{{ collection.getSlug() }}') }}" class="btn btn-sm btn-outline">Edit</a>
                     </td>
                 </tr>
                 {% endfor %}
@@ -132,7 +132,7 @@
     <div class="card-body empty-state">
         <h3>No collections yet</h3>
         <p>Create your first collection to start building your content.</p>
-        <a href="/cms/collections/create" class="btn btn-primary">Create Collection</a>
+        <a href="{{ admin_url('collections/create') }}" class="btn btn-primary">Create Collection</a>
     </div>
 </div>
 {% endif %}
@@ -178,7 +178,7 @@ function saveLayout() {
         formData.append('_token', csrfInput.value);
     }
 
-    fetch('/cms/dashboard/layout', {
+    fetch('/admin/dashboard/layout', {
         method: 'POST',
         body: formData
     }).catch(function() {});

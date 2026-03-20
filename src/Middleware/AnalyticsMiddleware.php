@@ -23,13 +23,16 @@ class AnalyticsMiddleware
     /**
      * Path prefixes to exclude from tracking.
      */
-    private const EXCLUDED_PREFIXES = [
-        '/cms',
-        '/api/',
-        '/oauth/',
-        '/cms-assets/',
-        '/marketplace/api/',
-    ];
+    private static function getExcludedPrefixes(): array
+    {
+        return [
+            admin_url(),
+            '/api/',
+            '/oauth/',
+            '/cms-assets/',
+            '/marketplace/api/',
+        ];
+    }
 
     /**
      * File extensions to exclude (static assets).
@@ -91,7 +94,7 @@ class AnalyticsMiddleware
 
     private function isExcludedPath(string $path): bool
     {
-        foreach (self::EXCLUDED_PREFIXES as $prefix) {
+        foreach (self::getExcludedPrefixes() as $prefix) {
             if (str_starts_with($path, $prefix)) {
                 return true;
             }

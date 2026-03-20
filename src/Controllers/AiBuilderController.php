@@ -15,7 +15,7 @@ class AiBuilderController extends Controller
     {
         if (!PermissionService::can($permission)) {
             $this->flash('errors', ['auth' => 'You do not have permission to perform this action.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
             exit;
         }
     }
@@ -323,7 +323,7 @@ class AiBuilderController extends Controller
         $defaultProvider = trim($this->input('AI_PROVIDER', 'gemini'));
         if (!in_array($defaultProvider, $validProviders, true)) {
             $this->flash('errors', ['Invalid default provider.']);
-            $this->redirect('/cms/ai-builder/settings');
+            $this->redirect(admin_url('ai-builder/settings'));
             return;
         }
 
@@ -336,7 +336,7 @@ class AiBuilderController extends Controller
                 // Validate model/host fields aren't absurdly long
                 if (strlen($value) > 500) {
                     $this->flash('errors', ["Value for {$key} is too long."]);
-                    $this->redirect('/cms/ai-builder/settings');
+                    $this->redirect(admin_url('ai-builder/settings'));
                     return;
                 }
                 $settings[$key] = $value;
@@ -345,7 +345,7 @@ class AiBuilderController extends Controller
 
         if (empty($settings)) {
             $this->flash('errors', ['No settings to update.']);
-            $this->redirect('/cms/ai-builder/settings');
+            $this->redirect(admin_url('ai-builder/settings'));
             return;
         }
 
@@ -353,7 +353,7 @@ class AiBuilderController extends Controller
         $envPath = $this->findEnvPath();
         if (!$envPath) {
             $this->flash('errors', ['Could not locate .env file.']);
-            $this->redirect('/cms/ai-builder/settings');
+            $this->redirect(admin_url('ai-builder/settings'));
             return;
         }
 
@@ -364,7 +364,7 @@ class AiBuilderController extends Controller
             $this->flash('errors', ['Failed to update settings: ' . $e->getMessage()]);
         }
 
-        $this->redirect('/cms/ai-builder/settings');
+        $this->redirect(admin_url('ai-builder/settings'));
     }
 
     // ── Private helpers ──

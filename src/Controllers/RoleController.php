@@ -29,7 +29,7 @@ class RoleController extends Controller
         $this->requireCmsAccess();
         if (!PermissionService::can($permission)) {
             $this->flash('errors', ['auth' => 'You do not have permission to perform this action.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
         }
     }
 
@@ -107,7 +107,7 @@ class RoleController extends Controller
         $role->save();
 
         $this->flash('success', 'Role created successfully.');
-        $this->redirect('/cms/roles');
+        $this->redirect(admin_url('roles'));
     }
 
     public function edit(int $id): string
@@ -119,7 +119,7 @@ class RoleController extends Controller
 
         if (!$role) {
             $this->flash('errors', ['role' => 'Role not found.']);
-            $this->redirect('/cms/roles');
+            $this->redirect(admin_url('roles'));
             return '';
         }
 
@@ -143,7 +143,7 @@ class RoleController extends Controller
 
         if (!$role) {
             $this->flash('errors', ['role' => 'Role not found.']);
-            $this->redirect('/cms/roles');
+            $this->redirect(admin_url('roles'));
             return;
         }
 
@@ -188,7 +188,7 @@ class RoleController extends Controller
         }
 
         $this->flash('success', 'Role updated successfully.');
-        $this->redirect('/cms/roles');
+        $this->redirect(admin_url('roles'));
     }
 
     public function destroy(int $id): void
@@ -199,19 +199,19 @@ class RoleController extends Controller
         $role = $roleModel::find($id);
 
         if (!$role) {
-            $this->redirect('/cms/roles');
+            $this->redirect(admin_url('roles'));
             return;
         }
 
         // Prevent deleting the admin role
         if ($role->getSlug() === 'admin') {
             $this->flash('errors', ['role' => 'The admin role cannot be deleted.']);
-            $this->redirect('/cms/roles');
+            $this->redirect(admin_url('roles'));
             return;
         }
 
         $role->delete();
         $this->flash('success', 'Role deleted successfully.');
-        $this->redirect('/cms/roles');
+        $this->redirect(admin_url('roles'));
     }
 }

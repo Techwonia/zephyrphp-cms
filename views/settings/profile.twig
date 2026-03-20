@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms">Dashboard</a> / Settings / Profile
+    <a href="{{ admin_url() }}">Dashboard</a> / Settings / Profile
 </div>
 
 <div class="page-header">
@@ -13,7 +13,7 @@
 
 <div class="card">
     <div class="card-body">
-        <form method="POST" action="/cms/settings/profile">
+        <form method="POST" action="{{ admin_url('settings/profile') }}">
             {{ csrf_field() | raw }}
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">

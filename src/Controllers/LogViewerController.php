@@ -18,7 +18,7 @@ class LogViewerController extends Controller
         }
         if (!PermissionService::can($permission)) {
             $this->flash('errors', ['You do not have permission to perform this action.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
         }
     }
 
@@ -67,7 +67,7 @@ class LogViewerController extends Controller
             $this->flash('success', "Log file '{$file}' deleted.");
         }
 
-        $this->redirect('/cms/system/logs');
+        $this->redirect(admin_url('system/logs'));
     }
 
     public function clearAll(): void
@@ -86,7 +86,7 @@ class LogViewerController extends Controller
         }
 
         $this->flash('success', "Cleared {$count} log file(s).");
-        $this->redirect('/cms/system/logs');
+        $this->redirect(admin_url('system/logs'));
     }
 
     public function downloadLog(): void
@@ -99,14 +99,14 @@ class LogViewerController extends Controller
 
         if (!$file || !in_array($file, array_column($files, 'name'), true)) {
             $this->flash('errors', ['File not found.']);
-            $this->redirect('/cms/system/logs');
+            $this->redirect(admin_url('system/logs'));
             return;
         }
 
         $filePath = $logsPath . '/' . $file;
         if (!file_exists($filePath)) {
             $this->flash('errors', ['File not found.']);
-            $this->redirect('/cms/system/logs');
+            $this->redirect(admin_url('system/logs'));
             return;
         }
 

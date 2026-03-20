@@ -54,7 +54,7 @@ use ZephyrPHP\Cms\Controllers\PluginController;
 use ZephyrPHP\Cms\Controllers\SearchController;
 
 // CMS Admin Routes (protected by auth middleware, with auto scheduled publishing)
-Route::group(['prefix' => '/cms', 'middleware' => [\ZephyrPHP\Middleware\AuthMiddleware::class, \ZephyrPHP\Cms\Middleware\ScheduledPublishMiddleware::class]], function () {
+Route::group(['prefix' => '/' . admin_path(), 'middleware' => [\ZephyrPHP\Middleware\AuthMiddleware::class, \ZephyrPHP\Cms\Middleware\ScheduledPublishMiddleware::class]], function () {
     // Dashboard
     Route::get('/', [CmsController::class, 'dashboard']);
     Route::post('/dashboard/layout', [CmsController::class, 'saveLayout']);

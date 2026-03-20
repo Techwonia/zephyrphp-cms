@@ -713,7 +713,7 @@ TWIG;
             <ul class="nav__menu">
                 <li><a href="/">Home</a></li>
                 {% if auth_check() %}
-                    <li><a href="/cms">Dashboard</a></li>
+                    <li><a href="{{ admin_url() }}">Dashboard</a></li>
                 {% else %}
                     <li><a href="/login">Sign In</a></li>
                 {% endif %}

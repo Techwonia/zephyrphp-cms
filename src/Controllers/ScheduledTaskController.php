@@ -18,7 +18,7 @@ class ScheduledTaskController extends Controller
         }
         if (!PermissionService::can($permission)) {
             $this->flash('errors', ['You do not have permission to perform this action.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
         }
     }
 
@@ -57,21 +57,21 @@ class ScheduledTaskController extends Controller
 
         if ($name === '' || $command === '' || $schedule === '') {
             $this->flash('errors', ['Name, command, and schedule are required.']);
-            $this->redirect('/cms/system/scheduled-tasks');
+            $this->redirect(admin_url('system/scheduled-tasks'));
             return;
         }
 
         // Validate cron expression (basic 5-field)
         if (!$this->isValidCron($schedule)) {
             $this->flash('errors', ['Invalid cron expression. Use standard 5-field format (e.g. */5 * * * *).']);
-            $this->redirect('/cms/system/scheduled-tasks');
+            $this->redirect(admin_url('system/scheduled-tasks'));
             return;
         }
 
         // Sanitize command — only allow artisan/craftsman commands and safe shell commands
         if (!$this->isAllowedCommand($command)) {
             $this->flash('errors', ['Command not allowed. Only php craftsman commands and whitelisted commands are permitted.']);
-            $this->redirect('/cms/system/scheduled-tasks');
+            $this->redirect(admin_url('system/scheduled-tasks'));
             return;
         }
 
@@ -89,7 +89,7 @@ class ScheduledTaskController extends Controller
         ]);
 
         $this->flash('success', "Task '{$name}' created.");
-        $this->redirect('/cms/system/scheduled-tasks');
+        $this->redirect(admin_url('system/scheduled-tasks'));
     }
 
     public function toggle(string $id): void
@@ -101,7 +101,7 @@ class ScheduledTaskController extends Controller
 
         if (!$task) {
             $this->flash('errors', ['Task not found.']);
-            $this->redirect('/cms/system/scheduled-tasks');
+            $this->redirect(admin_url('system/scheduled-tasks'));
             return;
         }
 
@@ -111,7 +111,7 @@ class ScheduledTaskController extends Controller
 
         $status = $task['is_active'] ? 'disabled' : 'enabled';
         $this->flash('success', "Task '{$task['name']}' {$status}.");
-        $this->redirect('/cms/system/scheduled-tasks');
+        $this->redirect(admin_url('system/scheduled-tasks'));
     }
 
     public function run(string $id): void
@@ -123,13 +123,13 @@ class ScheduledTaskController extends Controller
 
         if (!$task) {
             $this->flash('errors', ['Task not found.']);
-            $this->redirect('/cms/system/scheduled-tasks');
+            $this->redirect(admin_url('system/scheduled-tasks'));
             return;
         }
 
         if (!$this->isAllowedCommand($task['command'])) {
             $this->flash('errors', ['Command not allowed.']);
-            $this->redirect('/cms/system/scheduled-tasks');
+            $this->redirect(admin_url('system/scheduled-tasks'));
             return;
         }
 
@@ -176,7 +176,7 @@ class ScheduledTaskController extends Controller
             $this->flash('errors', ["Task '{$task['name']}' failed (exit code: {$exitCode})."]);
         }
 
-        $this->redirect('/cms/system/scheduled-tasks');
+        $this->redirect(admin_url('system/scheduled-tasks'));
     }
 
     public function destroy(string $id): void
@@ -193,7 +193,7 @@ class ScheduledTaskController extends Controller
             $this->flash('errors', ['Task not found.']);
         }
 
-        $this->redirect('/cms/system/scheduled-tasks');
+        $this->redirect(admin_url('system/scheduled-tasks'));
     }
 
     private function ensureTable(): void

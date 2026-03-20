@@ -1126,7 +1126,7 @@
             <button class="mobile-toggle" id="mobileToggle">
                 <svg viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
             </button>
-            <a href="/cms" class="topbar-brand">
+            <a href="{{ admin_url() }}" class="topbar-brand">
                 <div class="topbar-brand-icon">Z</div>
                 <span class="topbar-brand-text">{{ config('app.name', 'ZephyrPHP') }}</span>
             </a>
@@ -1151,11 +1151,11 @@
                         <div class="profile-menu-name">{{ auth().user().getName() }}</div>
                         <div class="profile-menu-email">{{ auth().user().getEmail() }}</div>
                     </div>
-                    <a href="/cms/settings/profile" class="profile-menu-item">
+                    <a href="{{ admin_url('settings/profile') }}" class="profile-menu-item">
                         <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                         Profile
                     </a>
-                    <a href="/cms/settings/system" class="profile-menu-item">
+                    <a href="{{ admin_url('settings/system') }}" class="profile-menu-item">
                         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                         Settings
                     </a>
@@ -1460,7 +1460,7 @@
                 }
 
                 debounceTimer = setTimeout(function() {
-                    fetch('/cms/search?q=' + encodeURIComponent(q), {
+                    fetch('/admin/search?q=' + encodeURIComponent(q), {
                         headers: { 'Accept': 'application/json' }
                     })
                     .then(function(r) { return r.json(); })

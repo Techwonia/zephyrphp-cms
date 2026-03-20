@@ -119,137 +119,137 @@ class CmsServiceProvider
         $sidebar->addItem('content', [
             'id' => 'marketplace',
             'label' => 'Marketplace',
-            'url' => '/cms/marketplace',
+            'url' => admin_url('marketplace'),
             'icon' => 'store',
-            'match' => 'prefix:/cms/marketplace',
+            'match' => 'prefix:' . admin_url('marketplace'),
         ]);
 
         // Add Plugins sidebar item
         $sidebar->addItem('content', [
             'id' => 'plugins',
             'label' => 'Plugins',
-            'url' => '/cms/plugins',
+            'url' => admin_url('plugins'),
             'icon' => 'puzzle',
             'permission' => 'apps.view',
-            'match' => 'prefix:/cms/plugins',
+            'match' => 'prefix:' . admin_url('plugins'),
         ]);
 
         // Add Activity Log sidebar item
         $sidebar->addItem('admin', [
             'id' => 'activity-log',
             'label' => 'Activity Log',
-            'url' => '/cms/activity-log',
+            'url' => admin_url('activity-log'),
             'icon' => 'clock',
-            'match' => 'prefix:/cms/activity-log',
+            'match' => 'prefix:' . admin_url('activity-log'),
         ]);
 
         // Add AI Builder sidebar item
         $sidebar->addItem('content', [
             'id' => 'ai-builder',
             'label' => 'AI Builder',
-            'url' => '/cms/ai-builder',
+            'url' => admin_url('ai-builder'),
             'icon' => 'sparkles',
-            'match' => 'prefix:/cms/ai-builder',
+            'match' => 'prefix:' . admin_url('ai-builder'),
         ]);
 
         // Add Languages sidebar item
         $sidebar->addItem('admin', [
             'id' => 'languages',
             'label' => 'Languages',
-            'url' => '/cms/languages',
+            'url' => admin_url('languages'),
             'icon' => 'globe',
-            'match' => 'prefix:/cms/languages',
+            'match' => 'prefix:' . admin_url('languages'),
         ]);
 
         // Add Notifications sidebar item
         $sidebar->addItem('admin', [
             'id' => 'notifications',
             'label' => 'Notifications',
-            'url' => '/cms/notifications',
+            'url' => admin_url('notifications'),
             'icon' => 'bell',
-            'match' => 'prefix:/cms/notifications',
+            'match' => 'prefix:' . admin_url('notifications'),
         ]);
 
         // Add Email Templates sidebar item
         $sidebar->addItem('admin', [
             'id' => 'email-templates',
             'label' => 'Email Templates',
-            'url' => '/cms/email-templates',
+            'url' => admin_url('email-templates'),
             'icon' => 'mail',
-            'match' => 'prefix:/cms/email-templates',
+            'match' => 'prefix:' . admin_url('email-templates'),
         ]);
 
         // Add Webhooks sidebar item
         $sidebar->addItem('admin', [
             'id' => 'webhooks',
             'label' => 'Webhooks',
-            'url' => '/cms/webhooks',
+            'url' => admin_url('webhooks'),
             'icon' => 'link',
-            'match' => 'prefix:/cms/webhooks',
+            'match' => 'prefix:' . admin_url('webhooks'),
         ]);
 
         $sidebar->addItem('admin', [
             'id' => 'permission-builder',
             'label' => 'Permission Builder',
-            'url' => '/cms/permissions',
+            'url' => admin_url('permissions'),
             'icon' => 'shield',
             'permission' => 'roles.manage',
-            'match' => 'prefix:/cms/permissions',
+            'match' => 'prefix:' . admin_url('permissions'),
         ]);
 
         // Add Mail Settings to settings section
         $sidebar->addItem('settings', [
             'id' => 'mail',
             'label' => 'Mail',
-            'url' => '/cms/settings/mail',
+            'url' => admin_url('settings/mail'),
             'icon' => 'mail',
             'permission' => 'settings.view',
             'position' => 5,
-            'match' => 'prefix:/cms/settings/mail',
+            'match' => 'prefix:' . admin_url('settings/mail'),
         ]);
 
         // Auth Settings
         $sidebar->addItem('settings', [
             'id' => 'auth-settings',
             'label' => 'Authentication',
-            'url' => '/cms/settings/auth',
+            'url' => admin_url('settings/auth'),
             'icon' => 'shield',
             'permission' => 'settings.view',
             'position' => 6,
-            'match' => 'prefix:/cms/settings/auth',
+            'match' => 'prefix:' . admin_url('settings/auth'),
         ]);
 
         // API Settings
         $sidebar->addItem('settings', [
             'id' => 'api-settings',
             'label' => 'API',
-            'url' => '/cms/settings/api',
+            'url' => admin_url('settings/api'),
             'icon' => 'code',
             'permission' => 'settings.view',
             'position' => 7,
-            'match' => 'prefix:/cms/settings/api',
+            'match' => 'prefix:' . admin_url('settings/api'),
         ]);
 
         // Cache Settings
         $sidebar->addItem('settings', [
             'id' => 'cache-settings',
             'label' => 'Cache',
-            'url' => '/cms/settings/cache',
+            'url' => admin_url('settings/cache'),
             'icon' => 'zap',
             'permission' => 'settings.view',
             'position' => 8,
-            'match' => 'prefix:/cms/settings/cache',
+            'match' => 'prefix:' . admin_url('settings/cache'),
         ]);
 
         // Error Pages
         $sidebar->addItem('settings', [
             'id' => 'error-pages',
             'label' => 'Error Pages',
-            'url' => '/cms/settings/error-pages',
+            'url' => admin_url('settings/error-pages'),
             'icon' => 'alert-triangle',
             'permission' => 'settings.edit',
             'position' => 9,
-            'match' => 'prefix:/cms/settings/error-pages',
+            'match' => 'prefix:' . admin_url('settings/error-pages'),
         ]);
 
         // System section
@@ -258,135 +258,135 @@ class CmsServiceProvider
         $sidebar->addItem('system', [
             'id' => 'system-health',
             'label' => 'Health Check',
-            'url' => '/cms/system/health',
+            'url' => admin_url('system/health'),
             'icon' => 'heart',
-            'match' => 'exact:/cms/system/health',
+            'match' => 'exact:' . admin_url('system/health'),
             'permission' => 'settings.view',
         ]);
 
         $sidebar->addItem('system', [
             'id' => 'system-logs',
             'label' => 'Log Viewer',
-            'url' => '/cms/system/logs',
+            'url' => admin_url('system/logs'),
             'icon' => 'file-text',
-            'match' => 'prefix:/cms/system/logs',
+            'match' => 'prefix:' . admin_url('system/logs'),
             'permission' => 'settings.view',
         ]);
 
         $sidebar->addItem('system', [
             'id' => 'system-cache',
             'label' => 'Cache',
-            'url' => '/cms/system/cache',
+            'url' => admin_url('system/cache'),
             'icon' => 'zap',
-            'match' => 'exact:/cms/system/cache',
+            'match' => 'exact:' . admin_url('system/cache'),
             'permission' => 'settings.view',
         ]);
 
         $sidebar->addItem('system', [
             'id' => 'system-maintenance',
             'label' => 'Maintenance',
-            'url' => '/cms/system/maintenance',
+            'url' => admin_url('system/maintenance'),
             'icon' => 'tool',
-            'match' => 'exact:/cms/system/maintenance',
+            'match' => 'exact:' . admin_url('system/maintenance'),
             'permission' => 'settings.view',
         ]);
 
         $sidebar->addItem('system', [
             'id' => 'system-database',
             'label' => 'Database',
-            'url' => '/cms/system/database',
+            'url' => admin_url('system/database'),
             'icon' => 'database',
-            'match' => 'prefix:/cms/system/database',
+            'match' => 'prefix:' . admin_url('system/database'),
             'permission' => 'settings.view',
         ]);
 
         $sidebar->addItem('system', [
             'id' => 'system-backups',
             'label' => 'Backups',
-            'url' => '/cms/system/backups',
+            'url' => admin_url('system/backups'),
             'icon' => 'archive',
-            'match' => 'prefix:/cms/system/backups',
+            'match' => 'prefix:' . admin_url('system/backups'),
             'permission' => 'settings.view',
         ]);
 
         $sidebar->addItem('system', [
             'id' => 'system-files',
             'label' => 'File Manager',
-            'url' => '/cms/system/files',
+            'url' => admin_url('system/files'),
             'icon' => 'folder',
-            'match' => 'prefix:/cms/system/files',
+            'match' => 'prefix:' . admin_url('system/files'),
             'permission' => 'settings.view',
         ]);
 
         $sidebar->addItem('system', [
             'id' => 'system-translations',
             'label' => 'Translations',
-            'url' => '/cms/system/translations',
+            'url' => admin_url('system/translations'),
             'icon' => 'globe',
-            'match' => 'prefix:/cms/system/translations',
+            'match' => 'prefix:' . admin_url('system/translations'),
             'permission' => 'settings.view',
         ]);
 
         $sidebar->addItem('system', [
             'id' => 'system-routes',
             'label' => 'Routes',
-            'url' => '/cms/system/routes',
+            'url' => admin_url('system/routes'),
             'icon' => 'map',
-            'match' => 'exact:/cms/system/routes',
+            'match' => 'exact:' . admin_url('system/routes'),
             'permission' => 'settings.view',
         ]);
 
         $sidebar->addItem('system', [
             'id' => 'system-scheduled-tasks',
             'label' => 'Scheduled Tasks',
-            'url' => '/cms/system/scheduled-tasks',
+            'url' => admin_url('system/scheduled-tasks'),
             'icon' => 'clock',
-            'match' => 'prefix:/cms/system/scheduled-tasks',
+            'match' => 'prefix:' . admin_url('system/scheduled-tasks'),
             'permission' => 'settings.view',
         ]);
 
         $sidebar->addItem('system', [
             'id' => 'system-sessions',
             'label' => 'Sessions',
-            'url' => '/cms/system/sessions',
+            'url' => admin_url('system/sessions'),
             'icon' => 'monitor',
-            'match' => 'prefix:/cms/system/sessions',
+            'match' => 'prefix:' . admin_url('system/sessions'),
             'permission' => 'users.view',
         ]);
 
         $sidebar->addItem('system', [
             'id' => 'system-workflow',
             'label' => 'Workflow Visualizer',
-            'url' => '/cms/system/workflow',
+            'url' => admin_url('system/workflow'),
             'icon' => 'git-branch',
-            'match' => 'exact:/cms/system/workflow',
+            'match' => 'exact:' . admin_url('system/workflow'),
             'permission' => 'entries.view',
         ]);
 
         $sidebar->addItem('system', [
             'id' => 'system-api-analytics',
             'label' => 'API Analytics',
-            'url' => '/cms/system/api-analytics',
+            'url' => admin_url('system/api-analytics'),
             'icon' => 'bar-chart',
-            'match' => 'exact:/cms/system/api-analytics',
+            'match' => 'exact:' . admin_url('system/api-analytics'),
             'permission' => 'api-keys.manage',
         ]);
 
         $sidebar->addItem('system', [
             'id' => 'system-queue',
             'label' => 'Queue Monitor',
-            'url' => '/cms/system/queue',
+            'url' => admin_url('system/queue'),
             'icon' => 'layers',
-            'match' => 'prefix:/cms/system/queue',
+            'match' => 'prefix:' . admin_url('system/queue'),
             'permission' => 'settings.edit',
         ]);
 
         $sidebar->addItem('system', [
             'id' => 'system-monitor',
             'label' => 'System Monitor',
-            'url' => '/cms/system/monitor',
+            'url' => admin_url('system/monitor'),
             'icon' => 'activity',
-            'match' => 'prefix:/cms/system/monitor',
+            'match' => 'prefix:' . admin_url('system/monitor'),
             'permission' => 'settings.view',
         ]);
 
@@ -414,6 +414,11 @@ class CmsServiceProvider
 
     private function registerTwigHelpers(\ZephyrPHP\View\View $view, ThemeManager $themeManager): void
     {
+        // Admin URL helper for Twig templates
+        $view->addFunction('admin_url', function (string $path = '') {
+            return admin_url($path);
+        });
+
         // Register sidebar and dashboard as Twig globals (lazy-loaded)
         $view->addFunction('cms_sidebar', function () {
             return SidebarManager::getInstance()->getSections();

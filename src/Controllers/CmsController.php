@@ -109,7 +109,7 @@ class CmsController extends Controller
 
         if (!PermissionService::can('entries.edit')) {
             $this->flash('errors', ['You do not have permission to publish entries.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
             return;
         }
 
@@ -161,6 +161,6 @@ class CmsController extends Controller
             $this->flash('success', 'No scheduled entries are due for publishing.');
         }
 
-        $this->redirect('/cms');
+        $this->redirect(admin_url());
     }
 }

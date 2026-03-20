@@ -19,7 +19,7 @@ class CacheController extends Controller
         }
         if (!PermissionService::can($permission)) {
             $this->flash('errors', ['You do not have permission to perform this action.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
         }
     }
 
@@ -85,7 +85,7 @@ class CacheController extends Controller
         }
 
         $this->flash('success', "Cache cleared. Removed {$cleared} file(s).");
-        $this->redirect('/cms/system/cache');
+        $this->redirect(admin_url('system/cache'));
     }
 
     public function cacheConfig(): void
@@ -102,7 +102,7 @@ class CacheController extends Controller
             $this->flash('errors', ['Failed to cache configuration.']);
         }
 
-        $this->redirect('/cms/system/cache');
+        $this->redirect(admin_url('system/cache'));
     }
 
     private function clearDirectory(string $dir): int

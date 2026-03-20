@@ -112,12 +112,12 @@ class PublicSubmitController extends Controller
             'form_submitted',
             "New submission: {$collection->getName()}",
             "A new entry \"{$entryLabel}\" was submitted to {$collection->getName()}.",
-            "/cms/collections/{$collection->getSlug()}/entries/{$entryId}",
+            admin_url("collections/{$collection->getSlug()}/entries/{$entryId}"),
             ['collection' => $collection->getSlug(), 'entry_id' => $entryId],
             [
                 'entry_title' => $entryLabel,
                 'collection_name' => $collection->getName(),
-                'entry_url' => rtrim($_ENV['APP_URL'] ?? '', '/') . "/cms/collections/{$collection->getSlug()}/entries/{$entryId}",
+                'entry_url' => rtrim($_ENV['APP_URL'] ?? '', '/') . admin_url("collections/{$collection->getSlug()}/entries/{$entryId}"),
             ]
         );
 

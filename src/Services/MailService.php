@@ -298,7 +298,7 @@ class MailService
     {
         // Add common variables
         $variables['app_name'] = $_ENV['APP_NAME'] ?? 'CMS';
-        $variables['admin_url'] = rtrim($_ENV['APP_URL'] ?? '', '/') . '/cms';
+        $variables['admin_url'] = rtrim($_ENV['APP_URL'] ?? '', '/') . admin_url();
 
         try {
             $twig = new \Twig\Environment(new \Twig\Loader\ArrayLoader([

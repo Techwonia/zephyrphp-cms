@@ -4,12 +4,12 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms">Dashboard</a> / System / Sessions
+    <a href="{{ admin_url() }}">Dashboard</a> / System / Sessions
 </div>
 
 <div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
     <h1>Session Manager</h1>
-    <form method="POST" action="/cms/system/sessions/terminate-all" onsubmit="return confirm('Terminate ALL other sessions? All users except you will be logged out.')">
+    <form method="POST" action="{{ admin_url('system/sessions/terminate-all') }}" onsubmit="return confirm('Terminate ALL other sessions? All users except you will be logged out.')">
         {{ csrf_field() | raw }}
         <button type="submit" class="btn btn-danger btn-sm">Terminate All Others</button>
     </form>
@@ -67,7 +67,7 @@
                             {% if session.is_current %}
                                 <span class="badge" style="background: var(--success); color: white;">Current</span>
                             {% else %}
-                                <form method="POST" action="/cms/system/sessions/{{ session.id }}/terminate" style="display: inline;" onsubmit="return confirm('Terminate this session?')">
+                                <form method="POST" action="{{ admin_url('system/sessions/{{ session.id }}/terminate') }}" style="display: inline;" onsubmit="return confirm('Terminate this session?')">
                                     {{ csrf_field() | raw }}
                                     <button type="submit" class="btn btn-danger btn-sm">Terminate</button>
                                 </form>

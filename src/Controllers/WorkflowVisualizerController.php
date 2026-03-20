@@ -34,7 +34,7 @@ class WorkflowVisualizerController extends Controller
         }
         if (!PermissionService::can($permission)) {
             $this->flash('errors', ['You do not have permission to perform this action.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
         }
     }
 
@@ -174,14 +174,14 @@ class WorkflowVisualizerController extends Controller
         $slug = $this->input('slug', '');
         if ($slug === '' || !preg_match('/^[a-z0-9_-]+$/', $slug)) {
             $this->flash('errors', ['Invalid collection.']);
-            $this->redirect('/cms/system/workflow');
+            $this->redirect(admin_url('system/workflow'));
             return;
         }
 
         $collection = Collection::findOneBy(['slug' => $slug]);
         if (!$collection) {
             $this->flash('errors', ['Collection not found.']);
-            $this->redirect('/cms/system/workflow');
+            $this->redirect(admin_url('system/workflow'));
             return;
         }
 
@@ -195,7 +195,7 @@ class WorkflowVisualizerController extends Controller
         $collection->save();
 
         $this->flash('success', "Workflow enabled for '{$collection->getName()}'.");
-        $this->redirect('/cms/system/workflow');
+        $this->redirect(admin_url('system/workflow'));
     }
 
     /**
@@ -208,14 +208,14 @@ class WorkflowVisualizerController extends Controller
         $slug = $this->input('slug', '');
         if ($slug === '' || !preg_match('/^[a-z0-9_-]+$/', $slug)) {
             $this->flash('errors', ['Invalid collection.']);
-            $this->redirect('/cms/system/workflow');
+            $this->redirect(admin_url('system/workflow'));
             return;
         }
 
         $collection = Collection::findOneBy(['slug' => $slug]);
         if (!$collection) {
             $this->flash('errors', ['Collection not found.']);
-            $this->redirect('/cms/system/workflow');
+            $this->redirect(admin_url('system/workflow'));
             return;
         }
 
@@ -223,7 +223,7 @@ class WorkflowVisualizerController extends Controller
         $collection->save();
 
         $this->flash('success', "Workflow disabled for '{$collection->getName()}'.");
-        $this->redirect('/cms/system/workflow');
+        $this->redirect(admin_url('system/workflow'));
     }
 
     /**
@@ -236,21 +236,21 @@ class WorkflowVisualizerController extends Controller
         $slug = $this->input('slug', '');
         if ($slug === '' || !preg_match('/^[a-z0-9_-]+$/', $slug)) {
             $this->flash('errors', ['Invalid collection.']);
-            $this->redirect('/cms/system/workflow');
+            $this->redirect(admin_url('system/workflow'));
             return;
         }
 
         $collection = Collection::findOneBy(['slug' => $slug]);
         if (!$collection || !$collection->isWorkflowEnabled()) {
             $this->flash('errors', ['Collection not found or workflow not enabled.']);
-            $this->redirect('/cms/system/workflow');
+            $this->redirect(admin_url('system/workflow'));
             return;
         }
 
         $stagesInput = $this->input('stages', []);
         if (!is_array($stagesInput) || empty($stagesInput)) {
             $this->flash('errors', ['At least one stage is required.']);
-            $this->redirect('/cms/system/workflow');
+            $this->redirect(admin_url('system/workflow'));
             return;
         }
 
@@ -267,13 +267,13 @@ class WorkflowVisualizerController extends Controller
 
         if (count($stages) < 2) {
             $this->flash('errors', ['At least 2 unique stages are required.']);
-            $this->redirect('/cms/system/workflow');
+            $this->redirect(admin_url('system/workflow'));
             return;
         }
 
         if (count($stages) > 20) {
             $this->flash('errors', ['Maximum 20 stages allowed.']);
-            $this->redirect('/cms/system/workflow');
+            $this->redirect(admin_url('system/workflow'));
             return;
         }
 
@@ -281,7 +281,7 @@ class WorkflowVisualizerController extends Controller
         $collection->save();
 
         $this->flash('success', "Workflow stages updated for '{$collection->getName()}'.");
-        $this->redirect('/cms/system/workflow');
+        $this->redirect(admin_url('system/workflow'));
     }
 
     /**
@@ -294,14 +294,14 @@ class WorkflowVisualizerController extends Controller
         $slug = $this->input('slug', '');
         if ($slug === '' || !preg_match('/^[a-z0-9_-]+$/', $slug)) {
             $this->flash('errors', ['Invalid collection.']);
-            $this->redirect('/cms/system/workflow');
+            $this->redirect(admin_url('system/workflow'));
             return;
         }
 
         $collection = Collection::findOneBy(['slug' => $slug]);
         if (!$collection || !$collection->isWorkflowEnabled()) {
             $this->flash('errors', ['Collection not found or workflow not enabled.']);
-            $this->redirect('/cms/system/workflow');
+            $this->redirect(admin_url('system/workflow'));
             return;
         }
 
@@ -323,6 +323,6 @@ class WorkflowVisualizerController extends Controller
         $collection->save();
 
         $this->flash('success', "Reviewers updated for '{$collection->getName()}'.");
-        $this->redirect('/cms/system/workflow');
+        $this->redirect(admin_url('system/workflow'));
     }
 }

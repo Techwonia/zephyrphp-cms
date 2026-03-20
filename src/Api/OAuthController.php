@@ -109,7 +109,7 @@ class OAuthController extends Controller
         $client = OAuthClient::findByClientId($clientId);
         if (!$client || $client->getRedirectUri() !== $redirectUri) {
             $this->flash('errors', ['Invalid OAuth request.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
             return;
         }
 

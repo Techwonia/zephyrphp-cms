@@ -4,13 +4,13 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms">Dashboard</a> / Users
+    <a href="{{ admin_url() }}">Dashboard</a> / Users
 </div>
 
 <div class="page-header">
     <h1>Users</h1>
     <div class="page-actions">
-        <a href="/cms/users/create" class="btn btn-primary">+ New User</a>
+        <a href="{{ admin_url('users/create') }}" class="btn btn-primary">+ New User</a>
     </div>
 </div>
 
@@ -42,9 +42,9 @@
                         </td>
                         <td>{{ u.getCreatedAt() ? u.getCreatedAt()|date('M d, Y') : '&mdash;' }}</td>
                         <td class="actions-cell">
-                            <a href="/cms/users/{{ u.getId() }}" class="btn btn-sm btn-outline">Edit</a>
+                            <a href="{{ admin_url('users/{{ u.getId() }}') }}" class="btn btn-sm btn-outline">Edit</a>
                             {% if u.getId() != user.getId() %}
-                            <form method="POST" action="/cms/users/{{ u.getId() }}/delete"
+                            <form method="POST" action="{{ admin_url('users/{{ u.getId() }}/delete') }}"
                                   style="display:inline" class="confirm-delete" data-message="Delete user {{ u.getName() }}?">
                                 {{ csrf_field() | raw }}
                                 <button type="submit" class="btn btn-sm btn-danger">Delete</button>
@@ -62,7 +62,7 @@
 <div class="empty-state">
     <h3>No users yet</h3>
     <p>Create your first user to get started.</p>
-    <a href="/cms/users/create" class="btn btn-primary">+ Create User</a>
+    <a href="{{ admin_url('users/create') }}" class="btn btn-primary">+ Create User</a>
 </div>
 {% endif %}
 {% endblock %}

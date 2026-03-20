@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms">Dashboard</a> / Activity Log
+    <a href="{{ admin_url() }}">Dashboard</a> / Activity Log
 </div>
 
 <div class="page-header">
@@ -12,7 +12,7 @@
 </div>
 
 <div class="search-bar" style="margin-bottom: 16px;">
-    <form method="GET" action="/cms/activity-log" class="search-form" style="display: flex; gap: 8px; flex-wrap: wrap;">
+    <form method="GET" action="{{ admin_url('activity-log') }}" class="search-form" style="display: flex; gap: 8px; flex-wrap: wrap;">
         <input type="text" name="search" class="form-control" placeholder="Search..." value="{{ filters.search }}" style="flex: 1; min-width: 200px;">
         <select name="resource_type" class="form-control" style="width: auto;">
             <option value="">All Types</option>
@@ -33,7 +33,7 @@
         </select>
         <button type="submit" class="btn btn-outline">Filter</button>
         {% if filters.search or filters.action or filters.resource_type %}
-            <a href="/cms/activity-log" class="btn btn-outline">Clear</a>
+            <a href="{{ admin_url('activity-log') }}" class="btn btn-outline">Clear</a>
         {% endif %}
     </form>
 </div>
@@ -92,17 +92,17 @@
         {% if logs.last_page > 1 %}
         <div class="pagination">
             {% if logs.current_page > 1 %}
-                <a href="/cms/activity-log?page={{ logs.current_page - 1 }}&search={{ filters.search }}&action={{ filters.action }}&resource_type={{ filters.resource_type }}">&laquo; Prev</a>
+                <a href="{{ admin_url('activity-log?page={{ logs.current_page - 1 }}&search={{ filters.search }}&action={{ filters.action }}&resource_type={{ filters.resource_type }}') }}">&laquo; Prev</a>
             {% endif %}
             {% for p in 1..logs.last_page %}
                 {% if p == logs.current_page %}
                     <span class="active">{{ p }}</span>
                 {% else %}
-                    <a href="/cms/activity-log?page={{ p }}&search={{ filters.search }}&action={{ filters.action }}&resource_type={{ filters.resource_type }}">{{ p }}</a>
+                    <a href="{{ admin_url('activity-log?page={{ p }}&search={{ filters.search }}&action={{ filters.action }}&resource_type={{ filters.resource_type }}') }}">{{ p }}</a>
                 {% endif %}
             {% endfor %}
             {% if logs.current_page < logs.last_page %}
-                <a href="/cms/activity-log?page={{ logs.current_page + 1 }}&search={{ filters.search }}&action={{ filters.action }}&resource_type={{ filters.resource_type }}">Next &raquo;</a>
+                <a href="{{ admin_url('activity-log?page={{ logs.current_page + 1 }}&search={{ filters.search }}&action={{ filters.action }}&resource_type={{ filters.resource_type }}') }}">Next &raquo;</a>
             {% endif %}
         </div>
         {% endif %}

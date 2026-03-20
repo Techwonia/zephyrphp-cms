@@ -6,7 +6,7 @@
 <div style="margin-top: 8px; border-top: 1px solid var(--border-color); padding-top: 8px;">
     {% for entry in entries %}
     <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 0.85em;">
-        <a href="/cms/collections/{{ entry.collection_slug }}/entries/{{ entry.id }}">
+        <a href="{{ admin_url('collections/{{ entry.collection_slug }}/entries/{{ entry.id }}') }}">
             {{ entry.label|length > 25 ? entry.label[:25] ~ '...' : entry.label }}
         </a>
         <span style="color: var(--text-secondary);">{{ entry.scheduled_at[:10] }}</span>

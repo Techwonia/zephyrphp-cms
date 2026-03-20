@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms">Dashboard</a> / System / System Monitor
+    <a href="{{ admin_url() }}">Dashboard</a> / System / System Monitor
 </div>
 
 <div class="page-header">
@@ -229,7 +229,7 @@
 <script nonce="{{ csp_nonce() }}">
 (function() {
     var refreshInterval = 10000;
-    var statsUrl = '/cms/system/monitor/stats';
+    var statsUrl = '/admin/system/monitor/stats';
 
     function updateStats() {
         fetch(statsUrl, {

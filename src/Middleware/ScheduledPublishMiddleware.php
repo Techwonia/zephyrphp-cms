@@ -92,12 +92,12 @@ class ScheduledPublishMiddleware
                             'scheduled_published',
                             "Scheduled entry published: {$entryTitle}",
                             "The scheduled entry \"{$entryTitle}\" in {$collection->getName()} has been automatically published.",
-                            "/cms/collections/{$collection->getSlug()}/entries/{$entry['id']}",
+                            admin_url("collections/{$collection->getSlug()}/entries/{$entry['id']}"),
                             ['collection' => $collection->getSlug(), 'entry_id' => $entry['id']],
                             [
                                 'entry_title' => $entryTitle,
                                 'collection_name' => $collection->getName(),
-                                'entry_url' => rtrim($_ENV['APP_URL'] ?? '', '/') . "/cms/collections/{$collection->getSlug()}/entries/{$entry['id']}",
+                                'entry_url' => rtrim($_ENV['APP_URL'] ?? '', '/') . admin_url("collections/{$collection->getSlug()}/entries/{$entry['id']}"),
                             ]
                         );
                     } catch (\Exception $e) {

@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms">Dashboard</a> / Settings / <a href="/cms/settings/system">System</a> / Assets
+    <a href="{{ admin_url() }}">Dashboard</a> / Settings / <a href="{{ admin_url('settings/system') }}">System</a> / Assets
 </div>
 
 <div class="page-header" style="display:flex; justify-content:space-between; align-items:center;">
@@ -63,7 +63,7 @@
 </div>
 
 <div style="display:flex; justify-content:flex-end; gap:8px; margin-bottom:40px;">
-    <a href="/cms/settings/system" class="btn btn-outline">Back to System Settings</a>
+    <a href="{{ admin_url('settings/system') }}" class="btn btn-outline">Back to System Settings</a>
     <button class="btn btn-primary" id="saveBtn2">Save Changes</button>
 </div>
 
@@ -92,7 +92,7 @@
         btn.textContent = 'Saving...'; btn2.textContent = 'Saving...';
 
         var csrfMeta = document.querySelector('meta[name="csrf-token"]');
-        fetch('/cms/settings/assets', {
+        fetch('/admin/settings/assets', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -130,7 +130,7 @@
         result.textContent = '';
 
         var csrfMeta = document.querySelector('meta[name="csrf-token"]');
-        fetch('/cms/settings/assets/minify', {
+        fetch('/admin/settings/assets/minify', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

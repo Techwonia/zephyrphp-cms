@@ -4,9 +4,9 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms/collections">Collections</a> /
-    <a href="/cms/collections/{{ collection.getSlug() }}">{{ collection.getName() }}</a> /
-    <a href="/cms/collections/{{ collection.getSlug() }}/entries">Entries</a> / #{{ entry.id }}
+    <a href="{{ admin_url('collections') }}">Collections</a> /
+    <a href="{{ admin_url('collections/{{ collection.getSlug() }}') }}">{{ collection.getName() }}</a> /
+    <a href="{{ admin_url('collections/{{ collection.getSlug() }}/entries') }}">Entries</a> / #{{ entry.id }}
 </div>
 
 <div class="page-header">
@@ -19,7 +19,7 @@
             <span style="font-size: var(--font-sm); color: var(--text-secondary);">Translate:</span>
             {% for lang in activeLangs %}
                 {% if not lang.isDefault() %}
-                <a href="/cms/collections/{{ collection.getSlug() }}/entries/{{ entry.id }}/translate/{{ lang.getCode() }}"
+                <a href="{{ admin_url('collections/{{ collection.getSlug() }}/entries/{{ entry.id }}/translate/{{ lang.getCode() }}') }}"
                    class="btn btn-outline btn-sm" style="padding: 2px 8px; font-size: var(--font-xs);">
                     {{ lang.getCode()|upper }}
                 </a>
@@ -28,8 +28,8 @@
         </div>
         {% endif %}
         {% endif %}
-        <a href="/cms/collections/{{ collection.getSlug() }}/entries/{{ entry.id }}/history" class="btn btn-outline">History</a>
-        <form method="POST" action="/cms/collections/{{ collection.getSlug() }}/entries/{{ entry.id }}/delete"
+        <a href="{{ admin_url('collections/{{ collection.getSlug() }}/entries/{{ entry.id }}/history') }}" class="btn btn-outline">History</a>
+        <form method="POST" action="{{ admin_url('collections/{{ collection.getSlug() }}/entries/{{ entry.id }}/delete') }}"
               style="display:inline" class="confirm-delete" data-message="Delete this entry?">
             {{ csrf_field() | raw }}
             <button type="submit" class="btn btn-danger">Delete</button>
@@ -39,7 +39,7 @@
 
 <div class="card">
     <div class="card-body">
-        <form method="POST" action="/cms/collections/{{ collection.getSlug() }}/entries/{{ entry.id }}" enctype="multipart/form-data">
+        <form method="POST" action="{{ admin_url('collections/{{ collection.getSlug() }}/entries/{{ entry.id }}') }}" enctype="multipart/form-data">
             {{ csrf_field() | raw }}
 
             {% if collection.hasSlug() %}
@@ -245,7 +245,7 @@
 
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Save Changes</button>
-                <a href="/cms/collections/{{ collection.getSlug() }}/entries" class="btn btn-outline">Cancel</a>
+                <a href="{{ admin_url('collections/{{ collection.getSlug() }}/entries') }}" class="btn btn-outline">Cancel</a>
             </div>
         </form>
 
@@ -283,7 +283,7 @@
                 <div style="display: flex; gap: var(--space-200); padding-top: 22px;">
                     {% set canReject = workflow_current(entry) != stages|first %}
                     {% if canReject %}
-                    <form method="POST" action="/cms/collections/{{ collection.getSlug() }}/entries/{{ entry.id }}/workflow/reject" id="workflow-reject-form">
+                    <form method="POST" action="{{ admin_url('collections/{{ collection.getSlug() }}/entries/{{ entry.id }}/workflow/reject') }}" id="workflow-reject-form">
                         <input type="hidden" name="_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="workflow_comment" id="reject-comment" value="">
                         <button type="submit" class="btn btn-outline" style="border-color: var(--color-critical); color: var(--color-critical);">Reject</button>
@@ -292,7 +292,7 @@
 
                     {% set canAdvance = workflow_current(entry) != stages|last %}
                     {% if canAdvance %}
-                    <form method="POST" action="/cms/collections/{{ collection.getSlug() }}/entries/{{ entry.id }}/workflow/advance" id="workflow-advance-form">
+                    <form method="POST" action="{{ admin_url('collections/{{ collection.getSlug() }}/entries/{{ entry.id }}/workflow/advance') }}" id="workflow-advance-form">
                         <input type="hidden" name="_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="workflow_comment" id="advance-comment" value="">
                         {% set nextStage = null %}
@@ -374,7 +374,7 @@
         document.body.appendChild(modal);
         modal.querySelector('.media-modal-close').addEventListener('click', function() { modal.remove(); });
         modal.addEventListener('click', function(e) { if (e.target === modal) modal.remove(); });
-        fetch('/cms/media/browse?filter=' + filter + '&per_page=24')
+        fetch('/admin/media/browse?filter=' + filter + '&per_page=24')
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 var body = modal.querySelector('.media-modal-body');

@@ -18,7 +18,7 @@ class CacheSettingsController extends Controller
         }
         if (!PermissionService::can($permission)) {
             $this->flash('errors', ['You do not have permission to perform this action.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
         }
     }
 
@@ -88,7 +88,7 @@ class CacheSettingsController extends Controller
         $envPath = $this->getEnvPath();
         if (!$envPath || !is_writable($envPath)) {
             $this->flash('errors', ['.env file not found or not writable.']);
-            $this->redirect('/cms/settings/cache');
+            $this->redirect(admin_url('settings/cache'));
             return;
         }
 
@@ -100,7 +100,7 @@ class CacheSettingsController extends Controller
         }
 
         $this->flash('success', 'Cache settings updated successfully.');
-        $this->redirect('/cms/settings/cache');
+        $this->redirect(admin_url('settings/cache'));
     }
 
     public function testRedis(): void
@@ -115,7 +115,7 @@ class CacheSettingsController extends Controller
             $this->flash('errors', ['Redis connection failed: ' . ($result['error'] ?? 'Unknown error')]);
         }
 
-        $this->redirect('/cms/settings/cache');
+        $this->redirect(admin_url('settings/cache'));
     }
 
     private function getCacheStats(): array

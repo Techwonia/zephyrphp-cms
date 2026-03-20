@@ -33,7 +33,7 @@ class FileManagerController extends Controller
         }
         if (!PermissionService::can($permission)) {
             $this->flash('errors', ['You do not have permission to perform this action.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
         }
     }
 
@@ -84,7 +84,7 @@ class FileManagerController extends Controller
         $file = $this->input('file', '');
 
         if (!isset(self::ALLOWED_ROOTS[$root]) || $file === '') {
-            $this->redirect('/cms/system/files');
+            $this->redirect(admin_url('system/files'));
             return '';
         }
 
@@ -98,20 +98,20 @@ class FileManagerController extends Controller
 
         if ($realRoot === false || $realFile === false || !str_starts_with($realFile, $realRoot)) {
             $this->flash('errors', ['File not found.']);
-            $this->redirect('/cms/system/files');
+            $this->redirect(admin_url('system/files'));
             return '';
         }
 
         if (!is_file($realFile)) {
             $this->flash('errors', ['Not a file.']);
-            $this->redirect('/cms/system/files');
+            $this->redirect(admin_url('system/files'));
             return '';
         }
 
         $ext = strtolower(pathinfo($realFile, PATHINFO_EXTENSION));
         if (!in_array($ext, self::EDITABLE_EXTENSIONS, true)) {
             $this->flash('errors', ['This file type cannot be edited.']);
-            $this->redirect('/cms/system/files');
+            $this->redirect(admin_url('system/files'));
             return '';
         }
 
@@ -140,7 +140,7 @@ class FileManagerController extends Controller
 
         if (!isset(self::ALLOWED_ROOTS[$root]) || $file === '') {
             $this->flash('errors', ['Invalid request.']);
-            $this->redirect('/cms/system/files');
+            $this->redirect(admin_url('system/files'));
             return;
         }
 
@@ -154,13 +154,13 @@ class FileManagerController extends Controller
 
         if ($realRoot === false || $realFile === false || !str_starts_with($realFile, $realRoot)) {
             $this->flash('errors', ['File not found.']);
-            $this->redirect('/cms/system/files');
+            $this->redirect(admin_url('system/files'));
             return;
         }
 
         if (!is_writable($realFile)) {
             $this->flash('errors', ['File is not writable.']);
-            $this->redirect('/cms/system/files?root=' . $root . '&file=' . urlencode($file));
+            $this->redirect(admin_url('system/files?root=' . $root . '&file=' . urlencode($file)));
             return;
         }
 
@@ -168,14 +168,14 @@ class FileManagerController extends Controller
         $ext = strtolower(pathinfo($realFile, PATHINFO_EXTENSION));
         if (in_array($ext, self::BLOCKED_EXTENSIONS, true)) {
             $this->flash('errors', ['This file type cannot be modified.']);
-            $this->redirect('/cms/system/files');
+            $this->redirect(admin_url('system/files'));
             return;
         }
 
         file_put_contents($realFile, $content, LOCK_EX);
 
         $this->flash('success', 'File saved successfully.');
-        $this->redirect('/cms/system/files/edit?root=' . $root . '&file=' . urlencode($file));
+        $this->redirect(admin_url('system/files/edit?root=' . $root . '&file=' . urlencode($file)));
     }
 
     private function listDirectory(string $path): array
@@ -224,7 +224,7 @@ class FileManagerController extends Controller
 
     private function buildBreadcrumbs(string $root, string $path): array
     {
-        $crumbs = [['label' => ucfirst($root), 'url' => '/cms/system/files?root=' . $root]];
+        $crumbs = [['label' => ucfirst($root), 'url' => admin_url('system/files?root=') . $root]];
 
         if ($path !== '') {
             $parts = explode('/', trim($path, '/'));
@@ -233,7 +233,7 @@ class FileManagerController extends Controller
                 $accumulated .= ($accumulated ? '/' : '') . $part;
                 $crumbs[] = [
                     'label' => $part,
-                    'url' => '/cms/system/files?root=' . $root . '&path=' . urlencode($accumulated),
+                    'url' => admin_url('system/files?root=') . $root . '&path=' . urlencode($accumulated),
                 ];
             }
         }

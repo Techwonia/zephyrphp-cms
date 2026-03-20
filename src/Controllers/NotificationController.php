@@ -82,7 +82,7 @@ class NotificationController extends Controller
         }
 
         $this->flash('success', 'All notifications marked as read.');
-        $this->redirect('/cms/notifications');
+        $this->redirect(admin_url('notifications'));
     }
 
     /**
@@ -135,7 +135,7 @@ class NotificationController extends Controller
         NotificationService::savePreferences($userId, $preferences);
 
         $this->flash('success', 'Notification preferences saved.');
-        $this->redirect('/cms/notifications/preferences');
+        $this->redirect(admin_url('notifications/preferences'));
     }
 
 }

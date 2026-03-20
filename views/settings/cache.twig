@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms">Dashboard</a> / Settings / Cache
+    <a href="{{ admin_url() }}">Dashboard</a> / Settings / Cache
 </div>
 
 <div class="page-header">
@@ -47,7 +47,7 @@
 </div>
 {% endif %}
 
-<form method="POST" action="/cms/settings/cache">
+<form method="POST" action="{{ admin_url('settings/cache') }}">
     {{ csrf_field() | raw }}
 
     {# Driver Selection #}
@@ -105,7 +105,7 @@
 </form>
 
 <div style="margin-top: var(--space-400);">
-    <form method="POST" action="/cms/settings/cache/test-redis" style="display: inline;">
+    <form method="POST" action="{{ admin_url('settings/cache/test-redis') }}" style="display: inline;">
         {{ csrf_field() | raw }}
         <button type="submit" class="btn btn-outline btn-sm">Test Redis Connection</button>
     </form>

@@ -18,7 +18,7 @@ class SessionManagerController extends Controller
         }
         if (!PermissionService::can($permission)) {
             $this->flash('errors', ['You do not have permission to perform this action.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
         }
     }
 
@@ -77,14 +77,14 @@ class SessionManagerController extends Controller
 
         if (!$session) {
             $this->flash('errors', ['Session not found.']);
-            $this->redirect('/cms/system/sessions');
+            $this->redirect(admin_url('system/sessions'));
             return;
         }
 
         // Don't allow terminating own session
         if ($session['session_id'] === (session_id() ?: '')) {
             $this->flash('errors', ['Cannot terminate your own session. Use logout instead.']);
-            $this->redirect('/cms/system/sessions');
+            $this->redirect(admin_url('system/sessions'));
             return;
         }
 
@@ -102,7 +102,7 @@ class SessionManagerController extends Controller
 
         $this->logAction('session_terminated', $session['user_id'], $session['ip_address']);
         $this->flash('success', 'Session terminated.');
-        $this->redirect('/cms/system/sessions');
+        $this->redirect(admin_url('system/sessions'));
     }
 
     public function terminateAll(): void
@@ -134,7 +134,7 @@ class SessionManagerController extends Controller
         }
 
         $this->flash('success', 'All other sessions terminated.');
-        $this->redirect('/cms/system/sessions');
+        $this->redirect(admin_url('system/sessions'));
     }
 
     public function terminateUser(string $userId): void
@@ -150,7 +150,7 @@ class SessionManagerController extends Controller
         );
 
         $this->flash('success', 'All sessions for this user terminated.');
-        $this->redirect('/cms/system/sessions');
+        $this->redirect(admin_url('system/sessions'));
     }
 
     private function ensureTable(): void

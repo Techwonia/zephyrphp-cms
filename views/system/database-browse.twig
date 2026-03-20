@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms">Dashboard</a> / <a href="/cms/system/database">Database Tools</a> / {{ table }}
+    <a href="{{ admin_url() }}">Dashboard</a> / <a href="{{ admin_url('system/database') }}">Database Tools</a> / {{ table }}
 </div>
 
 <div class="page-header">
@@ -41,11 +41,11 @@
 {% if lastPage > 1 %}
 <div style="display: flex; justify-content: center; gap: var(--space-200); margin-top: var(--space-400);">
     {% if page > 1 %}
-        <a href="/cms/system/database/browse/{{ table }}?page={{ page - 1 }}" class="btn btn-outline btn-sm">&laquo; Previous</a>
+        <a href="{{ admin_url('system/database/browse/{{ table }}?page={{ page - 1 }}') }}" class="btn btn-outline btn-sm">&laquo; Previous</a>
     {% endif %}
     <span style="padding: 6px 12px; color: var(--text-secondary);">Page {{ page }} of {{ lastPage }}</span>
     {% if page < lastPage %}
-        <a href="/cms/system/database/browse/{{ table }}?page={{ page + 1 }}" class="btn btn-outline btn-sm">Next &raquo;</a>
+        <a href="{{ admin_url('system/database/browse/{{ table }}?page={{ page + 1 }}') }}" class="btn btn-outline btn-sm">Next &raquo;</a>
     {% endif %}
 </div>
 {% endif %}

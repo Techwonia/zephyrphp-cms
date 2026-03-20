@@ -18,7 +18,7 @@ class BackupController extends Controller
         }
         if (!PermissionService::can($permission)) {
             $this->flash('errors', ['You do not have permission to perform this action.']);
-            $this->redirect('/cms');
+            $this->redirect(admin_url());
         }
     }
 
@@ -62,7 +62,7 @@ class BackupController extends Controller
             $this->flash('errors', ['Backup failed: ' . $e->getMessage()]);
         }
 
-        $this->redirect('/cms/system/backups');
+        $this->redirect(admin_url('system/backups'));
     }
 
     public function downloadBackup(string $filename): void
@@ -74,7 +74,7 @@ class BackupController extends Controller
 
         if (!file_exists($filePath)) {
             $this->flash('errors', ['Backup file not found.']);
-            $this->redirect('/cms/system/backups');
+            $this->redirect(admin_url('system/backups'));
             return;
         }
 
@@ -101,7 +101,7 @@ class BackupController extends Controller
             $this->flash('errors', ['Backup file not found.']);
         }
 
-        $this->redirect('/cms/system/backups');
+        $this->redirect(admin_url('system/backups'));
     }
 
     private function getBackups(): array

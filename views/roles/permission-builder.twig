@@ -4,13 +4,13 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms">Dashboard</a> / <a href="/cms/roles">Roles</a> / Permission Builder
+    <a href="{{ admin_url() }}">Dashboard</a> / <a href="{{ admin_url('roles') }}">Roles</a> / Permission Builder
 </div>
 
 <div class="page-header">
     <h1>Permission Builder</h1>
     <div class="page-actions">
-        <a href="/cms/roles" class="btn btn-outline">Back to Roles</a>
+        <a href="{{ admin_url('roles') }}" class="btn btn-outline">Back to Roles</a>
     </div>
 </div>
 
@@ -20,7 +20,7 @@
         <h3 style="margin: 0; font-size: 1rem;">Global Permission Matrix</h3>
     </div>
     <div class="card-body" style="padding: 0;">
-        <form method="POST" action="/cms/permissions/save-matrix">
+        <form method="POST" action="{{ admin_url('permissions/save-matrix') }}">
             {{ csrf_field() | raw }}
             <div class="table-responsive">
                 <table class="data-table" style="font-size: 0.85rem;">
@@ -113,7 +113,7 @@
         </p>
     </div>
     <div class="card-body" style="padding: 0;">
-        <form method="POST" action="/cms/permissions/save-collection">
+        <form method="POST" action="{{ admin_url('permissions/save-collection') }}">
             {{ csrf_field() | raw }}
 
             {% for col in collections %}
@@ -177,7 +177,7 @@
     </div>
     <div class="card-body">
         {# Add form #}
-        <form method="POST" action="/cms/permissions/custom/add" style="margin-bottom: var(--space-400);">
+        <form method="POST" action="{{ admin_url('permissions/custom/add') }}" style="margin-bottom: var(--space-400);">
             {{ csrf_field() | raw }}
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: var(--space-300); align-items: flex-end;">
                 <div class="form-group" style="margin-bottom: 0;">
@@ -215,7 +215,7 @@
                         <td>{{ cp.label }}</td>
                         <td>{{ cp.group_name }}</td>
                         <td>
-                            <form method="POST" action="/cms/permissions/custom/{{ cp.id }}/delete" style="display:inline;" onsubmit="return confirm('Delete this permission?')">
+                            <form method="POST" action="{{ admin_url('permissions/custom/{{ cp.id }}/delete') }}" style="display:inline;" onsubmit="return confirm('Delete this permission?')">
                                 {{ csrf_field() | raw }}
                                 <button type="submit" class="btn btn-sm btn-danger">Delete</button>
                             </form>

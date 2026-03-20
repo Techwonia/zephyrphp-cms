@@ -4,12 +4,12 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/cms">Dashboard</a> / System / Cache
+    <a href="{{ admin_url() }}">Dashboard</a> / System / Cache
 </div>
 
 <div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
     <h1>Cache Management</h1>
-    <form method="POST" action="/cms/system/cache/clear" onsubmit="return confirm('Clear ALL caches?')">
+    <form method="POST" action="{{ admin_url('system/cache/clear') }}" onsubmit="return confirm('Clear ALL caches?')">
         {{ csrf_field() | raw }}
         <input type="hidden" name="type" value="all">
         <button type="submit" class="btn btn-danger">Clear All Caches</button>
@@ -36,14 +36,14 @@
             </div>
 
             <div style="display: flex; gap: var(--space-200);">
-                <form method="POST" action="/cms/system/cache/clear" style="display: inline;">
+                <form method="POST" action="{{ admin_url('system/cache/clear') }}" style="display: inline;">
                     {{ csrf_field() | raw }}
                     <input type="hidden" name="type" value="{{ cache.key }}">
                     <button type="submit" class="btn btn-outline btn-sm">Clear</button>
                 </form>
 
                 {% if cache.key == 'config' %}
-                <form method="POST" action="/cms/system/cache/config" style="display: inline;">
+                <form method="POST" action="{{ admin_url('system/cache/config') }}" style="display: inline;">
                     {{ csrf_field() | raw }}
                     <button type="submit" class="btn btn-primary btn-sm">Cache Config</button>
                 </form>

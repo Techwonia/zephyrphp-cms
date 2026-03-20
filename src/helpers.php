@@ -7,6 +7,42 @@ use ZephyrPHP\Cms\Services\EntryQuery;
 use ZephyrPHP\Cms\Services\TranslationService;
 use ZephyrPHP\Cache\CacheManager;
 
+if (!function_exists('admin_url')) {
+    /**
+     * Generate a URL to the admin panel.
+     * Reads the admin path from ADMIN_PATH env var (default: 'admin').
+     *
+     * @param string $path Path within admin (e.g. '/collections', '/themes')
+     * @return string Full admin URL (e.g. '/admin/collections')
+     */
+    function admin_url(string $path = ''): string
+    {
+        static $prefix = null;
+        if ($prefix === null) {
+            $raw = $_ENV['ADMIN_PATH'] ?? 'admin';
+            // Sanitize: only allow alphanumeric, hyphens, underscores
+            $prefix = '/' . trim(preg_replace('/[^a-zA-Z0-9_-]/', '', $raw), '/');
+        }
+        if ($path === '' || $path === '/') {
+            return $prefix;
+        }
+        return $prefix . '/' . ltrim($path, '/');
+    }
+}
+
+if (!function_exists('admin_path')) {
+    /**
+     * Get the admin path prefix without leading slash (for route registration).
+     *
+     * @return string e.g. 'admin'
+     */
+    function admin_path(): string
+    {
+        $raw = $_ENV['ADMIN_PATH'] ?? 'admin';
+        return trim(preg_replace('/[^a-zA-Z0-9_-]/', '', $raw), '/');
+    }
+}
+
 if (!function_exists('collection')) {
     /**
      * Query collection/page type entries.
