@@ -335,10 +335,11 @@ class ThemeController extends Controller
         // Check if this is a dynamic route (has {param} patterns)
         $hasDynamicParams = (bool) preg_match('/\{(\w+)\}/', $pageSlug);
         $collection = trim($input['collection'] ?? '');
+        $detailSlug = trim($input['detail_slug'] ?? '');
 
         // Create template file — rich template for collection pages, minimal for others
         if (!empty($collection)) {
-            $templateContent = $this->generateCollectionTemplate($layout, $title, $pageSlug, $collection, $hasDynamicParams);
+            $templateContent = $this->generateCollectionTemplate($layout, $title, $pageSlug, $collection, $hasDynamicParams, $detailSlug);
         } else {
             $templateContent = "{% extends \"@theme/layouts/{$layout}.twig\" %}\n\n";
             $templateContent .= "{% block title %}{{ page.title }}{% endblock %}\n\n";
@@ -684,14 +685,39 @@ class ThemeController extends Controller
         return trim($slug, '-');
     }
 
-    private function generateCollectionTemplate(string $layout, string $title, string $route, string $collection, bool $isDetail): string
+    private function generateCollectionTemplate(string $layout, string $title, string $route, string $collection, bool $isDetail, string $detailSlug = ''): string
     {
+        // Auto-detect field names from collection
+        $titleField = 'title';
+        $excerptField = 'excerpt';
+        $imageField = 'image';
+        $contentField = 'content';
+        $collectionModel = \ZephyrPHP\Cms\Models\Collection::findOneBy(['slug' => $collection]);
+        if ($collectionModel) {
+            $fields = $collectionModel->getFields();
+            $fieldSlugs = array_map(fn($f) => $f->getSlug(), $fields->toArray());
+            // Find best match for each role
+            foreach (['title', 'name', 'heading'] as $candidate) {
+                if (in_array($candidate, $fieldSlugs)) { $titleField = $candidate; break; }
+            }
+            foreach (['excerpt', 'description', 'summary', 'intro'] as $candidate) {
+                if (in_array($candidate, $fieldSlugs)) { $excerptField = $candidate; break; }
+            }
+            foreach (['image', 'featured_image', 'thumbnail', 'cover', 'photo'] as $candidate) {
+                if (in_array($candidate, $fieldSlugs)) { $imageField = $candidate; break; }
+            }
+            foreach (['content', 'body', 'text', 'description'] as $candidate) {
+                if (in_array($candidate, $fieldSlugs)) { $contentField = $candidate; break; }
+            }
+        }
+
         if ($isDetail) {
             // Detail page template (e.g. /blog/{slug})
+            $listRoute = preg_replace('/\/\{[^}]+\}$/', '', $route) ?: '/';
             return <<<TWIG
 {% extends "@theme/layouts/{$layout}.twig" %}
 
-{% block title %}{{ item.title|default(page.title) }}{% endblock %}
+{% block title %}{{ item.{$titleField}|default(page.title) }}{% endblock %}
 
 {% block meta %}
 {% if seo is defined and seo.description is defined %}
@@ -704,24 +730,33 @@ class ThemeController extends Controller
 
 {% block content %}
 <article style="max-width:800px; margin:0 auto; padding:60px 24px;">
-    <a href="{{ page.slug|split('/{')[0]|default('/') }}" style="color:var(--color-primary, #008060); text-decoration:none; font-size:14px;">&larr; Back to {$title}</a>
+    <a href="{$listRoute}" style="color:var(--color-primary, #008060); text-decoration:none; font-size:14px;">&larr; Back to {$title}</a>
 
-    {% if item.image is defined and item.image %}
-        <img src="/{{ item.image }}" alt="{{ item.title|default('') }}" style="width:100%; border-radius:12px; margin:24px 0; max-height:480px; object-fit:cover;">
+    {% if item.{$imageField} is defined and item.{$imageField} %}
+        <img src="/{{ item.{$imageField} }}" alt="{{ item.{$titleField}|default('') }}" style="width:100%; border-radius:12px; margin:24px 0; max-height:480px; object-fit:cover;">
     {% endif %}
 
-    <h1 style="font-size:36px; margin:24px 0 12px; line-height:1.2;">{{ item.title|default('Untitled') }}</h1>
+    <h1 style="font-size:36px; margin:24px 0 12px; line-height:1.2;">{{ item.{$titleField}|default('Untitled') }}</h1>
 
     {% if item.created_at is defined %}
         <time style="color:var(--color-muted, #666); font-size:14px;">{{ item.created_at }}</time>
     {% endif %}
 
     <div style="line-height:1.8; margin-top:24px; font-size:17px;">
-        {{ item.content|default(item.body|default(''))|raw }}
+        {{ item.{$contentField}|default('')|raw }}
     </div>
 </article>
 {% endblock %}
 TWIG;
+        }
+
+        // Build the detail link expression for Twig
+        if (!empty($detailSlug)) {
+            // Convert /blog/{slug} to /blog/{{ item.slug }}
+            $detailLink = preg_replace('/\{(\w+)\}/', '{{ item.$1 }}', $detailSlug);
+        } else {
+            // Fallback: use listing page slug + item slug
+            $detailLink = '{{ page.slug }}/{{ item.slug }}';
         }
 
         // Listing page template (e.g. /blogs)
@@ -738,21 +773,21 @@ TWIG;
         <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:24px; margin-top:32px;">
         {% for item in items.data %}
             <div style="border:1px solid #eee; border-radius:8px; overflow:hidden; background:#fafafa;">
-                {% if item.image is defined and item.image %}
+                {% if item.{$imageField} is defined and item.{$imageField} %}
                     <div style="height:200px; overflow:hidden;">
-                        <img src="/{{ item.image }}" alt="" style="width:100%; height:100%; object-fit:cover;">
+                        <img src="/{{ item.{$imageField} }}" alt="" style="width:100%; height:100%; object-fit:cover;">
                     </div>
                 {% endif %}
                 <div style="padding:20px;">
                     {% if item.created_at is defined %}
                         <time style="font-size:12px; color:#999;">{{ item.created_at }}</time>
                     {% endif %}
-                    <h3 style="margin:6px 0 8px; font-size:18px;">{{ item.title|default('Untitled') }}</h3>
-                    {% if item.excerpt is defined %}
-                        <p style="color:#666; font-size:14px; line-height:1.5; margin:0 0 12px;">{{ item.excerpt|striptags|slice(0, 120) }}{% if item.excerpt|length > 120 %}...{% endif %}</p>
+                    <h3 style="margin:6px 0 8px; font-size:18px;">{{ item.{$titleField}|default('Untitled') }}</h3>
+                    {% if item.{$excerptField} is defined %}
+                        <p style="color:#666; font-size:14px; line-height:1.5; margin:0 0 12px;">{{ item.{$excerptField}|striptags|slice(0, 120) }}{% if item.{$excerptField}|length > 120 %}...{% endif %}</p>
                     {% endif %}
                     {% if item.slug is defined %}
-                        <a href="{{ page.slug }}/{{ item.slug }}" style="color:var(--color-primary, #008060); text-decoration:none; font-weight:500; font-size:14px;">Read More &rarr;</a>
+                        <a href="{$detailLink}" style="color:var(--color-primary, #008060); text-decoration:none; font-weight:500; font-size:14px;">Read More &rarr;</a>
                     {% endif %}
                 </div>
             </div>

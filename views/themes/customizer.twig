@@ -4127,7 +4127,7 @@
         fetch('/admin/themes/' + THEME_SLUG + '/pages/add', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN },
-            body: JSON.stringify({ title: title, slug: slug, layout: layout, collection: collection })
+            body: JSON.stringify({ title: title, slug: slug, layout: layout, collection: collection, detail_slug: createDetail ? detailSlug : '' })
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {

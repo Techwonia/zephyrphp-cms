@@ -609,21 +609,21 @@ class CmsServiceProvider
                 }
 
                 if ($isDynamic) {
-                    \ZephyrPHP\Router\Route::get($slug, function (...$args) use ($template, $title, $layout, $controllerName, $themeManager, $authRequired, $allowedRoles) {
+                    \ZephyrPHP\Router\Route::get($slug, function (...$args) use ($slug, $template, $title, $layout, $controllerName, $themeManager, $authRequired, $allowedRoles) {
                         if ($authRequired) {
                             $this->enforcePageAuth($allowedRoles);
                         }
                         $params = $args;
                         $params['_query'] = $_GET;
-                        $this->renderThemePage($themeManager, $template, $title, $layout, $controllerName, $params);
+                        $this->renderThemePage($themeManager, $template, $title, $layout, $controllerName, $params, $slug);
                     }, $middleware);
                 } else {
-                    \ZephyrPHP\Router\Route::get($slug, function () use ($template, $title, $layout, $controllerName, $themeManager, $authRequired, $allowedRoles) {
+                    \ZephyrPHP\Router\Route::get($slug, function () use ($slug, $template, $title, $layout, $controllerName, $themeManager, $authRequired, $allowedRoles) {
                         if ($authRequired) {
                             $this->enforcePageAuth($allowedRoles);
                         }
                         $params = ['_query' => $_GET];
-                        $this->renderThemePage($themeManager, $template, $title, $layout, $controllerName, $params);
+                        $this->renderThemePage($themeManager, $template, $title, $layout, $controllerName, $params, $slug);
                     }, $middleware);
                 }
             }
@@ -672,7 +672,7 @@ class CmsServiceProvider
         }
     }
 
-    private function renderThemePage(ThemeManager $themeManager, string $template, string $title, string $layout, ?string $controllerName, array $params): void
+    private function renderThemePage(ThemeManager $themeManager, string $template, string $title, string $layout, ?string $controllerName, array $params, string $routeSlug = '/'): void
     {
         $view = \ZephyrPHP\View\View::getInstance();
         $sectionManager = new SectionManager($themeManager);
@@ -692,8 +692,16 @@ class CmsServiceProvider
             }
         }
 
+        // Use route pattern slug (e.g. /blogs) and actual request path
+        $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+
         $pageData = array_merge($controllerData, [
-            'page' => array_merge(['title' => $title, 'template' => $template], $controllerData['page'] ?? []),
+            'page' => array_merge([
+                'title' => $title,
+                'template' => $template,
+                'slug' => $routeSlug,
+                'url' => $requestPath,
+            ], $controllerData['page'] ?? []),
             'params' => $params,
             'theme_settings' => $sectionManager->getGlobalSettings(),
         ]);
