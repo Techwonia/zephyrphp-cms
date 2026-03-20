@@ -565,22 +565,30 @@ class CollectionController extends Controller
 
         // Handle "Use as Slug" checkbox
         $useAsSlug = $this->boolean('use_as_slug');
-        if ($useAsSlug && in_array($type, ['text', 'email', 'url']) && !$collection->hasSlug()) {
-            $collection->setHasSlug(true);
+        if ($useAsSlug && in_array($type, ['text', 'email', 'url'])) {
+            if (!$collection->hasSlug()) {
+                $collection->setHasSlug(true);
+                // Add slug column to the data table
+                try {
+                    $tableName = $collection->getTableName();
+                    $safeTable = SchemaManager::validateIdentifier($tableName, 'table name');
+                    $safeIndex = SchemaManager::validateIdentifier("uniq_{$tableName}_slug", 'index name');
+                    $conn = $this->schema->getConnection();
+                    $conn->executeStatement("ALTER TABLE `{$safeTable}` ADD COLUMN `slug` VARCHAR(255) NULL DEFAULT NULL");
+                    $conn->executeStatement("ALTER TABLE `{$safeTable}` ADD UNIQUE INDEX `{$safeIndex}` (`slug`)");
+                } catch (\Exception $e) {
+                    // Column may already exist
+                }
+            }
+            // Always set/update the slug source field
             $collection->setSlugSourceField($fieldSlug);
             $collection->save();
+        }
 
-            // Add slug column to the data table
-            try {
-                $tableName = $collection->getTableName();
-                $safeTable = SchemaManager::validateIdentifier($tableName, 'table name');
-                $safeIndex = SchemaManager::validateIdentifier("uniq_{$tableName}_slug", 'index name');
-                $conn = $this->schema->getConnection();
-                $conn->executeStatement("ALTER TABLE `{$safeTable}` ADD COLUMN `slug` VARCHAR(255) NULL DEFAULT NULL");
-                $conn->executeStatement("ALTER TABLE `{$safeTable}` ADD UNIQUE INDEX `{$safeIndex}` (`slug`)");
-            } catch (\Exception $e) {
-                // Column may already exist
-            }
+        // Auto-set slug source if slug enabled but no source field set yet
+        if ($collection->hasSlug() && !$collection->getSlugSourceField() && in_array($type, ['text', 'email', 'url'])) {
+            $collection->setSlugSourceField($fieldSlug);
+            $collection->save();
         }
 
         $this->flash('success', "Field \"{$name}\" added successfully.");

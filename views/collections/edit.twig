@@ -384,13 +384,17 @@
                         <label><input type="checkbox" name="field_searchable" value="1"> Searchable</label>
                         <label><input type="checkbox" name="field_sortable" value="1"> Sortable</label>
                         <label><input type="checkbox" name="field_unique" value="1"> Unique</label>
-                        {% if not collection.hasSlug() %}
                         <label id="use-as-slug-label" style="display:none;">
                             <input type="checkbox" name="use_as_slug" value="1" id="useAsSlugCheck">
                             Use as Slug
-                            <small style="display:block;font-weight:normal;color:var(--text-secondary,#616161);">Auto-generates a URL-friendly slug from this field for each entry.</small>
+                            <small style="display:block;font-weight:normal;color:var(--text-secondary,#616161);">
+                                {% if collection.hasSlug() and collection.getSlugSourceField() %}
+                                    Currently using "{{ collection.getSlugSourceField() }}". Check to change slug source to this field.
+                                {% else %}
+                                    Auto-generates a URL-friendly slug from this field for each entry.
+                                {% endif %}
+                            </small>
                         </label>
-                        {% endif %}
                     </div>
 
                     <div class="form-group" id="select-options-group" style="display: none;">
