@@ -563,7 +563,11 @@ class CollectionController extends Controller
             $this->schema->addColumn($collection->getTableName(), $field);
         }
 
-        // No auto-set: user must explicitly choose slug source in Settings tab
+        // Auto-set slug source when a "slug" type field is added
+        if ($collection->hasSlug() && $type === 'slug') {
+            $collection->setSlugSourceField($fieldSlug);
+            $collection->save();
+        }
 
         $this->flash('success', "Field \"{$name}\" added successfully.");
         $this->redirect(admin_url("collections/{$slug}"));
