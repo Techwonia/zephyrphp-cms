@@ -451,6 +451,18 @@ class CmsServiceProvider
             return entry($ptSlug, $identifier);
         });
 
+        $view->addFunction('collection_meta', function (string $slug) {
+            $collection = Collection::findOneBy(['slug' => $slug]);
+            if (!$collection) return [];
+            return [
+                'name' => $collection->getName(),
+                'slug' => $collection->getSlug(),
+                'url_prefix' => $collection->getUrlPrefix(),
+                'has_slug' => $collection->hasSlug(),
+                'is_publishable' => $collection->isPublishable(),
+            ];
+        });
+
         // entry_query('blog') — returns an EntryQuery builder for use in templates
         $view->addFunction('entry_query', function (string $slug) {
             return EntryQuery::collection($slug);

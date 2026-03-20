@@ -40,7 +40,11 @@
             {% set df = section.settings.date_field|default('') %}
             {% set cf = section.settings.category_field|default('') %}
             {% set lf = section.settings.link_field|default('slug') %}
+            {% set _col_meta = collection_meta(section.settings.collection) %}
             {% set lp = section.settings.link_prefix|default('') %}
+            {% if lp is empty and _col_meta.url_prefix is defined and _col_meta.url_prefix %}
+                {% set lp = '/' ~ _col_meta.url_prefix %}
+            {% endif %}
             {% set items = collection(section.settings.collection, {per_page: section.settings.items_count|default(6), sort_dir: section.settings.sort_dir|default('DESC')}) %}
 
             {% if items.data|length > 0 %}
