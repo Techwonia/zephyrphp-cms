@@ -389,6 +389,11 @@
         .ref-item-type--func { color: #79c0ff; background: rgba(121,192,255,0.1); }
         .ref-item-type--snippet { color: #d2a8ff; background: rgba(210,168,255,0.1); }
 
+        /* ── Editor + Reference Wrapper ── */
+        .editor-ref-wrapper {
+            flex: 1; display: flex; min-height: 0;
+        }
+
         /* ── Editor Area (supports split) ── */
         .editor-area {
             flex: 1; display: flex; min-height: 0; position: relative;
@@ -936,6 +941,8 @@
                 <span class="toolbar-lang" id="toolbarLang"></span>
             </div>
 
+            <!-- Editor + Reference wrapper -->
+            <div class="editor-ref-wrapper">
             <!-- Editor Area (split-capable) -->
             <div class="editor-area" id="editorArea">
                 <div class="editor-pane" id="editorPane1">
@@ -985,6 +992,7 @@
                     <div class="ref-empty">Open a file to see references</div>
                 </div>
             </div>
+            </div><!-- /editor-ref-wrapper -->
 
             <!-- Schema Panel (full-width, toggled via Code/Designer/JSON tabs) -->
             <div class="schema-panel" id="schemaPanel">
@@ -1251,8 +1259,9 @@
 
     // ── Load CodeMirror ──
     let EditorView, EditorState, basicSetup, keymap, langHtml, langJson, langCss, langJs, langPhp, indentWithTab;
-    let oneDark, emmetExt;
+    let oneDark, emmetExt, autoComplete;
     let twigTheme, twigHighlighter;
+    var _completionFields = {}; // populated when collection detected
 
     try {
         // Load all CodeMirror modules in parallel for faster startup
@@ -1287,6 +1296,113 @@
         ];
         indentWithTab = cmCommands.indentWithTab;
         oneDark = cmTheme.oneDark;
+        autoComplete = cmAutocomplete.autocompletion;
+
+        // ── Twig/PHP Intellisense completion source ──
+        // _controllerVars: keys returned by the controller for current template
+        var _controllerVars = {};
+        // _sectionSettings: setting IDs from the current section schema
+        var _sectionSettings = [];
+
+        function zephyrCompletionSource(context) {
+            var word = context.matchBefore(/[\w]+\.[\w.]*/);
+            if (!word) return null;
+            var prefix = word.text;
+            var dotIdx = prefix.indexOf('.');
+            var base = prefix.substring(0, dotIdx);
+            var options = [];
+
+            if (prefix.startsWith('section.settings.')) {
+                for (var sid of _sectionSettings) {
+                    options.push({ label: 'section.settings.' + sid, type: 'property' });
+                }
+            } else if (prefix.startsWith('section.')) {
+                options.push({ label: 'section.settings', type: 'property' });
+                options.push({ label: 'section.blocks', type: 'property' });
+                options.push({ label: 'section.id', type: 'property' });
+                options.push({ label: 'section.type', type: 'property' });
+            } else if (prefix.startsWith('page.')) {
+                var pp = ['title', 'slug', 'url', 'template'];
+                for (var p of pp) options.push({ label: 'page.' + p, type: 'property' });
+            } else if (_controllerVars[base]) {
+                // Dynamic: suggest properties based on what controller returns
+                var varInfo = _controllerVars[base];
+                if (varInfo.type === 'collection') {
+                    // Paginated collection result
+                    var collProps = ['data', 'current_page', 'last_page', 'per_page', 'total'];
+                    for (var cp of collProps) options.push({ label: base + '.' + cp, type: 'property', detail: 'pagination' });
+                } else if (varInfo.type === 'entry') {
+                    // Single entry — suggest collection fields
+                    var sysFields = ['id', 'slug', 'created_at', 'updated_at', 'status'];
+                    for (var sf of sysFields) options.push({ label: base + '.' + sf, type: 'property', detail: 'system' });
+                    for (var slug in _completionFields) {
+                        for (var f of (_completionFields[slug] || [])) {
+                            options.push({ label: base + '.' + f.slug, type: 'property', detail: f.type });
+                        }
+                    }
+                }
+            } else {
+                // Fallback: if any collection fields loaded, suggest them for any *.field pattern
+                for (var slug in _completionFields) {
+                    var sysF = ['id', 'slug', 'created_at', 'updated_at'];
+                    for (var sf of sysF) options.push({ label: base + '.' + sf, type: 'property', detail: 'system' });
+                    for (var f of (_completionFields[slug] || [])) {
+                        options.push({ label: base + '.' + f.slug, type: 'property', detail: f.type });
+                    }
+                }
+            }
+
+            if (options.length === 0) return null;
+            return { from: word.from, options: options, validFor: /^[\w.]*/ };
+        }
+
+        // Parse controller PHP to extract return variable names and types
+        async function parseControllerVars(templateName) {
+            _controllerVars = {};
+            if (!_pagesConfig) await loadPagesConfig();
+            var page = (_pagesConfig.pages || []).find(function(p) { return p.template === templateName; });
+            if (!page || !page.controller) return;
+            try {
+                var data = await apiFetch(BASE_URL + '/file?path=controllers/' + page.controller + '.php');
+                var content = data.content || '';
+                // Find return [ 'key' => $expr, ... ]
+                var retMatch = content.match(/return\s*\[\s*([\s\S]*?)\];/);
+                if (retMatch) {
+                    var returnBlock = retMatch[1];
+                    var keyRe = /'(\w+)'\s*=>/g;
+                    var km;
+                    while ((km = keyRe.exec(returnBlock)) !== null) {
+                        var key = km[1];
+                        // Detect if it's a collection() call or entry() call
+                        var afterArrow = returnBlock.substring(km.index + km[0].length, km.index + km[0].length + 100);
+                        if (/collection\s*\(/.test(afterArrow)) {
+                            _controllerVars[key] = { type: 'collection' };
+                        } else if (/entry\s*\(/.test(afterArrow)) {
+                            _controllerVars[key] = { type: 'entry' };
+                        } else {
+                            _controllerVars[key] = { type: 'unknown' };
+                        }
+                    }
+                }
+            } catch(e) {}
+        }
+
+        // Parse section schema settings
+        function parseSectionSettings(content) {
+            _sectionSettings = [];
+            var schemaStart = content.indexOf('{% schema %}');
+            if (schemaStart === -1) {
+                // Try without Twig delimiters (in case content is raw)
+                schemaStart = content.indexOf('"settings"');
+            }
+            if (schemaStart === -1) return;
+            var schemaContent = content.substring(schemaStart);
+            var idRe = /"id"\s*:\s*"([^"]+)"/g;
+            var m;
+            while ((m = idRe.exec(schemaContent)) !== null) {
+                _sectionSettings.push(m[1]);
+            }
+        }
 
         // ── Twig syntax overlay highlighting ──
         // CodeMirror's HTML parser doesn't know Twig, so we overlay decorations
@@ -1830,6 +1946,13 @@
         updateUnsavedState();
         updateToolbarInfo(path);
         updateToolbarActions(path);
+        // Parse section settings or controller vars for intellisense
+        var fileExt = path.split('.').pop().toLowerCase();
+        if (fileExt === 'twig') {
+            parseSectionSettings(tab.content);
+            var tmplName = path.split('/').pop().replace('.twig', '');
+            parseControllerVars(tmplName);
+        }
         updateRefPanel(path, tab.content);
     }
 
@@ -1881,6 +2004,10 @@
             }
             if (emmetExt && ['twig', 'html', 'htm', 'css', 'php'].includes(fileExt)) {
                 extensions.push(...emmetExt);
+            }
+            // Intellisense for Twig templates and PHP controllers
+            if (autoComplete && ['twig', 'html', 'php'].includes(fileExt)) {
+                extensions.push(autoComplete({ override: [zephyrCompletionSource] }));
             }
 
             const view = new EditorView({
@@ -2049,15 +2176,48 @@
         var collSlugs = findCollectionForFile(path, content);
         var html = '';
 
+        // ── Controller Returns Group (for .twig templates) ──
+        if (isTwig) {
+            var tmplName = path.split('/').pop().replace('.twig', '');
+            await parseControllerVars(tmplName);
+            if (Object.keys(_controllerVars).length > 0) {
+                html += '<div class="ref-group open">';
+                html += '<div class="ref-group-header"><span class="ref-group-chevron">&#9654;</span> Controller Variables</div>';
+                html += '<div class="ref-group-body">';
+                for (var varName in _controllerVars) {
+                    var vtype = _controllerVars[varName].type;
+                    var badge = vtype === 'collection' ? 'list' : vtype === 'entry' ? 'entry' : 'var';
+                    html += '<div class="ref-item" data-copy="' + varName + '" title="' + vtype + ' — click to copy">' +
+                        varName + ' <span class="ref-item-type ref-item-type--func">' + badge + '</span></div>';
+                    // Show sub-properties
+                    if (vtype === 'collection') {
+                        var subProps = ['data', 'current_page', 'last_page', 'per_page', 'total'];
+                        for (var sp of subProps) {
+                            html += '<div class="ref-item" data-copy="' + varName + '.' + sp + '" title="Click to copy" style="padding-left:18px;">' +
+                                '.' + sp + ' <span class="ref-item-type ref-item-type--system">prop</span></div>';
+                        }
+                    }
+                }
+                // Also show page variable
+                html += '<div class="ref-item" data-copy="page" title="Page data">page <span class="ref-item-type ref-item-type--func">var</span></div>';
+                var pageProps = ['title', 'slug', 'url', 'template'];
+                for (var pp of pageProps) {
+                    html += '<div class="ref-item" data-copy="page.' + pp + '" title="Click to copy" style="padding-left:18px;">.' + pp + ' <span class="ref-item-type ref-item-type--system">prop</span></div>';
+                }
+                html += '</div></div>';
+            }
+        }
+
         // ── Fields Group (if collection detected) ──
+        _completionFields = {};
         if (collSlugs.length > 0) {
             for (var slug of collSlugs) {
                 var data = await fetchCollectionFields(slug);
                 var fields = data.fields || [];
+                _completionFields[slug] = fields;
                 html += '<div class="ref-group open">';
                 html += '<div class="ref-group-header"><span class="ref-group-chevron">&#9654;</span> ' + slug + ' fields</div>';
                 html += '<div class="ref-group-body">';
-                // System fields
                 var sysFields = [
                     { slug: 'id', type: 'id' }, { slug: 'slug', type: 'string' },
                     { slug: 'created_at', type: 'datetime' }, { slug: 'updated_at', type: 'datetime' }
@@ -2074,6 +2234,18 @@
                 }
                 html += '</div></div>';
             }
+        }
+
+        // ── Section Settings (for .twig sections) ──
+        if (isTwig && _sectionSettings.length > 0) {
+            html += '<div class="ref-group open">';
+            html += '<div class="ref-group-header"><span class="ref-group-chevron">&#9654;</span> Section Settings</div>';
+            html += '<div class="ref-group-body">';
+            for (var sid of _sectionSettings) {
+                html += '<div class="ref-item" data-copy="section.settings.' + sid + '" title="Click to copy">' +
+                    sid + ' <span class="ref-item-type ref-item-type--field">setting</span></div>';
+            }
+            html += '</div></div>';
         }
 
         // ── Snippets Group ──
