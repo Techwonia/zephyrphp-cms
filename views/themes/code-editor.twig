@@ -2415,14 +2415,13 @@
 
         // Normalize: put each tag on its own line, but protect Twig expressions first
         // Replace Twig {{ }}, {% %}, {# #} with placeholders so their contents aren't split
-        const twigPlaceholders = [];
+        var twigPlaceholders = [];
         src = src.replace(/(\{\{[\s\S]*?\}\}|\{%[\s\S]*?%\}|\{#[\s\S]*?#\})/g, function(match) {
             twigPlaceholders.push(match);
-            return '\x00TW' + (twigPlaceholders.length - 1) + '\x00';
+            return '___TWPH' + (twigPlaceholders.length - 1) + 'TWPH___';
         });
         src = src.replace(/>\s*</g, '>\n<').replace(/^\s+|\s+$/g, '');
-        // Restore Twig expressions
-        src = src.replace(/\x00TW(\d+)\x00/g, function(_, idx) {
+        src = src.replace(/___TWPH(\d+)TWPH___/g, function(_, idx) {
             return twigPlaceholders[parseInt(idx)];
         });
 
