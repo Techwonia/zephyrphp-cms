@@ -715,7 +715,7 @@ TWIG;
                 {% if auth_check() %}
                     <li><a href="{{ admin_url() }}">Dashboard</a></li>
                 {% else %}
-                    <li><a href="/login">Sign In</a></li>
+                    <li><a href="{{ login_url() }}">Sign In</a></li>
                 {% endif %}
             </ul>
         </nav>
@@ -747,7 +747,7 @@ TWIG;
     <h1 class="hero__title">{{ config('app.name', 'ZephyrPHP') }}</h1>
     <p class="hero__subtitle">Your site is ready. Sign in to start building.</p>
     <div class="hero__actions">
-        <a href="/login" class="btn btn--primary">Sign In</a>
+        <a href="{{ login_url() }}" class="btn btn--primary">Sign In</a>
         <a href="/register" class="btn btn--outline">Create Account</a>
     </div>
 </section>

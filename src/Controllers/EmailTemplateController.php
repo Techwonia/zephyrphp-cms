@@ -15,7 +15,7 @@ class EmailTemplateController extends Controller
     private function requireAccess(): void
     {
         if (!Auth::check()) {
-            $this->redirect('/login');
+            $this->redirect(login_url());
             return;
         }
         if (!PermissionService::can('cms.settings')) {

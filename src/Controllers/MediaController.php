@@ -16,13 +16,13 @@ class MediaController extends Controller
     private function requireCmsAccess(): void
     {
         if (!Auth::check()) {
-            $this->redirect('/login');
+            $this->redirect(login_url());
             return;
         }
         if (!PermissionService::can('cms.access')) {
             Auth::logout();
             $this->flash('errors', ['auth' => 'Access denied. You do not have CMS access.']);
-            $this->redirect('/login');
+            $this->redirect(login_url());
         }
     }
 

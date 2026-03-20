@@ -14,11 +14,11 @@ class NotificationController extends Controller
     private function requireAccess(): ?int
     {
         if (!Auth::check()) {
-            $this->redirect('/login');
+            $this->redirect(login_url());
             return null;
         }
         if (!PermissionService::can('cms.access')) {
-            $this->redirect('/login');
+            $this->redirect(login_url());
             return null;
         }
         return Auth::user()?->getId();

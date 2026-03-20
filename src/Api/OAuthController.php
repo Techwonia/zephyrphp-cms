@@ -38,7 +38,7 @@ class OAuthController extends Controller
         if (!Auth::check()) {
             // Store the full authorize URL to redirect back after login
             $_SESSION['_oauth_return'] = $_SERVER['REQUEST_URI'];
-            $this->redirect('/login');
+            $this->redirect(login_url());
             return '';
         }
 
@@ -93,7 +93,7 @@ class OAuthController extends Controller
     public function authorizeApprove(): void
     {
         if (!Auth::check()) {
-            $this->redirect('/login');
+            $this->redirect(login_url());
             return;
         }
 

@@ -28,7 +28,7 @@ class FileManagerController extends Controller
     private function requirePermission(string $permission): void
     {
         if (!Auth::check()) {
-            $this->redirect('/login');
+            $this->redirect(login_url());
             return;
         }
         if (!PermissionService::can($permission)) {

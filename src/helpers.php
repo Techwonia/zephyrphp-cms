@@ -43,6 +43,26 @@ if (!function_exists('admin_path')) {
     }
 }
 
+if (!function_exists('login_url')) {
+    /**
+     * Get the login URL.
+     */
+    function login_url(): string
+    {
+        return '/zephyrphp/auth/login';
+    }
+}
+
+if (!function_exists('logout_url')) {
+    /**
+     * Get the logout URL.
+     */
+    function logout_url(): string
+    {
+        return '/zephyrphp/auth/logout';
+    }
+}
+
 if (!function_exists('collection')) {
     /**
      * Query collection/page type entries.

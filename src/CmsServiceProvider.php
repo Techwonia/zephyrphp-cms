@@ -418,6 +418,12 @@ class CmsServiceProvider
         $view->addFunction('admin_url', function (string $path = '') {
             return admin_url($path);
         });
+        $view->addFunction('login_url', function () {
+            return login_url();
+        });
+        $view->addFunction('logout_url', function () {
+            return logout_url();
+        });
 
         // Register sidebar and dashboard as Twig globals (lazy-loaded)
         $view->addFunction('cms_sidebar', function () {

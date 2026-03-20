@@ -13,7 +13,7 @@ class ProfileController extends Controller
     private function requireAuth(): void
     {
         if (!Auth::check()) {
-            $this->redirect('/login');
+            $this->redirect(login_url());
         }
     }
 

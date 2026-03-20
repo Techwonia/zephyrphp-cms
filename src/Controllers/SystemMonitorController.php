@@ -13,7 +13,7 @@ class SystemMonitorController extends Controller
     private function requirePermission(): void
     {
         if (!Auth::check()) {
-            $this->redirect('/login');
+            $this->redirect(login_url());
             return;
         }
         if (!PermissionService::can('settings.view')) {

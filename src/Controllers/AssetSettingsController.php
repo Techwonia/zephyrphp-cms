@@ -14,13 +14,13 @@ class AssetSettingsController extends Controller
     private function requirePermission(string $permission): void
     {
         if (!Auth::check()) {
-            $this->redirect('/login');
+            $this->redirect(login_url());
             return;
         }
         if (!PermissionService::can('cms.access')) {
             Auth::logout();
             $this->flash('errors', ['auth' => 'Access denied.']);
-            $this->redirect('/login');
+            $this->redirect(login_url());
             return;
         }
         if (!PermissionService::can($permission)) {

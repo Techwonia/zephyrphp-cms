@@ -23,7 +23,7 @@ class ThemeCodeEditorController extends Controller
     private function requireAdmin(): bool
     {
         if (!Auth::check()) {
-            $this->redirect('/login');
+            $this->redirect(login_url());
             return false;
         }
         if (!PermissionService::can('themes.edit')) {
