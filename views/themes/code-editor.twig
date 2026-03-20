@@ -2080,16 +2080,17 @@
         html += '<div class="ref-group open">';
         html += '<div class="ref-group-header"><span class="ref-group-chevron">&#9654;</span> Snippets</div>';
         html += '<div class="ref-group-body">';
+        var _t = function(s) { return s.replace(/\{~/g, _ob).replace(/~\}/g, _cb); };
         if (isTwig) {
             var twigSnippets = [
-                ['for loop', "{% for item in items.data %}\n    {{ item.title }}\n{% endfor %}"],
-                ['if/else', "{% if condition %}\n    ...\n{% else %}\n    ...\n{% endif %}"],
-                ['set variable', "{% set myVar = 'value' %}"],
-                ['include', "{% include '@theme/snippets/name.twig' %}"],
-                ['block', "{% block content %}{% endblock %}"],
-                ['extends', '{% extends "@theme/layouts/base.twig" %}'],
-                ['raw', "{% raw %}...{% endraw %}"],
-                ['collection loop', "{% set items = collection('" + (collSlugs[0] || 'slug') + "', {per_page: 10}) %}\n{% for item in items.data %}\n    {{ item.title }}\n{% endfor %}"],
+                ['for loop', _t("{~% for item in items.data %~}\n    {~{ item.title }~}\n{~% endfor %~}")],
+                ['if/else', _t("{~% if condition %~}\n    ...\n{~% else %~}\n    ...\n{~% endif %~}")],
+                ['set variable', _t("{~% set myVar = 'value' %~}")],
+                ['include', _t("{~% include '@theme/snippets/name.twig' %~}")],
+                ['block', _t("{~% block content %~}{~% endblock %~}")],
+                ['extends', _t('{~% extends "@theme/layouts/base.twig" %~}')],
+                ['verbatim', _t("{~% verbatim %~}...{~% endverbatim %~}")],
+                ['collection loop', _t("{~% set items = collection('") + (collSlugs[0] || 'slug') + _t("', {per_page: 10}) %~}\n{~% for item in items.data %~}\n    {~{ item.title }~}\n{~% endfor %~}")],
             ];
             for (var s of twigSnippets) {
                 html += '<div class="ref-item" data-copy="' + s[1].replace(/"/g, '&quot;') + '" title="Click to copy">' +
@@ -2126,20 +2127,20 @@
         html += '<div class="ref-group-body">';
         if (isTwig) {
             var twigFuncs = [
-                ['admin_url()', "admin_url('path')"],
-                ['collection()', "collection('slug', {per_page: 10})"],
-                ['entry()', "entry('slug', identifier)"],
-                ['collection_meta()', "collection_meta('slug')"],
-                ['entry_query()', "entry_query('slug')"],
-                ['csrf_field()', "csrf_field() | raw"],
-                ['asset()', "asset('css/style.css')"],
-                ['theme_settings()', "theme_settings()"],
-                ['seo_meta()', "seo_meta(item, 'collection')"],
+                ['admin_url()', _t("{~{ admin_url('path') }~}")],
+                ['collection()', _t("{~{ collection('slug', {per_page: 10}) }~}")],
+                ['entry()', _t("{~{ entry('slug', identifier) }~}")],
+                ['collection_meta()', _t("{~{ collection_meta('slug') }~}")],
+                ['entry_query()', _t("{~{ entry_query('slug') }~}")],
+                ['csrf_field()', _t("{~{ csrf_field() | r") + "aw" + _t(" }~}")],
+                ['asset()', _t("{~{ asset('css/style.css') }~}")],
+                ['theme_settings()', _t("{~{ theme_settings() }~}")],
+                ['seo_meta()', _t("{~{ seo_meta(item, 'collection') }~}")],
                 ['date filter', "item.created_at|date('M d, Y')"],
                 ['striptags', "item.content|striptags|slice(0, 120)"],
                 ['url_encode', "value|url_encode"],
-                ['default', "variable|default('fallback')"],
-                ['raw', "content|raw"],
+                ['default filter', "variable|default('fallback')"],
+                ['raw filter', "content|r" + "aw"],
             ];
             for (var f of twigFuncs) {
                 html += '<div class="ref-item" data-copy="' + f[1].replace(/"/g, '&quot;') + '" title="Click to copy">' +
