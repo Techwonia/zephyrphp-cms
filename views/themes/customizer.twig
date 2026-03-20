@@ -1058,8 +1058,11 @@
         </div>
         <div style="margin-bottom:12px;">
             <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">URL Path *</label>
-            <input type="text" id="newPageSlug" placeholder="/about" style="width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:6px; font-size:13px;">
-            <small style="color:var(--text-disabled); font-size:11px;">Use <code>{slug}</code> for dynamic, e.g. <code>/blog/{slug}</code></small>
+            <div style="display:flex; align-items:center; border:1px solid var(--border); border-radius:6px; overflow:hidden;">
+                <span style="padding:8px 2px 8px 10px; background:var(--bg-subdued,#fafafa); color:var(--text-secondary); font-size:13px; border-right:1px solid var(--border); flex-shrink:0;">/</span>
+                <input type="text" id="newPageSlug" placeholder="about" style="width:100%; padding:8px 10px; border:none; font-size:13px; outline:none;">
+            </div>
+            <small style="color:var(--text-disabled); font-size:11px;">Auto-generated from title. Edit if needed.</small>
         </div>
         <div style="margin-bottom:12px;">
             <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Layout</label>
@@ -1076,6 +1079,20 @@
             </select>
             <small style="color:var(--text-disabled); font-size:11px;">Link this page to a CMS collection. A controller will be auto-generated.</small>
             <div id="collectionPageHint" style="display:none; margin-top:6px; padding:8px 10px; background:#e8f5e9; border-radius:6px; font-size:11px; color:#2e7d32; line-height:1.5;"></div>
+        </div>
+        <div id="detailPageGroup" style="display:none; margin-bottom:12px; padding:10px 12px; background:var(--bg-subdued,#fafafa); border-radius:6px; border:1px solid var(--border);">
+            <label style="font-size:12px; font-weight:600; display:flex; align-items:center; gap:6px; cursor:pointer;">
+                <input type="checkbox" id="createDetailPage" checked>
+                Also create detail page
+            </label>
+            <div id="detailPageSlugGroup" style="margin-top:8px;">
+                <label style="font-size:11px; font-weight:500; display:block; margin-bottom:4px; color:var(--text-secondary);">Detail URL Path</label>
+                <div style="display:flex; align-items:center; border:1px solid var(--border); border-radius:6px; overflow:hidden; background:#fff;">
+                    <span style="padding:6px 2px 6px 10px; background:var(--bg-subdued,#fafafa); color:var(--text-secondary); font-size:12px; border-right:1px solid var(--border); flex-shrink:0;">/</span>
+                    <input type="text" id="detailPageSlug" placeholder="blogs/{slug}" style="width:100%; padding:6px 10px; border:none; font-size:12px; outline:none;">
+                </div>
+                <small style="color:var(--text-disabled); font-size:11px;">Fetches a single entry by slug using <code>entry()</code>.</small>
+            </div>
         </div>
         <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
             <button id="cancelAddPage" style="padding:8px 16px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-size:13px;">Cancel</button>
@@ -4029,6 +4046,10 @@
     document.getElementById('addPageBtn')?.addEventListener('click', function() {
         document.getElementById('newPageTitle').value = '';
         document.getElementById('newPageSlug').value = '';
+        _slugManual = false;
+        document.getElementById('detailPageGroup').style.display = 'none';
+        document.getElementById('createDetailPage').checked = true;
+        document.getElementById('detailPageSlugGroup').style.display = 'block';
         // Populate collection dropdown
         var colSelect = document.getElementById('newPageCollection');
         colSelect.innerHTML = '<option value="">— No collection —</option>';
@@ -4049,33 +4070,60 @@
     addPageModal?.addEventListener('click', function(e) {
         if (e.target === addPageModal) addPageModal.style.display = 'none';
     });
-    // Collection hint in add-page modal
-    document.getElementById('newPageCollection')?.addEventListener('change', function() {
-        var hint = document.getElementById('collectionPageHint');
-        if (this.value) {
-            var hasSlug = document.getElementById('newPageSlug').value.includes('{');
-            hint.style.display = 'block';
-            hint.innerHTML = hasSlug
-                ? '📄 A controller will be generated that calls <code>entry(\'' + this.value + '\', $slug)</code> to fetch the detail page data.'
-                : '📋 A controller will be generated that calls <code>collection(\'' + this.value + '\')</code> to fetch listing data with pagination.';
-        } else {
-            hint.style.display = 'none';
-        }
-    });
-    document.getElementById('newPageSlug')?.addEventListener('input', function() {
+    // Auto-generate slug from title
+    var _slugManual = false;
+    document.getElementById('newPageTitle')?.addEventListener('input', function() {
+        if (_slugManual) return;
+        var slug = this.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        document.getElementById('newPageSlug').value = slug;
+        // Update detail slug if collection selected
         var colSelect = document.getElementById('newPageCollection');
         if (colSelect.value) colSelect.dispatchEvent(new Event('change'));
+    });
+    document.getElementById('newPageSlug')?.addEventListener('input', function() {
+        _slugManual = this.value !== '';
+        var colSelect = document.getElementById('newPageCollection');
+        if (colSelect.value) colSelect.dispatchEvent(new Event('change'));
+    });
+    // Collection selection: show hint + detail page option
+    document.getElementById('newPageCollection')?.addEventListener('change', function() {
+        var hint = document.getElementById('collectionPageHint');
+        var detailGroup = document.getElementById('detailPageGroup');
+        if (this.value) {
+            hint.style.display = 'block';
+            hint.innerHTML = 'A controller will be generated that calls <code>collection(\'' + this.value + '\')</code> to fetch listing data with pagination.';
+            detailGroup.style.display = 'block';
+            var listSlug = document.getElementById('newPageSlug').value || this.value.replace(/_/g, '-');
+            document.getElementById('detailPageSlug').value = listSlug + '/{slug}';
+        } else {
+            hint.style.display = 'none';
+            detailGroup.style.display = 'none';
+        }
+    });
+    document.getElementById('createDetailPage')?.addEventListener('change', function() {
+        document.getElementById('detailPageSlugGroup').style.display = this.checked ? 'block' : 'none';
     });
 
     document.getElementById('confirmAddPage')?.addEventListener('click', function() {
         var btn = this;
         var title = document.getElementById('newPageTitle').value.trim();
-        var slug = document.getElementById('newPageSlug').value.trim();
+        var slug = document.getElementById('newPageSlug').value.trim().replace(/^\/+/, '');
+        if (slug) slug = '/' + slug;
         var layout = document.getElementById('newPageLayout').value;
         var collection = document.getElementById('newPageCollection').value;
         if (!title || !slug) { alert('Title and URL are required'); return; }
+
+        var createDetail = collection && document.getElementById('createDetailPage').checked;
+        var detailSlug = '';
+        if (createDetail) {
+            detailSlug = document.getElementById('detailPageSlug').value.trim().replace(/^\/+/, '');
+            if (detailSlug) detailSlug = '/' + detailSlug;
+        }
+
         btn.disabled = true;
         btn.textContent = 'Creating...';
+
+        // Create listing page
         fetch('/admin/themes/' + THEME_SLUG + '/pages/add', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN },
@@ -4083,13 +4131,24 @@
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
-            if (data.success) {
-                window.location.reload();
-            } else {
+            if (!data.success) {
                 alert(data.error || 'Failed to create page');
                 btn.disabled = false;
                 btn.textContent = 'Create Page';
+                return;
             }
+            // If detail page requested, create it too
+            if (createDetail && detailSlug) {
+                var detailTitle = title.replace(/s$/, '') + ' Detail';
+                return fetch('/admin/themes/' + THEME_SLUG + '/pages/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN },
+                    body: JSON.stringify({ title: detailTitle, slug: detailSlug, layout: layout, collection: collection })
+                }).then(function(r) { return r.json(); }).then(function() {
+                    window.location.reload();
+                });
+            }
+            window.location.reload();
         })
         .catch(function() {
             alert('Network error');
@@ -4105,6 +4164,10 @@
         state.activeBlock = null;
         hideRightPanel();
         renderSectionTree();
+        // Persist page in URL
+        var url = new URL(window.location);
+        url.searchParams.set('page', state.currentPage);
+        history.replaceState(null, '', url);
         // Full page switch uses GET for initial load
         var frame = document.getElementById('previewFrame');
         frame.removeAttribute('srcdoc');

@@ -854,7 +854,6 @@
                             <div class="shortcut-hints">
                                 <span><kbd>Ctrl+P</kbd> Search files</span>
                                 <span><kbd>Ctrl+S</kbd> Save</span>
-                                <span><kbd>Ctrl+N</kbd> New file</span>
                             </div>
                         </div>
                     </div>
@@ -1078,7 +1077,9 @@
             "@codemirror/lang-html":   "https://esm.sh/@codemirror/lang-html@6.4.9?external=@codemirror/state,@codemirror/view,@codemirror/language,@codemirror/autocomplete,@lezer/common,@lezer/html,@codemirror/lang-css,@codemirror/lang-javascript",
             "@codemirror/lang-css":    "https://esm.sh/@codemirror/lang-css@6.3.1?external=@codemirror/state,@codemirror/view,@codemirror/language,@codemirror/autocomplete,@lezer/common,@lezer/highlight,@lezer/css",
             "@codemirror/lang-javascript":"https://esm.sh/@codemirror/lang-javascript@6.2.2?external=@codemirror/state,@codemirror/view,@codemirror/language,@codemirror/autocomplete,@lezer/common,@lezer/highlight,@lezer/javascript",
-            "@codemirror/lang-json":   "https://esm.sh/@codemirror/lang-json@6.0.1?external=@codemirror/state,@codemirror/language,@lezer/common,@lezer/highlight,@lezer/json"
+            "@codemirror/lang-json":   "https://esm.sh/@codemirror/lang-json@6.0.1?external=@codemirror/state,@codemirror/language,@lezer/common,@lezer/highlight,@lezer/json",
+            "@lezer/php":              "https://esm.sh/@lezer/php@1.0.2?external=@lezer/common,@lezer/lr,@lezer/highlight,@lezer/html,@lezer/javascript",
+            "@codemirror/lang-php":    "https://esm.sh/@codemirror/lang-php@6.0.1?external=@codemirror/state,@codemirror/view,@codemirror/language,@lezer/common,@lezer/highlight,@lezer/php,@codemirror/lang-html,@codemirror/lang-css,@codemirror/lang-javascript"
         }
     }
     </script>
@@ -1134,7 +1135,7 @@
     // Schema button removed — view tabs handle switching
 
     // ── Load CodeMirror ──
-    let EditorView, EditorState, basicSetup, keymap, langHtml, langJson, langCss, langJs, indentWithTab;
+    let EditorView, EditorState, basicSetup, keymap, langHtml, langJson, langCss, langJs, langPhp, indentWithTab;
     let oneDark;
     let twigTheme, twigHighlighter;
 
@@ -1150,6 +1151,7 @@
         const cmJson = await import('@codemirror/lang-json');
         const cmCss = await import('@codemirror/lang-css');
         const cmJs = await import('@codemirror/lang-javascript');
+        const cmPhp = await import('@codemirror/lang-php');
         const cmTheme = await import('@codemirror/theme-one-dark');
 
         EditorView = cmView.EditorView;
@@ -1159,6 +1161,7 @@
         langJson = cmJson.json;
         langCss = cmCss.css;
         langJs = cmJs.javascript;
+        langPhp = cmPhp.php;
         indentWithTab = cmCommands.indentWithTab;
         oneDark = cmTheme.oneDark;
 
@@ -1691,6 +1694,11 @@
         const tab = state.openTabs.find(t => t.path === path);
         if (!tab) return;
 
+        // Persist active file in URL
+        const url = new URL(window.location);
+        url.searchParams.set('file', path);
+        history.replaceState(null, '', url);
+
         $editorEmpty.style.display = 'none';
         $('pane1Name').textContent = path.split('/').pop();
         createEditor($container1, tab.content, path, 'main');
@@ -1717,14 +1725,15 @@
 
         if (state.cmAvailable) {
             const langExt = getLanguage(path);
-            const saveKeymap = keymap ? keymap.of([
+            const editorKeymap = keymap ? keymap.of([
                 { key: 'Mod-s', run: () => { window._saveFile(); return true; } },
+                { key: 'Mod-p', run: () => { window._openQuickSearch(); return true; } },
                 ...(indentWithTab ? [indentWithTab] : []),
             ]) : null;
 
             const extensions = [
                 basicSetup,
-                saveKeymap,
+                editorKeymap,
                 oneDark,
                 EditorView.updateListener.of(update => {
                     if (update.docChanged && role === 'main') onEditorChange();
@@ -1776,6 +1785,7 @@
             case 'json': return langJson();
             case 'css': return langCss();
             case 'js': return langJs();
+            case 'php': return langPhp();
             default: return null;
         }
     }
@@ -3286,10 +3296,6 @@
     document.addEventListener('keydown', e => {
         if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); window._saveFile(); }
         if ((e.ctrlKey || e.metaKey) && e.key === 'p') { e.preventDefault(); window._openQuickSearch(); }
-        if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
-            e.preventDefault();
-            $('addDropdown').classList.toggle('visible');
-        }
     });
 
     window.addEventListener('beforeunload', e => {
@@ -3447,6 +3453,11 @@
 
     await loadFileTree();
 
+    // Auto-open file from URL ?file= parameter
+    const urlFile = new URLSearchParams(window.location.search).get('file');
+    if (urlFile && state.allFilePaths.includes(urlFile)) {
+        await openFile(urlFile);
+    }
 
     </script>
 </body>

@@ -142,8 +142,11 @@
                     </div>
                     <div class="form-group">
                         <label for="pageSlug">URL Path *</label>
-                        <input type="text" id="pageSlug" class="form-control" placeholder="/about">
-                        <small class="text-muted">Use <code>{slug}</code> for dynamic parameters, e.g. <code>/blog/{slug}</code></small>
+                        <div style="display:flex; align-items:center; border:1px solid var(--border-color,#ccc); border-radius:var(--radius-100,4px); overflow:hidden;">
+                            <span style="padding:6px 2px 6px 10px; background:var(--bg-subdued,#f7f7f7); color:var(--text-secondary); font-size:13px; border-right:1px solid var(--border-color,#ccc); flex-shrink:0;">/</span>
+                            <input type="text" id="pageSlug" placeholder="about" style="width:100%; padding:6px 10px; border:none; font-size:13px; outline:none;">
+                        </div>
+                        <small class="text-muted">Auto-generated from title. Edit if needed.</small>
                     </div>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-400,16px);">
                         <div class="form-group">
@@ -2278,7 +2281,7 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.addEventListener('click', function() {
             document.getElementById('pageEditTemplate').value = this.dataset.template;
             document.getElementById('pageTitle').value = this.dataset.title;
-            document.getElementById('pageSlug').value = this.dataset.slug;
+            document.getElementById('pageSlug').value = (this.dataset.slug || '').replace(/^\//, '');
             document.getElementById('pageLayout').value = this.dataset.layout;
             var authReq = this.dataset.authRequired === '1' || this.dataset.authRequired === 'true';
             document.getElementById('pageAuthRequired').checked = authReq;
@@ -2298,9 +2301,11 @@ document.addEventListener('DOMContentLoaded', function() {
         var rolesStr = document.getElementById('pageAllowedRoles').value.trim();
         var allowedRoles = rolesStr ? rolesStr.split(',').map(function(r) { return r.trim(); }).filter(Boolean) : [];
 
+        var slugVal = document.getElementById('pageSlug').value.trim().replace(/^\/+/, '');
+        if (slugVal) slugVal = '/' + slugVal;
         var payload = {
             title: document.getElementById('pageTitle').value,
-            slug: document.getElementById('pageSlug').value,
+            slug: slugVal,
             layout: document.getElementById('pageLayout').value,
             collection: document.getElementById('pageCollection').value,
             auth_required: authRequired,
@@ -2358,7 +2363,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('pageTitle')?.addEventListener('input', function() {
         var editTemplate = document.getElementById('pageEditTemplate').value;
         if (editTemplate) return;
-        var slug = '/' + this.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        var slug = this.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
         document.getElementById('pageSlug').value = slug;
     });
 

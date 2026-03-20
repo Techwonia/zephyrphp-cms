@@ -1407,10 +1407,19 @@
             }
         });
 
-        // Auto-open panel for current section on page load
+        // Auto-open panel for current section on page load (without animation)
         var currentSectionBtn = activityBar.querySelector('[data-panel].active');
         if (currentSectionBtn) {
+            sidebarPanel.style.transition = 'none';
+            cmsMain.style.transition = 'none';
             currentSectionBtn.click();
+            // Re-enable transitions after paint
+            requestAnimationFrame(function() {
+                requestAnimationFrame(function() {
+                    sidebarPanel.style.transition = '';
+                    cmsMain.style.transition = '';
+                });
+            });
         }
 
         // Tab switching
