@@ -1298,112 +1298,6 @@
         oneDark = cmTheme.oneDark;
         autoComplete = cmAutocomplete.autocompletion;
 
-        // ── Twig/PHP Intellisense completion source ──
-        // _controllerVars: keys returned by the controller for current template
-        var _controllerVars = {};
-        // _sectionSettings: setting IDs from the current section schema
-        var _sectionSettings = [];
-
-        function zephyrCompletionSource(context) {
-            var word = context.matchBefore(/[\w]+\.[\w.]*/);
-            if (!word) return null;
-            var prefix = word.text;
-            var dotIdx = prefix.indexOf('.');
-            var base = prefix.substring(0, dotIdx);
-            var options = [];
-
-            if (prefix.startsWith('section.settings.')) {
-                for (var sid of _sectionSettings) {
-                    options.push({ label: 'section.settings.' + sid, type: 'property' });
-                }
-            } else if (prefix.startsWith('section.')) {
-                options.push({ label: 'section.settings', type: 'property' });
-                options.push({ label: 'section.blocks', type: 'property' });
-                options.push({ label: 'section.id', type: 'property' });
-                options.push({ label: 'section.type', type: 'property' });
-            } else if (prefix.startsWith('page.')) {
-                var pp = ['title', 'slug', 'url', 'template'];
-                for (var p of pp) options.push({ label: 'page.' + p, type: 'property' });
-            } else if (_controllerVars[base]) {
-                // Dynamic: suggest properties based on what controller returns
-                var varInfo = _controllerVars[base];
-                if (varInfo.type === 'collection') {
-                    // Paginated collection result
-                    var collProps = ['data', 'current_page', 'last_page', 'per_page', 'total'];
-                    for (var cp of collProps) options.push({ label: base + '.' + cp, type: 'property', detail: 'pagination' });
-                } else if (varInfo.type === 'entry') {
-                    // Single entry — suggest collection fields
-                    var sysFields = ['id', 'slug', 'created_at', 'updated_at', 'status'];
-                    for (var sf of sysFields) options.push({ label: base + '.' + sf, type: 'property', detail: 'system' });
-                    for (var slug in _completionFields) {
-                        for (var f of (_completionFields[slug] || [])) {
-                            options.push({ label: base + '.' + f.slug, type: 'property', detail: f.type });
-                        }
-                    }
-                }
-            } else {
-                // Fallback: if any collection fields loaded, suggest them for any *.field pattern
-                for (var slug in _completionFields) {
-                    var sysF = ['id', 'slug', 'created_at', 'updated_at'];
-                    for (var sf of sysF) options.push({ label: base + '.' + sf, type: 'property', detail: 'system' });
-                    for (var f of (_completionFields[slug] || [])) {
-                        options.push({ label: base + '.' + f.slug, type: 'property', detail: f.type });
-                    }
-                }
-            }
-
-            if (options.length === 0) return null;
-            return { from: word.from, options: options, validFor: /^[\w.]*/ };
-        }
-
-        // Parse controller PHP to extract return variable names and types
-        async function parseControllerVars(templateName) {
-            _controllerVars = {};
-            if (!_pagesConfig) await loadPagesConfig();
-            var page = (_pagesConfig.pages || []).find(function(p) { return p.template === templateName; });
-            if (!page || !page.controller) return;
-            try {
-                var data = await apiFetch(BASE_URL + '/file?path=controllers/' + page.controller + '.php');
-                var content = data.content || '';
-                // Find return [ 'key' => $expr, ... ]
-                var retMatch = content.match(/return\s*\[\s*([\s\S]*?)\];/);
-                if (retMatch) {
-                    var returnBlock = retMatch[1];
-                    var keyRe = /'(\w+)'\s*=>/g;
-                    var km;
-                    while ((km = keyRe.exec(returnBlock)) !== null) {
-                        var key = km[1];
-                        // Detect if it's a collection() call or entry() call
-                        var afterArrow = returnBlock.substring(km.index + km[0].length, km.index + km[0].length + 100);
-                        if (/collection\s*\(/.test(afterArrow)) {
-                            _controllerVars[key] = { type: 'collection' };
-                        } else if (/entry\s*\(/.test(afterArrow)) {
-                            _controllerVars[key] = { type: 'entry' };
-                        } else {
-                            _controllerVars[key] = { type: 'unknown' };
-                        }
-                    }
-                }
-            } catch(e) {}
-        }
-
-        // Parse section schema settings
-        function parseSectionSettings(content) {
-            _sectionSettings = [];
-            var schemaStart = content.indexOf(_ob + '% schema %' + _cb);
-            if (schemaStart === -1) {
-                // Try without Twig delimiters (in case content is raw)
-                schemaStart = content.indexOf('"settings"');
-            }
-            if (schemaStart === -1) return;
-            var schemaContent = content.substring(schemaStart);
-            var idRe = /"id"\s*:\s*"([^"]+)"/g;
-            var m;
-            while ((m = idRe.exec(schemaContent)) !== null) {
-                _sectionSettings.push(m[1]);
-            }
-        }
-
         // ── Twig syntax overlay highlighting ──
         // CodeMirror's HTML parser doesn't know Twig, so we overlay decorations
         // for twig delimiters, keywords, filters, variables
@@ -1594,6 +1488,99 @@
         state.cmAvailable = true;
     } catch (e) {
         console.warn('CodeMirror failed to load:', e);
+    }
+
+    // ── Twig/PHP Intellisense ──
+    var _controllerVars = {};
+    var _sectionSettings = [];
+
+    function zephyrCompletionSource(context) {
+        var word = context.matchBefore(/[\w]+\.[\w.]*/);
+        if (!word) return null;
+        var prefix = word.text;
+        var dotIdx = prefix.indexOf('.');
+        var base = prefix.substring(0, dotIdx);
+        var options = [];
+
+        if (prefix.startsWith('section.settings.')) {
+            for (var sid of _sectionSettings) {
+                options.push({ label: 'section.settings.' + sid, type: 'property' });
+            }
+        } else if (prefix.startsWith('section.')) {
+            options.push({ label: 'section.settings', type: 'property' });
+            options.push({ label: 'section.blocks', type: 'property' });
+            options.push({ label: 'section.id', type: 'property' });
+            options.push({ label: 'section.type', type: 'property' });
+        } else if (prefix.startsWith('page.')) {
+            var pp = ['title', 'slug', 'url', 'template'];
+            for (var p of pp) options.push({ label: 'page.' + p, type: 'property' });
+        } else if (_controllerVars[base]) {
+            var varInfo = _controllerVars[base];
+            if (varInfo.type === 'collection') {
+                var collProps = ['data', 'current_page', 'last_page', 'per_page', 'total'];
+                for (var cp of collProps) options.push({ label: base + '.' + cp, type: 'property', detail: 'pagination' });
+            } else if (varInfo.type === 'entry') {
+                var sysFields = ['id', 'slug', 'created_at', 'updated_at', 'status'];
+                for (var sf of sysFields) options.push({ label: base + '.' + sf, type: 'property', detail: 'system' });
+                for (var slug in _completionFields) {
+                    for (var f of (_completionFields[slug] || [])) {
+                        options.push({ label: base + '.' + f.slug, type: 'property', detail: f.type });
+                    }
+                }
+            }
+        } else {
+            for (var slug in _completionFields) {
+                var sysF = ['id', 'slug', 'created_at', 'updated_at'];
+                for (var sf of sysF) options.push({ label: base + '.' + sf, type: 'property', detail: 'system' });
+                for (var f of (_completionFields[slug] || [])) {
+                    options.push({ label: base + '.' + f.slug, type: 'property', detail: f.type });
+                }
+            }
+        }
+
+        if (options.length === 0) return null;
+        return { from: word.from, options: options, validFor: /^[\w.]*/ };
+    }
+
+    async function parseControllerVars(templateName) {
+        _controllerVars = {};
+        if (!_pagesConfig) await loadPagesConfig();
+        var page = (_pagesConfig.pages || []).find(function(p) { return p.template === templateName; });
+        if (!page || !page.controller) return;
+        try {
+            var data = await apiFetch(BASE_URL + '/file?path=controllers/' + page.controller + '.php');
+            var ct = data.content || '';
+            var retMatch = ct.match(/return\s*\[\s*([\s\S]*?)\];/);
+            if (retMatch) {
+                var returnBlock = retMatch[1];
+                var keyRe = /'(\w+)'\s*=>/g;
+                var km;
+                while ((km = keyRe.exec(returnBlock)) !== null) {
+                    var key = km[1];
+                    var afterArrow = returnBlock.substring(km.index + km[0].length, km.index + km[0].length + 100);
+                    if (/collection\s*\(/.test(afterArrow)) {
+                        _controllerVars[key] = { type: 'collection' };
+                    } else if (/entry\s*\(/.test(afterArrow)) {
+                        _controllerVars[key] = { type: 'entry' };
+                    } else {
+                        _controllerVars[key] = { type: 'unknown' };
+                    }
+                }
+            }
+        } catch(e) {}
+    }
+
+    function parseSectionSettings(content) {
+        _sectionSettings = [];
+        var schemaStart = content.indexOf(_ob + '% schema %' + _cb);
+        if (schemaStart === -1) schemaStart = content.indexOf('"settings"');
+        if (schemaStart === -1) return;
+        var schemaContent = content.substring(schemaStart);
+        var idRe = /"id"\s*:\s*"([^"]+)"/g;
+        var m;
+        while ((m = idRe.exec(schemaContent)) !== null) {
+            _sectionSettings.push(m[1]);
+        }
     }
 
     // ── Icons ──
