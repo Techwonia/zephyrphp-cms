@@ -384,17 +384,6 @@
                         <label><input type="checkbox" name="field_searchable" value="1"> Searchable</label>
                         <label><input type="checkbox" name="field_sortable" value="1"> Sortable</label>
                         <label><input type="checkbox" name="field_unique" value="1"> Unique</label>
-                        <label id="use-as-slug-label" style="display:none;">
-                            <input type="checkbox" name="use_as_slug" value="1" id="useAsSlugCheck">
-                            Use as Slug
-                            <small style="display:block;font-weight:normal;color:var(--text-secondary,#616161);">
-                                {% if collection.hasSlug() and collection.getSlugSourceField() %}
-                                    Currently using "{{ collection.getSlugSourceField() }}". Check to change slug source to this field.
-                                {% else %}
-                                    Auto-generates a URL-friendly slug from this field for each entry.
-                                {% endif %}
-                            </small>
-                        </label>
                     </div>
 
                     <div class="form-group" id="select-options-group" style="display: none;">
@@ -595,19 +584,6 @@ document.getElementById('field_slug').addEventListener('input', function() {
 });
 
 var fieldTypeSelect = document.getElementById('field_type');
-var slugTextTypes = ['text', 'email', 'url'];
-var useAsSlugLabel = document.getElementById('use-as-slug-label');
-var useAsSlugCheck = document.getElementById('useAsSlugCheck');
-
-function toggleSlugCheckbox() {
-    if (useAsSlugLabel) {
-        useAsSlugLabel.style.display = slugTextTypes.indexOf(fieldTypeSelect.value) !== -1 ? '' : 'none';
-        if (useAsSlugCheck && slugTextTypes.indexOf(fieldTypeSelect.value) === -1) {
-            useAsSlugCheck.checked = false;
-        }
-    }
-}
-toggleSlugCheckbox();
 
 fieldTypeSelect.addEventListener('change', function() {
     var selectGroup = document.getElementById('select-options-group');
@@ -628,7 +604,6 @@ fieldTypeSelect.addEventListener('change', function() {
         relationInput.name = 'field_options';
     }
 
-    toggleSlugCheckbox();
 });
 
 var relationTypeHints = {
