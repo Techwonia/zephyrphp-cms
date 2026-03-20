@@ -293,7 +293,12 @@ class ThemeManager
         // Only allow safe file extensions
         $ext = strtolower(pathinfo($relativePath, PATHINFO_EXTENSION));
         $allowedExts = ['twig', 'json', 'css', 'js', 'html', 'txt', 'svg'];
-        if (!in_array($ext, $allowedExts, true)) {
+        // PHP only allowed in controllers/ directory
+        if ($ext === 'php') {
+            if (!str_starts_with($normalized, 'controllers/') || substr_count($normalized, '/') !== 1) {
+                return false;
+            }
+        } elseif (!in_array($ext, $allowedExts, true)) {
             return false;
         }
 
