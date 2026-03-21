@@ -107,7 +107,7 @@ class MediaController extends Controller
             // Get paginated results
             $offset = ($page - 1) * $perPage;
             $rows = $conn->fetchAllAssociative(
-                "SELECT id FROM cms_media {$where} ORDER BY created_at DESC LIMIT {$perPage} OFFSET {$offset}",
+                "SELECT id FROM cms_media {$where} ORDER BY createdAt DESC LIMIT {$perPage} OFFSET {$offset}",
                 $params
             );
 
@@ -119,6 +119,7 @@ class MediaController extends Controller
                 }
             }
         } catch (\Throwable $e) {
+            error_log('Media index error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
             $media = [];
             $total = 0;
         }
@@ -285,7 +286,7 @@ class MediaController extends Controller
 
             $offset = ($page - 1) * $perPage;
             $rows = $conn->fetchAllAssociative(
-                "SELECT id FROM cms_media {$where} ORDER BY created_at DESC LIMIT {$perPage} OFFSET {$offset}",
+                "SELECT id FROM cms_media {$where} ORDER BY createdAt DESC LIMIT {$perPage} OFFSET {$offset}",
                 $params
             );
 
