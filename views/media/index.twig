@@ -22,10 +22,19 @@
             <span class="ml-sidebar-title">Folders</span>
         </div>
         <div class="ml-sidebar-body">
-            <div class="ml-folder-item {{ currentFolder == '' ? 'active' : '' }}" data-folder="">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+            <div class="ml-folder-item {{ currentFolder == '' and currentFilter != 'recent' ? 'active' : '' }}" data-folder="" data-special="all">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
                 All Files
             </div>
+            <div class="ml-folder-item {{ currentFilter == 'recent' ? 'active' : '' }}" data-folder="" data-special="recent">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Recent
+            </div>
+            <div class="ml-folder-item {{ currentFilter == 'images' and currentFolder == '' ? 'active' : '' }}" data-folder="" data-special="images">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                Images
+            </div>
+            <div class="ml-sidebar-sep"></div>
             {% for folder in folders %}
                 {% set folderName = folder|split('/')|last %}
                 {% set depth = folder|split('/')|length - 1 %}
@@ -54,7 +63,8 @@
             <span class="ml-count">{{ total }} file{{ total != 1 ? 's' : '' }}</span>
         </div>
 
-        {# Drop Zone (overlays the grid on drag) #}
+        <div class="ml-content-scroll">
+        {# Drop Zone #}
         <div class="ml-dropzone" id="mlDropzone">
             <div class="ml-dropzone-inner">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -134,6 +144,7 @@
             <p>Drag & drop files here or click upload.</p>
         </div>
         {% endif %}
+        </div>{# /ml-content-scroll #}
     </div>
 </div>
 
@@ -191,25 +202,27 @@
 {% block styles %}
 <style nonce="{{ csp_nonce() }}">
 /* ── Layout ── */
-.ml-layout { display:flex; gap:0; min-height:500px; }
-.ml-sidebar { width:220px; flex-shrink:0; background:var(--bg-surface,#fff); border:1px solid var(--border-color,#e5e5e5); border-radius:8px; overflow:hidden; align-self:flex-start; position:sticky; top:80px; }
-.ml-sidebar-header { padding:10px 14px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-secondary); border-bottom:1px solid var(--border-color); }
-.ml-sidebar-body { max-height:400px; overflow-y:auto; padding:4px 0; }
+.ml-layout { display:flex; gap:0; height:calc(100vh - 180px); min-height:400px; }
+.ml-sidebar { width:220px; flex-shrink:0; background:var(--bg-surface,#fff); border:1px solid var(--border-color,#e5e5e5); border-radius:8px; overflow:hidden; display:flex; flex-direction:column; }
+.ml-sidebar-header { padding:10px 14px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-secondary); border-bottom:1px solid var(--border-color); flex-shrink:0; }
+.ml-sidebar-body { flex:1; overflow-y:auto; padding:4px 0; }
+.ml-sidebar-sep { height:1px; background:var(--border-color,#e5e5e5); margin:4px 0; }
 .ml-folder-item { display:flex; align-items:center; gap:8px; padding:7px 14px; font-size:13px; cursor:pointer; color:var(--text-primary); transition:background 0.1s; border-radius:0; }
 .ml-folder-item:hover { background:var(--bg-subdued,#f7f7f7); }
 .ml-folder-item.active { background:var(--color-primary,#047B5D); color:#fff; }
 .ml-folder-item.active svg { stroke:#fff; }
-.ml-main { flex:1; min-width:0; margin-left:16px; }
+.ml-main { flex:1; min-width:0; margin-left:16px; display:flex; flex-direction:column; background:var(--bg-surface,#fff); border:1px solid var(--border-color,#e5e5e5); border-radius:8px; overflow:hidden; }
 
 /* ── Toolbar ── */
-.ml-toolbar { display:flex; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
-.ml-search { display:flex; align-items:center; gap:6px; padding:6px 12px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-surface); flex:1; min-width:180px; max-width:300px; }
+.ml-toolbar { display:flex; align-items:center; gap:12px; padding:12px 16px; border-bottom:1px solid var(--border-color); flex-wrap:wrap; flex-shrink:0; }
+.ml-search { display:flex; align-items:center; gap:6px; padding:5px 10px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-subdued,#fafafa); flex:1; min-width:160px; max-width:280px; }
 .ml-search input { border:none; outline:none; font-size:13px; width:100%; background:transparent; }
 .ml-filters { display:flex; gap:4px; }
-.ml-filter-btn { padding:5px 12px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-surface); font-size:12px; cursor:pointer; color:var(--text-primary); transition:all 0.1s; }
+.ml-filter-btn { padding:4px 10px; border:1px solid var(--border-color); border-radius:5px; background:var(--bg-surface); font-size:12px; cursor:pointer; color:var(--text-primary); transition:all 0.1s; }
 .ml-filter-btn:hover { border-color:var(--color-primary); }
 .ml-filter-btn.active { background:var(--color-primary); color:#fff; border-color:var(--color-primary); }
 .ml-count { font-size:12px; color:var(--text-secondary); margin-left:auto; }
+.ml-content-scroll { flex:1; overflow-y:auto; padding:16px; }
 
 /* ── Bulk Bar ── */
 .ml-bulk-bar { display:flex; align-items:center; gap:12px; padding:8px 14px; background:var(--bg-surface); border:1px solid var(--color-primary); border-radius:6px; margin-bottom:12px; }
@@ -247,8 +260,8 @@
 .ml-empty p { font-size:13px; }
 
 /* ── Drop Zone ── */
-.ml-dropzone { display:none; position:absolute; inset:0; z-index:50; background:rgba(4,123,93,0.06); border:3px dashed var(--color-primary,#047B5D); border-radius:8px; }
-.ml-main { position:relative; }
+.ml-content-scroll { position:relative; }
+.ml-dropzone { display:none; position:absolute; inset:0; z-index:50; background:rgba(4,123,93,0.06); border:3px dashed var(--color-primary,#047B5D); border-radius:0; }
 .ml-dropzone-inner { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; color:var(--color-primary); }
 .ml-dropzone-inner p { font-size:16px; font-weight:600; margin:0; }
 .ml-dropzone-inner span { font-size:12px; color:var(--text-secondary); }
@@ -263,10 +276,10 @@
 .ml-modal-body { padding:20px; }
 
 /* ── Upload Float ── */
-.ml-upload-float { position:fixed; bottom:20px; right:20px; width:340px; background:var(--bg-surface); border:1px solid var(--border-color); border-radius:10px; box-shadow:0 8px 30px rgba(0,0,0,0.15); z-index:999; overflow:hidden; }
-.ml-upload-float-header { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:#f8f8f8; border-bottom:1px solid var(--border-color); font-size:13px; font-weight:600; }
+.ml-upload-float { position:fixed; bottom:20px; right:20px; width:360px; max-height:50vh; background:var(--bg-surface); border:1px solid var(--border-color); border-radius:10px; box-shadow:0 8px 30px rgba(0,0,0,0.15); z-index:999; overflow:hidden; display:flex; flex-direction:column; }
+.ml-upload-float-header { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:#f8f8f8; border-bottom:1px solid var(--border-color); font-size:13px; font-weight:600; flex-shrink:0; }
 .ml-upload-float-close { background:none; border:none; font-size:18px; cursor:pointer; color:var(--text-secondary); }
-.ml-upload-float-body { max-height:240px; overflow-y:auto; }
+.ml-upload-float-body { flex:1; overflow-y:auto; }
 .ml-upload-item { display:flex; align-items:center; gap:10px; padding:8px 14px; border-bottom:1px solid #f0f0f0; font-size:12px; }
 .ml-upload-item-name { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .ml-upload-item-status { flex-shrink:0; font-weight:600; }
@@ -304,12 +317,15 @@
     var csrf = document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}';
     var currentFolder = '{{ currentFolder }}';
 
-    // ── Folder Navigation ──
+    // ── Sidebar Navigation ──
     document.querySelectorAll('.ml-folder-item').forEach(function(el) {
         el.addEventListener('click', function() {
             var folder = this.dataset.folder;
+            var special = this.dataset.special || '';
             var url = '{{ admin_url("media") }}';
-            if (folder) url += '?folder=' + encodeURIComponent(folder);
+            if (special === 'recent') url += '?filter=recent';
+            else if (special === 'images') url += '?filter=images';
+            else if (folder) url += '?folder=' + encodeURIComponent(folder);
             window.location.href = url;
         });
     });
@@ -363,19 +379,20 @@
 
     // ── Drag & Drop ──
     var mlMain = document.querySelector('.ml-main');
+    var mlScroll = document.querySelector('.ml-content-scroll');
     var dragCounter = 0;
-    mlMain.addEventListener('dragenter', function(e) {
+    mlScroll.addEventListener('dragenter', function(e) {
         e.preventDefault();
         dragCounter++;
         mlMain.classList.add('drag-over');
     });
-    mlMain.addEventListener('dragleave', function(e) {
+    mlScroll.addEventListener('dragleave', function(e) {
         e.preventDefault();
         dragCounter--;
         if (dragCounter <= 0) { mlMain.classList.remove('drag-over'); dragCounter = 0; }
     });
-    mlMain.addEventListener('dragover', function(e) { e.preventDefault(); });
-    mlMain.addEventListener('drop', function(e) {
+    mlScroll.addEventListener('dragover', function(e) { e.preventDefault(); });
+    mlScroll.addEventListener('drop', function(e) {
         e.preventDefault();
         mlMain.classList.remove('drag-over');
         dragCounter = 0;

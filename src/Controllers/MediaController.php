@@ -78,7 +78,10 @@ class MediaController extends Controller
                 $params[] = '%' . $search . '%';
             }
 
-            if ($filter === 'images') {
+            if ($filter === 'recent') {
+                $conditions[] = 'createdAt >= ?';
+                $params[] = date('Y-m-d H:i:s', strtotime('-7 days'));
+            } elseif ($filter === 'images') {
                 $conditions[] = 'mime_type LIKE ?';
                 $params[] = 'image/%';
             } elseif ($filter === 'video') {
@@ -98,13 +101,11 @@ class MediaController extends Controller
 
             $where = !empty($conditions) ? 'WHERE ' . implode(' AND ', $conditions) : '';
 
-            // Get total count
             $total = (int) $conn->fetchOne(
                 "SELECT COUNT(*) FROM cms_media {$where}",
                 $params
             );
 
-            // Get paginated results
             $offset = ($page - 1) * $perPage;
             $rows = $conn->fetchAllAssociative(
                 "SELECT id FROM cms_media {$where} ORDER BY createdAt DESC LIMIT {$perPage} OFFSET {$offset}",
