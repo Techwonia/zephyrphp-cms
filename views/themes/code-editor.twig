@@ -3130,11 +3130,15 @@
             state.schemaPanelOpen = false;
             $editorArea.style.display = '';
             $schemaPanel.classList.remove('visible');
+            // Restore ref panel if it was open
+            if (_refPanelOpen) $('refPanel').style.display = '';
             currentSchema = null;
         } else {
             state.schemaPanelOpen = true;
             $editorArea.style.display = 'none';
             $schemaPanel.classList.add('visible');
+            // Hide ref panel in designer/json view
+            $('refPanel').style.display = 'none';
             // Parse schema from active tab
             if (state.activeTab) {
                 const tab = state.openTabs.find(t => t.path === state.activeTab);
