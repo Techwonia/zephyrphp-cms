@@ -414,8 +414,15 @@ class MediaController extends Controller
     {
         $this->requirePermission('media.delete');
 
-        $action = $this->input('action', '');
-        $ids = $this->input('ids', []);
+        $isJson = str_contains($_SERVER['CONTENT_TYPE'] ?? '', 'application/json');
+        if ($isJson) {
+            $input = json_decode(file_get_contents('php://input'), true) ?? [];
+            $action = $input['action'] ?? '';
+            $ids = $input['ids'] ?? [];
+        } else {
+            $action = $this->input('action', '');
+            $ids = $this->input('ids', []);
+        }
 
         if (!is_array($ids) || empty($ids)) {
             $this->flash('errors', ['media' => 'No files selected.']);
@@ -439,13 +446,23 @@ class MediaController extends Controller
                 break;
             case 'move':
                 $this->requirePermission('media.upload');
-                $targetFolder = trim($this->input('target_folder', ''));
+                $targetFolder = $isJson ? ($input['target_folder'] ?? '') : trim($this->input('target_folder', ''));
                 $this->bulkMove($ids, $targetFolder);
                 break;
             default:
+                if ($isJson) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['error' => 'Unknown action.']);
+                    return;
+                }
                 $this->flash('errors', ['media' => 'Unknown action.']);
         }
 
+        if ($isJson) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true]);
+            return;
+        }
         $this->back();
     }
 

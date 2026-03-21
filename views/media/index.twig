@@ -63,11 +63,22 @@
             </div>
         </div>
 
+        {# Bulk Action Bar (hidden until selection) #}
+        <div class="ml-bulk-bar" id="mlBulkBar" style="display:none;">
+            <label class="ml-bulk-check"><input type="checkbox" id="mlSelectAll"> Select all</label>
+            <span id="mlSelectedCount">0 selected</span>
+            <button class="btn btn-danger btn-sm" id="mlBulkDelete">Delete Selected</button>
+        </div>
+
         {# File Grid #}
         {% if media|length > 0 %}
         <div class="ml-grid" id="mlGrid">
             {% for item in media %}
-            <a href="{{ admin_url('media/' ~ item.getId()) }}" class="ml-file-card" data-id="{{ item.getId() }}">
+            <div class="ml-file-card" data-id="{{ item.getId() }}">
+                <div class="ml-file-select" onclick="event.stopPropagation();">
+                    <input type="checkbox" class="ml-file-checkbox" data-id="{{ item.getId() }}">
+                </div>
+                <a href="{{ admin_url('media/' ~ item.getId()) }}" class="ml-file-link">
                 <div class="ml-file-thumb">
                     {% if item.isImage() %}
                         <img src="{{ item.getThumbnailUrl() ?: item.getUrl() }}" alt="{{ item.getOriginalName() }}" loading="lazy">
@@ -94,7 +105,8 @@
                     <span class="ml-file-name" title="{{ item.getOriginalName() }}">{{ item.getOriginalName() }}</span>
                     <span class="ml-file-meta">{{ item.getHumanSize() }}</span>
                 </div>
-            </a>
+                </a>
+            </div>
             {% endfor %}
         </div>
 
@@ -186,9 +198,21 @@
 .ml-filter-btn.active { background:var(--color-primary); color:#fff; border-color:var(--color-primary); }
 .ml-count { font-size:12px; color:var(--text-secondary); margin-left:auto; }
 
+/* ── Bulk Bar ── */
+.ml-bulk-bar { display:flex; align-items:center; gap:12px; padding:8px 14px; background:var(--bg-surface); border:1px solid var(--color-primary); border-radius:6px; margin-bottom:12px; }
+.ml-bulk-check { display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer; }
+#mlSelectedCount { font-size:12px; color:var(--text-secondary); }
+
+/* ── File Selection ── */
+.ml-file-select { position:absolute; top:6px; left:6px; z-index:3; opacity:0; transition:opacity 0.15s; }
+.ml-file-card:hover .ml-file-select, .ml-file-card.selected .ml-file-select { opacity:1; }
+.ml-file-card.selected { border-color:var(--color-primary); box-shadow:0 0 0 2px rgba(4,123,93,0.2); }
+.ml-file-checkbox { width:16px; height:16px; cursor:pointer; }
+.ml-file-link { display:block; text-decoration:none; color:inherit; }
+
 /* ── Grid ── */
 .ml-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:12px; }
-.ml-file-card { display:block; background:var(--bg-surface); border:1px solid var(--border-color); border-radius:8px; overflow:hidden; text-decoration:none; color:inherit; transition:box-shadow 0.15s, border-color 0.15s; }
+.ml-file-card { position:relative; background:var(--bg-surface); border:1px solid var(--border-color); border-radius:8px; overflow:hidden; transition:box-shadow 0.15s, border-color 0.15s; }
 .ml-file-card:hover { box-shadow:0 4px 16px rgba(0,0,0,0.08); border-color:var(--color-primary,#047B5D); }
 .ml-file-thumb { aspect-ratio:1; background:#f4f4f5; display:flex; align-items:center; justify-content:center; overflow:hidden; }
 .ml-file-thumb img { width:100%; height:100%; object-fit:cover; }
@@ -406,6 +430,50 @@
             xhr.send(formData);
         });
     }
+
+    // ── Bulk Selection ──
+    var bulkBar = document.getElementById('mlBulkBar');
+    var selectAllCb = document.getElementById('mlSelectAll');
+    var checkboxes = document.querySelectorAll('.ml-file-checkbox');
+
+    function updateBulkBar() {
+        var checked = document.querySelectorAll('.ml-file-checkbox:checked');
+        var count = checked.length;
+        bulkBar.style.display = count > 0 ? '' : 'none';
+        document.getElementById('mlSelectedCount').textContent = count + ' selected';
+        checkboxes.forEach(function(cb) {
+            cb.closest('.ml-file-card').classList.toggle('selected', cb.checked);
+        });
+    }
+
+    checkboxes.forEach(function(cb) {
+        cb.addEventListener('change', updateBulkBar);
+    });
+
+    if (selectAllCb) {
+        selectAllCb.addEventListener('change', function() {
+            checkboxes.forEach(function(cb) { cb.checked = selectAllCb.checked; });
+            updateBulkBar();
+        });
+    }
+
+    document.getElementById('mlBulkDelete')?.addEventListener('click', function() {
+        var ids = [];
+        document.querySelectorAll('.ml-file-checkbox:checked').forEach(function(cb) {
+            ids.push(cb.dataset.id);
+        });
+        if (ids.length === 0) return;
+        if (!confirm('Delete ' + ids.length + ' file(s)? This cannot be undone.')) return;
+
+        fetch('{{ admin_url("media/bulk") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+            body: JSON.stringify({ action: 'delete', ids: ids })
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            if (data.success) window.location.reload();
+            else alert(data.error || 'Failed to delete');
+        });
+    });
 
     // ── Close Upload Float ──
     document.getElementById('uploadFloatClose').addEventListener('click', function() {
