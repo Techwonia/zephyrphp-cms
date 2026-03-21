@@ -378,20 +378,22 @@ class MediaController extends Controller
     {
         $this->requirePermission('media.view');
 
-        // Try Doctrine first, fallback to raw query
-        $media = Media::find($id);
-        $rawData = null;
+        $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
 
-        if (!$media) {
-            // Fallback: fetch via raw DB
-            try {
-                $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
-                $rawData = $conn->fetchAssociative('SELECT * FROM cms_media WHERE id = ?', [$id]);
-            } catch (\Throwable $e) {}
+        // Always try raw DB first (reliable), then Doctrine
+        $rawData = null;
+        $media = null;
+        try {
+            $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
+            $rawData = $conn->fetchAssociative('SELECT * FROM cms_media WHERE id = ?', [$id]);
+        } catch (\Throwable $e) {}
+
+        if (!$rawData) {
+            $media = Media::find($id);
         }
 
         if (!$media && !$rawData) {
-            if ($this->isAjax()) {
+            if ($isAjax) {
                 header('Content-Type: application/json');
                 http_response_code(404);
                 echo json_encode(['error' => 'File not found']);
@@ -454,7 +456,7 @@ class MediaController extends Controller
         $data['dimensions'] = $dimensions;
 
         // Return JSON for AJAX requests
-        if ($this->isAjax()) {
+        if ($isAjax) {
             header('Content-Type: application/json');
             echo json_encode($data);
             return '';
