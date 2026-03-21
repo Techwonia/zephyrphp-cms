@@ -377,17 +377,72 @@ class MediaController extends Controller
     {
         $this->requirePermission('media.view');
 
+        // Try Doctrine first, fallback to raw query
         $media = Media::find($id);
+        $rawData = null;
+
         if (!$media) {
+            // Fallback: fetch via raw DB
+            try {
+                $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
+                $rawData = $conn->fetchAssociative('SELECT * FROM cms_media WHERE id = ?', [$id]);
+            } catch (\Throwable $e) {}
+        }
+
+        if (!$media && !$rawData) {
+            if ($this->isAjax()) {
+                header('Content-Type: application/json');
+                http_response_code(404);
+                echo json_encode(['error' => 'File not found']);
+                return '';
+            }
             $this->flash('errors', ['media' => 'File not found.']);
             $this->redirect(admin_url('media'));
             return '';
         }
 
-        // Get image dimensions if applicable
+        // Build data array (works with both Doctrine and raw)
+        if ($media) {
+            $data = [
+                'id' => $media->getId(),
+                'filename' => $media->getFilename(),
+                'original_name' => $media->getOriginalName(),
+                'path' => $media->getPath(),
+                'mime_type' => $media->getMimeType(),
+                'size' => $media->getSize(),
+                'human_size' => $media->getHumanSize(),
+                'alt_text' => $media->getAltText() ?? '',
+                'url' => $media->getUrl(),
+                'thumbnail_url' => $media->getThumbnailUrl(),
+                'is_image' => $media->isImage(),
+            ];
+        } else {
+            $size = (int)($rawData['size'] ?? 0);
+            $units = ['B','KB','MB','GB'];
+            $i = 0;
+            $s = $size;
+            while ($s >= 1024 && $i < 3) { $s /= 1024; $i++; }
+            $humanSize = round($s, 1) . ' ' . $units[$i];
+
+            $data = [
+                'id' => (int)$rawData['id'],
+                'filename' => $rawData['filename'] ?? '',
+                'original_name' => $rawData['original_name'] ?? '',
+                'path' => $rawData['path'] ?? '',
+                'mime_type' => $rawData['mime_type'] ?? '',
+                'size' => $size,
+                'human_size' => $humanSize,
+                'alt_text' => $rawData['alt_text'] ?? '',
+                'url' => '/' . ltrim($rawData['path'] ?? '', '/'),
+                'thumbnail_url' => ($rawData['thumbnail_path'] ?? '') ? '/' . ltrim($rawData['thumbnail_path'], '/') : null,
+                'is_image' => str_starts_with($rawData['mime_type'] ?? '', 'image/'),
+            ];
+        }
+
+        // Get image dimensions
         $dimensions = null;
-        if ($media->isImage()) {
-            $filePath = $this->getPublicPath() . '/' . $media->getPath();
+        if ($data['is_image']) {
+            $filePath = $this->getPublicPath() . '/' . $data['path'];
             if (file_exists($filePath)) {
                 $info = @getimagesize($filePath);
                 if ($info) {
@@ -395,12 +450,20 @@ class MediaController extends Controller
                 }
             }
         }
+        $data['dimensions'] = $dimensions;
+
+        // Return JSON for AJAX requests
+        if ($this->isAjax()) {
+            header('Content-Type: application/json');
+            echo json_encode($data);
+            return '';
+        }
 
         // Find usage across collections
-        $usage = $this->findMediaUsage($media);
+        $usage = $media ? $this->findMediaUsage($media) : [];
 
         return $this->render('cms::media/detail', [
-            'item' => $media,
+            'item' => $media ?: (object)$data,
             'dimensions' => $dimensions,
             'usage' => $usage,
             'user' => Auth::user(),
