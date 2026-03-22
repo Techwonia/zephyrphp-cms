@@ -252,6 +252,11 @@ class ThemeController extends Controller
         }
 
         $input = json_decode(file_get_contents('php://input'), true);
+        if (!is_array($input)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Invalid JSON input']);
+            return;
+        }
         $filePath = $input['file'] ?? '';
         $content = $input['content'] ?? '';
 
@@ -302,6 +307,11 @@ class ThemeController extends Controller
         }
 
         $input = json_decode(file_get_contents('php://input'), true);
+        if (!is_array($input)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Invalid JSON input']);
+            return;
+        }
         $title = trim($input['title'] ?? '');
         $pageSlug = trim($input['slug'] ?? '');
         $layout = trim($input['layout'] ?? 'base');
@@ -408,6 +418,11 @@ class ThemeController extends Controller
         }
 
         $input = json_decode(file_get_contents('php://input'), true);
+        if (!is_array($input)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Invalid JSON input']);
+            return;
+        }
         $template = trim($input['template'] ?? '');
         $title = trim($input['title'] ?? '');
         $pageSlug = trim($input['slug'] ?? '');
@@ -470,6 +485,11 @@ class ThemeController extends Controller
         }
 
         $input = json_decode(file_get_contents('php://input'), true);
+        if (!is_array($input)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Invalid JSON input']);
+            return;
+        }
         $template = trim($input['template'] ?? '');
 
         if (empty($template)) {
@@ -509,6 +529,11 @@ class ThemeController extends Controller
         }
 
         $input = json_decode(file_get_contents('php://input'), true);
+        if (!is_array($input)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Invalid JSON input']);
+            return;
+        }
         $name = trim($input['name'] ?? '');
 
         if (empty($name)) {

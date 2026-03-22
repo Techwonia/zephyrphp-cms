@@ -152,6 +152,26 @@ class CmsServiceProvider
             'match' => 'prefix:' . admin_url('ai-builder'),
         ]);
 
+        // Add Global Blocks sidebar item
+        $sidebar->addItem('content', [
+            'id' => 'global-blocks',
+            'label' => 'Global Blocks',
+            'url' => admin_url('global-blocks'),
+            'icon' => 'layers',
+            'permission' => 'settings.view',
+            'match' => 'prefix:' . admin_url('global-blocks'),
+        ]);
+
+        // Add Relationships sidebar item
+        $sidebar->addItem('content', [
+            'id' => 'relationships',
+            'label' => 'Relationships',
+            'url' => admin_url('relationships'),
+            'icon' => 'share-2',
+            'permission' => 'collections.view',
+            'match' => 'exact:' . admin_url('relationships'),
+        ]);
+
         // Add Languages sidebar item
         $sidebar->addItem('admin', [
             'id' => 'languages',
@@ -186,6 +206,16 @@ class CmsServiceProvider
             'url' => admin_url('webhooks'),
             'icon' => 'link',
             'match' => 'prefix:' . admin_url('webhooks'),
+        ]);
+
+        // Add Redirects sidebar item
+        $sidebar->addItem('admin', [
+            'id' => 'redirects',
+            'label' => 'Redirects',
+            'url' => admin_url('redirects'),
+            'icon' => 'corner-down-right',
+            'permission' => 'settings.view',
+            'match' => 'prefix:' . admin_url('redirects'),
         ]);
 
         $sidebar->addItem('admin', [
@@ -396,6 +426,10 @@ class CmsServiceProvider
         // Register Twig helper functions
         $this->registerTwigHelpers($view, $themeManager);
 
+        // Register redirect middleware for public routes
+        $redirectMiddleware = new Middleware\RedirectMiddleware();
+        $redirectMiddleware->handle(null, function ($request) { return $request; });
+
         // Load CMS routes
         $routesFile = __DIR__ . '/../routes/cms.php';
         if (file_exists($routesFile)) {
@@ -584,6 +618,32 @@ class CmsServiceProvider
             if (!$tableName) return $entry;
             return Services\TranslationService::resolveEntry($entry, $tableName, $locale);
         });
+
+        // search_url() - Returns the public search API endpoint URL
+        $view->addFunction('search_url', function () {
+            return '/api/search';
+        });
+
+        // global_block(slug) - Render a reusable global content block
+        $view->addFunction('global_block', function (string $slug) use ($view) {
+            $block = \ZephyrPHP\Cms\Models\GlobalBlock::findOneBy(['slug' => $slug, 'isActive' => true]);
+            if (!$block) {
+                return '';
+            }
+
+            if ($block->getType() === 'twig') {
+                try {
+                    $twig = $view->getEngine();
+                    $template = $twig->createTemplate($block->getContent());
+                    return $template->render([]);
+                } catch (\Throwable $e) {
+                    error_log('Global block Twig render error (' . $slug . '): ' . $e->getMessage());
+                    return '';
+                }
+            }
+
+            return $block->getContent();
+        }, ['is_safe' => ['html']]);
     }
 
     private function registerThemePageRoutes(ThemeManager $themeManager): void
@@ -1464,6 +1524,21 @@ class CmsServiceProvider
                     `createdAt` DATETIME NULL DEFAULT NULL,
                     INDEX `idx_ai_user` (`user_id`),
                     INDEX `idx_ai_created` (`createdAt`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            }
+
+            // Global Blocks (reusable content blocks)
+            if (!$sm->tablesExist(['cms_global_blocks'])) {
+                $conn->executeStatement("CREATE TABLE `cms_global_blocks` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `name` VARCHAR(255) NOT NULL,
+                    `slug` VARCHAR(255) NOT NULL,
+                    `content` TEXT NOT NULL,
+                    `type` VARCHAR(50) NOT NULL DEFAULT 'html',
+                    `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+                    `createdAt` DATETIME NULL DEFAULT NULL,
+                    `updatedAt` DATETIME NULL DEFAULT NULL,
+                    UNIQUE KEY `uniq_global_block_slug` (`slug`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
             }
         } catch (\Exception $e) {

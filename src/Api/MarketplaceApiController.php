@@ -203,7 +203,7 @@ class MarketplaceApiController extends Controller
     public function checkUpdates(): void
     {
         $input = json_decode(file_get_contents('php://input'), true);
-        $installed = $input['items'] ?? [];
+        $installed = is_array($input) ? ($input['items'] ?? []) : [];
 
         if (!is_array($installed)) {
             $this->json(['data' => []]);

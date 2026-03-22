@@ -328,6 +328,11 @@ class AssetSettingsController extends Controller
         header('Content-Type: application/json');
 
         $input = json_decode(file_get_contents('php://input'), true);
+        if (!is_array($input)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Invalid JSON input']);
+            return;
+        }
         $filePath = $input['path'] ?? '';
 
         if (empty($filePath) || !str_starts_with($filePath, 'assets/')) {

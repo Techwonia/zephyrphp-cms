@@ -333,6 +333,20 @@
                             {% if collection.hasSlug() and collection.getSlugSourceField() == field.getSlug() %}
                                 <span class="field-badge slug-source">slug source</span>
                             {% endif %}
+                            {% set fOpts = field.getOptions() ?? {} %}
+                            {% if fOpts.min_length is defined %}<span class="field-badge">min: {{ fOpts.min_length }} chars</span>{% endif %}
+                            {% if fOpts.max_length is defined %}<span class="field-badge">max: {{ fOpts.max_length }} chars</span>{% endif %}
+                            {% if fOpts.min_value is defined %}<span class="field-badge">min: {{ fOpts.min_value }}</span>{% endif %}
+                            {% if fOpts.max_value is defined %}<span class="field-badge">max: {{ fOpts.max_value }}</span>{% endif %}
+                            {% if fOpts.pattern is defined %}<span class="field-badge">pattern</span>{% endif %}
+                            {% if fOpts.field_permissions is defined %}
+                                {% if fOpts.field_permissions.view is defined and fOpts.field_permissions.view is not empty %}
+                                    <span class="field-badge" style="background:#e0f2fe;color:#0369a1;">view: {{ fOpts.field_permissions.view|join(', ') }}</span>
+                                {% endif %}
+                                {% if fOpts.field_permissions.edit is defined and fOpts.field_permissions.edit is not empty %}
+                                    <span class="field-badge" style="background:#fef3c7;color:#92400e;">edit: {{ fOpts.field_permissions.edit|join(', ') }}</span>
+                                {% endif %}
+                            {% endif %}
                         </div>
                     </div>
                     <div>
@@ -425,11 +439,97 @@
                         <p class="text-muted" id="relation-type-hint">One to One: Pick a single related entry.</p>
                     </div>
 
+                    {# ===== VALIDATION RULES ===== #}
+                    <div id="validation-rules-group" style="display: none; margin-top: var(--space-300);">
+                        <h5 style="margin-bottom: var(--space-200); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary);">Validation Rules</h5>
+
+                        <div class="form-row" id="validation-length-group" style="display: none;">
+                            <div class="form-group">
+                                <label for="field_min_length">Min Length</label>
+                                <input type="number" id="field_min_length" name="field_min_length" class="form-control"
+                                       min="0" placeholder="e.g. 5">
+                            </div>
+                            <div class="form-group">
+                                <label for="field_max_length">Max Length</label>
+                                <input type="number" id="field_max_length" name="field_max_length" class="form-control"
+                                       min="0" placeholder="e.g. 500">
+                            </div>
+                        </div>
+
+                        <div class="form-row" id="validation-value-group" style="display: none;">
+                            <div class="form-group">
+                                <label for="field_min_value">Min Value</label>
+                                <input type="number" id="field_min_value" name="field_min_value" class="form-control"
+                                       step="any" placeholder="e.g. 0">
+                            </div>
+                            <div class="form-group">
+                                <label for="field_max_value">Max Value</label>
+                                <input type="number" id="field_max_value" name="field_max_value" class="form-control"
+                                       step="any" placeholder="e.g. 1000">
+                            </div>
+                        </div>
+
+                        <div id="validation-pattern-group" style="display: none;">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="field_pattern">Pattern (Regex)</label>
+                                    <input type="text" id="field_pattern" name="field_pattern" class="form-control"
+                                           placeholder="e.g. ^[a-zA-Z]+$">
+                                </div>
+                                <div class="form-group">
+                                    <label for="field_pattern_message">Pattern Error Message</label>
+                                    <input type="text" id="field_pattern_message" name="field_pattern_message" class="form-control"
+                                           placeholder="e.g. Only letters allowed">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="field_custom_message">Custom Required Message</label>
+                            <input type="text" id="field_custom_message" name="field_custom_message" class="form-control"
+                                   placeholder="Override default required/validation message">
+                        </div>
+                    </div>
+
                     <div class="form-group">
                         <label for="field_default">Default Value</label>
                         <input type="text" id="field_default" name="field_default" class="form-control"
                                placeholder="Optional">
                     </div>
+
+                    {# ===== FIELD-LEVEL PERMISSIONS ===== #}
+                    {% if roles is not empty %}
+                    <div style="margin-top: var(--space-300); padding-top: var(--space-300); border-top: 1px solid var(--border);">
+                        <h5 style="margin-bottom: var(--space-200); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary);">Field Permissions</h5>
+                        <p class="text-muted" style="margin-bottom: var(--space-200); font-size: var(--font-sm);">
+                            Restrict which roles can view or edit this field. Leave empty for no restriction (all roles can access).
+                        </p>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="field_perm_view">Restrict View to Roles</label>
+                                <select id="field_perm_view" name="field_perm_view[]" class="form-control" multiple size="4">
+                                    {% for role in roles %}
+                                        {% if role.slug != 'admin' %}
+                                        <option value="{{ role.slug }}">{{ role.name }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                                <p class="text-muted">Empty = all roles can view. Hold Ctrl to select multiple.</p>
+                            </div>
+                            <div class="form-group">
+                                <label for="field_perm_edit">Restrict Edit to Roles</label>
+                                <select id="field_perm_edit" name="field_perm_edit[]" class="form-control" multiple size="4">
+                                    {% for role in roles %}
+                                        {% if role.slug != 'admin' %}
+                                        <option value="{{ role.slug }}">{{ role.name }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                                <p class="text-muted">Empty = all roles can edit. Hold Ctrl to select multiple.</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
 
                     <button type="submit" class="btn btn-primary">Add Field</button>
                 </form>
@@ -605,7 +705,27 @@ fieldTypeSelect.addEventListener('change', function() {
         relationInput.name = 'field_options';
     }
 
+    // Toggle validation rule groups based on field type
+    var validationGroup = document.getElementById('validation-rules-group');
+    var lengthGroup = document.getElementById('validation-length-group');
+    var valueGroup = document.getElementById('validation-value-group');
+    var patternGroup = document.getElementById('validation-pattern-group');
+
+    var textTypes = ['text', 'textarea', 'richtext', 'email', 'url', 'slug'];
+    var numberTypes = ['number', 'decimal'];
+    var hasLength = textTypes.indexOf(this.value) !== -1;
+    var hasValue = numberTypes.indexOf(this.value) !== -1;
+    var hasPattern = textTypes.indexOf(this.value) !== -1;
+    var showValidation = hasLength || hasValue || hasPattern;
+
+    validationGroup.style.display = showValidation ? 'block' : 'none';
+    lengthGroup.style.display = hasLength ? 'flex' : 'none';
+    valueGroup.style.display = hasValue ? 'flex' : 'none';
+    patternGroup.style.display = hasPattern ? 'block' : 'none';
 });
+
+// Trigger on page load to show validation fields for default type
+fieldTypeSelect.dispatchEvent(new Event('change'));
 
 var relationTypeHints = {
     'one_to_one': 'One to One: Pick a single related entry.',

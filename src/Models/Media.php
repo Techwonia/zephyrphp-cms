@@ -36,6 +36,9 @@ class Media extends Model
     #[ORM\Column(name: 'uploaded_by', type: 'integer', nullable: true)]
     protected ?int $uploadedBy = null;
 
+    #[ORM\Column(type: 'text', nullable: true)]
+    protected ?string $tags = null;
+
     // --- Getters ---
 
     public function getFilename(): string
@@ -96,6 +99,31 @@ class Media extends Model
             $i++;
         }
         return round($size, 1) . ' ' . $units[$i];
+    }
+
+    public function getTags(): array
+    {
+        return $this->tags ? array_map('trim', explode(',', $this->tags)) : [];
+    }
+
+    public function setTags(array $tags): void
+    {
+        $this->tags = !empty($tags) ? implode(',', array_map('trim', $tags)) : null;
+    }
+
+    public function getTagsString(): ?string
+    {
+        return $this->tags;
+    }
+
+    public function setTagsString(?string $tags): void
+    {
+        $this->tags = $tags;
+    }
+
+    public function hasTag(string $tag): bool
+    {
+        return in_array(trim($tag), $this->getTags(), true);
     }
 
     // --- Setters ---

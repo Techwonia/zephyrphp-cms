@@ -8,6 +8,7 @@ use ZephyrPHP\Cms\Models\Collection;
 use ZephyrPHP\Cms\Services\SchemaManager;
 use ZephyrPHP\Cms\Services\EntryQuery;
 use ZephyrPHP\Cms\Services\NotificationService;
+use ZephyrPHP\Cms\Services\AutomationService;
 
 /**
  * Lightweight middleware that checks for overdue scheduled entries
@@ -107,6 +108,13 @@ class ScheduledPublishMiddleware
             }
         } catch (\Exception $e) {
             // Silently fail — scheduled publishing should not break the request
+        }
+
+        // Run scheduled automation rules (uses same throttle window)
+        try {
+            AutomationService::runScheduledRules();
+        } catch (\Exception $e) {
+            // Silently fail — automation should not break the request
         }
     }
 

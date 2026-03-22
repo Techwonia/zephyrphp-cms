@@ -1,0 +1,108 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Global Blocks{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="{{ admin_url() }}">Dashboard</a> / Global Blocks
+</div>
+
+<div class="page-header">
+    <h1>Global Blocks</h1>
+    <div class="page-actions">
+        <a href="{{ admin_url('global-blocks/create') }}" class="btn btn-primary">+ New Block</a>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: var(--space-400);">
+    <div class="card-body">
+        <form method="GET" action="{{ admin_url('global-blocks') }}" style="display: flex; gap: var(--space-200);">
+            <input type="text" name="search" class="form-control" placeholder="Search blocks..." value="{{ search }}" style="flex: 1;">
+            <button type="submit" class="btn btn-outline">Search</button>
+            {% if search %}
+                <a href="{{ admin_url('global-blocks') }}" class="btn btn-outline">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+{% if blocks|length > 0 %}
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Slug</th>
+                        <th>Type</th>
+                        <th style="text-align: center;">Status</th>
+                        <th>Usage</th>
+                        <th style="text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for block in blocks %}
+                    <tr>
+                        <td><strong>{{ block.getName() }}</strong></td>
+                        <td><code style="font-size: var(--font-xs); background: var(--bg-subdued); padding: 2px 6px; border-radius: var(--radius-100);">{{ block.getSlug() }}</code></td>
+                        <td>
+                            <span class="badge">{{ block.getType()|upper }}</span>
+                        </td>
+                        <td style="text-align: center;">
+                            {% if block.isActive() %}
+                                <span class="badge badge-success">Active</span>
+                            {% else %}
+                                <span class="badge badge-default">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <code style="font-size: var(--font-xs); background: var(--bg-subdued); padding: 2px 6px; border-radius: var(--radius-100); cursor: pointer;" onclick="copySnippet(this)" title="Click to copy">{{ '{{' }} global_block('{{ block.getSlug() }}') {{ '}}' }}</code>
+                        </td>
+                        <td style="text-align: right;">
+                            <a href="{{ admin_url('global-blocks/' ~ block.getId()) }}" class="btn btn-sm btn-outline">Edit</a>
+                            <form method="POST" action="{{ admin_url('global-blocks/' ~ block.getId() ~ '/delete') }}"
+                                  style="display: inline;" class="confirm-delete" data-message="Delete this global block?">
+                                {{ csrf_field() | raw }}
+                                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% if totalPages > 1 %}
+<div class="pagination" style="margin-top: var(--space-400); display: flex; gap: var(--space-200); justify-content: center;">
+    {% if page > 1 %}
+        <a href="{{ admin_url('global-blocks?page=' ~ (page - 1) ~ (search ? '&search=' ~ search : '')) }}" class="btn btn-outline btn-sm">Previous</a>
+    {% endif %}
+    <span style="line-height: 32px; color: var(--text-secondary);">Page {{ page }} of {{ totalPages }}</span>
+    {% if page < totalPages %}
+        <a href="{{ admin_url('global-blocks?page=' ~ (page + 1) ~ (search ? '&search=' ~ search : '')) }}" class="btn btn-outline btn-sm">Next</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="empty-state">
+    <h3>No global blocks yet</h3>
+    <p>Create reusable content blocks that can be embedded in any page or template.</p>
+    <a href="{{ admin_url('global-blocks/create') }}" class="btn btn-primary">+ Create Block</a>
+</div>
+{% endif %}
+
+<script nonce="{{ csp_nonce() }}">
+function copySnippet(el) {
+    var text = el.textContent.trim();
+    navigator.clipboard.writeText(text).then(function() {
+        var original = el.textContent;
+        el.textContent = 'Copied!';
+        setTimeout(function() { el.textContent = original; }, 1500);
+    });
+}
+</script>
+{% endblock %}

@@ -6,6 +6,7 @@ namespace ZephyrPHP\Cms\Controllers;
 
 use ZephyrPHP\Core\Controllers\Controller;
 use ZephyrPHP\Auth\Auth;
+use ZephyrPHP\Security\Csrf;
 use ZephyrPHP\Cms\Models\Media;
 use ZephyrPHP\Cms\Services\ImageService;
 use ZephyrPHP\Cms\Services\FileValidator;
@@ -35,6 +36,24 @@ class MediaController extends Controller
         }
     }
 
+    /**
+     * Ensure the `tags` column exists on the cms_media table.
+     */
+    private function ensureTagsColumn(): void
+    {
+        try {
+            $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
+            $sm = $conn->createSchemaManager();
+            $columns = $sm->listTableColumns('cms_media');
+
+            if (!isset($columns['tags'])) {
+                $conn->executeStatement('ALTER TABLE cms_media ADD COLUMN tags TEXT DEFAULT NULL');
+            }
+        } catch (\Throwable $e) {
+            // Silently fail — column may already exist or table may not exist yet
+        }
+    }
+
     private function getPublicPath(): string
     {
         $basePath = defined('BASE_PATH') ? BASE_PATH : getcwd();
@@ -50,11 +69,15 @@ class MediaController extends Controller
     {
         $this->requirePermission('media.view');
 
+        // Ensure tags column exists
+        $this->ensureTagsColumn();
+
         $page = max(1, (int) ($this->input('page') ?? 1));
         $perPage = 24;
         $folder = trim($this->input('folder', ''));
         $filter = $this->input('filter', 'all');
         $search = trim($this->input('search', ''));
+        $activeTag = trim($this->input('tag', ''));
 
         // Get folders
         $folders = $this->getFolders();
@@ -76,6 +99,15 @@ class MediaController extends Controller
             if ($search !== '') {
                 $conditions[] = 'original_name LIKE ?';
                 $params[] = '%' . $search . '%';
+            }
+
+            if ($activeTag !== '') {
+                $safeTag = $activeTag;
+                $conditions[] = '(tags = ? OR tags LIKE ? OR tags LIKE ? OR tags LIKE ?)';
+                $params[] = $safeTag;
+                $params[] = $safeTag . ',%';
+                $params[] = '%,' . $safeTag;
+                $params[] = '%,' . $safeTag . ',%';
             }
 
             if ($filter === 'recent') {
@@ -108,7 +140,7 @@ class MediaController extends Controller
 
             $offset = ($page - 1) * $perPage;
             $rows = $conn->fetchAllAssociative(
-                "SELECT id FROM cms_media {$where} ORDER BY createdAt DESC LIMIT {$perPage} OFFSET {$offset}",
+                "SELECT id FROM cms_media {$where} ORDER BY createdAt DESC LIMIT " . (int) $perPage . " OFFSET " . (int) $offset,
                 $params
             );
 
@@ -125,6 +157,23 @@ class MediaController extends Controller
             $total = 0;
         }
 
+        // Collect all unique tags across all media
+        $allTags = [];
+        try {
+            $tagRows = $conn->fetchAllAssociative('SELECT DISTINCT tags FROM cms_media WHERE tags IS NOT NULL AND tags != ?', ['']);
+            foreach ($tagRows as $row) {
+                foreach (array_map('trim', explode(',', $row['tags'])) as $t) {
+                    if ($t !== '') {
+                        $allTags[$t] = true;
+                    }
+                }
+            }
+            $allTags = array_keys($allTags);
+            sort($allTags);
+        } catch (\Throwable $e) {
+            $allTags = [];
+        }
+
         return $this->render('cms::media/index', [
             'media' => $media,
             'total' => $total,
@@ -134,6 +183,8 @@ class MediaController extends Controller
             'currentFolder' => $folder,
             'currentFilter' => $filter,
             'search' => $search,
+            'activeTag' => $activeTag,
+            'allTags' => $allTags,
             'user' => Auth::user(),
         ]);
     }
@@ -287,7 +338,7 @@ class MediaController extends Controller
 
             $offset = ($page - 1) * $perPage;
             $rows = $conn->fetchAllAssociative(
-                "SELECT id FROM cms_media {$where} ORDER BY createdAt DESC LIMIT {$perPage} OFFSET {$offset}",
+                "SELECT id FROM cms_media {$where} ORDER BY createdAt DESC LIMIT " . (int) $perPage . " OFFSET " . (int) $offset,
                 $params
             );
 
@@ -361,10 +412,23 @@ class MediaController extends Controller
         $altText = trim($this->input('alt_text', ''));
         $originalName = trim($this->input('original_name', ''));
 
+        $tagsInput = trim($this->input('tags', ''));
+
         $media->setAltText($altText !== '' ? htmlspecialchars($altText, ENT_QUOTES, 'UTF-8') : null);
         if ($originalName !== '') {
             $media->setOriginalName(htmlspecialchars($originalName, ENT_QUOTES, 'UTF-8'));
         }
+
+        // Sanitize and save tags
+        if ($tagsInput !== '') {
+            $tags = array_filter(array_map(function ($t) {
+                return htmlspecialchars(trim($t), ENT_QUOTES, 'UTF-8');
+            }, explode(',', $tagsInput)), fn($t) => $t !== '');
+            $media->setTags($tags);
+        } else {
+            $media->setTagsString(null);
+        }
+
         $media->save();
 
         $this->flash('success', 'Media updated.');
@@ -418,6 +482,8 @@ class MediaController extends Controller
                 'url' => $media->getUrl(),
                 'thumbnail_url' => $media->getThumbnailUrl(),
                 'is_image' => $media->isImage(),
+                'tags' => $media->getTags(),
+                'tags_string' => $media->getTagsString() ?? '',
             ];
         } else {
             $size = (int)($rawData['size'] ?? 0);
@@ -439,6 +505,8 @@ class MediaController extends Controller
                 'url' => '/' . ltrim($rawData['path'] ?? '', '/'),
                 'thumbnail_url' => ($rawData['thumbnail_path'] ?? '') ? '/' . ltrim($rawData['thumbnail_path'], '/') : null,
                 'is_image' => str_starts_with($rawData['mime_type'] ?? '', 'image/'),
+                'tags' => ($rawData['tags'] ?? '') ? array_map('trim', explode(',', $rawData['tags'])) : [],
+                'tags_string' => $rawData['tags'] ?? '',
             ];
         }
 
@@ -481,6 +549,23 @@ class MediaController extends Controller
         $this->requirePermission('media.delete');
 
         $isJson = str_contains($_SERVER['CONTENT_TYPE'] ?? '', 'application/json');
+
+        // CSRF validation
+        $csrfToken = $isJson
+            ? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? null)
+            : ($this->input('csrf_token') ?? null);
+        if (!Csrf::validate($csrfToken)) {
+            if ($isJson) {
+                header('Content-Type: application/json');
+                http_response_code(403);
+                echo json_encode(['error' => 'CSRF token invalid or missing.']);
+                return;
+            }
+            $this->flash('errors', ['media' => 'CSRF token invalid. Please refresh and try again.']);
+            $this->back();
+            return;
+        }
+
         if ($isJson) {
             $input = json_decode(file_get_contents('php://input'), true) ?? [];
             $action = $input['action'] ?? '';
@@ -740,6 +825,36 @@ class MediaController extends Controller
 
         $this->json(['usage' => $usage]);
         return '';
+    }
+
+    /**
+     * Return all unique tags as JSON for autocomplete.
+     */
+    public function tags(): void
+    {
+        $this->requirePermission('media.view');
+
+        $this->ensureTagsColumn();
+
+        $uniqueTags = [];
+        try {
+            $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
+            $rows = $conn->fetchAllAssociative('SELECT DISTINCT tags FROM cms_media WHERE tags IS NOT NULL AND tags != ?', ['']);
+            foreach ($rows as $row) {
+                foreach (array_map('trim', explode(',', $row['tags'])) as $t) {
+                    if ($t !== '') {
+                        $uniqueTags[$t] = true;
+                    }
+                }
+            }
+            $uniqueTags = array_keys($uniqueTags);
+            sort($uniqueTags);
+        } catch (\Throwable $e) {
+            $uniqueTags = [];
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode(['tags' => $uniqueTags]);
     }
 
     // ─── Private helpers ────────────────────────────────────────

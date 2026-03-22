@@ -10,6 +10,7 @@
 <div class="page-header">
     <h1>Users</h1>
     <div class="page-actions">
+        <button type="button" class="btn btn-outline" onclick="document.getElementById('invite-modal').style.display='flex'">Invite User</button>
         <a href="{{ admin_url('users/create') }}" class="btn btn-primary">+ New User</a>
     </div>
 </div>
@@ -65,4 +66,98 @@
     <a href="{{ admin_url('users/create') }}" class="btn btn-primary">+ Create User</a>
 </div>
 {% endif %}
+
+{# ── Pending Invitations ── #}
+{% if invitations|length > 0 %}
+<div style="margin-top: var(--space-600, 32px);">
+    <h2 style="font-size: 1.15rem; font-weight: 600; margin-bottom: var(--space-300, 12px);">Pending Invitations</h2>
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Invited By</th>
+                            <th>Expires</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in invitations %}
+                        {% set inv = item.invitation %}
+                        <tr>
+                            <td>{{ inv.getEmail() }}</td>
+                            <td>
+                                {% if item.roleName %}
+                                    <span class="badge badge-info">{{ item.roleName }}</span>
+                                {% else %}
+                                    <span class="text-muted">&mdash;</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ item.inviterName ?? '&mdash;' }}</td>
+                            <td>{{ inv.getExpiresAt()|date('M d, Y H:i') }}</td>
+                            <td>
+                                {% if inv.isExpired() %}
+                                    <span class="badge" style="background:rgba(239,68,68,0.15);color:#ef4444;">Expired</span>
+                                {% else %}
+                                    <span class="badge" style="background:rgba(234,179,8,0.15);color:#eab308;">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td class="actions-cell">
+                                <form method="POST" action="{{ admin_url('users/invite/' ~ inv.getId() ~ '/resend') }}"
+                                      style="display:inline">
+                                    {{ csrf_field() | raw }}
+                                    <button type="submit" class="btn btn-sm btn-outline">Resend</button>
+                                </form>
+                                <form method="POST" action="{{ admin_url('users/invite/' ~ inv.getId() ~ '/cancel') }}"
+                                      style="display:inline" class="confirm-delete" data-message="Cancel invitation to {{ inv.getEmail() }}?">
+                                    {{ csrf_field() | raw }}
+                                    <button type="submit" class="btn btn-sm btn-danger">Cancel</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{# ── Invite User Modal ── #}
+<div id="invite-modal" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);" onclick="if(event.target===this)this.style.display='none'">
+    <div style="background:var(--bg-card, #1a1a1a);border:1px solid var(--border, rgba(255,255,255,0.08));border-radius:12px;padding:24px;width:100%;max-width:420px;position:relative;">
+        <h3 style="margin:0 0 16px;font-size:1.1rem;font-weight:600;">Invite User</h3>
+        <form method="POST" action="{{ admin_url('users/invite') }}">
+            {{ csrf_field() | raw }}
+
+            <div class="form-group" style="margin-bottom:16px;">
+                <label for="invite-email" style="display:block;font-size:0.8125rem;font-weight:500;margin-bottom:6px;">Email Address *</label>
+                <input type="email" id="invite-email" name="email" class="form-control"
+                       placeholder="user@example.com" required>
+            </div>
+
+            {% if roles|length > 0 %}
+            <div class="form-group" style="margin-bottom:16px;">
+                <label for="invite-role" style="display:block;font-size:0.8125rem;font-weight:500;margin-bottom:6px;">Assign Role</label>
+                <select id="invite-role" name="role_id" class="form-control">
+                    <option value="">No role</option>
+                    {% for role in roles %}
+                        <option value="{{ role.getId() }}">{{ role.getName() }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px;">
+                <button type="button" class="btn btn-outline" onclick="document.getElementById('invite-modal').style.display='none'">Cancel</button>
+                <button type="submit" class="btn btn-primary">Send Invitation</button>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}

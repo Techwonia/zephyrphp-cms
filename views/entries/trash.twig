@@ -1,0 +1,126 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Trash — {{ collection.getName() }}{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="{{ admin_url('collections') }}">Collections</a> /
+    <a href="{{ admin_url('collections/' ~ collection.getSlug()) }}">{{ collection.getName() }}</a> /
+    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}">Entries</a> / Trash
+</div>
+
+<div class="page-header">
+    <h1>Trash &mdash; {{ collection.getName() }}</h1>
+    <div class="page-actions">
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="btn btn-outline">&larr; Back to Entries</a>
+            {% if entries.total > 0 %}
+            <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/trash/empty') }}" style="display: inline;" class="confirm-delete" data-message="Permanently delete ALL {{ entries.total }} trashed entries? This cannot be undone.">
+                {{ csrf_field() | raw }}
+                <button type="submit" class="btn btn-danger">Empty Trash ({{ entries.total }})</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if entries.data|length > 0 %}
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        {% for field in listableFields %}
+                        <th>{{ field.getName() }}</th>
+                        {% endfor %}
+                        <th>Deleted At</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in entries.data %}
+                    <tr>
+                        <td>{{ entry.id }}</td>
+                        {% for field in listableFields %}
+                        <td>
+                            {% if field.getType() == 'boolean' %}
+                                {{ entry[field.getSlug()] ? 'Yes' : 'No' }}
+                            {% elseif field.getType() == 'image' and entry[field.getSlug()] %}
+                                <img src="/{{ entry[field.getSlug()] }}" alt="" style="max-height: 30px;">
+                            {% elseif field.getType() == 'relation' and entry[field.getSlug()] %}
+                                {% if relationLabels[field.getSlug()] is defined and relationLabels[field.getSlug()][entry[field.getSlug()]] is defined %}
+                                    <span class="truncate">{{ relationLabels[field.getSlug()][entry[field.getSlug()]] }}</span>
+                                {% else %}
+                                    <span class="truncate text-muted">#{{ entry[field.getSlug()] }}</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="truncate">{{ entry[field.getSlug()] ?? '—' }}</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                        <td>
+                            <span class="text-muted">{{ entry.deleted_at ?? '—' }}</span>
+                        </td>
+                        <td class="actions-cell">
+                            <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/restore') }}" style="display: inline;">
+                                {{ csrf_field() | raw }}
+                                <button type="submit" class="btn btn-sm btn-outline">Restore</button>
+                            </form>
+                            <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/force-delete') }}"
+                                  style="display: inline;" class="confirm-delete" data-message="Permanently delete this entry? This cannot be undone.">
+                                {{ csrf_field() | raw }}
+                                <button type="submit" class="btn btn-sm btn-danger">Delete Forever</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {# Pagination #}
+        {% if entries.last_page > 1 %}
+        <div class="pagination">
+            {% if entries.current_page > 1 %}
+                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/trash?page=' ~ (entries.current_page - 1)) }}">&laquo; Prev</a>
+            {% endif %}
+
+            {% for p in 1..entries.last_page %}
+                {% if p == entries.current_page %}
+                    <span class="active">{{ p }}</span>
+                {% else %}
+                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/trash?page=' ~ p) }}">{{ p }}</a>
+                {% endif %}
+            {% endfor %}
+
+            {% if entries.current_page < entries.last_page %}
+                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/trash?page=' ~ (entries.current_page + 1)) }}">Next &raquo;</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% else %}
+<div class="empty-state">
+    <h3>Trash is empty</h3>
+    <p>No deleted entries found for this collection.</p>
+    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="btn btn-outline">&larr; Back to Entries</a>
+</div>
+{% endif %}
+
+{% block scripts %}
+<script nonce="{{ csp_nonce() }}">
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.confirm-delete').forEach(function(form) {
+        form.addEventListener('submit', function(e) {
+            if (!confirm(form.dataset.message || 'Are you sure?')) {
+                e.preventDefault();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

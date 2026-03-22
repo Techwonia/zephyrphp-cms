@@ -1,0 +1,110 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Set Up Two-Factor Authentication{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="{{ admin_url() }}">Dashboard</a> / <a href="{{ admin_url('settings/profile') }}">Profile</a> / Two-Factor Authentication
+</div>
+
+<div class="page-header">
+    <h1>Set Up Two-Factor Authentication</h1>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <p style="color: var(--text-secondary); margin-bottom: var(--space-500); line-height: 1.6;">
+            Scan the QR code below with your authenticator app (Google Authenticator, Authy, 1Password, etc.),
+            or manually enter the secret key. Then enter the 6-digit code to verify and activate 2FA.
+        </p>
+
+        {% if flash('errors').code is defined %}
+            <div class="alert alert--error" style="margin-bottom: var(--space-400);">{{ flash('errors').code }}</div>
+        {% endif %}
+
+        <!-- Setup Key Section -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-500); margin-bottom: var(--space-500);">
+            <!-- OTPAuth URI -->
+            <div>
+                <h3 style="font-size: 0.875rem; font-weight: 600; margin-bottom: var(--space-300);">Authenticator Link</h3>
+                <p style="color: var(--text-secondary); font-size: 0.8125rem; margin-bottom: var(--space-300);">
+                    Click the link below to open it in your authenticator app, or copy and paste it:
+                </p>
+                <div style="background: var(--bg-secondary); border: 1px solid var(--border-default); border-radius: 8px; padding: var(--space-300); word-break: break-all; font-size: 0.75rem; font-family: monospace; color: var(--text-secondary); position: relative;">
+                    <a href="{{ uri }}" style="color: var(--accent-primary); text-decoration: none; word-break: break-all;">{{ uri }}</a>
+                    <button type="button" class="btn btn-sm" style="position: absolute; top: 6px; right: 6px; font-size: 0.7rem; padding: 4px 8px;" onclick="copyToClipboard('{{ uri }}', this)" title="Copy URI">
+                        Copy
+                    </button>
+                </div>
+            </div>
+
+            <!-- Manual Secret Key -->
+            <div>
+                <h3 style="font-size: 0.875rem; font-weight: 600; margin-bottom: var(--space-300);">Manual Entry Key</h3>
+                <p style="color: var(--text-secondary); font-size: 0.8125rem; margin-bottom: var(--space-300);">
+                    If you cannot scan the link, enter this key manually in your authenticator app:
+                </p>
+                <div style="background: var(--bg-secondary); border: 1px solid var(--border-default); border-radius: 8px; padding: var(--space-300); font-family: monospace; font-size: 1rem; font-weight: 600; letter-spacing: 0.15em; text-align: center; color: var(--accent-primary); position: relative;">
+                    {{ secret }}
+                    <button type="button" class="btn btn-sm" style="position: absolute; top: 50%; right: 8px; transform: translateY(-50%); font-size: 0.7rem; padding: 4px 8px;" onclick="copyToClipboard('{{ secret }}', this)" title="Copy secret key">
+                        Copy
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <hr style="margin: var(--space-500) 0; border: none; border-top: 1px solid var(--border-default);">
+
+        <!-- Verification Form -->
+        <h3 style="font-size: 0.875rem; font-weight: 600; margin-bottom: var(--space-300);">Verify Setup</h3>
+        <p style="color: var(--text-secondary); font-size: 0.8125rem; margin-bottom: var(--space-400);">
+            Enter the 6-digit code displayed in your authenticator app to confirm the setup:
+        </p>
+
+        <form method="POST" action="{{ admin_url('settings/profile/2fa/confirm') }}">
+            {{ csrf_field() | raw }}
+
+            <div class="form-group" style="max-width: 280px;">
+                <label for="code">Verification Code</label>
+                <input type="text" id="code" name="code"
+                       class="form-control"
+                       placeholder="000000"
+                       maxlength="6"
+                       inputmode="numeric"
+                       autocomplete="one-time-code"
+                       style="text-align: center; font-size: 1.25rem; font-weight: 600; letter-spacing: 0.3em;"
+                       autofocus required>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Enable Two-Factor Authentication</button>
+                <a href="{{ admin_url('settings/profile') }}" class="btn btn-secondary" style="margin-left: var(--space-200);">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script nonce="{{ csp_nonce() }}">
+    function copyToClipboard(text, btn) {
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(text).then(function() {
+                var original = btn.textContent;
+                btn.textContent = 'Copied!';
+                setTimeout(function() { btn.textContent = original; }, 2000);
+            });
+        } else {
+            var textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            var original = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(function() { btn.textContent = original; }, 2000);
+        }
+    }
+</script>
+{% endblock %}

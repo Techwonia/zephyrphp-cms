@@ -253,6 +253,48 @@ class PermissionService
     }
 
     /**
+     * Check if the current user can access a specific field (view or edit).
+     *
+     * Field-level permissions are stored in the field's options JSON:
+     *   { "field_permissions": { "view": ["admin", "editor"], "edit": ["admin"] } }
+     *
+     * Empty arrays or missing key = no restriction (everyone can access).
+     * Users with 'super-admin' or 'admin' role always have access.
+     */
+    public static function canAccessField(\ZephyrPHP\Cms\Models\Field $field, string $action = 'view'): bool
+    {
+        $options = $field->getOptions();
+        $permissions = $options['field_permissions'][$action] ?? [];
+
+        // Empty = no restriction
+        if (empty($permissions)) {
+            return true;
+        }
+
+        if (!Auth::check()) {
+            return false;
+        }
+
+        $user = Auth::user();
+
+        // Admin / super-admin bypass
+        if (method_exists($user, 'hasRole')) {
+            if ($user->hasRole('admin') || $user->hasRole('super-admin')) {
+                return true;
+            }
+        }
+
+        $userRoles = self::getUserRoles($user);
+        foreach ($userRoles as $roleSlug) {
+            if (in_array($roleSlug, $permissions, true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Save permissions for a role.
      */
     public static function saveRolePermissions(string $roleSlug, array $permissions): void

@@ -1,0 +1,183 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Redirects{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="{{ admin_url() }}">Dashboard</a> / Redirects
+</div>
+
+<div class="page-header">
+    <h1>Redirects</h1>
+</div>
+
+{# Search #}
+<div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card-body">
+        <form method="GET" action="{{ admin_url('redirects') }}" style="display: flex; gap: var(--space-300); align-items: end;">
+            <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                <label for="search">Search Redirects</label>
+                <input type="text" id="search" name="search" class="form-control" placeholder="Search by path or URL..." value="{{ search }}">
+            </div>
+            <button type="submit" class="btn btn-outline">Search</button>
+            {% if search %}
+                <a href="{{ admin_url('redirects') }}" class="btn btn-outline">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+{# Create Redirect #}
+<div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card-header"><h3 style="margin:0; font-size:1rem;">Add Redirect</h3></div>
+    <div class="card-body">
+        <form method="POST" action="{{ admin_url('redirects') }}">
+            {{ csrf_field() | raw }}
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: var(--space-400); align-items: end;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="from_path">From Path</label>
+                    <input type="text" id="from_path" name="from_path" class="form-control" placeholder="/old-page" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="to_url">To URL</label>
+                    <input type="text" id="to_url" name="to_url" class="form-control" placeholder="/new-page or https://example.com/page" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="status_code">Type</label>
+                    <select id="status_code" name="status_code" class="form-control">
+                        <option value="301">301 (Permanent)</option>
+                        <option value="302">302 (Temporary)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-actions" style="margin-top: var(--space-400);">
+                <button type="submit" class="btn btn-primary">Add Redirect</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# Redirect List #}
+{% if redirects|length > 0 %}
+<div class="card">
+    <div class="card-header">
+        <h3 style="margin:0; font-size:1rem;">
+            Redirects
+            {% if total is defined %}
+                <span style="font-weight: normal; color: var(--text-muted); font-size: 0.85rem;">({{ total }} total)</span>
+            {% endif %}
+        </h3>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>From Path</th>
+                        <th>To URL</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Hits</th>
+                        <th>Last Hit</th>
+                        <th style="width: 280px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for redirect in redirects %}
+                    <tr id="redirect-row-{{ redirect.id }}">
+                        {# Display mode #}
+                        <td class="redirect-display" data-id="{{ redirect.id }}" style="font-family: monospace; font-size: 0.85rem; max-width: 250px; overflow: hidden; text-overflow: ellipsis;">{{ redirect.fromPath }}</td>
+                        <td class="redirect-display" data-id="{{ redirect.id }}" style="font-family: monospace; font-size: 0.85rem; max-width: 250px; overflow: hidden; text-overflow: ellipsis;">{{ redirect.toUrl }}</td>
+                        <td class="redirect-display" data-id="{{ redirect.id }}">
+                            <span class="badge">{{ redirect.statusCode }}</span>
+                        </td>
+                        <td>
+                            {% if redirect.isActive %}
+                                <span class="badge" style="background: var(--success); color: #fff;">Active</span>
+                            {% else %}
+                                <span class="badge">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ redirect.hitCount }}</td>
+                        <td>{{ redirect.lastHitAt ? redirect.lastHitAt|date('M j, Y H:i') : 'Never' }}</td>
+                        <td>
+                            <div style="display: flex; gap: var(--space-200); flex-wrap: wrap;">
+                                <button type="button" class="btn btn-outline btn-sm" onclick="toggleEdit({{ redirect.id }})">Edit</button>
+                                <form method="POST" action="{{ admin_url('redirects/' ~ redirect.id ~ '/toggle') }}" style="display: inline;">
+                                    {{ csrf_field() | raw }}
+                                    <button type="submit" class="btn btn-outline btn-sm">{{ redirect.isActive ? 'Disable' : 'Enable' }}</button>
+                                </form>
+                                <form method="POST" action="{{ admin_url('redirects/' ~ redirect.id ~ '/delete') }}" style="display: inline;" onsubmit="return confirm('Delete this redirect?')">
+                                    {{ csrf_field() | raw }}
+                                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {# Edit mode (hidden by default) #}
+                    <tr id="redirect-edit-{{ redirect.id }}" style="display: none;">
+                        <td colspan="7">
+                            <form method="POST" action="{{ admin_url('redirects/' ~ redirect.id) }}" style="display: flex; gap: var(--space-300); align-items: end;">
+                                {{ csrf_field() | raw }}
+                                <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                                    <label>From Path</label>
+                                    <input type="text" name="from_path" class="form-control" value="{{ redirect.fromPath }}" required>
+                                </div>
+                                <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                                    <label>To URL</label>
+                                    <input type="text" name="to_url" class="form-control" value="{{ redirect.toUrl }}" required>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label>Type</label>
+                                    <select name="status_code" class="form-control">
+                                        <option value="301" {{ redirect.statusCode == 301 ? 'selected' : '' }}>301</option>
+                                        <option value="302" {{ redirect.statusCode == 302 ? 'selected' : '' }}>302</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                                <button type="button" class="btn btn-outline btn-sm" onclick="toggleEdit({{ redirect.id }})">Cancel</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{# Pagination #}
+{% if totalPages > 1 %}
+<div style="display: flex; justify-content: center; gap: var(--space-200); margin-top: var(--space-500);">
+    {% if page > 1 %}
+        <a href="{{ admin_url('redirects') }}?page={{ page - 1 }}{{ search ? '&search=' ~ search|url_encode : '' }}" class="btn btn-outline btn-sm">Previous</a>
+    {% endif %}
+    <span style="display: flex; align-items: center; font-size: 0.85rem; color: var(--text-muted);">Page {{ page }} of {{ totalPages }}</span>
+    {% if page < totalPages %}
+        <a href="{{ admin_url('redirects') }}?page={{ page + 1 }}{{ search ? '&search=' ~ search|url_encode : '' }}" class="btn btn-outline btn-sm">Next</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="empty-state">
+    <h3>No redirects configured</h3>
+    <p>Create a redirect above to automatically redirect visitors from one URL to another.</p>
+</div>
+{% endif %}
+
+<script nonce="{{ csp_nonce() }}">
+function toggleEdit(id) {
+    var editRow = document.getElementById('redirect-edit-' + id);
+    if (editRow.style.display === 'none') {
+        editRow.style.display = '';
+    } else {
+        editRow.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

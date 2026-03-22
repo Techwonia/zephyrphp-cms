@@ -919,7 +919,8 @@ class EntryQuery
             && empty($this->whereDates) && empty($this->rawConditions) && empty($this->whereCompares)
             && empty($this->whereColumns) && empty($this->whereJsonContains)
             && empty($this->whereNotIns) && empty($this->whereNotBetweens)
-            && $this->searchTerm === null) {
+            && $this->searchTerm === null
+            && !$this->onlyTrashed && !$this->includeTrashed) {
             $this->boot();
             if (!$this->tableName) {
                 return 0;
@@ -927,7 +928,7 @@ class EntryQuery
             return $this->schema->countEntries($this->tableName);
         }
 
-        // With filters, use the list query but only get total
+        // With filters (including soft-delete flags), use the list query but only get total
         $result = $this->executeList(1, 1);
         return $result['total'];
     }
@@ -1662,6 +1663,7 @@ class EntryQuery
 
     /**
      * Delete an entry by ID.
+     * Uses soft delete (sets deleted_at) when the column exists, otherwise hard deletes.
      */
     public function delete(int|string $id): void
     {
@@ -1670,7 +1672,25 @@ class EntryQuery
             throw new \RuntimeException("Collection '{$this->collectionSlug}' not found.");
         }
 
-        $this->schema->deleteEntry($this->tableName, $id);
+        if ($this->hasSoftDeleteColumn()) {
+            $this->schema->softDeleteEntry($this->tableName, $id);
+        } else {
+            $this->schema->deleteEntry($this->tableName, $id);
+        }
+        cms_invalidate_cache($this->collectionSlug);
+    }
+
+    /**
+     * Permanently delete an entry by ID (bypasses soft delete).
+     */
+    public function forceDelete(int|string $id): void
+    {
+        $this->boot();
+        if (!$this->tableName) {
+            throw new \RuntimeException("Collection '{$this->collectionSlug}' not found.");
+        }
+
+        $this->schema->forceDeleteEntry($this->tableName, $id);
         cms_invalidate_cache($this->collectionSlug);
     }
 

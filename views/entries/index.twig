@@ -11,7 +11,8 @@
 <div class="page-header">
     <h1>{{ collection.getName() }}</h1>
     <div class="page-actions">
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+            <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/trash') }}" class="btn btn-outline" title="View Trash">Trash{% if trashCount is defined and trashCount > 0 %} <span style="display:inline-block;min-width:18px;padding:1px 5px;font-size:0.75rem;font-weight:600;line-height:1.2;text-align:center;border-radius:10px;background:#dc3545;color:#fff;">{{ trashCount }}</span>{% endif %}</a>
             <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/export?format=csv') }}" class="btn btn-outline" title="Export CSV">Export CSV</a>
             <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/export?format=json') }}" class="btn btn-outline" title="Export JSON">Export JSON</a>
             <button class="btn btn-outline" id="toggle-import-btn">Import</button>
@@ -146,14 +147,28 @@
     <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/bulk') }}" style="display: inline; margin-left: 12px;">
         {{ csrf_field() | raw }}
         <input type="hidden" name="selected_ids" id="bulk-ids" value="">
-        <select name="bulk_action" class="form-control" style="display: inline-block; width: auto;">
+        <select name="bulk_action" id="bulk-action-select" class="form-control" style="display: inline-block; width: auto;">
             <option value="">— Bulk Action —</option>
             <option value="delete">Delete Selected</option>
             {% if collection.isPublishable() %}
             <option value="publish">Publish Selected</option>
             <option value="unpublish">Unpublish Selected</option>
             {% endif %}
+            <option value="update_field">Update Field</option>
         </select>
+        <span id="bulk-field-controls" style="display: none;">
+            <select name="bulk_field" id="bulk-field-select" class="form-control" style="display: inline-block; width: auto;">
+                <option value="">— Select Field —</option>
+                {% for field in fields %}
+                    {% if field.getType() in ['text', 'number', 'select', 'boolean', 'email', 'url'] %}
+                    <option value="{{ field.getSlug() }}" data-type="{{ field.getType() }}" {% if field.getType() == 'select' and field.getOptions() %}data-options="{{ field.getOptions()|json_encode }}"{% endif %}>{{ field.getName() }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+            <span id="bulk-value-wrapper" style="display: inline-block;">
+                <input type="text" name="bulk_value" id="bulk-value-input" class="form-control" style="display: inline-block; width: auto;" placeholder="New value">
+            </span>
+        </span>
         <button type="submit" class="btn btn-sm btn-primary" onclick="return confirm('Apply bulk action to selected entries?')">Apply</button>
     </form>
 </div>
@@ -215,6 +230,11 @@
                         {% endif %}
                         <td class="actions-cell">
                             <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id) }}" class="btn btn-sm btn-outline">Edit</a>
+                            <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/duplicate') }}"
+                                  style="display:inline">
+                                {{ csrf_field() | raw }}
+                                <button type="submit" class="btn btn-sm btn-outline" onclick="return confirm('Duplicate this entry?')">Duplicate</button>
+                            </form>
                             <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/delete') }}"
                                   style="display:inline" class="confirm-delete" data-message="Delete this entry?">
                                 {{ csrf_field() | raw }}
@@ -314,6 +334,62 @@ document.addEventListener('DOMContentLoaded', function() {
                 clone.querySelectorAll('input, select').forEach(function(el) { el.value = ''; });
                 viewFilters.appendChild(clone);
             }
+        });
+    }
+
+    // Bulk update field toggle
+    var bulkActionSelect = document.getElementById('bulk-action-select');
+    var bulkFieldControls = document.getElementById('bulk-field-controls');
+    var bulkFieldSelect = document.getElementById('bulk-field-select');
+    var bulkValueWrapper = document.getElementById('bulk-value-wrapper');
+
+    if (bulkActionSelect && bulkFieldControls) {
+        bulkActionSelect.addEventListener('change', function() {
+            bulkFieldControls.style.display = this.value === 'update_field' ? 'inline' : 'none';
+            if (this.value !== 'update_field') {
+                if (bulkFieldSelect) bulkFieldSelect.value = '';
+                renderValueInput('text');
+            }
+        });
+    }
+
+    function renderValueInput(type, options) {
+        if (!bulkValueWrapper) return;
+        var html = '';
+        if (type === 'boolean') {
+            html = '<select name="bulk_value" id="bulk-value-input" class="form-control" style="display:inline-block;width:auto;">' +
+                   '<option value="0">No</option><option value="1">Yes</option></select>';
+        } else if (type === 'select' && options) {
+            var opts;
+            try { opts = typeof options === 'string' ? JSON.parse(options) : options; } catch(e) { opts = []; }
+            html = '<select name="bulk_value" id="bulk-value-input" class="form-control" style="display:inline-block;width:auto;">';
+            html += '<option value="">— Select —</option>';
+            if (Array.isArray(opts)) {
+                opts.forEach(function(o) {
+                    var val = typeof o === 'object' ? (o.value || '') : o;
+                    var label = typeof o === 'object' ? (o.label || o.value || '') : o;
+                    html += '<option value="' + val + '">' + label + '</option>';
+                });
+            }
+            html += '</select>';
+        } else if (type === 'number') {
+            html = '<input type="number" name="bulk_value" id="bulk-value-input" class="form-control" style="display:inline-block;width:auto;" placeholder="New value" step="any">';
+        } else if (type === 'email') {
+            html = '<input type="email" name="bulk_value" id="bulk-value-input" class="form-control" style="display:inline-block;width:auto;" placeholder="New value">';
+        } else if (type === 'url') {
+            html = '<input type="url" name="bulk_value" id="bulk-value-input" class="form-control" style="display:inline-block;width:auto;" placeholder="New value">';
+        } else {
+            html = '<input type="text" name="bulk_value" id="bulk-value-input" class="form-control" style="display:inline-block;width:auto;" placeholder="New value">';
+        }
+        bulkValueWrapper.innerHTML = html;
+    }
+
+    if (bulkFieldSelect) {
+        bulkFieldSelect.addEventListener('change', function() {
+            var selected = this.options[this.selectedIndex];
+            var type = selected.getAttribute('data-type') || 'text';
+            var options = selected.getAttribute('data-options') || null;
+            renderValueInput(type, options);
         });
     }
 

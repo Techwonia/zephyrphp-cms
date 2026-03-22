@@ -526,6 +526,29 @@ class CollectionController extends Controller
             }
         }
 
+        // Parse validation rules into options
+        $options = $options ?? [];
+        $validationKeys = ['min_length', 'max_length', 'min_value', 'max_value', 'pattern', 'pattern_message', 'custom_message'];
+        foreach ($validationKeys as $key) {
+            $val = trim($this->input('field_' . $key, ''));
+            if ($val !== '') {
+                $options[$key] = in_array($key, ['min_length', 'max_length']) ? (int) $val : $val;
+                if (in_array($key, ['min_value', 'max_value']) && is_numeric($val)) {
+                    $options[$key] = $val + 0; // cast to int or float as appropriate
+                }
+            }
+        }
+
+        // Parse field-level permissions
+        $fieldPermissions = $this->parseFieldPermissions();
+        if (!empty($fieldPermissions)) {
+            $options['field_permissions'] = $fieldPermissions;
+        }
+
+        if (empty($options)) {
+            $options = null;
+        }
+
         $maxOrder = 0;
         foreach ($collection->getFields() as $f) {
             if ($f->getSortOrder() > $maxOrder) {
@@ -671,6 +694,29 @@ class CollectionController extends Controller
             if (!empty($maxFileSize) && is_numeric($maxFileSize)) {
                 $options['max_file_size'] = (int) ((float) $maxFileSize * 1024 * 1024);
             }
+        }
+
+        // Parse validation rules into options
+        $options = $options ?? [];
+        $validationKeys = ['min_length', 'max_length', 'min_value', 'max_value', 'pattern', 'pattern_message', 'custom_message'];
+        foreach ($validationKeys as $key) {
+            $val = trim($this->input('field_' . $key, ''));
+            if ($val !== '') {
+                $options[$key] = in_array($key, ['min_length', 'max_length']) ? (int) $val : $val;
+                if (in_array($key, ['min_value', 'max_value']) && is_numeric($val)) {
+                    $options[$key] = $val + 0;
+                }
+            }
+        }
+
+        // Parse field-level permissions
+        $fieldPermissions = $this->parseFieldPermissions();
+        if (!empty($fieldPermissions)) {
+            $options['field_permissions'] = $fieldPermissions;
+        }
+
+        if (empty($options)) {
+            $options = null;
         }
 
         $field->setName($name);
@@ -827,6 +873,36 @@ class CollectionController extends Controller
     /**
      * Load all roles from the database for the permissions UI.
      */
+    /**
+     * Parse field-level permission inputs from the form.
+     *
+     * Expects: field_perm_view[] and field_perm_edit[] arrays of role slugs.
+     * Returns: ['view' => ['role1', ...], 'edit' => ['role1', ...]] or empty array.
+     */
+    private function parseFieldPermissions(): array
+    {
+        $fieldPermissions = [];
+
+        $viewRoles = $this->input('field_perm_view', []);
+        $editRoles = $this->input('field_perm_edit', []);
+
+        if (is_array($viewRoles) && !empty($viewRoles)) {
+            $viewRoles = array_filter($viewRoles, fn($r) => preg_match('/^[a-z0-9\-_]+$/', $r));
+            if (!empty($viewRoles)) {
+                $fieldPermissions['view'] = array_values($viewRoles);
+            }
+        }
+
+        if (is_array($editRoles) && !empty($editRoles)) {
+            $editRoles = array_filter($editRoles, fn($r) => preg_match('/^[a-z0-9\-_]+$/', $r));
+            if (!empty($editRoles)) {
+                $fieldPermissions['edit'] = array_values($editRoles);
+            }
+        }
+
+        return $fieldPermissions;
+    }
+
     private function loadRoles(): array
     {
         try {

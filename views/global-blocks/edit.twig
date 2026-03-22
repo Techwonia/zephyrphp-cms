@@ -1,0 +1,89 @@
+{% extends "@cms/layouts/cms.twig" %}
+
+{% block title %}Edit Global Block: {{ block.getName() }}{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="{{ admin_url() }}">Dashboard</a> /
+    <a href="{{ admin_url('global-blocks') }}">Global Blocks</a> / Edit
+</div>
+
+<div class="page-header">
+    <h1>Edit Global Block</h1>
+    <div class="page-actions">
+        <form method="POST" action="{{ admin_url('global-blocks/' ~ block.getId() ~ '/delete') }}"
+              style="display: inline;" class="confirm-delete" data-message="Delete this global block?">
+            {{ csrf_field() | raw }}
+            <button type="submit" class="btn btn-danger">Delete Block</button>
+        </form>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: var(--space-400); background: var(--bg-subdued);">
+    <div class="card-body" style="display: flex; align-items: center; gap: var(--space-300);">
+        <strong>Usage:</strong>
+        <code style="font-size: var(--font-sm); background: var(--bg-surface); padding: 4px 10px; border-radius: var(--radius-100); cursor: pointer;" onclick="copySnippet(this)" title="Click to copy">{{ '{{' }} global_block('{{ block.getSlug() }}') {{ '}}' }}</code>
+        <span class="text-muted" style="font-size: var(--font-xs);">Click to copy</span>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" action="{{ admin_url('global-blocks/' ~ block.getId()) }}">
+            {{ csrf_field() | raw }}
+
+            <div class="form-group">
+                <label for="name">Name *</label>
+                <input type="text" id="name" name="name" class="form-control" required
+                       value="{{ block.getName() }}">
+            </div>
+
+            <div class="form-group">
+                <label for="slug">Slug *</label>
+                <input type="text" id="slug" name="slug" class="form-control" required
+                       value="{{ block.getSlug() }}">
+                <p class="text-muted">Lowercase letters, numbers, and hyphens only. Changing this will break existing references.</p>
+            </div>
+
+            <div class="form-group">
+                <label for="type">Type</label>
+                <select id="type" name="type" class="form-control">
+                    <option value="html" {{ block.getType() == 'html' ? 'selected' : '' }}>HTML - Static HTML content</option>
+                    <option value="twig" {{ block.getType() == 'twig' ? 'selected' : '' }}>Twig - Dynamic content with Twig syntax</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="content">Content</label>
+                <textarea id="content" name="content" class="form-control" rows="20"
+                          style="font-family: monospace; font-size: var(--font-sm);">{{ block.getContent() }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: var(--space-200); cursor: pointer;">
+                    <input type="hidden" name="active" value="0">
+                    <input type="checkbox" name="active" value="1" {{ block.isActive() ? 'checked' : '' }}>
+                    <span>Active</span>
+                </label>
+                <p class="text-muted">Inactive blocks will not render on the frontend.</p>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <a href="{{ admin_url('global-blocks') }}" class="btn btn-outline">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script nonce="{{ csp_nonce() }}">
+function copySnippet(el) {
+    var text = el.textContent.trim();
+    navigator.clipboard.writeText(text).then(function() {
+        var original = el.textContent;
+        el.textContent = 'Copied!';
+        setTimeout(function() { el.textContent = original; }, 1500);
+    });
+}
+</script>
+{% endblock %}

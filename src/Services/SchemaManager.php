@@ -213,6 +213,9 @@ class SchemaManager
         $table->addColumn('created_at', Types::DATETIME_MUTABLE, ['notnull' => false]);
         $table->addColumn('updated_at', Types::DATETIME_MUTABLE, ['notnull' => false]);
 
+        // Soft delete column
+        $table->addColumn('deleted_at', Types::DATETIME_MUTABLE, ['notnull' => false]);
+
         // Execute
         $platform = $this->connection->getDatabasePlatform();
         $queries = $schema->toSql($platform);
@@ -724,12 +727,60 @@ class SchemaManager
     }
 
     /**
-     * Delete an entry from a collection table
+     * Delete an entry from a collection table (hard delete).
      */
     public function deleteEntry(string $tableName, int|string $id): void
     {
         $tableName = $this->safeTable($tableName);
         $this->connection->delete($tableName, ['id' => $id]);
+    }
+
+    /**
+     * Soft-delete an entry by setting deleted_at timestamp.
+     */
+    public function softDeleteEntry(string $tableName, int|string $id): void
+    {
+        $tableName = $this->safeTable($tableName);
+        $this->connection->executeStatement(
+            "UPDATE `{$tableName}` SET `deleted_at` = :now WHERE `id` = :id",
+            ['now' => (new \DateTime())->format('Y-m-d H:i:s'), 'id' => $id]
+        );
+    }
+
+    /**
+     * Restore a soft-deleted entry by clearing deleted_at.
+     */
+    public function restoreEntry(string $tableName, int|string $id): void
+    {
+        $tableName = $this->safeTable($tableName);
+        $this->connection->executeStatement(
+            "UPDATE `{$tableName}` SET `deleted_at` = NULL WHERE `id` = :id",
+            ['id' => $id]
+        );
+    }
+
+    /**
+     * Permanently delete an entry (hard delete). Alias of deleteEntry.
+     */
+    public function forceDeleteEntry(string $tableName, int|string $id): void
+    {
+        $this->deleteEntry($tableName, $id);
+    }
+
+    /**
+     * Add `deleted_at` column to an existing collection table if it does not exist.
+     */
+    public function ensureDeletedAtColumn(string $tableName): void
+    {
+        $tableName = $this->safeTable($tableName);
+        $sm = $this->connection->createSchemaManager();
+        $columns = $sm->listTableColumns($tableName);
+
+        if (!isset($columns['deleted_at'])) {
+            $this->connection->executeStatement(
+                "ALTER TABLE `{$tableName}` ADD COLUMN `deleted_at` DATETIME NULL DEFAULT NULL"
+            );
+        }
     }
 
     /**

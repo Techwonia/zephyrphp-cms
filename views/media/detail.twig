@@ -70,6 +70,18 @@
                         <input type="text" id="alt_text" name="alt_text" class="form-control" value="{{ item.getAltText() ?? '' }}" placeholder="Describe this image for accessibility">
                         <small style="color: var(--text-secondary);">Used as alt attribute for images. Important for SEO and accessibility.</small>
                     </div>
+                    <div class="form-group">
+                        <label for="tags">Tags</label>
+                        <input type="text" id="tags" name="tags" class="form-control" value="{{ item.getTagsString() ?? '' }}" placeholder="e.g. hero, banner, product">
+                        <small style="color: var(--text-secondary);">Comma-separated tags for organizing media.</small>
+                        {% if item.getTags()|length > 0 %}
+                        <div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px;">
+                            {% for tag in item.getTags() %}
+                            <a href="{{ admin_url('media?tag=' ~ tag) }}" style="display:inline-block; padding:2px 8px; background:var(--bg-subdued,#f0f0f0); border:1px solid var(--border-color); border-radius:12px; font-size:11px; text-decoration:none; color:var(--text-primary);">{{ tag }}</a>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
                     <button type="submit" class="btn btn-primary">Save</button>
                 </form>
             </div>

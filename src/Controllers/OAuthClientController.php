@@ -86,8 +86,9 @@ class OAuthClientController extends Controller
         try {
             $client = OAuthClient::create($name, $redirectUri, $validScopes);
 
-            // Show the plain secret once
-            $this->flash('success', "App \"{$name}\" registered. Client ID: {$client->getClientId()}");
+            // Show the plain secret once (stored briefly in session, cleared on next page load)
+            $this->flash('success', "App \"{$name}\" registered.");
+            $this->flash('client_id', $client->getClientId());
             $this->flash('client_secret', $client->_plainSecret);
         } catch (\Exception $e) {
             $this->flash('errors', ['Failed to create OAuth client: ' . $e->getMessage()]);

@@ -6,6 +6,7 @@ namespace ZephyrPHP\Cms\Controllers;
 
 use ZephyrPHP\Core\Controllers\Controller;
 use ZephyrPHP\Auth\Auth;
+use ZephyrPHP\Security\Csrf;
 use ZephyrPHP\Cms\Models\Theme;
 use ZephyrPHP\Cms\Services\ThemeManager;
 use ZephyrPHP\Cms\Services\PermissionService;
@@ -29,6 +30,17 @@ class ThemeCodeEditorController extends Controller
         if (!PermissionService::can('themes.edit')) {
             $this->flash('errors', ['auth' => 'You do not have permission to perform this action.']);
             $this->redirect(admin_url());
+            return false;
+        }
+        return true;
+    }
+
+    private function verifyCsrfJson(): bool
+    {
+        $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? null;
+        if (!$token || !Csrf::validate($token)) {
+            http_response_code(403);
+            echo json_encode(['error' => 'CSRF token invalid or missing. Send X-CSRF-TOKEN header.']);
             return false;
         }
         return true;
@@ -260,6 +272,8 @@ class ThemeCodeEditorController extends Controller
 
         header('Content-Type: application/json');
 
+        if (!$this->verifyCsrfJson()) return;
+
         $theme = Theme::findOneBy(['slug' => $slug]);
         if (!$theme) {
             http_response_code(404);
@@ -367,6 +381,8 @@ class ThemeCodeEditorController extends Controller
         if (!$this->requireAdmin()) return;
 
         header('Content-Type: application/json');
+
+        if (!$this->verifyCsrfJson()) return;
 
         $theme = Theme::findOneBy(['slug' => $slug]);
         if (!$theme) {
@@ -490,6 +506,8 @@ class ThemeCodeEditorController extends Controller
         if (!$this->requireAdmin()) return;
 
         header('Content-Type: application/json');
+
+        if (!$this->verifyCsrfJson()) return;
 
         $theme = Theme::findOneBy(['slug' => $slug]);
         if (!$theme) {
@@ -881,7 +899,11 @@ class ThemeCodeEditorController extends Controller
             }
 
             // Sanitize filename
-            $safeName = preg_replace('/[^a-zA-Z0-9._-]/', '-', basename($name));
+            $baseName = basename($name);
+            if ($baseName === '' || $baseName === '.' || $baseName === '..') {
+                continue; // reject dangerous filenames
+            }
+            $safeName = preg_replace('/[^a-zA-Z0-9._-]/', '-', $baseName);
             $ext = strtolower(pathinfo($safeName, PATHINFO_EXTENSION));
 
             if (in_array($ext, $blockedExts, true)) {

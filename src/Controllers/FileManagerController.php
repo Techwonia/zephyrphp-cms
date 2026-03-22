@@ -243,8 +243,11 @@ class FileManagerController extends Controller
 
     private function sanitizePath(string $path): string
     {
-        // Remove dangerous characters and path traversal
-        $path = str_replace(['..', "\0"], '', $path);
+        // Reject null bytes and path traversal attempts outright
+        if (str_contains($path, "\0") || preg_match('#(^|[/\\\\])\.\.([/\\\\]|$)#', $path)) {
+            return '';
+        }
+
         $path = preg_replace('#[/\\\\]+#', '/', $path);
         return trim($path, '/');
     }

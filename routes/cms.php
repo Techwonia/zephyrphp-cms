@@ -52,6 +52,10 @@ use ZephyrPHP\Cms\Controllers\ThemeAssetController;
 use ZephyrPHP\Cms\Controllers\ThemeCodeEditorController;
 use ZephyrPHP\Cms\Controllers\PluginController;
 use ZephyrPHP\Cms\Controllers\SearchController;
+use ZephyrPHP\Cms\Controllers\RedirectController;
+use ZephyrPHP\Cms\Controllers\GlobalBlockController;
+use ZephyrPHP\Cms\Controllers\RelationshipGraphController;
+use ZephyrPHP\Cms\Controllers\AutomationController;
 
 // CMS Admin Routes (protected by auth middleware, with auto scheduled publishing)
 Route::group(['prefix' => '/' . admin_path(), 'middleware' => [\ZephyrPHP\Middleware\AuthMiddleware::class, \ZephyrPHP\Cms\Middleware\ScheduledPublishMiddleware::class]], function () {
@@ -85,6 +89,11 @@ Route::group(['prefix' => '/' . admin_path(), 'middleware' => [\ZephyrPHP\Middle
     Route::post('/collections/{slug}/views', [EntryController::class, 'saveView']);
     Route::post('/collections/{slug}/views/{viewId}/delete', [EntryController::class, 'deleteView']);
 
+    // Content Templates (reusable entry templates)
+    Route::post('/collections/{slug}/entries/{id}/save-template', [EntryController::class, 'saveAsTemplate']);
+    Route::post('/collections/{slug}/templates/{templateId}/delete', [EntryController::class, 'deleteTemplate']);
+    Route::get('/collections/{slug}/templates/{templateId}', [EntryController::class, 'getTemplateData']);
+
     // Entries (nested under collection)
     Route::get('/collections/{slug}/entries', [EntryController::class, 'index']);
     Route::get('/collections/{slug}/entries/create', [EntryController::class, 'create']);
@@ -97,8 +106,27 @@ Route::group(['prefix' => '/' . admin_path(), 'middleware' => [\ZephyrPHP\Middle
     Route::post('/collections/{slug}/entries/{id}/restore/{revisionId}', [EntryController::class, 'restore']);
     Route::post('/collections/{slug}/entries/{id}/workflow/advance', [EntryController::class, 'advanceWorkflow']);
     Route::post('/collections/{slug}/entries/{id}/workflow/reject', [EntryController::class, 'rejectWorkflow']);
+    Route::post('/collections/{slug}/entries/{id}/heartbeat', [EntryController::class, 'heartbeat']);
+    Route::post('/collections/{slug}/entries/{id}/unlock', [EntryController::class, 'unlock']);
+    Route::post('/collections/{slug}/entries/{id}/duplicate', [EntryController::class, 'duplicate']);
+    Route::post('/collections/{slug}/entries/{id}/preview', [EntryController::class, 'preview']);
     Route::post('/collections/{slug}/entries/{id}', [EntryController::class, 'update']);
     Route::post('/collections/{slug}/entries/{id}/delete', [EntryController::class, 'destroy']);
+
+    // Trash / Soft Deletes
+    Route::get('/collections/{slug}/trash', [EntryController::class, 'trash']);
+    Route::post('/collections/{slug}/entries/{id}/restore', [EntryController::class, 'restoreEntry']);
+    Route::post('/collections/{slug}/entries/{id}/force-delete', [EntryController::class, 'forceDelete']);
+    Route::post('/collections/{slug}/trash/empty', [EntryController::class, 'emptyTrash']);
+
+    // Autosave / Draft Recovery (for existing entries)
+    Route::get('/collections/{slug}/entries/{id}/autosave', [EntryController::class, 'getAutosave']);
+    Route::post('/collections/{slug}/entries/{id}/autosave', [EntryController::class, 'autosave']);
+    Route::post('/collections/{slug}/entries/{id}/autosave/delete', [EntryController::class, 'deleteAutosave']);
+    // Autosave for new entries (create mode)
+    Route::get('/collections/{slug}/autosave', [EntryController::class, 'getAutosave']);
+    Route::post('/collections/{slug}/autosave', [EntryController::class, 'autosave']);
+    Route::post('/collections/{slug}/autosave/delete', [EntryController::class, 'deleteAutosave']);
 
     // Languages
     Route::get('/languages', [LanguageController::class, 'index']);
@@ -109,6 +137,7 @@ Route::group(['prefix' => '/' . admin_path(), 'middleware' => [\ZephyrPHP\Middle
     // Media
     Route::get('/media', [MediaController::class, 'index']);
     Route::get('/media/browse', [MediaController::class, 'browse']);
+    Route::get('/media/tags', [MediaController::class, 'tags']);
     Route::get('/media/{id}', [MediaController::class, 'detail']);
     Route::post('/media/upload', [MediaController::class, 'upload']);
     Route::post('/media/bulk', [MediaController::class, 'bulk']);
@@ -171,6 +200,9 @@ Route::group(['prefix' => '/' . admin_path(), 'middleware' => [\ZephyrPHP\Middle
     Route::get('/users', [UserController::class, 'index']);
     Route::get('/users/create', [UserController::class, 'create']);
     Route::post('/users', [UserController::class, 'store']);
+    Route::post('/users/invite', [UserController::class, 'invite']);
+    Route::post('/users/invite/{id}/resend', [UserController::class, 'resendInvite']);
+    Route::post('/users/invite/{id}/cancel', [UserController::class, 'cancelInvite']);
     Route::get('/users/{id}', [UserController::class, 'edit']);
     Route::post('/users/{id}', [UserController::class, 'update']);
     Route::post('/users/{id}/delete', [UserController::class, 'destroy']);
@@ -193,6 +225,12 @@ Route::group(['prefix' => '/' . admin_path(), 'middleware' => [\ZephyrPHP\Middle
     // Profile Settings
     Route::get('/settings/profile', [ProfileController::class, 'index']);
     Route::post('/settings/profile', [ProfileController::class, 'update']);
+
+    // Two-Factor Authentication
+    Route::post('/settings/profile/2fa/enable', [ProfileController::class, 'enable2fa']);
+    Route::get('/settings/profile/2fa/setup', [ProfileController::class, 'show2faSetup']);
+    Route::post('/settings/profile/2fa/confirm', [ProfileController::class, 'confirm2fa']);
+    Route::post('/settings/profile/2fa/disable', [ProfileController::class, 'disable2fa']);
 
     // System Settings
     Route::get('/settings/system', [SystemSettingsController::class, 'index']);
@@ -401,6 +439,33 @@ Route::group(['prefix' => '/' . admin_path(), 'middleware' => [\ZephyrPHP\Middle
 
     // Global Search
     Route::get('/search', [SearchController::class, 'search']);
+
+    // Redirects
+    Route::get('/redirects', [RedirectController::class, 'index']);
+    Route::post('/redirects', [RedirectController::class, 'store']);
+    Route::post('/redirects/{id}', [RedirectController::class, 'update']);
+    Route::post('/redirects/{id}/delete', [RedirectController::class, 'destroy']);
+    Route::post('/redirects/{id}/toggle', [RedirectController::class, 'toggleStatus']);
+
+    // Relationship Graph
+    Route::get('/relationships', [RelationshipGraphController::class, 'index']);
+
+    // Global Blocks
+    Route::get('/global-blocks', [GlobalBlockController::class, 'index']);
+    Route::get('/global-blocks/create', [GlobalBlockController::class, 'create']);
+    Route::post('/global-blocks', [GlobalBlockController::class, 'store']);
+    Route::get('/global-blocks/{id}', [GlobalBlockController::class, 'edit']);
+    Route::post('/global-blocks/{id}', [GlobalBlockController::class, 'update']);
+    Route::post('/global-blocks/{id}/delete', [GlobalBlockController::class, 'destroy']);
+
+    // Automation Rules
+    Route::get('/automations', [AutomationController::class, 'index']);
+    Route::get('/automations/create', [AutomationController::class, 'create']);
+    Route::post('/automations', [AutomationController::class, 'store']);
+    Route::get('/automations/{id}', [AutomationController::class, 'edit']);
+    Route::post('/automations/{id}', [AutomationController::class, 'update']);
+    Route::post('/automations/{id}/delete', [AutomationController::class, 'destroy']);
+    Route::post('/automations/{id}/run', [AutomationController::class, 'run']);
 });
 
 
@@ -430,6 +495,9 @@ Route::post('/collections/{slug}/submit', [\ZephyrPHP\Cms\Controllers\PublicSubm
 // Sitemap
 Route::get('/sitemap.xml', [\ZephyrPHP\Cms\Controllers\SitemapController::class, 'index']);
 
+
+// Public Search API (no auth required, rate-limited)
+Route::get('/api/search', [\ZephyrPHP\Cms\Api\SearchApiController::class, 'search']);
 
 // CMS Public API Routes (legacy, API-key based)
 Route::group(['prefix' => '/api/cms'], function () {

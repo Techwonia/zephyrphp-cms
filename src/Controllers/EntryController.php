@@ -11,6 +11,7 @@ use ZephyrPHP\Cms\Models\Field;
 use ZephyrPHP\Cms\Models\Media;
 use ZephyrPHP\Cms\Models\Revision;
 use ZephyrPHP\Cms\Models\SavedView;
+use ZephyrPHP\Cms\Models\ContentTemplate;
 use ZephyrPHP\Cms\Services\SchemaManager;
 use ZephyrPHP\Cms\Services\EntryQuery;
 use ZephyrPHP\Cms\Services\FileValidator;
@@ -20,8 +21,8 @@ use ZephyrPHP\Cms\Services\SeoService;
 use ZephyrPHP\Cms\Services\NotificationService;
 use ZephyrPHP\Cms\Services\TranslationService;
 use ZephyrPHP\Cms\Services\WorkflowService;
+use ZephyrPHP\Cms\Services\AutomationService;
 use ZephyrPHP\Cms\Models\Language;
-use ZephyrPHP\Cms\Api\ContentApiController;
 
 class EntryController extends Controller
 {
@@ -159,8 +160,18 @@ class EntryController extends Controller
         // Resolve relation labels for list view
         $relationLabels = $this->resolveRelationLabels($listableFields, $entries['data']);
 
+        // Trash count for badge
+        $trashCount = 0;
+        try {
+            $this->schema->ensureDeletedAtColumn($collection->getTableName());
+            $trashCount = EntryQuery::collection($slug)->onlyTrashed()->noCache()->count();
+        } catch (\Throwable $e) {
+            // Silently ignore if column check fails
+        }
+
         return $this->render('cms::entries/index', [
             'collection' => $collection,
+            'fields' => $fields,
             'listableFields' => $listableFields,
             'entries' => $entries,
             'relationLabels' => $relationLabels,
@@ -170,6 +181,7 @@ class EntryController extends Controller
             'savedViews' => $savedViews,
             'activeViewSlug' => $activeViewSlug,
             'user' => Auth::user(),
+            'trashCount' => $trashCount,
         ]);
     }
 
@@ -179,14 +191,42 @@ class EntryController extends Controller
         if (!$collection) return '';
         $this->requireCollectionPermission('create', $collection);
 
+        $allFields = $collection->getFields()->toArray();
+
+        // Filter fields by view permission
+        $fields = array_filter($allFields, fn(Field $f) => PermissionService::canAccessField($f, 'view'));
+
+        // Determine which fields the user can edit
+        $editableFields = array_map(
+            fn(Field $f) => $f->getSlug(),
+            array_filter($fields, fn(Field $f) => PermissionService::canAccessField($f, 'edit'))
+        );
+
         // Load related collection data for relation fields
-        $relationData = $this->loadRelationData($collection->getFields()->toArray());
+        $relationData = $this->loadRelationData($fields);
+
+        // Load content templates for this collection
+        $templates = ContentTemplate::findBy(['collectionSlug' => $slug], ['name' => 'ASC']);
+
+        // If a template is selected via query param, load its data
+        $templateData = [];
+        $templateId = $this->input('template');
+        if ($templateId !== null && $templateId !== '') {
+            $selectedTemplate = ContentTemplate::find((int) $templateId);
+            if ($selectedTemplate && $selectedTemplate->getCollectionSlug() === $slug) {
+                $templateData = $selectedTemplate->getData();
+            }
+        }
 
         return $this->render('cms::entries/create', [
             'collection' => $collection,
-            'fields' => $collection->getFields()->toArray(),
+            'fields' => array_values($fields),
+            'editableFields' => array_values($editableFields),
             'relationData' => $relationData,
             'user' => Auth::user(),
+            'templates' => $templates,
+            'templateData' => $templateData,
+            'selectedTemplateId' => $templateId,
         ]);
     }
 
@@ -196,7 +236,9 @@ class EntryController extends Controller
         if (!$collection) return;
         $this->requireCollectionPermission('create', $collection);
 
-        $fields = $collection->getFields()->toArray();
+        $allFields = $collection->getFields()->toArray();
+        // Only process fields the user can edit
+        $fields = array_filter($allFields, fn(Field $f) => PermissionService::canAccessField($f, 'edit'));
         $data = $this->buildEntryData($fields);
         $pivotData = $this->collectPivotData($fields);
         $errors = $this->validateEntryData($fields, $data, $pivotData);
@@ -283,6 +325,13 @@ class EntryController extends Controller
             );
         }
 
+        // Run automation rules for on_create trigger
+        $data['id'] = $entryId;
+        AutomationService::runEventRules('on_create', $slug, $data);
+        if (($data['status'] ?? '') === 'published') {
+            AutomationService::runEventRules('on_publish', $slug, $data);
+        }
+
         $this->flash('success', 'Entry created successfully.');
         $this->redirect(admin_url("collections/{$slug}/entries"));
     }
@@ -300,7 +349,17 @@ class EntryController extends Controller
             return '';
         }
 
-        $fields = $collection->getFields()->toArray();
+        $allFields = $collection->getFields()->toArray();
+
+        // Filter fields by view permission
+        $fields = array_filter($allFields, fn(Field $f) => PermissionService::canAccessField($f, 'view'));
+
+        // Determine which fields the user can edit
+        $editableFields = array_map(
+            fn(Field $f) => $f->getSlug(),
+            array_filter($fields, fn(Field $f) => PermissionService::canAccessField($f, 'edit'))
+        );
+
         $relationData = $this->loadRelationData($fields);
 
         // For multi-relation fields, extract just the IDs for the edit form
@@ -318,13 +377,107 @@ class EntryController extends Controller
             }
         }
 
+        // Content locking — acquire or detect existing lock
+        $lockInfo = $this->acquireLock($slug, $id);
+
         return $this->render('cms::entries/edit', [
             'collection' => $collection,
-            'fields' => $fields,
+            'fields' => array_values($fields),
+            'editableFields' => array_values($editableFields),
             'entry' => $entry,
             'relationData' => $relationData,
             'user' => Auth::user(),
+            'lockInfo' => $lockInfo,
         ]);
+    }
+
+    /**
+     * Preview an entry using the active theme's template without saving.
+     */
+    public function preview(string $slug, string $id): string
+    {
+        $collection = $this->resolveCollection($slug);
+        if (!$collection) return '';
+        $this->requireCollectionPermission('view', $collection);
+
+        $fields = $collection->getFields()->toArray();
+
+        // Build entry data from POST (same as update but don't save)
+        $data = $this->buildEntryData($fields);
+        $data['id'] = $id;
+
+        // Get the existing entry for fields not in form
+        $existing = EntryQuery::collection($slug)->noCache()->find($id);
+        if ($existing) {
+            $data = array_merge($existing, $data);
+        }
+
+        // Find active theme
+        $theme = \ZephyrPHP\Cms\Models\Theme::findOneBy(['status' => 'live']);
+        if (!$theme) {
+            return '<html><body><p>No active theme found. Publish a theme to enable preview.</p></body></html>';
+        }
+
+        // Try to render with collection-specific template, fall back to generic
+        $themePath = 'themes/' . $theme->getSlug();
+        $templateCandidates = [
+            $themePath . '/templates/' . $slug . '-single.twig',
+            $themePath . '/templates/' . $slug . '.twig',
+            $themePath . '/templates/entry.twig',
+            $themePath . '/templates/single.twig',
+        ];
+
+        $templateToUse = null;
+        foreach ($templateCandidates as $candidate) {
+            $fullPath = (defined('BASE_PATH') ? BASE_PATH : '.') . '/pages/' . $candidate;
+            if (file_exists($fullPath)) {
+                $templateToUse = $candidate;
+                break;
+            }
+        }
+
+        if (!$templateToUse) {
+            return $this->renderBasicPreview($collection, $fields, $data);
+        }
+
+        return $this->render($templateToUse, [
+            'entry' => $data,
+            'collection' => $collection,
+            'is_preview' => true,
+        ]);
+    }
+
+    /**
+     * Render a basic HTML preview when no theme template is available.
+     */
+    private function renderBasicPreview(Collection $collection, array $fields, array $data): string
+    {
+        $html = '<!DOCTYPE html><html><head><meta charset="UTF-8">';
+        $html .= '<title>Preview — ' . htmlspecialchars($collection->getName()) . '</title>';
+        $html .= '<style>body{font-family:system-ui,sans-serif;max-width:800px;margin:2rem auto;padding:0 1rem;color:#333}';
+        $html .= '.field{margin-bottom:1.5rem}.field-label{font-weight:600;color:#666;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.25rem}';
+        $html .= '.field-value{font-size:1rem;line-height:1.6}.preview-banner{background:#fef3cd;border:1px solid #ffc107;padding:0.75rem 1rem;border-radius:6px;margin-bottom:2rem;font-size:0.9rem}</style>';
+        $html .= '</head><body>';
+        $html .= '<div class="preview-banner">This is a preview. Changes have not been saved.</div>';
+        $html .= '<h1>' . htmlspecialchars((string) ($data['slug'] ?? $data['id'] ?? 'Entry Preview')) . '</h1>';
+
+        foreach ($fields as $field) {
+            $value = $data[$field->getSlug()] ?? '';
+            $html .= '<div class="field"><div class="field-label">' . htmlspecialchars($field->getName()) . '</div>';
+            if ($field->getType() === 'richtext') {
+                $html .= '<div class="field-value">' . $value . '</div>';
+            } elseif ($field->getType() === 'boolean') {
+                $html .= '<div class="field-value">' . ($value ? 'Yes' : 'No') . '</div>';
+            } elseif ($field->getType() === 'image') {
+                $html .= '<div class="field-value">' . ($value ? '<img src="/' . htmlspecialchars((string) $value) . '" style="max-width:100%">' : '—') . '</div>';
+            } else {
+                $html .= '<div class="field-value">' . htmlspecialchars((string) $value) . '</div>';
+            }
+            $html .= '</div>';
+        }
+
+        $html .= '</body></html>';
+        return $html;
     }
 
     public function update(string $slug, string $id): void
@@ -340,7 +493,9 @@ class EntryController extends Controller
             return;
         }
 
-        $fields = $collection->getFields()->toArray();
+        $allFields = $collection->getFields()->toArray();
+        // Only process fields the user can edit
+        $fields = array_filter($allFields, fn(Field $f) => PermissionService::canAccessField($f, 'edit'));
         $data = $this->buildEntryData($fields, $entry);
         $pivotData = $this->collectPivotData($fields);
         $errors = $this->validateEntryData($fields, $data, $pivotData);
@@ -434,6 +589,13 @@ class EntryController extends Controller
             );
         }
 
+        // Run automation rules for on_update trigger
+        $data['id'] = $id;
+        AutomationService::runEventRules('on_update', $slug, $data);
+        if (($data['status'] ?? '') === 'published' && ($entry['status'] ?? '') !== 'published') {
+            AutomationService::runEventRules('on_publish', $slug, $data);
+        }
+
         $this->flash('success', 'Entry updated successfully.');
         $this->redirect(admin_url("collections/{$slug}/entries"));
     }
@@ -444,18 +606,170 @@ class EntryController extends Controller
         if (!$collection) return;
         $this->requireCollectionPermission('delete', $collection);
 
-        // Record revision before deleting
-        $entry = EntryQuery::collection($slug)->noCache()->find($id);
+        // Ensure the deleted_at column exists before soft-deleting
+        $this->schema->ensureDeletedAtColumn($collection->getTableName());
+
+        // Record revision before soft-deleting
+        $entry = EntryQuery::collection($slug)->withTrashed()->noCache()->find($id);
         if ($entry) {
             Revision::record($collection->getTableName(), $id, $entry, 'delete');
         }
 
         EntryQuery::collection($slug)->delete($id);
 
-        ActivityLogger::log('deleted', 'entry', (string) $id, null, ['collection' => $slug]);
+        ActivityLogger::log('trashed', 'entry', (string) $id, null, ['collection' => $slug]);
 
-        $this->flash('success', 'Entry deleted.');
+        // Run automation rules for on_delete trigger
+        if ($entry) {
+            AutomationService::runEventRules('on_delete', $slug, $entry);
+        }
+
+        $this->flash('success', 'Entry moved to trash.');
         $this->redirect(admin_url("collections/{$slug}/entries"));
+    }
+
+    /**
+     * Show trashed entries for a collection.
+     */
+    public function trash(string $slug): string
+    {
+        $collection = $this->resolveCollection($slug);
+        if (!$collection) return '';
+        $this->requireCollectionPermission('view', $collection);
+
+        $this->schema->ensureDeletedAtColumn($collection->getTableName());
+
+        $listableFields = $collection->getListableFields();
+
+        $page = max(1, (int) ($this->input('page') ?? 1));
+        $perPage = 20;
+
+        $query = EntryQuery::collection($slug)->onlyTrashed()->noCache();
+        $query->orderBy('deleted_at', 'DESC');
+
+        $entries = $query->paginate($page, $perPage);
+
+        $relationLabels = $this->resolveRelationLabels($listableFields, $entries['data']);
+
+        return $this->render('cms::entries/trash', [
+            'collection' => $collection,
+            'listableFields' => $listableFields,
+            'entries' => $entries,
+            'relationLabels' => $relationLabels,
+        ]);
+    }
+
+    /**
+     * Restore a soft-deleted entry.
+     */
+    public function restoreEntry(string $slug, string $id): void
+    {
+        $collection = $this->resolveCollection($slug);
+        if (!$collection) return;
+        $this->requireCollectionPermission('delete', $collection);
+
+        EntryQuery::collection($slug)->restore($id);
+
+        ActivityLogger::log('restored', 'entry', (string) $id, null, ['collection' => $slug]);
+
+        $this->flash('success', 'Entry restored.');
+        $this->redirect(admin_url("collections/{$slug}/trash"));
+    }
+
+    /**
+     * Permanently delete a trashed entry.
+     */
+    public function forceDelete(string $slug, string $id): void
+    {
+        $collection = $this->resolveCollection($slug);
+        if (!$collection) return;
+        $this->requireCollectionPermission('delete', $collection);
+
+        EntryQuery::collection($slug)->forceDelete($id);
+
+        ActivityLogger::log('force_deleted', 'entry', (string) $id, null, ['collection' => $slug]);
+
+        $this->flash('success', 'Entry permanently deleted.');
+        $this->redirect(admin_url("collections/{$slug}/trash"));
+    }
+
+    /**
+     * Permanently delete ALL trashed entries for a collection.
+     */
+    public function emptyTrash(string $slug): void
+    {
+        $collection = $this->resolveCollection($slug);
+        if (!$collection) return;
+        $this->requireCollectionPermission('delete', $collection);
+
+        $trashed = EntryQuery::collection($slug)->onlyTrashed()->noCache()->get();
+        $count = 0;
+
+        foreach ($trashed as $entry) {
+            EntryQuery::collection($slug)->forceDelete($entry['id']);
+            $count++;
+        }
+
+        ActivityLogger::log('emptied_trash', 'entry', null, "{$count} entries", ['collection' => $slug, 'count' => $count]);
+
+        $this->flash('success', "{$count} trashed " . ($count === 1 ? 'entry' : 'entries') . " permanently deleted.");
+        $this->redirect(admin_url("collections/{$slug}/trash"));
+    }
+
+    /**
+     * Duplicate (clone) an existing entry.
+     */
+    public function duplicate(string $slug, string $id): void
+    {
+        $collection = $this->resolveCollection($slug);
+        if (!$collection) return;
+        $this->requireCollectionPermission('create', $collection);
+
+        $entry = EntryQuery::collection($slug)->noCache()->withRelations(1)->find($id);
+        if (!$entry) {
+            $this->flash('errors', ['entry' => 'Entry not found.']);
+            $this->redirect(admin_url("collections/{$slug}/entries"));
+            return;
+        }
+
+        // Prepare data for duplication — strip system columns
+        $data = $entry;
+        unset($data['id'], $data['created_at'], $data['updated_at'], $data['created_by']);
+
+        // Modify slug to avoid uniqueness conflict
+        if (isset($data['slug']) && $data['slug']) {
+            $data['slug'] = $data['slug'] . '-copy-' . time();
+        }
+
+        // Set status to draft (don't auto-publish clones)
+        if ($collection->isPublishable()) {
+            $data['status'] = 'draft';
+            $data['published_at'] = null;
+            $data['scheduled_at'] = null;
+        }
+
+        // For multi-relation fields, extract IDs from resolved objects
+        $fields = $collection->getFields()->toArray();
+        foreach ($fields as $field) {
+            if ($field->getType() === 'relation') {
+                $relationType = $field->getOptions()['relation_type'] ?? 'one_to_one';
+                if ($relationType !== 'one_to_one') {
+                    $resolved = $data[$field->getSlug()] ?? [];
+                    if (is_array($resolved) && !empty($resolved) && is_array($resolved[0] ?? null)) {
+                        $data[$field->getSlug()] = array_column($resolved, 'id');
+                    }
+                }
+            }
+        }
+
+        $data['created_by'] = Auth::user()?->getId();
+
+        $newId = EntryQuery::collection($slug)->create($data);
+
+        ActivityLogger::log('duplicated', 'entry', (string) $newId, $data['title'] ?? $data['name'] ?? "#{$newId}", ['collection' => $slug, 'duplicated_from' => $id]);
+
+        $this->flash('success', 'Entry duplicated successfully.');
+        $this->redirect(admin_url("collections/{$slug}/entries/{$newId}"));
     }
 
     /**
@@ -837,6 +1151,7 @@ class EntryController extends Controller
             'delete' => 'delete',
             'publish' => 'publish',
             'unpublish' => 'publish',
+            'update_field' => 'edit',
         ];
         $requiredAction = $actionMap[$action] ?? 'delete';
         if (!PermissionService::canForCollection($requiredAction, $collection)) {
@@ -859,9 +1174,40 @@ class EntryController extends Controller
 
         $count = 0;
         $eq = EntryQuery::collection($slug);
+
+        // Ensure deleted_at column exists for soft delete
+        if ($action === 'delete') {
+            $this->schema->ensureDeletedAtColumn($collection->getTableName());
+        }
+
+        // Handle update_field: validate field before looping
+        $bulkFieldSlug = '';
+        if ($action === 'update_field') {
+            $bulkFieldSlug = $this->input('bulk_field', '');
+            $bulkFieldValue = $this->input('bulk_value', '');
+
+            // Only allow safe field types for bulk update
+            $allowedTypes = ['text', 'number', 'select', 'boolean', 'email', 'url'];
+            $fields = $collection->getFields()->toArray();
+            $validField = false;
+
+            foreach ($fields as $f) {
+                if ($f->getSlug() === $bulkFieldSlug && in_array($f->getType(), $allowedTypes, true)) {
+                    $validField = true;
+                    break;
+                }
+            }
+
+            if (!$validField) {
+                $this->flash('errors', ['bulk' => 'Invalid field selected.']);
+                $this->redirect(admin_url("collections/{$slug}/entries"));
+                return;
+            }
+        }
+
         foreach ($ids as $id) {
             if ($action === 'delete') {
-                $entry = EntryQuery::collection($slug)->noCache()->find($id);
+                $entry = EntryQuery::collection($slug)->withTrashed()->noCache()->find($id);
                 if ($entry) {
                     Revision::record($collection->getTableName(), $id, $entry, 'delete');
                     $eq->delete($id);
@@ -878,20 +1224,28 @@ class EntryController extends Controller
                     'status' => 'draft',
                 ]);
                 $count++;
+            } elseif ($action === 'update_field') {
+                $eq->update($id, [$bulkFieldSlug => $bulkFieldValue]);
+                $count++;
             }
         }
 
         $actionLabel = match ($action) {
-            'delete' => 'deleted',
+            'delete' => 'moved to trash',
             'publish' => 'published',
             'unpublish' => 'unpublished',
+            'update_field' => 'updated',
             default => 'processed',
         };
 
         // Invalidate collection cache
         cms_invalidate_cache($slug);
 
-        ActivityLogger::log("bulk_{$action}", 'entry', null, "{$count} entries", ['collection' => $slug, 'count' => $count]);
+        $logContext = ['collection' => $slug, 'count' => $count];
+        if ($action === 'update_field') {
+            $logContext['field'] = $bulkFieldSlug;
+        }
+        ActivityLogger::log("bulk_{$action}", 'entry', null, "{$count} entries", $logContext);
 
         $this->flash('success', "{$count} entries {$actionLabel}.");
         $this->redirect(admin_url("collections/{$slug}/entries"));
@@ -1279,9 +1633,10 @@ class EntryController extends Controller
             }
 
             $value = $data[$field->getSlug()] ?? null;
+            $options = $field->getOptions() ?? [];
 
             if ($field->isRequired() && ($value === null || $value === '')) {
-                $errors[$field->getSlug()] = "{$field->getName()} is required.";
+                $errors[$field->getSlug()] = $options['custom_message'] ?? "{$field->getName()} is required.";
                 continue;
             }
 
@@ -1298,6 +1653,30 @@ class EntryController extends Controller
                             $errors[$field->getSlug()] = "{$field->getName()} must be a valid URL.";
                         }
                         break;
+                }
+
+                // Min/Max length (text types)
+                if (!empty($options['min_length']) && is_string($value) && mb_strlen($value) < (int) $options['min_length']) {
+                    $errors[$field->getSlug()] = $options['custom_message'] ?? "Must be at least {$options['min_length']} characters.";
+                }
+                if (!empty($options['max_length']) && is_string($value) && mb_strlen($value) > (int) $options['max_length']) {
+                    $errors[$field->getSlug()] = $options['custom_message'] ?? "Must be at most {$options['max_length']} characters.";
+                }
+
+                // Min/Max value (numeric types)
+                if (isset($options['min_value']) && $options['min_value'] !== '' && is_numeric($value) && (float) $value < (float) $options['min_value']) {
+                    $errors[$field->getSlug()] = $options['custom_message'] ?? "Must be at least {$options['min_value']}.";
+                }
+                if (isset($options['max_value']) && $options['max_value'] !== '' && is_numeric($value) && (float) $value > (float) $options['max_value']) {
+                    $errors[$field->getSlug()] = $options['custom_message'] ?? "Must be at most {$options['max_value']}.";
+                }
+
+                // Pattern (regex)
+                if (!empty($options['pattern']) && is_string($value)) {
+                    $pattern = '/' . str_replace('/', '\/', $options['pattern']) . '/';
+                    if (@preg_match($pattern, $value) === 0) {
+                        $errors[$field->getSlug()] = $options['pattern_message'] ?? 'Invalid format.';
+                    }
                 }
             }
         }
@@ -1596,5 +1975,290 @@ class EntryController extends Controller
         }
 
         $this->redirect(admin_url("collections/{$slug}/entries"));
+    }
+
+    // ─── Content Templates ─────────────────────────────────────────
+
+    /**
+     * POST /admin/collections/{slug}/entries/{id}/save-template — Save entry as reusable template.
+     */
+    public function saveAsTemplate(string $slug, string $id): void
+    {
+        $collection = $this->resolveCollection($slug);
+        if (!$collection) return;
+        $this->requireCollectionPermission('edit', $collection);
+
+        $name = trim($this->input('template_name', ''));
+        if (empty($name)) {
+            $this->flash('errors', ['template_name' => 'Template name is required.']);
+            $this->back();
+            return;
+        }
+
+        // Fetch the entry data
+        $entry = EntryQuery::collection($slug)->noCache()->find($id);
+        if (!$entry) {
+            $this->flash('errors', ['entry' => 'Entry not found.']);
+            $this->redirect(admin_url("collections/{$slug}/entries"));
+            return;
+        }
+
+        // Strip system fields from template data
+        $systemFields = ['id', 'slug', 'status', 'published_at', 'scheduled_at', 'created_by', 'created_at', 'updated_at', 'deleted_at'];
+        $templateData = array_diff_key($entry, array_flip($systemFields));
+
+        $template = new ContentTemplate();
+        $template->setName($name);
+        $template->setCollectionSlug($slug);
+        $template->setData($templateData);
+        $template->setCreatedBy(Auth::user()?->getId());
+        $template->save();
+
+        $this->flash('success', "Template \"{$name}\" saved.");
+        $this->redirect(admin_url("collections/{$slug}/entries/{$id}"));
+    }
+
+    /**
+     * POST /admin/collections/{slug}/templates/{templateId}/delete — Delete a content template.
+     */
+    public function deleteTemplate(string $slug, string $templateId): void
+    {
+        $collection = $this->resolveCollection($slug);
+        if (!$collection) return;
+        $this->requireCollectionPermission('create', $collection);
+
+        $template = ContentTemplate::find((int) $templateId);
+        if ($template && $template->getCollectionSlug() === $slug) {
+            $templateName = $template->getName();
+            $template->delete();
+            $this->flash('success', "Template \"{$templateName}\" deleted.");
+        }
+
+        $this->back();
+    }
+
+    /**
+     * GET /admin/collections/{slug}/templates/{templateId} — Return template data as JSON.
+     */
+    public function getTemplateData(string $slug, string $templateId): void
+    {
+        $collection = $this->resolveCollection($slug);
+        if (!$collection) {
+            $this->json(['error' => 'Collection not found.'], 404);
+            return;
+        }
+        $this->requireCollectionPermission('create', $collection);
+
+        $template = ContentTemplate::find((int) $templateId);
+        if (!$template || $template->getCollectionSlug() !== $slug) {
+            $this->json(['error' => 'Template not found.'], 404);
+            return;
+        }
+
+        $this->json([
+            'id' => $template->getId(),
+            'name' => $template->getName(),
+            'data' => $template->getData(),
+        ]);
+    }
+
+    // ─── Content Locking ────────────────────────────────────────────
+
+    private function getLocksDir(): string
+    {
+        $dir = (defined('BASE_PATH') ? BASE_PATH : '.') . '/storage/locks';
+        if (!is_dir($dir)) {
+            mkdir($dir, 0700, true);
+        }
+        return $dir;
+    }
+
+    private function getLockFile(string $slug, string $id): string
+    {
+        // Whitelist slug and id to prevent path traversal
+        $safeSlug = preg_replace('/[^a-zA-Z0-9_-]/', '', $slug);
+        $safeId = preg_replace('/[^a-zA-Z0-9_-]/', '', $id);
+        return $this->getLocksDir() . '/' . $safeSlug . '_' . $safeId . '.lock';
+    }
+
+    /**
+     * Try to acquire a lock for the current user.
+     * Returns lock info array if another user holds a valid lock, null if acquired.
+     */
+    private function acquireLock(string $slug, string $id): ?array
+    {
+        $lockFile = $this->getLockFile($slug, $id);
+        $userId = Auth::user()->getId();
+
+        if (file_exists($lockFile)) {
+            $data = json_decode(file_get_contents($lockFile), true);
+            if (is_array($data) && isset($data['user_id'], $data['expires_at'])) {
+                // If locked by another user and not expired, return lock info
+                if ((int) $data['user_id'] !== (int) $userId && strtotime($data['expires_at']) > time()) {
+                    return $data;
+                }
+            }
+        }
+
+        // Write new lock for current user
+        $lock = [
+            'user_id'   => $userId,
+            'user_name' => Auth::user()->getName(),
+            'locked_at' => date('Y-m-d H:i:s'),
+            'expires_at' => date('Y-m-d H:i:s', time() + 300), // 5 minutes
+        ];
+        file_put_contents($lockFile, json_encode($lock), LOCK_EX);
+
+        return null;
+    }
+
+    public function heartbeat(string $slug, string $id): void
+    {
+        header('Content-Type: application/json');
+
+        if (!Auth::check()) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Unauthorized']);
+            return;
+        }
+
+        $lockFile = $this->getLockFile($slug, $id);
+        $userId = Auth::user()->getId();
+
+        if (file_exists($lockFile)) {
+            $data = json_decode(file_get_contents($lockFile), true);
+            if (is_array($data) && (int) ($data['user_id'] ?? 0) === (int) $userId) {
+                $data['expires_at'] = date('Y-m-d H:i:s', time() + 300);
+                file_put_contents($lockFile, json_encode($data), LOCK_EX);
+                echo json_encode(['ok' => true]);
+                return;
+            }
+        }
+
+        echo json_encode(['ok' => false]);
+    }
+
+    public function unlock(string $slug, string $id): void
+    {
+        header('Content-Type: application/json');
+
+        if (!Auth::check()) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Unauthorized']);
+            return;
+        }
+
+        $lockFile = $this->getLockFile($slug, $id);
+        $userId = Auth::user()->getId();
+
+        if (file_exists($lockFile)) {
+            $data = json_decode(file_get_contents($lockFile), true);
+            if (is_array($data) && (int) ($data['user_id'] ?? 0) === (int) $userId) {
+                unlink($lockFile);
+                echo json_encode(['ok' => true]);
+                return;
+            }
+        }
+
+        echo json_encode(['ok' => false]);
+    }
+
+    // ─── Autosave / Draft Recovery ─────────────────────────────────
+
+    /**
+     * Return the autosave storage directory path, creating it if needed.
+     */
+    private function autosaveDir(): string
+    {
+        $dir = (defined('BASE_PATH') ? BASE_PATH : sys_get_temp_dir()) . '/storage/autosaves';
+        if (!is_dir($dir)) {
+            mkdir($dir, 0700, true);
+        }
+        return $dir;
+    }
+
+    /**
+     * Build a safe autosave filename for the current user + collection + entry.
+     */
+    private function autosaveFilename(string $slug, string $id): string
+    {
+        $userId = Auth::user()?->getId() ?? 0;
+        $safeSlug = preg_replace('/[^a-z0-9_-]/i', '', $slug);
+        $safeId = preg_replace('/[^a-z0-9_-]/i', '', $id);
+        return $this->autosaveDir() . "/{$userId}_{$safeSlug}_{$safeId}.json";
+    }
+
+    /**
+     * POST — Save autosave data (AJAX).
+     */
+    public function autosave(string $slug, string $id = 'new'): string
+    {
+        $this->requireCmsAccess();
+
+        $raw = file_get_contents('php://input');
+        $data = json_decode($raw, true);
+
+        if (!is_array($data)) {
+            return $this->json(['success' => false, 'error' => 'Invalid data.'], 400);
+        }
+
+        $payload = [
+            'data' => $data,
+            'timestamp' => time(),
+            'datetime' => (new \DateTime())->format('Y-m-d H:i:s'),
+        ];
+
+        $file = $this->autosaveFilename($slug, $id);
+        file_put_contents($file, json_encode($payload, JSON_UNESCAPED_UNICODE), LOCK_EX);
+
+        return $this->json(['success' => true, 'time' => date('H:i')]);
+    }
+
+    /**
+     * GET — Retrieve autosave data (AJAX).
+     */
+    public function getAutosave(string $slug, string $id = 'new'): string
+    {
+        $this->requireCmsAccess();
+
+        $file = $this->autosaveFilename($slug, $id);
+
+        if (!file_exists($file)) {
+            return $this->json(['exists' => false]);
+        }
+
+        $payload = json_decode(file_get_contents($file), true);
+        if (!is_array($payload) || empty($payload['timestamp'])) {
+            @unlink($file);
+            return $this->json(['exists' => false]);
+        }
+
+        // Expire after 24 hours
+        if ((time() - $payload['timestamp']) > 86400) {
+            @unlink($file);
+            return $this->json(['exists' => false]);
+        }
+
+        return $this->json([
+            'exists' => true,
+            'data' => $payload['data'],
+            'datetime' => $payload['datetime'] ?? '',
+            'timestamp' => $payload['timestamp'],
+        ]);
+    }
+
+    /**
+     * POST — Delete autosave data (AJAX).
+     */
+    public function deleteAutosave(string $slug, string $id = 'new'): string
+    {
+        $this->requireCmsAccess();
+
+        $file = $this->autosaveFilename($slug, $id);
+        if (file_exists($file)) {
+            @unlink($file);
+        }
+
+        return $this->json(['success' => true]);
     }
 }
