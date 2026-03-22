@@ -427,8 +427,12 @@ class CmsServiceProvider
         $this->registerTwigHelpers($view, $themeManager);
 
         // Register redirect middleware for public routes
-        $redirectMiddleware = new Middleware\RedirectMiddleware();
-        $redirectMiddleware->handle(null, function ($request) { return $request; });
+        try {
+            $redirectMiddleware = new Middleware\RedirectMiddleware();
+            $redirectMiddleware->handle(null, function ($request) { return $request; });
+        } catch (\Throwable $e) {
+            // Redirect middleware may fail if DB not configured yet
+        }
 
         // Load CMS routes
         $routesFile = __DIR__ . '/../routes/cms.php';

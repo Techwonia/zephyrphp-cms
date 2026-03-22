@@ -14,25 +14,24 @@ use ZephyrPHP\Cms\Models\Redirect;
  */
 class RedirectMiddleware
 {
-    public function handle($request, callable $next)
+    public function handle($request = null, ?callable $next = null)
     {
-        $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
-
-        // Skip admin paths
-        if (str_starts_with($path, '/' . admin_path())) {
-            return $next($request);
-        }
-
         try {
+            $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+
+            // Skip admin paths
+            $adminPrefix = function_exists('admin_path') ? '/' . admin_path() : '/admin';
+            if (str_starts_with($path, $adminPrefix)) {
+                return $next ? $next($request) : true;
+            }
+
             $redirect = Redirect::findOneBy(['fromPath' => $path, 'isActive' => true]);
 
             if ($redirect) {
-                // Increment hit count
                 $redirect->setHitCount($redirect->getHitCount() + 1);
                 $redirect->setLastHitAt(new \DateTime());
                 $redirect->save();
 
-                // Perform redirect
                 header('Location: ' . $redirect->getToUrl(), true, $redirect->getStatusCode());
                 exit;
             }
@@ -40,6 +39,6 @@ class RedirectMiddleware
             // Silently fail — redirect lookup should not break the request
         }
 
-        return $next($request);
+        return $next ? $next($request) : true;
     }
 }
