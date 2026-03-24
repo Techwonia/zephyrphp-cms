@@ -5,1206 +5,107 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{% block title %}CMS{% endblock %} | {{ config('app.name') }}</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style nonce="{{ csp_nonce() }}">
-    /* ============================================
-       Design System Variables
-       ============================================ */
-    :root {
-        /* Backgrounds */
-        --bg-app: #F1F1F1;
-        --bg-surface: #FFFFFF;
-        --bg-surface-hover: #F7F7F7;
-        --bg-subdued: #FAFAFA;
-        --bg-inverse: #1A1A1A;
-        --bg-sidebar: #1A1A1A;
 
-        /* Text */
-        --text: #303030;
-        --text-secondary: #616161;
-        --text-disabled: #B5B5B5;
-        --text-link: #1A7BA8;
-        --text-inverse: #FFFFFF;
-        --text-sidebar: #A3A3A3;
-        --text-sidebar-active: #FFFFFF;
-
-        /* Borders */
-        --border: #E3E3E3;
-        --border-hover: #CCCCCC;
-        --border-focus: #1A7BA8;
-
-        /* Primary (ZephyrPHP Blue) */
-        --color-primary: #1A7BA8;
-        --color-primary-hover: #156A93;
-        --color-primary-pressed: #115A7E;
-        --color-primary-text: #FFFFFF;
-        --color-accent: #2196C8;
-
-        /* Status */
-        --color-success: #047B5D;
-        --color-success-bg: rgba(4, 123, 93, 0.08);
-        --color-critical: #D72C0D;
-        --color-critical-bg: rgba(215, 44, 13, 0.08);
-        --color-warning: #B98900;
-        --color-warning-bg: rgba(185, 137, 0, 0.08);
-        --color-info: #2C6ECB;
-        --color-info-bg: rgba(44, 110, 203, 0.08);
-
-        /* Shadows */
-        --shadow-card: 0px 0px 0px 1px rgba(0,0,0,0.04), 0px 1px 3px rgba(0,0,0,0.08);
-        --shadow-card-hover: 0px 0px 0px 1px rgba(0,0,0,0.04), 0px 3px 6px rgba(0,0,0,0.12);
-        --shadow-dropdown: 0px 4px 12px rgba(0,0,0,0.15);
-
-        /* Spacing */
-        --space-100: 4px;
-        --space-200: 8px;
-        --space-300: 12px;
-        --space-400: 16px;
-        --space-500: 20px;
-        --space-600: 24px;
-        --space-800: 32px;
-        --space-1000: 40px;
-
-        /* Border Radius */
-        --radius-100: 4px;
-        --radius-200: 8px;
-        --radius-300: 12px;
-        --radius-full: 9999px;
-
-        /* Typography */
-        --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        --font-mono: 'SF Mono', Monaco, Consolas, 'Liberation Mono', monospace;
-        --font-xs: 0.75rem;
-        --font-sm: 0.8125rem;
-        --font-base: 0.875rem;
-        --font-md: 1rem;
-        --font-lg: 1.25rem;
-        --font-xl: 1.5rem;
-
-        /* Layout */
-        --activity-bar-width: 48px;
-        --sidebar-panel-width: 220px;
-        --topbar-height: 48px;
-    }
-
-    /* ============================================
-       Reset & Base
-       ============================================ */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-        font-family: var(--font);
-        font-size: var(--font-base);
-        color: var(--text);
-        background: var(--bg-app);
-        line-height: 1.5;
-        -webkit-font-smoothing: antialiased;
-    }
-    a { color: var(--text-link); text-decoration: none; }
-    a:hover { text-decoration: underline; }
-
-    /* Subtle pattern for dark surfaces */
-    .dark-pattern {
-        background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='1' cy='1' r='0.6' fill='rgba(255,255,255,0.03)'/%3E%3C/svg%3E");
-    }
-
-    /* ============================================
-       Layout: Topbar + Activity Bar + Sidebar Panel + Main
-       ============================================ */
-    .cms-topbar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: var(--topbar-height);
-        background: #111111;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0 var(--space-400);
-        z-index: 200;
-        border-bottom: 1px solid rgba(255,255,255,0.08);
-    }
-    .topbar-left {
-        display: flex;
-        align-items: center;
-        gap: var(--space-300);
-    }
-    .topbar-brand {
-        display: flex;
-        align-items: center;
-        gap: var(--space-300);
-        text-decoration: none;
-        color: var(--text-inverse);
-    }
-    .topbar-brand:hover { text-decoration: none; color: var(--text-inverse); }
-    .topbar-brand-icon {
-        width: 28px;
-        height: 28px;
-        background: var(--color-primary);
-        border-radius: var(--radius-200);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: 700;
-        font-size: var(--font-xs);
-        box-shadow: 0 0 8px rgba(26,123,168,0.3);
-    }
-    .topbar-brand-text {
-        font-weight: 600;
-        font-size: var(--font-base);
-    }
-    .mobile-toggle {
-        display: none;
-        background: none;
-        border: none;
-        color: var(--text-inverse);
-        cursor: pointer;
-        padding: var(--space-100);
-    }
-    .mobile-toggle svg {
-        width: 20px;
-        height: 20px;
-        stroke: currentColor;
-        stroke-width: 1.5;
-        fill: none;
-    }
-    .topbar-right {
-        display: flex;
-        align-items: center;
-        gap: var(--space-300);
-    }
-    .topbar-right .notif-bell a { color: rgba(255,255,255,0.7); }
-    .topbar-right .notif-bell a:hover { color: #fff; }
-    .topbar-user-info {
-        display: flex;
-        align-items: center;
-        gap: var(--space-200);
-    }
-    .topbar-avatar {
-        width: 26px;
-        height: 26px;
-        border-radius: var(--radius-full);
-        background: var(--color-primary);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 11px;
-        font-weight: 600;
-    }
-    .topbar-user-name {
-        color: rgba(255,255,255,0.85);
-        font-size: var(--font-sm);
-        font-weight: 500;
-    }
-    /* Profile Dropdown */
-    .profile-dropdown {
-        position: relative;
-    }
-    .profile-trigger {
-        display: flex;
-        align-items: center;
-        gap: var(--space-200);
-        background: none;
-        border: none;
-        cursor: pointer;
-        padding: 4px 8px;
-        border-radius: var(--radius-200);
-        transition: background 0.15s;
-        color: rgba(255,255,255,0.85);
-        font-family: var(--font);
-    }
-    .profile-trigger:hover { background: rgba(255,255,255,0.08); }
-    .profile-trigger svg {
-        width: 14px;
-        height: 14px;
-        stroke: rgba(255,255,255,0.5);
-        stroke-width: 2;
-        fill: none;
-        transition: transform 0.15s;
-    }
-    .profile-dropdown.open .profile-trigger svg { transform: rotate(180deg); }
-    .profile-menu {
-        display: none;
-        position: absolute;
-        top: calc(100% + 6px);
-        right: 0;
-        min-width: 180px;
-        background: var(--bg-surface);
-        border-radius: var(--radius-200);
-        box-shadow: var(--shadow-dropdown);
-        border: 1px solid var(--border);
-        overflow: hidden;
-        z-index: 300;
-    }
-    .profile-dropdown.open .profile-menu { display: block; }
-    .profile-menu-header {
-        padding: var(--space-300) var(--space-400);
-        border-bottom: 1px solid var(--border);
-    }
-    .profile-menu-name {
-        font-size: var(--font-sm);
-        font-weight: 600;
-        color: var(--text);
-    }
-    .profile-menu-email {
-        font-size: var(--font-xs);
-        color: var(--text-secondary);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .profile-menu-item {
-        display: flex;
-        align-items: center;
-        gap: var(--space-200);
-        padding: 8px var(--space-400);
-        color: var(--text);
-        text-decoration: none;
-        font-size: var(--font-sm);
-        transition: background 0.12s;
-        border: none;
-        background: none;
-        width: 100%;
-        cursor: pointer;
-        font-family: var(--font);
-        text-align: left;
-    }
-    .profile-menu-item:hover {
-        background: var(--bg-surface-hover);
-        text-decoration: none;
-    }
-    .profile-menu-item svg {
-        width: 16px;
-        height: 16px;
-        stroke: var(--text-secondary);
-        stroke-width: 1.5;
-        fill: none;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-    }
-    .profile-menu-divider {
-        height: 1px;
-        background: var(--border);
-    }
-    .profile-menu-item.danger { color: var(--color-critical); }
-    .profile-menu-item.danger svg { stroke: var(--color-critical); }
-    .profile-menu-item.danger:hover { background: var(--color-critical-bg); }
-
-    .cms-body {
-        display: flex;
-        margin-top: var(--topbar-height);
-        min-height: calc(100vh - var(--topbar-height));
-    }
-
-    /* Activity Bar */
-    .cms-activity-bar {
-        width: var(--activity-bar-width);
-        min-width: var(--activity-bar-width);
-        background: #1A1A1A;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding: 8px 0;
-        position: fixed;
-        top: var(--topbar-height);
-        left: 0;
-        bottom: 0;
-        z-index: 100;
-        border-right: 1px solid rgba(255,255,255,0.08);
-    }
-    .ab-top {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 2px;
-        flex: 1;
-    }
-    .ab-bottom {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 2px;
-        padding-top: 8px;
-        border-top: 1px solid rgba(255,255,255,0.08);
-    }
-    .ab-item {
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 36px;
-        height: 36px;
-        border-radius: 8px;
-        color: #777;
-        text-decoration: none;
-        transition: background 0.15s, color 0.15s;
-        cursor: pointer;
-        border: none;
-        background: none;
-        padding: 0;
-    }
-    .ab-item:hover {
-        background: rgba(255,255,255,0.08);
-        color: #ccc;
-        text-decoration: none;
-    }
-    .ab-item.active {
-        color: #2196C8;
-        background: rgba(33,150,200,0.1);
-    }
-    .ab-item svg {
-        width: 20px;
-        height: 20px;
-        stroke: currentColor;
-        stroke-width: 1.5;
-        fill: none;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-    }
-    .ab-item::after {
-        content: attr(data-tooltip);
-        position: absolute;
-        left: calc(100% + 8px);
-        top: 50%;
-        transform: translateY(-50%);
-        background: #303030;
-        color: #fff;
-        font-size: 12px;
-        font-weight: 500;
-        padding: 4px 10px;
-        border-radius: 6px;
-        white-space: nowrap;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.15s;
-        z-index: 300;
-    }
-    .ab-item:hover::after { opacity: 1; }
-    .ab-separator {
-        width: 24px;
-        height: 1px;
-        background: rgba(255,255,255,0.08);
-        margin: 4px 0;
-    }
-
-    /* Sidebar Panel */
-    .cms-sidebar-panel {
-        width: var(--sidebar-panel-width);
-        background: #222222;
-        position: fixed;
-        top: var(--topbar-height);
-        left: var(--activity-bar-width);
-        bottom: 0;
-        z-index: 90;
-        border-right: 1px solid rgba(255,255,255,0.08);
-        transform: translateX(-100%);
-        transition: transform 0.2s ease;
-        display: flex;
-        flex-direction: column;
-    }
-    .cms-sidebar-panel.open {
-        transform: translateX(0);
-    }
-    .sidebar-panel-header {
-        padding: var(--space-300) var(--space-400);
-        border-bottom: 1px solid rgba(255,255,255,0.08);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-    .sidebar-panel-title {
-        color: rgba(255,255,255,0.6);
-        font-size: 11px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-    }
-    .sidebar-panel-close {
-        background: none;
-        border: none;
-        color: rgba(255,255,255,0.4);
-        cursor: pointer;
-        padding: 2px;
-        border-radius: 4px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    .sidebar-panel-close:hover { color: #fff; background: rgba(255,255,255,0.08); }
-    .sidebar-panel-close svg {
-        width: 14px;
-        height: 14px;
-        stroke: currentColor;
-        stroke-width: 2;
-        fill: none;
-    }
-    .sidebar-panel-nav {
-        flex: 1;
-        padding: var(--space-200) 0;
-        overflow-y: auto;
-    }
-    .sidebar-panel-nav ul { list-style: none; }
-    .sp-nav-item a {
-        display: flex;
-        align-items: center;
-        gap: var(--space-300);
-        padding: 7px var(--space-400);
-        color: var(--text-sidebar);
-        text-decoration: none;
-        font-size: var(--font-sm);
-        font-weight: 500;
-        border-radius: var(--radius-200);
-        margin: 1px var(--space-200);
-        transition: background 0.15s, color 0.15s;
-    }
-    .sp-nav-item a:hover {
-        background: rgba(255,255,255,0.06);
-        color: var(--text-sidebar-active);
-        text-decoration: none;
-    }
-    .sp-nav-add a:hover {
-        border-color: var(--color-primary, #1A7BA8) !important;
-        color: var(--color-primary, #1A7BA8) !important;
-        background: rgba(26,123,168,0.08) !important;
-    }
-    .sp-nav-item a.active {
-        background: rgba(255,255,255,0.1);
-        color: var(--text-sidebar-active);
-    }
-    .sp-nav-item a.active .sp-nav-icon svg { stroke: #2196C8; }
-    .sp-nav-icon {
-        width: 18px;
-        height: 18px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-    }
-    .sp-nav-icon svg {
-        width: 16px;
-        height: 16px;
-        stroke: currentColor;
-        stroke-width: 1.5;
-        fill: none;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-    }
-    .sp-sub-item a {
-        padding-left: 52px;
-        font-size: var(--font-xs);
-    }
-
-    /* Main Content Area */
-    .cms-main {
-        flex: 1;
-        margin-left: var(--activity-bar-width);
-        min-height: calc(100vh - var(--topbar-height));
-        display: flex;
-        flex-direction: column;
-        transition: margin-left 0.2s ease;
-    }
-    .cms-main.panel-open {
-        margin-left: calc(var(--activity-bar-width) + var(--sidebar-panel-width));
-    }
-    .cms-content {
-        padding: var(--space-600);
-        max-width: 1100px;
-        margin: 0 auto;
-        width: 100%;
-        flex: 1;
-    }
-
-    /* ============================================
-       Components
-       ============================================ */
-
-    /* Breadcrumb */
-    .breadcrumb {
-        font-size: var(--font-sm);
-        color: var(--text-secondary);
-        margin-bottom: var(--space-300);
-    }
-    .breadcrumb a { color: var(--text-link); text-decoration: none; }
-    .breadcrumb a:hover { text-decoration: underline; }
-
-    /* Page Header */
-    .page-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: var(--space-500);
-    }
-    .page-header h1 {
-        font-size: var(--font-xl);
-        font-weight: 700;
-        color: var(--text);
-        margin: 0;
-    }
-    .page-actions {
-        display: flex;
-        gap: var(--space-200);
-    }
-
-    /* Cards */
-    .card {
-        background: var(--bg-surface);
-        border-radius: var(--radius-300);
-        box-shadow: var(--shadow-card);
-        overflow: hidden;
-    }
-    .card-header {
-        padding: var(--space-400) var(--space-500);
-        border-bottom: 1px solid var(--border);
-    }
-    .card-header h3 {
-        font-size: var(--font-base);
-        font-weight: 600;
-        margin: 0;
-    }
-    .card-body { padding: var(--space-500); }
-
-    /* Buttons */
-    .btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: var(--space-200);
-        padding: 6px 12px;
-        font-size: var(--font-sm);
-        font-weight: 600;
-        font-family: var(--font);
-        border-radius: var(--radius-200);
-        border: 1px solid transparent;
-        cursor: pointer;
-        transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
-        text-decoration: none;
-        line-height: 1.4;
-        white-space: nowrap;
-    }
-    .btn:hover { text-decoration: none; }
-    .btn-primary {
-        background: var(--color-primary);
-        color: var(--color-primary-text);
-        border-color: var(--color-primary);
-    }
-    .btn-primary:hover {
-        background: var(--color-primary-hover);
-        border-color: var(--color-primary-hover);
-    }
-    .btn-outline {
-        background: var(--bg-surface);
-        color: var(--text);
-        border-color: var(--border);
-    }
-    .btn-outline:hover {
-        background: var(--bg-surface-hover);
-        border-color: var(--border-hover);
-    }
-    .btn-danger {
-        background: transparent;
-        color: var(--color-critical);
-        border-color: var(--border);
-    }
-    .btn-danger:hover {
-        background: var(--color-critical-bg);
-        border-color: var(--color-critical);
-    }
-    .btn-plain {
-        background: none;
-        border: none;
-        color: var(--text-link);
-        padding: 4px 8px;
-    }
-    .btn-plain:hover { text-decoration: underline; }
-    .btn-sm {
-        padding: 4px 10px;
-        font-size: var(--font-xs);
-    }
-
-    /* Tables */
-    .table-responsive { overflow-x: auto; }
-    .data-table { width: 100%; border-collapse: collapse; }
-    .data-table thead th {
-        padding: var(--space-300) var(--space-400);
-        text-align: left;
-        font-size: var(--font-xs);
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: var(--text-secondary);
-        background: var(--bg-subdued);
-        border-bottom: 1px solid var(--border);
-    }
-    .data-table tbody td {
-        padding: var(--space-300) var(--space-400);
-        font-size: var(--font-sm);
-        border-bottom: 1px solid var(--border);
-        vertical-align: middle;
-    }
-    .data-table tbody tr:hover { background: var(--bg-surface-hover); }
-    .data-table tbody tr:last-child td { border-bottom: none; }
-    .sort-link { color: inherit; text-decoration: none; }
-    .sort-link:hover { color: var(--text-link); text-decoration: none; }
-    .actions-cell {
-        display: flex;
-        gap: var(--space-100);
-        align-items: center;
-    }
-
-    /* Forms */
-    .form-group { margin-bottom: var(--space-400); }
-    .form-group label {
-        display: block;
-        margin-bottom: var(--space-100);
-        font-weight: 500;
-        font-size: var(--font-sm);
-        color: var(--text);
-    }
-    .form-control {
-        width: 100%;
-        padding: 8px 12px;
-        font-size: var(--font-base);
-        font-family: var(--font);
-        background: var(--bg-surface);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-200);
-        color: var(--text);
-        transition: border-color 0.15s, box-shadow 0.15s;
-    }
-    .form-control:focus {
-        outline: none;
-        border-color: var(--border-focus);
-        box-shadow: 0 0 0 2px rgba(26, 123, 168, 0.2);
-    }
-    .form-control::placeholder { color: var(--text-disabled); }
-    .form-control:disabled {
-        background: var(--bg-subdued);
-        color: var(--text-disabled);
-        cursor: not-allowed;
-    }
-    select.form-control {
-        appearance: none;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23616161' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right 12px center;
-        padding-right: 32px;
-        cursor: pointer;
-    }
-    textarea.form-control { resize: vertical; }
-    .form-control.is-invalid { border-color: var(--color-critical); }
-    .invalid-feedback {
-        color: var(--color-critical);
-        font-size: var(--font-xs);
-        margin-top: var(--space-100);
-    }
-    .form-inline-checks {
-        display: flex;
-        gap: var(--space-400);
-        flex-wrap: wrap;
-        margin: var(--space-200) 0;
-    }
-    .form-inline-checks label {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--space-100);
-        font-size: var(--font-sm);
-        color: var(--text);
-        cursor: pointer;
-        font-weight: 400;
-    }
-    .form-inline-checks input[type="checkbox"] {
-        accent-color: var(--color-primary);
-        width: 16px;
-        height: 16px;
-    }
-    input[type="file"].form-control { padding: 6px 12px; cursor: pointer; }
-    input[type="file"].form-control::file-selector-button {
-        background: var(--bg-subdued);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-100);
-        color: var(--text);
-        padding: 4px 10px;
-        margin-right: 8px;
-        cursor: pointer;
-        font-size: var(--font-xs);
-        font-family: var(--font);
-    }
-    .form-actions {
-        display: flex;
-        gap: var(--space-200);
-        margin-top: var(--space-500);
-    }
-    .form-row {
-        display: flex;
-        gap: var(--space-300);
-        flex-wrap: wrap;
-        align-items: flex-end;
-    }
-    .form-row .form-group { flex: 1; min-width: 150px; }
-    .text-muted { color: var(--text-secondary); }
-    small.text-muted { font-size: var(--font-xs); display: block; margin-top: 2px; }
-
-    /* Badges */
-    .badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 2px 8px;
-        font-size: 11px;
-        font-weight: 600;
-        border-radius: var(--radius-full);
-        border: 1px solid transparent;
-    }
-    .badge-success, .badge-live {
-        background: var(--color-success-bg);
-        color: var(--color-success);
-        border-color: rgba(4, 123, 93, 0.15);
-    }
-    .badge-warning, .badge-draft {
-        background: var(--color-warning-bg);
-        color: var(--color-warning);
-        border-color: rgba(185, 137, 0, 0.15);
-    }
-    .badge-info {
-        background: var(--color-info-bg);
-        color: var(--color-info);
-        border-color: rgba(44, 110, 203, 0.15);
-    }
-    .badge-danger, .badge-critical {
-        background: var(--color-critical-bg);
-        color: var(--color-critical);
-        border-color: rgba(215, 44, 13, 0.15);
-    }
-    .badge-default {
-        background: var(--bg-subdued);
-        color: var(--text-secondary);
-        border-color: var(--border);
-    }
-
-    /* Alerts */
-    .alert {
-        padding: var(--space-300) var(--space-400);
-        border-radius: var(--radius-200);
-        margin-bottom: var(--space-400);
-        font-size: var(--font-sm);
-        border-left: 3px solid transparent;
-    }
-    .alert p { margin: 0; }
-    .alert p + p { margin-top: 2px; }
-    .alert-success {
-        background: var(--color-success-bg);
-        border-left-color: var(--color-success);
-        color: var(--color-success);
-    }
-    .alert-error {
-        background: var(--color-critical-bg);
-        border-left-color: var(--color-critical);
-        color: var(--color-critical);
-    }
-
-    /* Tabs */
-    .tab-nav {
-        display: flex;
-        border-bottom: 1px solid var(--border);
-        background: var(--bg-surface);
-        padding: 0 var(--space-400);
-    }
-    .tab-btn {
-        padding: var(--space-300) var(--space-400);
-        background: none;
-        border: none;
-        border-bottom: 2px solid transparent;
-        color: var(--text-secondary);
-        cursor: pointer;
-        font-size: var(--font-sm);
-        font-weight: 500;
-        font-family: var(--font);
-        transition: color 0.15s, border-color 0.15s;
-    }
-    .tab-btn:hover { color: var(--text); }
-    .tab-btn.active {
-        color: var(--color-primary);
-        border-bottom-color: var(--color-primary);
-    }
-    .tab-panel { display: none; padding: var(--space-500); }
-    .tab-panel.active { display: block; }
-
-    /* Stats Grid */
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: var(--space-400);
-        margin-bottom: var(--space-500);
-    }
-    .stat-card {
-        background: var(--bg-surface);
-        border-radius: var(--radius-300);
-        box-shadow: var(--shadow-card);
-        padding: var(--space-400) var(--space-500);
-        display: flex;
-        align-items: center;
-        gap: var(--space-400);
-    }
-    .stat-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: var(--radius-200);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.25rem;
-    }
-    .stat-icon-green { background: var(--color-success-bg); color: var(--color-success); }
-    .stat-icon-blue { background: var(--color-info-bg); color: var(--color-info); }
-    .stat-icon-purple { background: rgba(130, 87, 229, 0.08); color: #8257E5; }
-    .stat-icon-orange { background: var(--color-warning-bg); color: var(--color-warning); }
-    .stat-value { font-size: var(--font-lg); font-weight: 700; color: var(--text); }
-    .stat-label { font-size: var(--font-xs); color: var(--text-secondary); }
-
-    /* Pagination */
-    .pagination {
-        display: flex;
-        gap: var(--space-100);
-        justify-content: center;
-        margin-top: var(--space-500);
-    }
-    .pagination a, .pagination span {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 32px;
-        height: 32px;
-        padding: 0 var(--space-200);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-200);
-        font-size: var(--font-sm);
-        color: var(--text);
-        text-decoration: none;
-        transition: all 0.15s;
-    }
-    .pagination a:hover {
-        background: var(--bg-surface-hover);
-        border-color: var(--border-hover);
-        text-decoration: none;
-    }
-    .pagination .active {
-        background: var(--color-primary);
-        color: var(--color-primary-text);
-        border-color: var(--color-primary);
-    }
-
-    /* Empty State */
-    .empty-state {
-        text-align: center;
-        padding: var(--space-1000) var(--space-500) !important;
-        color: var(--text-secondary);
-    }
-    .empty-state h3 {
-        color: var(--text);
-        font-size: var(--font-md);
-        margin-bottom: var(--space-200);
-    }
-    .empty-state p { margin-bottom: var(--space-400); }
-
-    /* Search Bar */
-    .search-bar {
-        display: flex;
-        gap: var(--space-200);
-        margin-bottom: var(--space-400);
-    }
-    .search-bar input { flex: 1; }
-    .search-form { display: flex; gap: var(--space-200); width: 100%; }
-
-    /* Code */
-    code {
-        font-family: var(--font-mono);
-        font-size: var(--font-xs);
-        padding: 2px 6px;
-        background: var(--bg-subdued);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-100);
-        color: var(--text);
-    }
-
-    /* Truncate */
-    .truncate {
-        max-width: 200px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        display: inline-block;
-        vertical-align: middle;
-    }
-
-    /* Field Rows */
-    .field-row {
-        display: flex;
-        align-items: center;
-        gap: var(--space-300);
-        padding: var(--space-300) var(--space-400);
-        border-bottom: 1px solid var(--border);
-        transition: background 0.15s;
-    }
-    .field-row:last-child { border-bottom: none; }
-    .field-row:hover { background: var(--bg-surface-hover); }
-    .field-info { flex: 1; }
-    .field-name { font-weight: 600; font-size: var(--font-sm); }
-    .field-meta {
-        font-size: var(--font-xs);
-        color: var(--text-secondary);
-        margin-top: 2px;
-        display: flex;
-        gap: var(--space-100);
-        flex-wrap: wrap;
-    }
-    .field-badge {
-        display: inline-block;
-        padding: 1px 6px;
-        border-radius: var(--radius-full);
-        font-size: 10px;
-        font-weight: 600;
-    }
-    .field-badge.required {
-        background: var(--color-critical-bg);
-        color: var(--color-critical);
-    }
-    .field-badge:not(.required) {
-        background: var(--bg-subdued);
-        color: var(--text-secondary);
-        border: 1px solid var(--border);
-    }
-    .add-field-form {
-        background: var(--bg-subdued);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-200);
-        padding: var(--space-400);
-        margin-top: var(--space-400);
-    }
-    .add-field-form h4 {
-        margin: 0 0 var(--space-300) 0;
-        font-size: var(--font-base);
-        font-weight: 600;
-    }
-
-    /* Toggle Switch */
-    .toggle-label {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: var(--space-300);
-        font-weight: 500;
-    }
-    .toggle-switch {
-        position: relative;
-        display: inline-block;
-        width: 40px;
-        height: 22px;
-        flex-shrink: 0;
-    }
-    .toggle-switch input { opacity: 0; width: 0; height: 0; }
-    .toggle-slider {
-        position: absolute;
-        cursor: pointer;
-        inset: 0;
-        background: var(--border);
-        border-radius: 22px;
-        transition: 0.2s;
-    }
-    .toggle-slider:before {
-        position: absolute;
-        content: "";
-        height: 16px;
-        width: 16px;
-        left: 3px;
-        bottom: 3px;
-        background: white;
-        border-radius: 50%;
-        transition: 0.2s;
-    }
-    .toggle-switch input:checked + .toggle-slider { background: var(--color-primary); }
-    .toggle-switch input:checked + .toggle-slider:before { transform: translateX(18px); }
-
-    /* Media Grid */
-    .media-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-        gap: var(--space-400);
-    }
-    .media-card {
-        background: var(--bg-surface);
-        border-radius: var(--radius-200);
-        box-shadow: var(--shadow-card);
-        overflow: hidden;
-        transition: box-shadow 0.15s;
-    }
-    .media-card:hover { box-shadow: var(--shadow-card-hover); }
-    .media-preview {
-        height: 130px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--bg-subdued);
-        overflow: hidden;
-    }
-    .media-preview img { max-width: 100%; max-height: 100%; object-fit: cover; }
-    .media-file-icon { font-size: 1.75rem; color: var(--text-disabled); }
-    .media-info { padding: var(--space-300); }
-    .media-name {
-        font-weight: 600;
-        font-size: var(--font-xs);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-    .media-size { color: var(--text-secondary); font-size: 11px; }
-    .media-actions {
-        margin-top: var(--space-200);
-        display: flex;
-        gap: var(--space-100);
-    }
-    .upload-card { margin-bottom: var(--space-400); }
-    .upload-row { display: flex; gap: var(--space-300); align-items: flex-end; }
-    .upload-field { flex: 1; margin-bottom: 0 !important; }
-
-    /* Roles Grid */
-    .roles-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-        gap: var(--space-300);
-        margin-bottom: var(--space-500);
-    }
-    .role-checkbox {
-        display: flex;
-        flex-direction: column;
-        padding: var(--space-300) var(--space-400);
-        background: var(--bg-surface);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-200);
-        cursor: pointer;
-        transition: border-color 0.15s;
-    }
-    .role-checkbox:hover { border-color: var(--color-primary); }
-    .role-checkbox input[type="checkbox"] { accent-color: var(--color-primary); }
-    .role-name { font-weight: 600; font-size: var(--font-sm); }
-    .role-description { font-size: var(--font-xs); color: var(--text-secondary); }
-
-    /* ============================================
-       Responsive
-       ============================================ */
-    @media (max-width: 768px) {
-        .cms-activity-bar { transform: translateX(-100%); }
-        .cms-activity-bar.open { transform: translateX(0); }
-        .cms-sidebar-panel { left: 0; }
-        .cms-sidebar-panel.open { left: var(--activity-bar-width); }
-        .mobile-toggle { display: block; }
-        .cms-main { margin-left: 0 !important; }
-        .cms-content { padding: var(--space-400); }
-        .stats-grid { grid-template-columns: 1fr 1fr; }
-        .tab-nav { overflow-x: auto; }
-        .topbar-user-name { display: none; }
-    }
-
-    @media (max-width: 480px) {
-        .stats-grid { grid-template-columns: 1fr; }
-        .page-header { flex-direction: column; gap: var(--space-200); align-items: flex-start; }
-    }
-
-    /* Mobile overlay */
-    .cms-overlay {
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(0,0,0,0.5);
-        z-index: 80;
-    }
-    .cms-overlay.active { display: block; }
-    </style>
+    {# ZephyrUI Design System — local CSS, no CDN #}
+    <link rel="stylesheet" href="/cms-assets/css/zephyr-ui.css">
+    <link rel="stylesheet" href="/cms-assets/css/quill.snow.css">
+    <link rel="stylesheet" href="/cms-assets/css/quill-table-better.css">
     {% block styles %}{% endblock %}
 
-    {# Quill Rich Text Editor #}
-    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/quill-table-better@1.4.3/dist/quill-table-better.css" rel="stylesheet">
+    {# Sidebar state restoration — runs BEFORE paint to prevent flicker #}
+    <script nonce="{{ csp_nonce() }}">
+    (function(){
+      var s=localStorage.getItem('zui-panel');
+      if(s)document.documentElement.setAttribute('data-panel',s);
+    })();
+    </script>
+
+    {# Quill / richtext editor styles #}
     <style nonce="{{ csp_nonce() }}">
-    .ql-wrap { border: 1px solid var(--border, #E3E3E3); border-radius: var(--radius-200, 8px); overflow: hidden; background: var(--bg-surface, #fff); }
-    .ql-wrap:focus-within { border-color: var(--color-primary, #1A7BA8); box-shadow: 0 0 0 3px rgba(26,123,168,0.1); }
-    .ql-wrap .ql-toolbar { border: none; border-bottom: 1px solid var(--border, #E3E3E3); background: var(--bg-subdued, #FAFAFA); padding: 6px 8px; }
-    .ql-wrap .ql-container { border: none; font-family: 'Inter', system-ui, sans-serif; font-size: var(--font-base, 0.875rem); }
-    .ql-wrap .ql-editor { min-height: 200px; line-height: 1.7; color: var(--text, #303030); padding: 16px; }
-    .ql-wrap .ql-editor.ql-blank::before { color: var(--text-disabled, #B5B5B5); font-style: normal; }
-    .ql-wrap .ql-editor h1 { font-size: 1.75em; font-weight: 700; }
-    .ql-wrap .ql-editor h2 { font-size: 1.35em; font-weight: 600; }
-    .ql-wrap .ql-editor h3 { font-size: 1.15em; font-weight: 600; }
-    .ql-wrap .ql-editor blockquote { border-left: 3px solid var(--color-primary, #1A7BA8); color: var(--text-secondary, #616161); }
-    .ql-wrap .ql-editor pre.ql-syntax { background: #1e1e1e; color: #d4d4d4; border-radius: 6px; font-family: 'SF Mono', Monaco, Consolas, monospace; }
-    .ql-wrap .ql-editor a { color: var(--color-primary, #1A7BA8); }
-    .ql-wrap .ql-editor img { max-width: 100%; border-radius: 4px; }
-    .ql-wrap .ql-toolbar .ql-stroke { stroke: var(--text, #303030); }
-    .ql-wrap .ql-toolbar .ql-fill { fill: var(--text, #303030); }
-    .ql-wrap .ql-toolbar button:hover .ql-stroke { stroke: var(--color-primary, #1A7BA8); }
-    .ql-wrap .ql-toolbar button:hover .ql-fill { fill: var(--color-primary, #1A7BA8); }
-    .ql-wrap .ql-toolbar button.ql-active .ql-stroke { stroke: var(--color-primary, #1A7BA8); }
-    .ql-wrap .ql-toolbar button.ql-active .ql-fill { fill: var(--color-primary, #1A7BA8); }
-    .ql-wrap .ql-toolbar .ql-picker-label { color: var(--text, #303030); }
-    .ql-footer { display: flex; justify-content: space-between; align-items: center; padding: 4px 12px; border-top: 1px solid var(--border, #E3E3E3); background: var(--bg-subdued, #FAFAFA); font-size: 11px; color: var(--text-secondary, #616161); }
-    .ql-source-btn { padding: 2px 8px; border: 1px solid var(--border, #E3E3E3); border-radius: 4px; background: var(--bg-surface, #fff); color: var(--text-secondary, #616161); font-size: 11px; cursor: pointer; font-family: inherit; }
-    .ql-source-btn:hover { color: var(--color-primary, #1A7BA8); border-color: var(--color-primary, #1A7BA8); }
-    .ql-source-btn.active { background: var(--color-primary, #1A7BA8); color: #fff; border-color: var(--color-primary, #1A7BA8); }
-    .ql-source-area { display: none; width: 100%; min-height: 200px; border: none; padding: 16px; font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 0.8125rem; line-height: 1.6; resize: vertical; background: #1e1e1e; color: #d4d4d4; outline: none; }
-    .ql-source-area.active { display: block; }
-    .ql-container-hidden { display: none !important; }
-    .ql-wrap .ql-editor table { border-collapse: collapse; width: 100%; margin: 0.75em 0; }
-    .ql-wrap .ql-editor table td, .ql-wrap .ql-editor table th { border: 1px solid var(--border, #E3E3E3); padding: 8px 12px; }
-    .ql-wrap .ql-editor table th { background: var(--bg-subdued, #FAFAFA); font-weight: 600; }
+    .ql-source-area{display:none;width:100%;min-height:200px;font-family:var(--font-mono);font-size:var(--text-sm);padding:var(--sp-4);border:none;outline:none;resize:vertical;background:#1e1e1e;color:#d4d4d4;line-height:1.6}
+    .ql-source-area.active{display:block}
+    .ql-container-hidden{display:none!important}
+    .ql-footer{display:flex;justify-content:space-between;align-items:center;padding:var(--sp-2) var(--sp-3);border-top:1px solid var(--border);background:var(--bg-subdued);font-size:var(--text-xs);color:var(--text-secondary)}
+    .ql-source-btn{background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:2px 8px;font-size:11px;cursor:pointer;font-family:var(--font-mono);color:var(--text-secondary);transition:all var(--duration) var(--ease)}
+    .ql-source-btn:hover,.ql-source-btn.active{background:var(--zui-gray-800);color:#fff;border-color:var(--zui-gray-800)}
+    .ql-word-count{font-variant-numeric:tabular-nums}
+
+    /* Media browser modal (for richtext image/video insertion) */
+    .media-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:600;display:flex;align-items:center;justify-content:center}
+    .media-modal{background:var(--bg-surface);border-radius:var(--radius-xl);box-shadow:var(--shadow-lg);width:90%;max-width:800px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;animation:zui-modal-enter var(--duration-slow) var(--ease)}
+    .media-modal-header{display:flex;align-items:center;justify-content:space-between;padding:var(--sp-4) var(--sp-5);border-bottom:1px solid var(--border)}
+    .media-modal-header h3{font-size:var(--text-md);font-weight:600;color:var(--text-heading);margin:0}
+    .media-modal-close{width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:none;border:none;cursor:pointer;font-size:20px;color:var(--text-secondary);border-radius:var(--radius)}
+    .media-modal-close:hover{background:var(--bg-surface-hover)}
+    .media-modal-toolbar{display:flex;gap:var(--sp-3);padding:var(--sp-3) var(--sp-5);border-bottom:1px solid var(--border);flex-wrap:wrap;align-items:center}
+    .media-modal-search{display:flex;align-items:center;gap:var(--sp-2);flex:1;min-width:180px;background:var(--bg-subdued);border-radius:var(--radius);padding:0 var(--sp-3);border:1px solid var(--border)}
+    .media-modal-search svg{color:var(--text-disabled);flex-shrink:0}
+    .media-search-input{border:none;background:none;outline:none;padding:var(--sp-2) 0;font-size:var(--text-sm);font-family:var(--font-sans);width:100%;color:var(--text)}
+    .media-modal-filters{display:flex;gap:var(--sp-1)}
+    .media-filter-btn{padding:var(--sp-1) var(--sp-3);font-size:var(--text-xs);font-weight:500;border:1px solid var(--border);background:var(--bg-surface);border-radius:var(--radius-full);cursor:pointer;color:var(--text-secondary);font-family:var(--font-sans);transition:all var(--duration) var(--ease)}
+    .media-filter-btn:hover{border-color:var(--border-hover);color:var(--text)}
+    .media-filter-btn.active{background:var(--zui-primary-500);color:#fff;border-color:var(--zui-primary-500)}
+    .media-modal-body{flex:1;overflow-y:auto;padding:var(--sp-4) var(--sp-5)}
+    .media-modal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:var(--sp-3)}
+    .media-modal-item{cursor:pointer;border:2px solid transparent;border-radius:var(--radius);overflow:hidden;transition:border-color var(--duration) var(--ease)}
+    .media-modal-item:hover{border-color:var(--zui-primary-400)}
+    .media-modal-thumb{aspect-ratio:1;background:var(--zui-gray-100);overflow:hidden}
+    .media-modal-thumb img{width:100%;height:100%;object-fit:cover}
+    .media-modal-name{padding:var(--sp-1) var(--sp-2);font-size:11px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .media-modal-upload-bar{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3) var(--sp-5);border-top:1px solid var(--border);background:var(--bg-subdued)}
+    .media-upload-label{display:inline-flex;align-items:center;gap:var(--sp-2);padding:var(--sp-2) var(--sp-3);font-size:var(--text-sm);font-weight:500;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:background var(--duration) var(--ease)}
+    .media-upload-label:hover{background:var(--bg-surface-hover)}
+    .media-upload-status{font-size:var(--text-xs);color:var(--text-secondary)}
     </style>
 </head>
-<body>
+<body data-admin-path="{{ admin_url() }}">
+
     {# ========== TOPBAR ========== #}
-    <header class="cms-topbar dark-pattern">
-        <div class="topbar-left">
-            <button class="mobile-toggle" id="mobileToggle">
-                <svg viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-            </button>
-            <a href="{{ admin_url() }}" class="topbar-brand">
-                <div class="topbar-brand-icon">Z</div>
-                <span class="topbar-brand-text">{{ config('app.name', 'ZephyrPHP') }}</span>
-            </a>
+    <header class="cms-topbar">
+        <button class="mobile-toggle" id="mobileToggle" aria-label="Menu">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+
+        <a href="{{ admin_url() }}" class="topbar-brand">
+            <div class="topbar-brand-icon">Z</div>
+            <span>{{ config('app.name', 'ZephyrPHP') }}</span>
+        </a>
+
+        <div class="topbar-search">
+            <span class="topbar-search-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </span>
+            <input type="text" class="topbar-search-input" id="globalSearchInput" placeholder="Search..." autocomplete="off">
+            <span class="topbar-search-kbd">Ctrl+K</span>
+            <div class="topbar-search-results" id="globalSearchResults"></div>
         </div>
-        {# Global Search #}
-        <div class="topbar-search" style="flex: 1; max-width: 420px; margin: 0 var(--space-400); position: relative;">
-            <input type="text" id="globalSearchInput" class="form-control" placeholder="Search entries, media, collections... (Ctrl+K)" autocomplete="off"
-                style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #fff; font-size: var(--font-sm); padding: 6px 12px 6px 32px; border-radius: var(--radius-full); width: 100%;">
-            <svg style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; stroke: rgba(255,255,255,0.4); fill: none; stroke-width: 2; pointer-events: none;" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <div id="globalSearchResults" style="display: none; position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: var(--bg-surface); border-radius: var(--radius-200); box-shadow: var(--shadow-dropdown); border: 1px solid var(--border); max-height: 400px; overflow-y: auto; z-index: 300;"></div>
-        </div>
+
         <div class="topbar-right">
             {% include "@cms/partials/notification-bell.twig" %}
-            <div class="profile-dropdown" id="profileDropdown">
-                <button class="profile-trigger" id="profileTrigger">
+            <div style="position:relative">
+                <button class="topbar-profile" id="profileTrigger">
                     <div class="topbar-avatar">{{ auth().user().getName()|first|upper }}</div>
                     <span class="topbar-user-name">{{ auth().user().getName() }}</span>
-                    <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
                 </button>
-                <div class="profile-menu">
-                    <div class="profile-menu-header">
-                        <div class="profile-menu-name">{{ auth().user().getName() }}</div>
-                        <div class="profile-menu-email">{{ auth().user().getEmail() }}</div>
+                <div class="profile-dropdown" id="profileDropdown">
+                    <div class="profile-dropdown-header">
+                        <div class="name">{{ auth().user().getName() }}</div>
+                        <div class="email">{{ auth().user().getEmail() }}</div>
                     </div>
-                    <a href="{{ admin_url('settings/profile') }}" class="profile-menu-item">
-                        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <a href="{{ admin_url('settings/profile') }}" class="profile-dropdown-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                         Profile
                     </a>
-                    <a href="{{ admin_url('settings/system') }}" class="profile-menu-item">
-                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    <a href="{{ admin_url('settings/system') }}" class="profile-dropdown-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                         Settings
                     </a>
-                    <div class="profile-menu-divider"></div>
-                    <form method="POST" action="/logout" style="margin:0;">
-                        {{ csrf_field() | raw }}
-                        <button type="submit" class="profile-menu-item danger">
-                            <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    <div class="profile-dropdown-divider"></div>
+                    <form method="POST" action="{{ logout_url() }}">
+                        {{ csrf_field() }}
+                        <button type="submit" class="profile-dropdown-item danger">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                             Sign Out
                         </button>
                     </form>
@@ -1213,44 +114,38 @@
         </div>
     </header>
 
+    {# ========== BODY ========== #}
     <div class="cms-body">
-        {# ========== ACTIVITY BAR ========== #}
         {% set current_path = request().path() %}
         {% set sidebar_sections = cms_sidebar() %}
 
-        <nav class="cms-activity-bar dark-pattern" id="activityBar">
+        {# Activity Bar #}
+        <nav class="cms-activity-bar" id="activityBar">
             <div class="ab-top">
                 {% for section in sidebar_sections %}
-                    {% if section.items|length == 1 and section.id != 'footer' %}
-                        {# Single-item section: direct link icon #}
-                        {% set item = section.items[0] %}
-                        <a href="{{ item.url }}"
-                           class="ab-item{% if cms_sidebar_active(current_path, item) %} active{% endif %}"
-                           data-tooltip="{{ item.label }}">
-                            {% if item.icon %}
+                    {% if section.id != 'footer' %}
+                        {% if section.items|length == 1 %}
+                            {% set item = section.items[0] %}
+                            <a href="{{ item.url }}"
+                               class="ab-item{% if cms_sidebar_active(current_path, item) %} active{% endif %}"
+                               data-tooltip="{{ item.label }}">
                                 {% include '@cms/partials/sidebar-icon.twig' with {icon: item.icon} only %}
-                            {% endif %}
-                        </a>
-                    {% elseif section.items|length > 1 and section.id != 'footer' %}
-                        {# Multi-item section: toggle sidebar panel #}
-                        {% set section_icon = section.icon ?? section.items[0].icon ?? 'folder' %}
-                        {% set section_active = false %}
-                        {% for item in section.items %}
-                            {% if cms_sidebar_active(current_path, item) %}
-                                {% set section_active = true %}
-                            {% endif %}
-                        {% endfor %}
-                        <button class="ab-item{% if section_active %} active{% endif %}"
-                                data-panel="{{ section.id }}"
-                                {% if section.default_url is defined and section.default_url %}data-href="{{ section.default_url }}"{% endif %}
-                                data-tooltip="{{ section.label }}">
-                            {% include '@cms/partials/sidebar-icon.twig' with {icon: section_icon} only %}
-                        </button>
-                    {% endif %}
-
-                    {# Add separator after home section #}
-                    {% if section.id == 'home' %}
-                        <div class="ab-separator"></div>
+                            </a>
+                        {% elseif section.items|length > 1 %}
+                            {% set section_icon = section.icon ?? section.items[0].icon ?? 'folder' %}
+                            {% set section_active = false %}
+                            {% for item in section.items %}
+                                {% if cms_sidebar_active(current_path, item) %}{% set section_active = true %}{% endif %}
+                            {% endfor %}
+                            <button class="ab-item{% if section_active %} active{% endif %}"
+                                    data-section="{{ section.id }}"
+                                    data-tooltip="{{ section.label ?? section.id|capitalize }}">
+                                {% include '@cms/partials/sidebar-icon.twig' with {icon: section_icon} only %}
+                            </button>
+                        {% endif %}
+                        {% if section.id == 'home' %}
+                            <div class="ab-separator"></div>
+                        {% endif %}
                     {% endif %}
                 {% endfor %}
             </div>
@@ -1259,9 +154,7 @@
                     {% if section.id == 'footer' %}
                         {% for item in section.items %}
                         <a href="{{ item.url }}" class="ab-item" data-tooltip="{{ item.label }}">
-                            {% if item.icon %}
-                                {% include '@cms/partials/sidebar-icon.twig' with {icon: item.icon} only %}
-                            {% endif %}
+                            {% include '@cms/partials/sidebar-icon.twig' with {icon: item.icon} only %}
                         </a>
                         {% endfor %}
                     {% endif %}
@@ -1269,52 +162,51 @@
             </div>
         </nav>
 
-        {# ========== SIDEBAR PANEL ========== #}
-        <aside class="cms-sidebar-panel dark-pattern" id="sidebarPanel">
+        {# Sidebar Panel #}
+        <aside class="cms-sidebar-panel" id="sidebarPanel">
             <div class="sidebar-panel-header">
                 <span class="sidebar-panel-title" id="panelTitle"></span>
-                <button class="sidebar-panel-close" id="panelClose">
-                    <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                <button class="sidebar-panel-close" id="panelClose" aria-label="Close panel">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
             </div>
             <nav class="sidebar-panel-nav">
                 {% for section in sidebar_sections %}
                     {% if section.items|length > 1 and section.id != 'footer' %}
-                    <ul id="panel-{{ section.id }}" style="display:none;">
+                    <ul class="sidebar-nav-list" data-nav="{{ section.id }}">
                         {% for item in section.items %}
-                        {% if item.is_header is defined and item.is_header %}
-                        <li class="sp-nav-header">
-                            <span style="display:block;padding:12px 16px 4px;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:#888;">{{ item.label }}</span>
-                        </li>
-                        {% elseif item.is_add_button is defined and item.is_add_button %}
-                        <li class="sp-nav-item sp-nav-add">
-                            <a href="{{ item.url }}" style="border:1px dashed rgba(255,255,255,0.2);border-radius:6px;margin:4px 8px 8px;padding:8px 12px;display:flex;align-items:center;gap:8px;justify-content:center;color:#aaa;font-size:12px;transition:all 0.15s;">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                {{ item.label }}
-                            </a>
-                        </li>
-                        {% else %}
-                        <li class="sp-nav-item">
-                            <a href="{{ item.url }}" class="{% if cms_sidebar_active(current_path, item) %}active{% endif %}">
-                                {% if item.icon %}
-                                <span class="sp-nav-icon">{% include '@cms/partials/sidebar-icon.twig' with {icon: item.icon} only %}</span>
-                                {% endif %}
-                                {{ item.label }}
-                                {% if item.badge %}
-                                <span class="badge badge-info" style="margin-left:auto;font-size:10px;">{{ item.badge }}</span>
-                                {% endif %}
-                            </a>
-                        </li>
-                        {% endif %}
-                        {% if item.children is defined and item.children|length > 0 %}
-                            {% for child in item.children %}
-                            <li class="sp-nav-item sp-sub-item">
-                                <a href="{{ child.url }}" class="{% if cms_sidebar_active(current_path, child) %}active{% endif %}">
-                                    {{ child.label }}
-                                </a>
-                            </li>
-                            {% endfor %}
-                        {% endif %}
+                            {% if item.is_header is defined and item.is_header %}
+                                <li><span class="sidebar-nav-header">{{ item.label }}</span></li>
+                            {% elseif item.is_add_button is defined and item.is_add_button %}
+                                <li>
+                                    <a href="{{ item.url }}" class="sidebar-nav-add">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                        {{ item.label }}
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li>
+                                    <a href="{{ item.url }}" class="sidebar-nav-item{% if cms_sidebar_active(current_path, item) %} active{% endif %}">
+                                        {% if item.icon %}
+                                        <svg width="16" height="16"><use href="#icon-{{ item.icon }}"/></svg>
+                                        {% include '@cms/partials/sidebar-icon.twig' with {icon: item.icon} only %}
+                                        {% endif %}
+                                        {{ item.label }}
+                                        {% if item.badge %}
+                                        <span class="badge-count">{{ item.badge }}</span>
+                                        {% endif %}
+                                    </a>
+                                </li>
+                            {% endif %}
+                            {% if item.children is defined and item.children|length > 0 %}
+                                {% for child in item.children %}
+                                <li style="padding-left:var(--sp-6)">
+                                    <a href="{{ child.url }}" class="sidebar-nav-item{% if cms_sidebar_active(current_path, child) %} active{% endif %}">
+                                        {{ child.label }}
+                                    </a>
+                                </li>
+                                {% endfor %}
+                            {% endif %}
                         {% endfor %}
                     </ul>
                     {% endif %}
@@ -1322,22 +214,18 @@
             </nav>
         </aside>
 
-        {# ========== OVERLAY (mobile) ========== #}
+        {# Overlay (mobile) #}
         <div class="cms-overlay" id="cmsOverlay"></div>
 
-        {# ========== MAIN ========== #}
+        {# Main Content #}
         <main class="cms-main" id="cmsMain">
             <div class="cms-content">
+                {# Flash messages — converted to toasts by zephyr-ui.js #}
                 {% if flash('success') %}
-                <div class="alert alert-success">{{ flash('success') }}</div>
+                <div data-flash="success" style="display:none">{{ flash('success') }}</div>
                 {% endif %}
-
                 {% if flash('errors') is iterable %}
-                <div class="alert alert-error">
-                    {% for error in flash('errors') %}
-                        <p>{{ error }}</p>
-                    {% endfor %}
-                </div>
+                <div data-flash="error" style="display:none">{% for error in flash('errors') %}{{ error }}{% if not loop.last %} {% endif %}{% endfor %}</div>
                 {% endif %}
 
                 {% block content %}{% endblock %}
@@ -1345,879 +233,23 @@
         </main>
     </div>
 
-    <script nonce="{{ csp_nonce() }}">
-    document.addEventListener('DOMContentLoaded', function() {
-        var activityBar = document.getElementById('activityBar');
-        var sidebarPanel = document.getElementById('sidebarPanel');
-        var panelTitle = document.getElementById('panelTitle');
-        var panelClose = document.getElementById('panelClose');
-        var cmsMain = document.getElementById('cmsMain');
-        var overlay = document.getElementById('cmsOverlay');
-        var mobileToggle = document.getElementById('mobileToggle');
-        var activePanel = null;
-
-        // Section labels for panel title
-        var sectionLabels = {};
-        {% for section in sidebar_sections %}
-            {% if section.items|length > 1 and section.id != 'footer' %}
-            sectionLabels['{{ section.id }}'] = '{{ section.label }}';
-            {% endif %}
-        {% endfor %}
-
-        // Activity bar panel toggle buttons
-        activityBar.querySelectorAll('[data-panel]').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                var panelId = btn.dataset.panel;
-
-                // Navigate to default URL if set and panel is not yet open
-                if (btn.dataset.href && activePanel !== panelId) {
-                    window.location.href = btn.dataset.href;
-                    return;
-                }
-
-                if (activePanel === panelId) {
-                    closePanel();
-                    return;
-                }
-
-                // Hide all panel lists
-                sidebarPanel.querySelectorAll('.sidebar-panel-nav ul').forEach(function(ul) {
-                    ul.style.display = 'none';
-                });
-
-                // Show target panel list
-                var targetList = document.getElementById('panel-' + panelId);
-                if (targetList) {
-                    targetList.style.display = 'block';
-                }
-
-                // Update title
-                panelTitle.textContent = sectionLabels[panelId] || '';
-
-                // Highlight active button
-                activityBar.querySelectorAll('[data-panel]').forEach(function(b) {
-                    b.classList.remove('active');
-                });
-                btn.classList.add('active');
-
-                // Re-add active class to single-item links that match current path
-                activityBar.querySelectorAll('a.ab-item[data-tooltip]').forEach(function(a) {
-                    // Handled by server-side active class, no JS needed
-                });
-
-                // Open panel
-                sidebarPanel.classList.add('open');
-                cmsMain.classList.add('panel-open');
-                activePanel = panelId;
-            });
-        });
-
-        function closePanel() {
-            sidebarPanel.classList.remove('open');
-            cmsMain.classList.remove('panel-open');
-
-            // Remove active from panel buttons, but keep for current section
-            activityBar.querySelectorAll('[data-panel]').forEach(function(b) {
-                // Check if any item in this section is active (on current page)
-                var panelId = b.dataset.panel;
-                var panelList = document.getElementById('panel-' + panelId);
-                if (panelList && panelList.querySelector('a.active')) {
-                    b.classList.add('active');
-                } else {
-                    b.classList.remove('active');
-                }
-            });
-
-            activePanel = null;
-        }
-
-        // Close button
-        panelClose.addEventListener('click', closePanel);
-
-        // Mobile toggle
-        if (mobileToggle) {
-            mobileToggle.addEventListener('click', function() {
-                activityBar.classList.toggle('open');
-                overlay.classList.toggle('active');
-            });
-        }
-
-        // Overlay click closes everything
-        if (overlay) {
-            overlay.addEventListener('click', function() {
-                activityBar.classList.remove('open');
-                sidebarPanel.classList.remove('open');
-                cmsMain.classList.remove('panel-open');
-                overlay.classList.remove('active');
-                activePanel = null;
-            });
-        }
-
-        // Profile dropdown
-        var profileDropdown = document.getElementById('profileDropdown');
-        var profileTrigger = document.getElementById('profileTrigger');
-        if (profileTrigger) {
-            profileTrigger.addEventListener('click', function(e) {
-                e.stopPropagation();
-                profileDropdown.classList.toggle('open');
-            });
-        }
-        document.addEventListener('click', function(e) {
-            if (profileDropdown && !profileDropdown.contains(e.target)) {
-                profileDropdown.classList.remove('open');
-            }
-        });
-
-        // Auto-open panel for current section on page load (without animation)
-        var currentSectionBtn = activityBar.querySelector('[data-panel].active');
-        if (currentSectionBtn) {
-            sidebarPanel.style.transition = 'none';
-            cmsMain.style.transition = 'none';
-            currentSectionBtn.click();
-            // Re-enable transitions after paint
-            requestAnimationFrame(function() {
-                requestAnimationFrame(function() {
-                    sidebarPanel.style.transition = '';
-                    cmsMain.style.transition = '';
-                });
-            });
-        }
-
-        // Tab switching
-        document.querySelectorAll('.tab-btn').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                var target = btn.dataset.tab;
-                document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
-                document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
-                btn.classList.add('active');
-                document.getElementById(target).classList.add('active');
-            });
-        });
-
-        // Hash-based tab activation
-        if (window.location.hash) {
-            var hashTab = document.querySelector('[data-tab="tab-' + window.location.hash.slice(1) + '"]');
-            if (hashTab) hashTab.click();
-        }
-
-        // Confirm delete forms
-        document.querySelectorAll('.confirm-delete').forEach(function(form) {
-            form.addEventListener('submit', function(e) {
-                if (!confirm(form.dataset.message || 'Are you sure?')) {
-                    e.preventDefault();
-                }
-            });
-        });
-
-        // ── Global Search ──
-        (function() {
-            var input = document.getElementById('globalSearchInput');
-            var resultsBox = document.getElementById('globalSearchResults');
-            if (!input || !resultsBox) return;
-
-            var debounceTimer = null;
-            var currentQuery = '';
-
-            input.addEventListener('input', function() {
-                var q = input.value.trim();
-                currentQuery = q;
-                clearTimeout(debounceTimer);
-
-                if (q.length < 2) {
-                    resultsBox.style.display = 'none';
-                    resultsBox.innerHTML = '';
-                    return;
-                }
-
-                debounceTimer = setTimeout(function() {
-                    fetch('/admin/search?q=' + encodeURIComponent(q), {
-                        headers: { 'Accept': 'application/json' }
-                    })
-                    .then(function(r) { return r.json(); })
-                    .then(function(data) {
-                        if (input.value.trim() !== currentQuery) return;
-                        renderSearchResults(data.results || []);
-                    })
-                    .catch(function() {
-                        resultsBox.style.display = 'none';
-                    });
-                }, 250);
-            });
-
-            input.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape') {
-                    resultsBox.style.display = 'none';
-                    input.blur();
-                }
-                // Arrow navigation
-                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    var items = resultsBox.querySelectorAll('.gs-item');
-                    if (!items.length) return;
-                    var active = resultsBox.querySelector('.gs-item.active');
-                    var idx = active ? Array.from(items).indexOf(active) : -1;
-                    if (active) active.classList.remove('active');
-                    if (e.key === 'ArrowDown') idx = (idx + 1) % items.length;
-                    else idx = idx <= 0 ? items.length - 1 : idx - 1;
-                    items[idx].classList.add('active');
-                    items[idx].scrollIntoView({ block: 'nearest' });
-                }
-                if (e.key === 'Enter') {
-                    var active = resultsBox.querySelector('.gs-item.active');
-                    if (active) {
-                        e.preventDefault();
-                        window.location.href = active.getAttribute('href');
-                    }
-                }
-            });
-
-            // Ctrl+K / Cmd+K shortcut
-            document.addEventListener('keydown', function(e) {
-                if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-                    e.preventDefault();
-                    input.focus();
-                    input.select();
-                }
-            });
-
-            // Close on click outside
-            document.addEventListener('click', function(e) {
-                if (!input.contains(e.target) && !resultsBox.contains(e.target)) {
-                    resultsBox.style.display = 'none';
-                }
-            });
-
-            function renderSearchResults(results) {
-                if (!results.length) {
-                    resultsBox.innerHTML = '<div style="padding: 12px 16px; color: var(--text-secondary); font-size: var(--font-sm);">No results found.</div>';
-                    resultsBox.style.display = 'block';
-                    return;
-                }
-
-                var typeLabels = { entry: 'Entries', media: 'Media', collection: 'Collections' };
-                var grouped = {};
-                results.forEach(function(r) {
-                    if (!grouped[r.type]) grouped[r.type] = [];
-                    grouped[r.type].push(r);
-                });
-
-                var html = '';
-                for (var type in grouped) {
-                    html += '<div style="padding: 6px 16px; font-size: 0.7rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; background: var(--bg-subdued);">' + (typeLabels[type] || type) + '</div>';
-                    grouped[type].forEach(function(r) {
-                        html += '<a href="' + escHtml(r.url) + '" class="gs-item" style="display: flex; align-items: center; gap: 10px; padding: 8px 16px; text-decoration: none; color: var(--text); font-size: var(--font-sm); cursor: pointer; transition: background 0.1s;">' +
-                            '<span style="font-weight: 500;">' + escHtml(r.title) + '</span>' +
-                            '<span style="color: var(--text-secondary); font-size: 0.75rem; margin-left: auto;">' + escHtml(r.meta) + '</span>' +
-                            '</a>';
-                    });
-                }
-
-                resultsBox.innerHTML = html;
-                resultsBox.style.display = 'block';
-
-                // Hover effect
-                resultsBox.querySelectorAll('.gs-item').forEach(function(item) {
-                    item.addEventListener('mouseenter', function() {
-                        resultsBox.querySelectorAll('.gs-item.active').forEach(function(a) { a.classList.remove('active'); });
-                        item.classList.add('active');
-                    });
-                });
-            }
-
-            function escHtml(str) {
-                var d = document.createElement('div');
-                d.textContent = str || '';
-                return d.innerHTML;
-            }
-        })();
-    });
-    </script>
-    <style nonce="{{ csp_nonce() }}">
-    .gs-item:hover, .gs-item.active { background: var(--bg-surface-hover) !important; }
-    .topbar-search input::placeholder { color: rgba(255,255,255,0.35); }
-    .topbar-search input:focus { background: rgba(255,255,255,0.12) !important; border-color: rgba(255,255,255,0.25) !important; outline: none; }
-    @media (max-width: 768px) { .topbar-search { display: none; } }
-    </style>
-
-    {# ========== KEYBOARD SHORTCUTS ========== #}
-    <script nonce="{{ csp_nonce() }}">
-    var adminUrl = '{{ admin_url() }}';
-    </script>
-    <style nonce="{{ csp_nonce() }}">
-    /* Keyboard Shortcuts Overlays */
-    .kb-overlay {
-        position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(4px);
-        -webkit-backdrop-filter: blur(4px);
-        z-index: 10000;
-        display: flex;
-        align-items: flex-start;
-        justify-content: center;
-        padding-top: 12vh;
-        opacity: 0;
-        visibility: hidden;
-        transition: opacity 0.15s ease, visibility 0.15s ease;
-    }
-    .kb-overlay.active {
-        opacity: 1;
-        visibility: visible;
-    }
-    .kb-overlay .kb-modal {
-        background: var(--bg-surface);
-        border-radius: var(--radius-300);
-        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.06);
-        width: 90%;
-        max-width: 560px;
-        max-height: 70vh;
-        display: flex;
-        flex-direction: column;
-        transform: translateY(-8px) scale(0.98);
-        transition: transform 0.15s ease;
-        overflow: hidden;
-    }
-    .kb-overlay.active .kb-modal {
-        transform: translateY(0) scale(1);
-    }
-
-    /* Quick Nav */
-    .kb-quicknav-input {
-        width: 100%;
-        padding: 14px 16px;
-        border: none;
-        border-bottom: 1px solid var(--border);
-        font-family: var(--font);
-        font-size: var(--font-md);
-        color: var(--text);
-        background: transparent;
-        outline: none;
-    }
-    .kb-quicknav-input::placeholder {
-        color: var(--text-disabled);
-    }
-    .kb-quicknav-list {
-        list-style: none;
-        margin: 0;
-        padding: var(--space-200) 0;
-        overflow-y: auto;
-        flex: 1;
-    }
-    .kb-quicknav-item {
-        display: flex;
-        align-items: center;
-        gap: var(--space-300);
-        padding: var(--space-200) var(--space-400);
-        color: var(--text);
-        text-decoration: none;
-        font-size: var(--font-sm);
-        cursor: pointer;
-        transition: background 0.1s;
-    }
-    .kb-quicknav-item:hover,
-    .kb-quicknav-item.active {
-        background: var(--bg-surface-hover);
-    }
-    .kb-quicknav-item .kb-nav-icon {
-        width: 20px;
-        height: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--text-secondary);
-        flex-shrink: 0;
-    }
-    .kb-quicknav-item .kb-nav-icon svg {
-        width: 16px;
-        height: 16px;
-        stroke: currentColor;
-        fill: none;
-        stroke-width: 2;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-    }
-    .kb-quicknav-item .kb-nav-label {
-        flex: 1;
-    }
-    .kb-quicknav-item .kb-nav-shortcut {
-        font-size: var(--font-xs);
-        color: var(--text-disabled);
-        font-family: var(--font-mono);
-    }
-    .kb-quicknav-footer {
-        padding: var(--space-200) var(--space-400);
-        border-top: 1px solid var(--border);
-        font-size: var(--font-xs);
-        color: var(--text-disabled);
-        display: flex;
-        gap: var(--space-400);
-    }
-    .kb-quicknav-footer kbd {
-        display: inline-block;
-        padding: 1px 5px;
-        font-family: var(--font-mono);
-        font-size: 0.65rem;
-        background: var(--bg-subdued);
-        border: 1px solid var(--border);
-        border-radius: 3px;
-        margin: 0 2px;
-    }
-
-    /* Shortcuts Help Modal */
-    .kb-help-content {
-        padding: var(--space-500);
-        overflow-y: auto;
-        flex: 1;
-    }
-    .kb-help-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: var(--space-400) var(--space-500);
-        border-bottom: 1px solid var(--border);
-    }
-    .kb-help-header h3 {
-        margin: 0;
-        font-size: var(--font-lg);
-        font-weight: 600;
-    }
-    .kb-help-close {
-        background: none;
-        border: none;
-        cursor: pointer;
-        color: var(--text-secondary);
-        padding: var(--space-100);
-        border-radius: var(--radius-100);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    .kb-help-close:hover {
-        background: var(--bg-surface-hover);
-        color: var(--text);
-    }
-    .kb-help-close svg {
-        width: 18px;
-        height: 18px;
-        stroke: currentColor;
-        fill: none;
-        stroke-width: 2;
-    }
-    .kb-help-section {
-        margin-bottom: var(--space-500);
-    }
-    .kb-help-section:last-child {
-        margin-bottom: 0;
-    }
-    .kb-help-section h4 {
-        font-size: var(--font-xs);
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: var(--text-secondary);
-        margin: 0 0 var(--space-200);
-        padding-bottom: var(--space-100);
-        border-bottom: 1px solid var(--border);
-    }
-    .kb-help-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: var(--space-200) 0;
-    }
-    .kb-help-row .kb-help-action {
-        font-size: var(--font-sm);
-        color: var(--text);
-    }
-    .kb-help-row .kb-help-keys {
-        display: flex;
-        align-items: center;
-        gap: var(--space-100);
-        flex-shrink: 0;
-    }
-    .kb-help-row kbd {
-        display: inline-block;
-        padding: 2px 7px;
-        font-family: var(--font-mono);
-        font-size: var(--font-xs);
-        font-weight: 500;
-        color: var(--text);
-        background: var(--bg-subdued);
-        border: 1px solid var(--border);
-        border-radius: 4px;
-        line-height: 1.4;
-        min-width: 22px;
-        text-align: center;
-    }
-    .kb-help-row .kb-help-then {
-        font-size: var(--font-xs);
-        color: var(--text-disabled);
-    }
-    </style>
-
-    {# Quick Nav Overlay #}
-    <div class="kb-overlay" id="kbQuickNav">
-        <div class="kb-modal" role="dialog" aria-label="Quick navigation">
-            <input type="text" class="kb-quicknav-input" id="kbQuickNavInput" placeholder="Type to navigate..." autocomplete="off">
-            <ul class="kb-quicknav-list" id="kbQuickNavList">
-                <li><a class="kb-quicknav-item" href="" data-nav="dashboard" data-path="">
-                    <span class="kb-nav-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
-                    <span class="kb-nav-label">Dashboard</span>
-                    <span class="kb-nav-shortcut">G D</span>
-                </a></li>
-                <li><a class="kb-quicknav-item" href="" data-nav="collections" data-path="/collections">
-                    <span class="kb-nav-icon"><svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></span>
-                    <span class="kb-nav-label">Collections</span>
-                    <span class="kb-nav-shortcut">G C</span>
-                </a></li>
-                <li><a class="kb-quicknav-item" href="" data-nav="media" data-path="/media">
-                    <span class="kb-nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span>
-                    <span class="kb-nav-label">Media</span>
-                    <span class="kb-nav-shortcut">G M</span>
-                </a></li>
-                <li><a class="kb-quicknav-item" href="" data-nav="users" data-path="/users">
-                    <span class="kb-nav-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
-                    <span class="kb-nav-label">Users</span>
-                    <span class="kb-nav-shortcut">G U</span>
-                </a></li>
-                <li><a class="kb-quicknav-item" href="" data-nav="settings" data-path="/settings/system">
-                    <span class="kb-nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
-                    <span class="kb-nav-label">Settings</span>
-                    <span class="kb-nav-shortcut">G S</span>
-                </a></li>
-            </ul>
-            <div class="kb-quicknav-footer">
-                <span><kbd>&uarr;</kbd><kbd>&darr;</kbd> navigate</span>
-                <span><kbd>Enter</kbd> open</span>
-                <span><kbd>Esc</kbd> close</span>
-            </div>
-        </div>
-    </div>
-
-    {# Shortcuts Help Overlay #}
-    <div class="kb-overlay" id="kbShortcutsHelp">
-        <div class="kb-modal" role="dialog" aria-label="Keyboard shortcuts">
-            <div class="kb-help-header">
-                <h3>Keyboard Shortcuts</h3>
-                <button class="kb-help-close" id="kbHelpClose" aria-label="Close">
-                    <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                </button>
-            </div>
-            <div class="kb-help-content">
-                <div class="kb-help-section">
-                    <h4>General</h4>
-                    <div class="kb-help-row">
-                        <span class="kb-help-action">Quick navigation</span>
-                        <span class="kb-help-keys"><kbd>Ctrl</kbd><kbd>K</kbd></span>
-                    </div>
-                    <div class="kb-help-row">
-                        <span class="kb-help-action">Show keyboard shortcuts</span>
-                        <span class="kb-help-keys"><kbd>Ctrl</kbd><kbd>/</kbd></span>
-                    </div>
-                    <div class="kb-help-row">
-                        <span class="kb-help-action">Close overlay / Cancel</span>
-                        <span class="kb-help-keys"><kbd>Esc</kbd></span>
-                    </div>
-                </div>
-                <div class="kb-help-section">
-                    <h4>Navigation</h4>
-                    <div class="kb-help-row">
-                        <span class="kb-help-action">Go to Dashboard</span>
-                        <span class="kb-help-keys"><kbd>G</kbd> <span class="kb-help-then">then</span> <kbd>D</kbd></span>
-                    </div>
-                    <div class="kb-help-row">
-                        <span class="kb-help-action">Go to Collections</span>
-                        <span class="kb-help-keys"><kbd>G</kbd> <span class="kb-help-then">then</span> <kbd>C</kbd></span>
-                    </div>
-                    <div class="kb-help-row">
-                        <span class="kb-help-action">Go to Media</span>
-                        <span class="kb-help-keys"><kbd>G</kbd> <span class="kb-help-then">then</span> <kbd>M</kbd></span>
-                    </div>
-                    <div class="kb-help-row">
-                        <span class="kb-help-action">Go to Users</span>
-                        <span class="kb-help-keys"><kbd>G</kbd> <span class="kb-help-then">then</span> <kbd>U</kbd></span>
-                    </div>
-                    <div class="kb-help-row">
-                        <span class="kb-help-action">Go to Settings</span>
-                        <span class="kb-help-keys"><kbd>G</kbd> <span class="kb-help-then">then</span> <kbd>S</kbd></span>
-                    </div>
-                </div>
-                <div class="kb-help-section">
-                    <h4>Entry Editing</h4>
-                    <div class="kb-help-row">
-                        <span class="kb-help-action">Save entry</span>
-                        <span class="kb-help-keys"><kbd>Ctrl</kbd><kbd>S</kbd></span>
-                    </div>
-                    <div class="kb-help-row">
-                        <span class="kb-help-action">Publish entry</span>
-                        <span class="kb-help-keys"><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>P</kbd></span>
-                    </div>
-                    <div class="kb-help-row">
-                        <span class="kb-help-action">Save as Draft</span>
-                        <span class="kb-help-keys"><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>D</kbd></span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script nonce="{{ csp_nonce() }}">
-    (function() {
-        var quickNavOverlay = document.getElementById('kbQuickNav');
-        var quickNavInput = document.getElementById('kbQuickNavInput');
-        var quickNavList = document.getElementById('kbQuickNavList');
-        var helpOverlay = document.getElementById('kbShortcutsHelp');
-        var helpCloseBtn = document.getElementById('kbHelpClose');
-
-        // Set correct hrefs on quick nav items based on adminUrl
-        quickNavList.querySelectorAll('.kb-quicknav-item').forEach(function(item) {
-            item.href = adminUrl + (item.dataset.path || '');
-        });
-
-        // ── Overlay helpers ──
-        function openOverlay(overlay) {
-            overlay.classList.add('active');
-            // Trap focus
-            var focusable = overlay.querySelector('input, button, a');
-            if (focusable) focusable.focus();
-        }
-
-        function closeOverlay(overlay) {
-            overlay.classList.remove('active');
-        }
-
-        function closeAllOverlays() {
-            closeOverlay(quickNavOverlay);
-            closeOverlay(helpOverlay);
-        }
-
-        function isAnyOverlayOpen() {
-            return quickNavOverlay.classList.contains('active') || helpOverlay.classList.contains('active');
-        }
-
-        // ── Quick Nav ──
-        function toggleQuickNav() {
-            if (quickNavOverlay.classList.contains('active')) {
-                closeOverlay(quickNavOverlay);
-            } else {
-                closeAllOverlays();
-                quickNavInput.value = '';
-                filterQuickNav('');
-                openOverlay(quickNavOverlay);
-                quickNavInput.focus();
-            }
-        }
-
-        function filterQuickNav(query) {
-            var items = quickNavList.querySelectorAll('li');
-            var q = query.toLowerCase().trim();
-            var firstVisible = null;
-            items.forEach(function(li) {
-                var link = li.querySelector('.kb-quicknav-item');
-                var label = link.querySelector('.kb-nav-label').textContent.toLowerCase();
-                var show = !q || label.indexOf(q) !== -1;
-                li.style.display = show ? '' : 'none';
-                link.classList.remove('active');
-                if (show && !firstVisible) {
-                    firstVisible = link;
-                }
-            });
-            if (firstVisible) firstVisible.classList.add('active');
-        }
-
-        quickNavInput.addEventListener('input', function() {
-            filterQuickNav(this.value);
-        });
-
-        quickNavInput.addEventListener('keydown', function(e) {
-            var items = Array.from(quickNavList.querySelectorAll('li')).filter(function(li) {
-                return li.style.display !== 'none';
-            });
-            var links = items.map(function(li) { return li.querySelector('.kb-quicknav-item'); });
-            var activeIdx = -1;
-            links.forEach(function(link, i) {
-                if (link.classList.contains('active')) activeIdx = i;
-            });
-
-            if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                links.forEach(function(l) { l.classList.remove('active'); });
-                activeIdx = (activeIdx + 1) % links.length;
-                links[activeIdx].classList.add('active');
-                links[activeIdx].scrollIntoView({ block: 'nearest' });
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                links.forEach(function(l) { l.classList.remove('active'); });
-                activeIdx = activeIdx <= 0 ? links.length - 1 : activeIdx - 1;
-                links[activeIdx].classList.add('active');
-                links[activeIdx].scrollIntoView({ block: 'nearest' });
-            } else if (e.key === 'Enter') {
-                e.preventDefault();
-                var active = quickNavList.querySelector('.kb-quicknav-item.active');
-                if (active) window.location.href = active.href;
-            }
-        });
-
-        // Close on click outside modal
-        quickNavOverlay.addEventListener('click', function(e) {
-            if (e.target === quickNavOverlay) closeOverlay(quickNavOverlay);
-        });
-
-        // ── Shortcuts Help ──
-        function toggleShortcutsHelp() {
-            if (helpOverlay.classList.contains('active')) {
-                closeOverlay(helpOverlay);
-            } else {
-                closeAllOverlays();
-                openOverlay(helpOverlay);
-            }
-        }
-
-        helpCloseBtn.addEventListener('click', function() {
-            closeOverlay(helpOverlay);
-        });
-
-        helpOverlay.addEventListener('click', function(e) {
-            if (e.target === helpOverlay) closeOverlay(helpOverlay);
-        });
-
-        // ── Key Sequence System ──
-        var keySequence = '';
-        var sequenceTimer = null;
-        var SEQUENCE_TIMEOUT = 1000;
-
-        document.addEventListener('keydown', function(e) {
-            var tag = e.target.tagName;
-            var inInput = (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT');
-            var ctrl = e.ctrlKey || e.metaKey;
-            var shift = e.shiftKey;
-            var key = e.key.toLowerCase();
-
-            // Esc — always works, close overlays first
-            if (key === 'escape') {
-                if (isAnyOverlayOpen()) {
-                    closeAllOverlays();
-                    e.preventDefault();
-                    return;
-                }
-                // Let Esc propagate for other uses (close search results, etc.)
-                return;
-            }
-
-            // Ctrl+K — Quick nav (override existing handler when overlay should open)
-            if (ctrl && key === 'k') {
-                e.preventDefault();
-                // If the global search input exists and no overlay is open, focus it
-                // But also provide the quick nav as a toggle
-                var globalSearch = document.getElementById('globalSearchInput');
-                if (globalSearch && !isAnyOverlayOpen()) {
-                    globalSearch.focus();
-                    globalSearch.select();
-                } else {
-                    toggleQuickNav();
-                }
-                return;
-            }
-
-            // Ctrl+/ — Shortcuts help
-            if (ctrl && key === '/') {
-                e.preventDefault();
-                toggleShortcutsHelp();
-                return;
-            }
-
-            // Don't process modifier shortcuts or sequences while typing in form fields
-            if (inInput && !ctrl) {
-                keySequence = '';
-                return;
-            }
-
-            // Ctrl+S — Save (form submit)
-            if (ctrl && !shift && key === 's') {
-                e.preventDefault();
-                var form = document.querySelector('form[method="post"], form[method="POST"]');
-                if (form) {
-                    // Skip delete/duplicate forms, find the main edit form
-                    var forms = document.querySelectorAll('form[method="post"], form[method="POST"]');
-                    for (var i = 0; i < forms.length; i++) {
-                        if (!forms[i].classList.contains('confirm-delete') &&
-                            !forms[i].action.match(/\/(delete|duplicate|logout|workflow)\b/)) {
-                            forms[i].submit();
-                            break;
-                        }
-                    }
-                }
-                return;
-            }
-
-            // Ctrl+Shift+P — Publish
-            if (ctrl && shift && key === 'p') {
-                e.preventDefault();
-                var statusSelect = document.querySelector('select[name="status"]');
-                if (statusSelect) {
-                    statusSelect.value = 'published';
-                    var form = statusSelect.closest('form');
-                    if (form) form.submit();
-                }
-                return;
-            }
-
-            // Ctrl+Shift+D — Save as Draft
-            if (ctrl && shift && key === 'd') {
-                e.preventDefault();
-                var statusSelect = document.querySelector('select[name="status"]');
-                if (statusSelect) {
-                    statusSelect.value = 'draft';
-                    var form = statusSelect.closest('form');
-                    if (form) form.submit();
-                }
-                return;
-            }
-
-            // Don't process G-sequences when overlays are open or in inputs
-            if (isAnyOverlayOpen() || inInput) return;
-
-            // G-key sequences for navigation
-            clearTimeout(sequenceTimer);
-            keySequence += key;
-            sequenceTimer = setTimeout(function() { keySequence = ''; }, SEQUENCE_TIMEOUT);
-
-            var navMap = {
-                'gd': '',
-                'gc': '/collections',
-                'gm': '/media',
-                'gu': '/users',
-                'gs': '/settings/system'
-            };
-
-            if (navMap.hasOwnProperty(keySequence)) {
-                window.location.href = adminUrl + navMap[keySequence];
-                keySequence = '';
-            }
-
-            // Reset if sequence is too long (no match possible)
-            if (keySequence.length > 2) {
-                keySequence = key;
-            }
-        });
-    })();
-    </script>
-
-    {# Quill Rich Text Editor — standalone UMD build #}
-    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/quill-table-better@1.4.3/dist/quill-table-better.umd.cjs"></script>
+    {# Toast container #}
+    <div class="zui-toast-container"></div>
+
+    {# Core JS — sidebar persistence, toasts, dropdowns, tabs, shortcuts #}
+    <script src="/cms-assets/js/zephyr-ui.js"></script>
+
+    {# Quill Rich Text Editor (local) #}
+    <script src="/cms-assets/js/quill.min.js"></script>
+    <script src="/cms-assets/js/quill-table-better.js"></script>
     <script nonce="{{ csp_nonce() }}">
     (function() {
         if (typeof Quill === 'undefined') return;
-
         var textareas = document.querySelectorAll('textarea.richtext-editor');
         if (!textareas.length) return;
 
-        // Register table module if available
         var hasTable = typeof QuillTableBetter !== 'undefined';
-        if (hasTable) {
-            Quill.register({ 'modules/table-better': QuillTableBetter }, true);
-        }
+        if (hasTable) Quill.register({ 'modules/table-better': QuillTableBetter }, true);
 
         var toolbarOptions = [
             [{ 'header': [1, 2, 3, false] }],
@@ -2235,7 +267,6 @@
         var csrfInput = document.querySelector('input[name="csrf_token"], input[name="_token"]');
         var csrfVal = csrfInput ? csrfInput.value : '';
 
-        // Media browser for richtext image/video insertion
         function openRichtextMediaBrowser(filter, onSelect) {
             var modal = document.createElement('div');
             modal.className = 'media-modal-overlay';
@@ -2248,7 +279,7 @@
                 + '<button type="button" class="media-filter-btn' + (filter === 'images' ? ' active' : '') + '" data-filter="images">Images</button>'
                 + '<button type="button" class="media-filter-btn' + (filter === 'video' ? ' active' : '') + '" data-filter="video">Video</button>'
                 + '</div></div>'
-                + '<div class="media-modal-body"><p style="text-align:center;padding:40px;color:#616161">Loading...</p></div>'
+                + '<div class="media-modal-body"><p style="text-align:center;padding:40px;color:var(--text-secondary)">Loading...</p></div>'
                 + '<div class="media-modal-upload-bar">'
                 + '<label class="media-upload-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Upload<input type="file" class="media-upload-input" multiple style="display:none"'
                 + (filter === 'images' ? ' accept="image/*"' : filter === 'video' ? ' accept="video/*"' : '')
@@ -2264,25 +295,22 @@
 
             function loadItems() {
                 var body = modal.querySelector('.media-modal-body');
-                body.innerHTML = '<p style="text-align:center;padding:40px;color:#616161">Loading...</p>';
+                body.innerHTML = '<p style="text-align:center;padding:40px;color:var(--text-secondary)">Loading...</p>';
                 fetch(mediaUrl + '?filter=' + currentFilter + '&per_page=36' + (currentSearch ? '&search=' + encodeURIComponent(currentSearch) : ''))
                     .then(function(r) { return r.json(); })
                     .then(function(data) {
                         if (!data.data || !data.data.length) {
-                            body.innerHTML = '<div style="text-align:center;padding:60px"><p style="font-weight:600">No files found</p><p style="color:#616161;font-size:13px">Upload using the button below</p></div>';
+                            body.innerHTML = '<div class="empty-state" style="padding:var(--sp-10)"><p>No files found</p><p class="text-secondary text-sm">Upload using the button below</p></div>';
                             return;
                         }
                         var html = '<div class="media-modal-grid">';
                         data.data.forEach(function(item) {
-                            var thumb = item.is_image ? '<img src="' + (item.thumbnail || item.url) + '" loading="lazy">' : '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#666"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>';
+                            var thumb = item.is_image ? '<img src="' + (item.thumbnail || item.url) + '" loading="lazy">' : '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-secondary)"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>';
                             html += '<div class="media-modal-item" data-url="' + item.url + '"><div class="media-modal-thumb">' + thumb + '</div><div class="media-modal-name">' + item.name + '</div></div>';
                         });
                         body.innerHTML = html + '</div>';
                         body.querySelectorAll('.media-modal-item').forEach(function(el) {
-                            el.addEventListener('click', function() {
-                                onSelect(el.dataset.url);
-                                modal.remove();
-                            });
+                            el.addEventListener('click', function() { onSelect(el.dataset.url); modal.remove(); });
                         });
                     });
             }
@@ -2295,18 +323,14 @@
             modal.querySelectorAll('.media-filter-btn').forEach(function(btn) {
                 btn.addEventListener('click', function() {
                     modal.querySelectorAll('.media-filter-btn').forEach(function(b) { b.classList.remove('active'); });
-                    btn.classList.add('active');
-                    currentFilter = btn.dataset.filter;
-                    loadItems();
+                    btn.classList.add('active'); currentFilter = btn.dataset.filter; loadItems();
                 });
             });
-            // Upload
             modal.querySelector('.media-upload-input').addEventListener('change', function() {
                 var files = this.files; if (!files.length) return;
                 var status = modal.querySelector('.media-upload-status');
                 status.textContent = 'Uploading...';
-                var lastUrl = '';
-                var done = 0;
+                var lastUrl = '', done = 0;
                 Array.from(files).forEach(function(f) {
                     var fd = new FormData(); fd.append('file', f); fd.append('csrf_token', csrfVal);
                     var xhr = new XMLHttpRequest();
@@ -2316,123 +340,60 @@
                         done++;
                         try { var r = JSON.parse(xhr.responseText); if (r.path) lastUrl = '/' + r.path; } catch(e) {}
                         if (done >= files.length) {
-                            if (lastUrl && files.length === 1) {
-                                onSelect(lastUrl);
-                                modal.remove();
-                            } else {
-                                status.textContent = 'Uploaded!';
-                                loadItems();
-                            }
+                            if (lastUrl && files.length === 1) { onSelect(lastUrl); modal.remove(); }
+                            else { status.textContent = 'Uploaded!'; loadItems(); }
                         }
                     };
                     xhr.onerror = function() { done++; status.textContent = 'Error'; };
                     xhr.send(fd);
                 });
             });
-
             loadItems();
         }
 
         textareas.forEach(function(textarea) {
             textarea.style.display = 'none';
-
-            // Create wrapper
-            var wrap = document.createElement('div');
-            wrap.className = 'ql-wrap';
-
-            // Create toolbar container
-            var toolbarDiv = document.createElement('div');
-            toolbarDiv.className = 'ql-toolbar-container';
-
-            // Create editor container
-            var editorDiv = document.createElement('div');
-            editorDiv.innerHTML = textarea.value || '';
-
-            // Create source textarea
-            var sourceArea = document.createElement('textarea');
-            sourceArea.className = 'ql-source-area';
-
-            // Create footer
-            var footer = document.createElement('div');
-            footer.className = 'ql-footer';
+            var wrap = document.createElement('div'); wrap.className = 'ql-wrap';
+            var toolbarDiv = document.createElement('div'); toolbarDiv.className = 'ql-toolbar-container';
+            var editorDiv = document.createElement('div'); editorDiv.innerHTML = textarea.value || '';
+            var sourceArea = document.createElement('textarea'); sourceArea.className = 'ql-source-area';
+            var footer = document.createElement('div'); footer.className = 'ql-footer';
             footer.innerHTML = '<span class="ql-word-count">0 words</span><button type="button" class="ql-source-btn">&lt;/&gt; HTML</button>';
-
-            wrap.appendChild(toolbarDiv);
-            wrap.appendChild(editorDiv);
-            wrap.appendChild(sourceArea);
-            wrap.appendChild(footer);
+            wrap.appendChild(toolbarDiv); wrap.appendChild(editorDiv); wrap.appendChild(sourceArea); wrap.appendChild(footer);
             textarea.parentNode.insertBefore(wrap, textarea.nextSibling);
 
-            // Initialize Quill
             var quill = new Quill(editorDiv, {
                 theme: 'snow',
                 modules: {
-                    toolbar: {
-                        container: toolbarOptions,
-                        handlers: {
-                            image: function() {
-                                var q = this.quill;
-                                openRichtextMediaBrowser('images', function(url) {
-                                    var range = q.getSelection(true);
-                                    q.insertEmbed(range.index, 'image', url);
-                                    q.setSelection(range.index + 1);
-                                });
-                            },
-                            video: function() {
-                                var q = this.quill;
-                                openRichtextMediaBrowser('video', function(url) {
-                                    var range = q.getSelection(true);
-                                    q.insertEmbed(range.index, 'video', url);
-                                    q.setSelection(range.index + 1);
-                                });
-                            }
-                        }
-                    },
+                    toolbar: { container: toolbarOptions, handlers: {
+                        image: function() { var q = this.quill; openRichtextMediaBrowser('images', function(url) { var r = q.getSelection(true); q.insertEmbed(r.index, 'image', url); q.setSelection(r.index + 1); }); },
+                        video: function() { var q = this.quill; openRichtextMediaBrowser('video', function(url) { var r = q.getSelection(true); q.insertEmbed(r.index, 'video', url); q.setSelection(r.index + 1); }); }
+                    }},
                     'table-better': hasTable ? {} : undefined,
                     keyboard: hasTable ? { bindings: QuillTableBetter.keyboardBindings } : {}
                 },
                 placeholder: textarea.placeholder || 'Write your content...',
             });
 
-            // Move Quill's generated toolbar into our toolbar container
             var generatedToolbar = wrap.querySelector('.ql-toolbar');
-            if (generatedToolbar && generatedToolbar !== toolbarDiv) {
-                toolbarDiv.appendChild(generatedToolbar);
-            }
+            if (generatedToolbar && generatedToolbar !== toolbarDiv) toolbarDiv.appendChild(generatedToolbar);
 
-            // Sync content to hidden textarea on change
             quill.on('text-change', function() {
-                var html = quill.getSemanticHTML();
-                textarea.value = html;
-                // Update word count
+                textarea.value = quill.getSemanticHTML();
                 var text = quill.getText().trim();
                 var words = text ? text.split(/\s+/).length : 0;
                 footer.querySelector('.ql-word-count').textContent = words + ' word' + (words !== 1 ? 's' : '');
             });
 
-            // Initial word count
             var initText = quill.getText().trim();
             var initWords = initText ? initText.split(/\s+/).length : 0;
             footer.querySelector('.ql-word-count').textContent = initWords + ' word' + (initWords !== 1 ? 's' : '');
 
-            // Source toggle
-            var isSource = false;
-            var sourceBtn = footer.querySelector('.ql-source-btn');
-            var qlContainer = wrap.querySelector('.ql-container');
+            var isSource = false, sourceBtn = footer.querySelector('.ql-source-btn'), qlContainer = wrap.querySelector('.ql-container');
             sourceBtn.addEventListener('click', function() {
                 isSource = !isSource;
-                if (isSource) {
-                    sourceArea.value = quill.getSemanticHTML();
-                    sourceArea.classList.add('active');
-                    if (qlContainer) qlContainer.classList.add('ql-container-hidden');
-                    sourceBtn.classList.add('active');
-                } else {
-                    quill.clipboard.dangerouslyPasteHTML(sourceArea.value);
-                    textarea.value = sourceArea.value;
-                    sourceArea.classList.remove('active');
-                    if (qlContainer) qlContainer.classList.remove('ql-container-hidden');
-                    sourceBtn.classList.remove('active');
-                }
+                if (isSource) { sourceArea.value = quill.getSemanticHTML(); sourceArea.classList.add('active'); if (qlContainer) qlContainer.classList.add('ql-container-hidden'); sourceBtn.classList.add('active'); }
+                else { quill.clipboard.dangerouslyPasteHTML(sourceArea.value); textarea.value = sourceArea.value; sourceArea.classList.remove('active'); if (qlContainer) qlContainer.classList.remove('ql-container-hidden'); sourceBtn.classList.remove('active'); }
             });
         });
     })();

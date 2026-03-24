@@ -225,9 +225,9 @@
 {% endblock %}
 
 {% block styles %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/theme/dracula.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/hint/show-hint.min.css">
+<link rel="stylesheet" href="/cms-assets/css/codemirror/codemirror.min.css">
+<link rel="stylesheet" href="/cms-assets/css/codemirror/dracula.min.css">
+<link rel="stylesheet" href="/cms-assets/css/codemirror/show-hint.min.css">
 <style nonce="{{ csp_nonce() }}">
 #tab-editor { padding: 0; }
 .editor-layout {
@@ -898,15 +898,14 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/htmlmixed/htmlmixed.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/xml/xml.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/javascript/javascript.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/css/css.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/clike/clike.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/php/php.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/hint/show-hint.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<script src="/cms-assets/js/codemirror/codemirror.min.js"></script>
+<script src="/cms-assets/js/codemirror/htmlmixed.min.js"></script>
+<script src="/cms-assets/js/codemirror/xml.min.js"></script>
+<script src="/cms-assets/js/codemirror/javascript.min.js"></script>
+<script src="/cms-assets/js/codemirror/css.min.js"></script>
+<script src="/cms-assets/js/codemirror/clike.min.js"></script>
+<script src="/cms-assets/js/codemirror/php.min.js"></script>
+<script src="/cms-assets/js/sortable.min.js"></script>
 <script nonce="{{ csp_nonce() }}">
 document.addEventListener('DOMContentLoaded', function() {
     var textarea = document.getElementById('codeEditor');

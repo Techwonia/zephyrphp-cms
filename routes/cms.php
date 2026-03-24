@@ -457,22 +457,42 @@ Route::group(['prefix' => '/' . admin_path(), 'middleware' => [\ZephyrPHP\Middle
 });
 
 
-// CMS Module Assets
-Route::get('/cms-assets/css/{file}', function (string $file) {
-    $file = basename($file);
-    $filePath = dirname(__DIR__) . '/assets/css/' . $file;
-    if (!file_exists($filePath)) { http_response_code(404); return ''; }
-    header('Content-Type: text/css');
-    header('Cache-Control: public, max-age=86400');
-    readfile($filePath);
-    exit;
-});
-Route::get('/cms-assets/js/{file}', function (string $file) {
-    $file = basename($file);
-    $filePath = dirname(__DIR__) . '/assets/js/' . $file;
-    if (!file_exists($filePath)) { http_response_code(404); return ''; }
-    header('Content-Type: application/javascript');
-    header('Cache-Control: public, max-age=86400');
+// CMS Module Assets (CSS, JS, fonts — serves from cms/assets/)
+Route::get('/cms-assets/{path}', function (string $path) {
+    // Sanitize: only allow safe characters, no ..
+    $path = str_replace('\\', '/', $path);
+    if (str_contains($path, '..') || !preg_match('#^[a-zA-Z0-9/_.-]+$#', $path)) {
+        http_response_code(400);
+        return '';
+    }
+
+    $basePath = dirname(__DIR__) . '/assets/';
+    $filePath = realpath($basePath . $path);
+
+    // Verify resolved path is within assets directory
+    if (!$filePath || !str_starts_with($filePath, realpath($basePath))) {
+        http_response_code(404);
+        return '';
+    }
+
+    $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+    $mimeTypes = [
+        'css' => 'text/css',
+        'js' => 'application/javascript',
+        'woff2' => 'font/woff2',
+        'woff' => 'font/woff',
+        'ttf' => 'font/ttf',
+        'svg' => 'image/svg+xml',
+        'png' => 'image/png',
+        'jpg' => 'image/jpeg',
+        'gif' => 'image/gif',
+    ];
+
+    $mime = $mimeTypes[$ext] ?? null;
+    if (!$mime) { http_response_code(403); return ''; }
+
+    header('Content-Type: ' . $mime);
+    header('Cache-Control: public, max-age=604800, immutable');
     readfile($filePath);
     exit;
 });
