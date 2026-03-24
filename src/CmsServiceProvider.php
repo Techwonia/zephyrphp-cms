@@ -1550,12 +1550,12 @@ class CmsServiceProvider
                 $conn->executeStatement("CREATE TABLE `cms_content_templates` (
                     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                     `name` VARCHAR(255) NOT NULL,
-                    `collectionSlug` VARCHAR(255) NOT NULL,
+                    `collection_slug` VARCHAR(255) NOT NULL,
                     `data` JSON NULL DEFAULT NULL,
-                    `createdBy` INT NULL DEFAULT NULL,
+                    `created_by` INT NULL DEFAULT NULL,
                     `createdAt` DATETIME NULL DEFAULT NULL,
                     `updatedAt` DATETIME NULL DEFAULT NULL,
-                    INDEX `idx_ct_collection` (`collectionSlug`)
+                    INDEX `idx_ct_collection` (`collection_slug`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
             }
 
@@ -1564,13 +1564,13 @@ class CmsServiceProvider
                 $conn->executeStatement("CREATE TABLE `cms_automation_rules` (
                     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                     `name` VARCHAR(255) NOT NULL,
-                    `collectionSlug` VARCHAR(255) NOT NULL,
-                    `triggerType` VARCHAR(50) NOT NULL DEFAULT 'schedule',
+                    `collection_slug` VARCHAR(255) NOT NULL,
+                    `trigger_type` VARCHAR(50) NOT NULL DEFAULT 'schedule',
                     `conditions` TEXT NULL DEFAULT NULL,
                     `actions` TEXT NULL DEFAULT NULL,
                     `schedule` VARCHAR(100) NULL DEFAULT NULL,
-                    `lastRunAt` DATETIME NULL DEFAULT NULL,
-                    `isActive` TINYINT(1) NOT NULL DEFAULT 1,
+                    `last_run_at` DATETIME NULL DEFAULT NULL,
+                    `is_active` TINYINT(1) NOT NULL DEFAULT 1,
                     `createdAt` DATETIME NULL DEFAULT NULL,
                     `updatedAt` DATETIME NULL DEFAULT NULL
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
@@ -1597,10 +1597,10 @@ class CmsServiceProvider
                     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                     `email` VARCHAR(255) NOT NULL,
                     `token` VARCHAR(255) NOT NULL,
-                    `roleId` INT NULL DEFAULT NULL,
-                    `invitedBy` INT NULL DEFAULT NULL,
-                    `expiresAt` DATETIME NOT NULL,
-                    `acceptedAt` DATETIME NULL DEFAULT NULL,
+                    `role_id` INT NULL DEFAULT NULL,
+                    `invited_by` INT NULL DEFAULT NULL,
+                    `expires_at` DATETIME NOT NULL,
+                    `accepted_at` DATETIME NULL DEFAULT NULL,
                     `createdAt` DATETIME NULL DEFAULT NULL,
                     `updatedAt` DATETIME NULL DEFAULT NULL,
                     INDEX `idx_inv_email` (`email`)
