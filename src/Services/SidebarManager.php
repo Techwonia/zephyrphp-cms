@@ -57,7 +57,7 @@ class SidebarManager
      * @param string $label Display label (e.g., 'Content', 'Admin')
      * @param int $position Sort order (lower = higher in sidebar)
      */
-    public function addSection(string $id, string $label, int $position = 50, string $icon = ''): void
+    public function addSection(string $id, string $label, int $position = 50, string $icon = '', string $defaultUrl = ''): void
     {
         $this->validateId($id);
 
@@ -65,6 +65,7 @@ class SidebarManager
             'label' => $label,
             'position' => $position,
             'icon' => $icon,
+            'default_url' => $defaultUrl,
             'items' => $this->sections[$id]['items'] ?? [],
         ];
     }

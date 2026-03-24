@@ -1242,6 +1242,7 @@
                         {% endfor %}
                         <button class="ab-item{% if section_active %} active{% endif %}"
                                 data-panel="{{ section.id }}"
+                                {% if section.default_url is defined and section.default_url %}data-href="{{ section.default_url }}"{% endif %}
                                 data-tooltip="{{ section.label }}">
                             {% include '@cms/partials/sidebar-icon.twig' with {icon: section_icon} only %}
                         </button>
@@ -1367,6 +1368,12 @@
         activityBar.querySelectorAll('[data-panel]').forEach(function(btn) {
             btn.addEventListener('click', function() {
                 var panelId = btn.dataset.panel;
+
+                // Navigate to default URL if set and panel is not yet open
+                if (btn.dataset.href && activePanel !== panelId) {
+                    window.location.href = btn.dataset.href;
+                    return;
+                }
 
                 if (activePanel === panelId) {
                     closePanel();

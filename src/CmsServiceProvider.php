@@ -116,7 +116,7 @@ class CmsServiceProvider
         $sidebar->registerDefaults();
 
         // "Collection Manager" section — dynamic collection links + management
-        $sidebar->addSection('collections', 'Collection Manager', 5, 'database');
+        $sidebar->addSection('collections', 'Collection Manager', 5, 'database', admin_url('collections'));
         try {
             $collections = \ZephyrPHP\Cms\Models\Collection::findAll();
 
