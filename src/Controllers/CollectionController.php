@@ -151,6 +151,7 @@ class CollectionController extends Controller
         $collection->setIsTranslatable($this->boolean('is_translatable'));
         $collection->setHasHierarchy($this->boolean('has_hierarchy'));
         $collection->setHierarchyMaxDepth(max(0, (int) $this->input('hierarchy_max_depth', 0)));
+        $collection->setDisplayField(trim($this->input('display_field', '')) ?: null);
         $collection->setCreatedBy(Auth::user()?->getId());
         $collection->save();
 
@@ -332,6 +333,7 @@ class CollectionController extends Controller
         $oldHasHierarchy = $collection->hasHierarchy();
         $collection->setHasHierarchy($hasHierarchy);
         $collection->setHierarchyMaxDepth(max(0, (int) $this->input('hierarchy_max_depth', 0)));
+        $collection->setDisplayField(trim($this->input('display_field', '')) ?: null);
 
         if ($hasHierarchy && !$oldHasHierarchy) {
             $this->schema->addHierarchyColumn($tableName, $collection->isUuid());

@@ -35,7 +35,8 @@
     <span class="breadcrumb-sep">/</span>
     <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}">Entries</a>
     <span class="breadcrumb-sep">/</span>
-    {% set _entryLabel = entry.slug ?? entry.title ?? entry.name ?? entry.label ?? ('#' ~ entry.id) %}
+    {% set _df = collection.getDisplayField() %}
+    {% set _entryLabel = (_df and entry[_df] is defined and entry[_df]) ? entry[_df] : (entry.title ?? entry.name ?? entry.slug ?? entry.label ?? ('#' ~ entry.id)) %}
     <span>{{ _entryLabel }}</span>
 </div>
 

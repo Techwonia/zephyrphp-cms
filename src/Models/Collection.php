@@ -41,6 +41,9 @@ class Collection extends Model
     #[ORM\Column(name: 'slug_source_field', type: 'string', length: 100, nullable: true)]
     protected ?string $slugSourceField = null;
 
+    #[ORM\Column(name: 'display_field', type: 'string', length: 100, nullable: true)]
+    protected ?string $displayField = null;
+
     #[ORM\Column(name: 'is_submittable', type: 'boolean')]
     protected bool $isSubmittable = false;
 
@@ -145,6 +148,11 @@ class Collection extends Model
     public function getSlugSourceField(): ?string
     {
         return $this->slugSourceField;
+    }
+
+    public function getDisplayField(): ?string
+    {
+        return $this->displayField;
     }
 
     public function isSubmittable(): bool
@@ -336,6 +344,12 @@ class Collection extends Model
     public function setSlugSourceField(?string $slugSourceField): self
     {
         $this->slugSourceField = $slugSourceField;
+        return $this;
+    }
+
+    public function setDisplayField(?string $displayField): self
+    {
+        $this->displayField = $displayField;
         return $this;
     }
 

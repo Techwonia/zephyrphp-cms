@@ -854,6 +854,17 @@
                             {% endif %}
                         </div>
 
+                        <div class="form-group">
+                            <label for="display_field">Display Field</label>
+                            <select id="display_field" name="display_field" class="form-control">
+                                <option value="">Auto-detect (title, name, slug, id)</option>
+                                {% for field in fields %}
+                                    <option value="{{ field.getSlug() }}" {% if collection.getDisplayField() == field.getSlug() %}selected{% endif %}>{{ field.getName() }} ({{ field.getSlug() }})</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-hint">Which field represents this entry's title. Used in lists, breadcrumbs, relations, and tree view.</div>
+                        </div>
+
                         {# Feature toggles #}
                         <div class="features-grid">
                             <div class="feature-toggle">

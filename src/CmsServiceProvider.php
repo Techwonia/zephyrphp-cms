@@ -1251,6 +1251,9 @@ class CmsServiceProvider
                 if (!isset($columns['hierarchy_max_depth'])) {
                     $conn->executeStatement("ALTER TABLE `cms_collections` ADD COLUMN `hierarchy_max_depth` INT NOT NULL DEFAULT 0");
                 }
+                if (!isset($columns['display_field'])) {
+                    $conn->executeStatement("ALTER TABLE `cms_collections` ADD COLUMN `display_field` VARCHAR(100) NULL DEFAULT NULL");
+                }
             }
 
             // Migrate cms_media: add alt_text and thumbnail_path columns
