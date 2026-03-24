@@ -243,13 +243,17 @@
                         {% elseif field.getType() == 'image' and entry[field.getSlug()] %}
                             <img src="/{{ entry[field.getSlug()] }}" alt="" style="max-height: 30px; border-radius: var(--radius-100);">
                         {% elseif field.getType() == 'relation' and entry[field.getSlug()] %}
-                            {% if relationLabels[field.getSlug()] is defined and relationLabels[field.getSlug()][entry[field.getSlug()]] is defined %}
-                                <span class="truncate">{{ relationLabels[field.getSlug()][entry[field.getSlug()]] }}</span>
+                            {% set _fKey = field.getSlug() %}
+                            {% set _relLabels = relationLabels[_fKey] ?? {} %}
+                            {% set _entryVal = entry[_fKey] %}
+                            {% if _entryVal in (_relLabels|keys) %}
+                                <span class="truncate">{{ _relLabels[_entryVal] }}</span>
                             {% else %}
-                                <span class="truncate" style="color: var(--text-secondary);">#{{ entry[field.getSlug()] }}</span>
+                                <span class="truncate" style="color: var(--text-secondary);">#{{ _entryVal }}</span>
                             {% endif %}
                         {% else %}
-                            <span class="truncate">{{ entry[field.getSlug()] ?? '&mdash;' }}</span>
+                            {% set _cellVal = entry[field.getSlug()]|default('') %}
+                            <span class="truncate">{{ _cellVal ? _cellVal : '&mdash;' }}</span>
                         {% endif %}
                     </td>
                     {% endfor %}

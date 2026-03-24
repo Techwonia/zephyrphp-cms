@@ -246,15 +246,20 @@
                             {% elseif field.getType() == 'image' and entry[field.getSlug()] %}
                                 <img src="/{{ entry[field.getSlug()] }}" alt="" class="entries-thumb">
                             {% elseif field.getType() == 'richtext' and entry[field.getSlug()] %}
-                                <span class="entries-truncate entries-richtext-preview" data-content="{{ entry[field.getSlug()]|e('html_attr') }}" title="Click to preview">{{ entry[field.getSlug()]|striptags|slice(0, 60) }}{% if entry[field.getSlug()]|striptags|length > 60 %}...{% endif %}</span>
+                                {% set _rtVal = entry[field.getSlug()]|striptags %}
+                                <span class="entries-truncate entries-richtext-preview" data-content="{{ entry[field.getSlug()]|e('html_attr') }}" title="Click to preview">{{ _rtVal|slice(0, 60) }}{% if _rtVal|length > 60 %}...{% endif %}</span>
                             {% elseif field.getType() == 'relation' and entry[field.getSlug()] %}
-                                {% if relationLabels[field.getSlug()] is defined and relationLabels[field.getSlug()][entry[field.getSlug()]] is defined %}
-                                    <span class="entries-truncate">{{ relationLabels[field.getSlug()][entry[field.getSlug()]] }}</span>
+                                {% set _fKey = field.getSlug() %}
+                                {% set _relLabels = relationLabels[_fKey] ?? {} %}
+                                {% set _entryVal = entry[_fKey] %}
+                                {% if _entryVal in (_relLabels|keys) %}
+                                    <span class="entries-truncate">{{ _relLabels[_entryVal] }}</span>
                                 {% else %}
-                                    <span class="entries-truncate entries-text-muted">#{{ entry[field.getSlug()] }}</span>
+                                    <span class="entries-truncate entries-text-muted">#{{ _entryVal }}</span>
                                 {% endif %}
                             {% else %}
-                                <span class="entries-truncate">{{ entry[field.getSlug()]|striptags|slice(0, 80) ?? '' }}{% if entry[field.getSlug()]|default('')|length > 80 %}...{% endif %}</span>
+                                {% set _cellVal = entry[field.getSlug()]|default('')|striptags %}
+                                <span class="entries-truncate">{{ _cellVal|slice(0, 80) }}{% if _cellVal|length > 80 %}...{% endif %}</span>
                             {% endif %}
                         </td>
                         {% endfor %}
