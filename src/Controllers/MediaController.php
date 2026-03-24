@@ -298,7 +298,7 @@ class MediaController extends Controller
             $this->flash('errors', ['file' => 'Failed to move uploaded file.']);
         }
 
-        $this->back();
+        $this->redirect(admin_url('media'));
     }
 
     /**
