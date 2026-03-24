@@ -111,8 +111,8 @@ Route::group(['prefix' => '/' . admin_path(), 'middleware' => [\ZephyrPHP\Middle
     Route::post('/collections/{slug}/entries/{id}/heartbeat', [EntryController::class, 'heartbeat']);
     Route::post('/collections/{slug}/entries/{id}/unlock', [EntryController::class, 'unlock']);
     // GET fallbacks for POST-only AJAX routes (browser lands here after session expiry redirect)
-    Route::get('/collections/{slug}/entries/{id}/heartbeat', function(string $slug) { header('Location: ' . admin_url("collections/{$slug}/entries")); exit; });
-    Route::get('/collections/{slug}/entries/{id}/unlock', function(string $slug) { header('Location: ' . admin_url("collections/{$slug}/entries")); exit; });
+    Route::get('/collections/{slug}/entries/{id}/heartbeat', function(string $slug, string $id) { header('Location: ' . admin_url("collections/{$slug}/entries")); exit; });
+    Route::get('/collections/{slug}/entries/{id}/unlock', function(string $slug, string $id) { header('Location: ' . admin_url("collections/{$slug}/entries")); exit; });
     Route::post('/collections/{slug}/entries/{id}/duplicate', [EntryController::class, 'duplicate']);
     Route::post('/collections/{slug}/entries/{id}/preview', [EntryController::class, 'preview']);
     Route::post('/collections/{slug}/entries/{id}', [EntryController::class, 'update']);
