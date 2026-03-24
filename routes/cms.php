@@ -457,9 +457,9 @@ Route::group(['prefix' => '/' . admin_path(), 'middleware' => [\ZephyrPHP\Middle
 });
 
 
-// CMS Module Assets (CSS, JS, fonts — serves from cms/assets/)
-Route::get('/cms-assets/{path}', function (string $path) {
-    // Sanitize: only allow safe characters, no ..
+// CMS Module Assets (serves from cms/assets/ with subdirectory support)
+$cmsAssetHandler = function (string ...$parts) {
+    $path = implode('/', $parts);
     $path = str_replace('\\', '/', $path);
     if (str_contains($path, '..') || !preg_match('#^[a-zA-Z0-9/_.-]+$#', $path)) {
         http_response_code(400);
@@ -468,8 +468,6 @@ Route::get('/cms-assets/{path}', function (string $path) {
 
     $basePath = dirname(__DIR__) . '/assets/';
     $filePath = realpath($basePath . $path);
-
-    // Verify resolved path is within assets directory
     if (!$filePath || !str_starts_with($filePath, realpath($basePath))) {
         http_response_code(404);
         return '';
@@ -477,17 +475,10 @@ Route::get('/cms-assets/{path}', function (string $path) {
 
     $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
     $mimeTypes = [
-        'css' => 'text/css',
-        'js' => 'application/javascript',
-        'woff2' => 'font/woff2',
-        'woff' => 'font/woff',
-        'ttf' => 'font/ttf',
-        'svg' => 'image/svg+xml',
-        'png' => 'image/png',
-        'jpg' => 'image/jpeg',
-        'gif' => 'image/gif',
+        'css' => 'text/css', 'js' => 'application/javascript',
+        'woff2' => 'font/woff2', 'woff' => 'font/woff', 'ttf' => 'font/ttf',
+        'svg' => 'image/svg+xml', 'png' => 'image/png', 'jpg' => 'image/jpeg', 'gif' => 'image/gif',
     ];
-
     $mime = $mimeTypes[$ext] ?? null;
     if (!$mime) { http_response_code(403); return ''; }
 
@@ -495,7 +486,15 @@ Route::get('/cms-assets/{path}', function (string $path) {
     header('Cache-Control: public, max-age=604800, immutable');
     readfile($filePath);
     exit;
-});
+};
+
+// Flat: /cms-assets/css/file.css, /cms-assets/js/file.js, /cms-assets/fonts/inter/file.woff2
+Route::get('/cms-assets/css/{file}', fn(string $file) => $cmsAssetHandler('css', $file));
+Route::get('/cms-assets/js/{file}', fn(string $file) => $cmsAssetHandler('js', $file));
+// Subdirectories: codemirror modes/themes, font variants
+Route::get('/cms-assets/css/{dir}/{file}', fn(string $dir, string $file) => $cmsAssetHandler('css', $dir, $file));
+Route::get('/cms-assets/js/{dir}/{file}', fn(string $dir, string $file) => $cmsAssetHandler('js', $dir, $file));
+Route::get('/cms-assets/fonts/{dir}/{file}', fn(string $dir, string $file) => $cmsAssetHandler('fonts', $dir, $file));
 
 // Public Collection Submit (no auth required)
 Route::post('/collections/{slug}/submit', [\ZephyrPHP\Cms\Controllers\PublicSubmitController::class, 'submit']);
