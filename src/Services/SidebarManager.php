@@ -411,6 +411,11 @@ class SidebarManager
             throw new \InvalidArgumentException('Sidebar item URL cannot be empty.');
         }
 
+        // Allow anchor-only URLs (used for section headers)
+        if ($url === '#') {
+            return;
+        }
+
         // Internal paths must start with /
         if (str_starts_with($url, '/')) {
             // Prevent path traversal
