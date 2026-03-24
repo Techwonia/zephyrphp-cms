@@ -266,7 +266,11 @@
                 </thead>
                 <tbody>
                     {% for entry in entries.data %}
-                    <tr class="entries-table__row" data-entry-id="{{ entry.id }}" data-parent-id="{{ entry.parent_id ?? '' }}"{% if collection.hasHierarchy() %}{% set _entryDepth = 0 %}{% for tItem in treeEntries %}{% if tItem.id == entry.id %}{% set _entryDepth = tItem._depth %}{% endif %}{% endfor %} data-depth="{{ _entryDepth }}"{% endif %}>
+                    {% set _eId = entry.id %}
+                    {% set _eDepth = depthMap[_eId]|default(0) %}
+                    {% set _eChildren = childCountMap[_eId]|default(0) %}
+                    {% set _eParent = entry.parent_id|default('') %}
+                    <tr class="entries-table__row" data-entry-id="{{ _eId }}" data-parent-id="{{ _eParent }}" data-depth="{{ _eDepth }}" data-children="{{ _eChildren }}">
                         <td class="entries-col-checkbox"><input type="checkbox" class="entry-checkbox entries-checkbox" value="{{ entry.id }}"></td>
                         {% for field in listableFields %}
                         <td class="entries-col-field" data-col="field-{{ field.getSlug() }}">
@@ -1652,35 +1656,92 @@ document.addEventListener('DOMContentLoaded', function() {
 
     var rows = document.querySelectorAll('.entries-table__row');
     var isTreeMode = false;
+    var collapsed = {}; // Track collapsed parent IDs
 
-    treeBtn.addEventListener('click', function() {
-        isTreeMode = !isTreeMode;
-        treeBtn.dataset.mode = isTreeMode ? 'tree' : 'flat';
-        treeBtn.innerHTML = isTreeMode
-            ? '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1h12v2H1zM1 5h12v2H1zM1 9h12v2H1z" fill="currentColor" opacity="0.6"/></svg> Flat View'
-            : '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 2h3v3H2zM7 2h3v3H7zM7 7h3v3H7zM7 12h3v1H7z" fill="currentColor" opacity="0.6"/><path d="M5 3.5h2M5 8.5h2M10 5.5v2" stroke="currentColor" stroke-width="1"/></svg> Tree View';
-
+    function applyTreeView() {
         rows.forEach(function(row) {
             var depth = parseInt(row.dataset.depth || '0', 10);
+            var parentId = row.dataset.parentId;
+            var entryId = row.dataset.entryId;
+            var childCount = parseInt(row.dataset.children || '0', 10);
             var firstFieldCell = row.querySelector('.entries-col-field');
             if (!firstFieldCell) return;
 
-            // Remove existing indent
-            var existingIndent = firstFieldCell.querySelector('.tree-indent');
-            if (existingIndent) existingIndent.remove();
+            // Remove existing tree elements
+            var old = firstFieldCell.querySelector('.tree-indent');
+            if (old) old.remove();
 
-            if (isTreeMode && depth > 0) {
+            if (!isTreeMode) {
+                row.style.display = '';
+                return;
+            }
+
+            // Check if this row should be hidden (any ancestor is collapsed)
+            var hidden = false;
+            if (parentId) {
+                var checkId = parentId;
+                var seen = {};
+                while (checkId && !seen[checkId]) {
+                    seen[checkId] = true;
+                    if (collapsed[checkId]) { hidden = true; break; }
+                    // Find parent's parent
+                    var parentRow = document.querySelector('[data-entry-id="' + checkId + '"]');
+                    checkId = parentRow ? parentRow.dataset.parentId : '';
+                }
+            }
+            row.style.display = hidden ? 'none' : '';
+
+            // Add indent + toggle
+            if (depth > 0 || childCount > 0) {
                 var indent = document.createElement('span');
                 indent.className = 'tree-indent';
-                indent.style.cssText = 'display:inline-block;width:' + (depth * 20) + 'px;flex-shrink:0;';
-                // Add tree connector
-                var connector = document.createElement('span');
-                connector.style.cssText = 'color:var(--text-disabled,#ccc);margin-right:4px;font-size:12px;';
-                connector.textContent = '\u2514\u2500 ';
-                indent.appendChild(connector);
+                indent.style.cssText = 'display:inline-flex;align-items:center;flex-shrink:0;';
+
+                // Spacing
+                if (depth > 0) {
+                    var spacer = document.createElement('span');
+                    spacer.style.cssText = 'display:inline-block;width:' + (depth * 24) + 'px;';
+                    indent.appendChild(spacer);
+                }
+
+                // Expand/collapse toggle or leaf connector
+                if (childCount > 0) {
+                    var toggle = document.createElement('button');
+                    toggle.type = 'button';
+                    toggle.className = 'tree-toggle-btn';
+                    toggle.style.cssText = 'background:none;border:none;cursor:pointer;padding:2px;margin-right:4px;color:var(--text-secondary,#616161);font-size:11px;line-height:1;width:18px;text-align:center;border-radius:3px;';
+                    toggle.textContent = collapsed[entryId] ? '▶' : '▼';
+                    toggle.dataset.entryId = entryId;
+                    toggle.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        collapsed[entryId] = !collapsed[entryId];
+                        this.textContent = collapsed[entryId] ? '▶' : '▼';
+                        applyTreeView();
+                    });
+                    toggle.addEventListener('mouseenter', function() { this.style.background = 'var(--bg-surface-hover,#f5f5f5)'; });
+                    toggle.addEventListener('mouseleave', function() { this.style.background = 'none'; });
+                    indent.appendChild(toggle);
+                } else if (depth > 0) {
+                    var leaf = document.createElement('span');
+                    leaf.style.cssText = 'color:var(--border,#ddd);margin-right:4px;font-size:12px;width:18px;text-align:center;display:inline-block;';
+                    leaf.textContent = '└';
+                    indent.appendChild(leaf);
+                }
+
                 firstFieldCell.insertBefore(indent, firstFieldCell.firstChild);
             }
         });
+    }
+
+    treeBtn.addEventListener('click', function() {
+        isTreeMode = !isTreeMode;
+        collapsed = {};
+        treeBtn.innerHTML = isTreeMode
+            ? '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1h12v2H1zM1 5h12v2H1zM1 9h12v2H1z" fill="currentColor" opacity="0.6"/></svg> Flat View'
+            : '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 2h3v3H2zM7 2h3v3H7zM7 7h3v3H7z" fill="currentColor" opacity="0.6"/><path d="M5 3.5h2M5 8.5h2M10 5.5v2" stroke="currentColor" stroke-width="1"/></svg> Tree View';
+        treeBtn.style.background = isTreeMode ? 'var(--color-primary,#1A7BA8)' : '';
+        treeBtn.style.color = isTreeMode ? '#fff' : '';
+        applyTreeView();
     });
 })();
 {% endif %}

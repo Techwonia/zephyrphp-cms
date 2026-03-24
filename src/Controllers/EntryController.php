@@ -279,10 +279,22 @@ class EntryController extends Controller
 
         // Build tree data for hierarchy collections
         $treeEntries = [];
+        $depthMap = [];
+        $childCountMap = [];
         if ($collection->hasHierarchy()) {
             $allForTree = EntryQuery::collection($slug)->noCache()->orderBy('parent_id')->thenBy('id')->limit(1000)->get();
             $tree = $this->buildTree($allForTree);
             $treeEntries = $this->flattenTree($tree);
+            // Build O(1) depth map and child count map
+            foreach ($treeEntries as $te) {
+                $depthMap[$te['id']] = $te['_depth'];
+            }
+            foreach ($allForTree as $e) {
+                $pid = $e['parent_id'] ?? null;
+                if ($pid !== null) {
+                    $childCountMap[$pid] = ($childCountMap[$pid] ?? 0) + 1;
+                }
+            }
         }
 
         return $this->render('cms::entries/index', [
@@ -299,6 +311,8 @@ class EntryController extends Controller
             'user' => Auth::user(),
             'trashCount' => $trashCount,
             'treeEntries' => $treeEntries,
+            'depthMap' => $depthMap,
+            'childCountMap' => $childCountMap,
         ]);
     }
 
