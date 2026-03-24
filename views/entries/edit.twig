@@ -62,33 +62,7 @@
         {# ==================== MAIN COLUMN ==================== #}
         <div class="ee-main">
 
-            {# --- Slug Field Card --- #}
-            {% if collection.hasSlug() %}
-            <div class="ee-card">
-                <div class="ee-card-header">
-                    <span class="ee-card-title">URL Slug</span>
-                    <span class="ee-field-badge ee-badge-slug">slug</span>
-                </div>
-                <div class="ee-card-body">
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <code style="padding:6px 10px;background:var(--bg-subdued,#FAFAFA);border:1px solid var(--border,#E3E3E3);border-radius:6px;font-size:var(--font-sm,0.8125rem);color:var(--text-secondary,#616161);white-space:nowrap;">{{ collection.getUrlPrefix() ? '/' ~ collection.getUrlPrefix() ~ '/' : '/' }}</code>
-                        <input type="text" id="entry-slug" name="slug" class="form-control"
-                               value="{{ entry.slug ?? '' }}"
-                               readonly
-                               style="flex:1;background:var(--bg-subdued,#FAFAFA);cursor:default;">
-                        <button type="button" id="slug-edit-btn" style="padding:4px 12px;border:1px solid var(--border,#E3E3E3);border-radius:6px;background:var(--bg-surface,#fff);color:var(--color-primary,#1A7BA8);font-size:var(--font-xs,0.75rem);cursor:pointer;white-space:nowrap;font-family:inherit;">Edit</button>
-                    </div>
-                    <div id="slug-redirect-row" style="display:none;">
-                        {% if entry.slug %}
-                        <label style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:var(--font-xs,0.75rem);color:var(--text-secondary,#616161);cursor:pointer;">
-                            <input type="checkbox" name="create_slug_redirect" value="1" checked style="margin:0;">
-                            Create URL redirect from old slug (recommended)
-                        </label>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            {% endif %}
+            {# Slug field moved to sidebar #}
 
             {# --- Field Cards --- #}
             {% for field in fields %}
@@ -354,6 +328,33 @@
                     </div>
                 </div>
             </div>
+
+            {# --- URL Slug Card --- #}
+            {% if collection.hasSlug() %}
+            <div class="ee-sidebar-card">
+                <div class="ee-sidebar-card-header">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6.5 11.5L4 14a2.12 2.12 0 01-3-3l2.5-2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M9.5 4.5L12 2a2.12 2.12 0 013 3l-2.5 2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><line x1="6" y1="10" x2="10" y2="6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                    <span>URL Slug</span>
+                </div>
+                <div class="ee-sidebar-card-body">
+                    <div style="font-size:var(--font-xs,0.75rem);color:var(--text-secondary,#616161);margin-bottom:6px;">{{ collection.getUrlPrefix() ? '/' ~ collection.getUrlPrefix() ~ '/' : '/' }}</div>
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        <input type="text" id="entry-slug" name="slug" class="form-control"
+                               value="{{ entry.slug ?? '' }}" readonly
+                               style="flex:1;font-size:var(--font-sm,0.8125rem);background:var(--bg-subdued,#FAFAFA);cursor:default;">
+                        <button type="button" id="slug-edit-btn" style="padding:3px 10px;border:1px solid var(--border,#E3E3E3);border-radius:6px;background:var(--bg-surface,#fff);color:var(--color-primary,#1A7BA8);font-size:var(--font-xs,0.75rem);cursor:pointer;white-space:nowrap;font-family:inherit;">Edit</button>
+                    </div>
+                    <div id="slug-redirect-row" style="display:none;">
+                        {% if entry.slug %}
+                        <label style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:var(--font-xs,0.75rem);color:var(--text-secondary,#616161);cursor:pointer;">
+                            <input type="checkbox" name="create_slug_redirect" value="1" checked style="margin:0;">
+                            Create redirect from old URL
+                        </label>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
 
             {# --- Actions Card --- #}
             <div class="ee-sidebar-card">
