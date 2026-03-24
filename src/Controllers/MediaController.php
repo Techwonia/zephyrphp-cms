@@ -204,7 +204,7 @@ class MediaController extends Controller
                 return;
             }
             $this->flash('errors', ['file' => 'No file uploaded.']);
-            $this->back();
+            $this->redirect(admin_url('media'));
             return;
         }
 
@@ -218,7 +218,7 @@ class MediaController extends Controller
                 return;
             }
             $this->flash('errors', ['file' => $validation['error']]);
-            $this->back();
+            $this->redirect(admin_url('media'));
             return;
         }
 
@@ -231,7 +231,7 @@ class MediaController extends Controller
             $folder = $this->sanitizeFolderPath($folder);
             if ($folder === false) {
                 $this->flash('errors', ['file' => 'Invalid folder path.']);
-                $this->back();
+                $this->redirect(admin_url('media'));
                 return;
             }
             $uploadDir = $this->getUploadBase() . '/' . $folder;

@@ -74,14 +74,18 @@
                         <code style="padding:6px 10px;background:var(--bg-subdued,#FAFAFA);border:1px solid var(--border,#E3E3E3);border-radius:6px;font-size:var(--font-sm,0.8125rem);color:var(--text-secondary,#616161);white-space:nowrap;">{{ collection.getUrlPrefix() ? '/' ~ collection.getUrlPrefix() ~ '/' : '/' }}</code>
                         <input type="text" id="entry-slug" name="slug" class="form-control"
                                value="{{ entry.slug ?? '' }}"
-                               placeholder="{{ entry.slug ?? 'auto-generated' }}" style="flex:1;">
+                               readonly
+                               style="flex:1;background:var(--bg-subdued,#FAFAFA);cursor:default;">
+                        <button type="button" id="slug-edit-btn" style="padding:4px 12px;border:1px solid var(--border,#E3E3E3);border-radius:6px;background:var(--bg-surface,#fff);color:var(--color-primary,#1A7BA8);font-size:var(--font-xs,0.75rem);cursor:pointer;white-space:nowrap;font-family:inherit;">Edit</button>
                     </div>
-                    {% if entry.slug %}
-                    <label style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:var(--font-xs,0.75rem);color:var(--text-secondary,#616161);cursor:pointer;">
-                        <input type="checkbox" name="create_slug_redirect" value="1" checked style="margin:0;">
-                        Create URL redirect from old slug (recommended)
-                    </label>
-                    {% endif %}
+                    <div id="slug-redirect-row" style="display:none;">
+                        {% if entry.slug %}
+                        <label style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:var(--font-xs,0.75rem);color:var(--text-secondary,#616161);cursor:pointer;">
+                            <input type="checkbox" name="create_slug_redirect" value="1" checked style="margin:0;">
+                            Create URL redirect from old slug (recommended)
+                        </label>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
             {% endif %}
@@ -1542,22 +1546,40 @@ function updateSeoCounter(el, counterId, recommended) {
     }
     window.addEventListener('beforeunload', releaseLock);
 
-    // Slug auto-generation
-    {% if collection.hasSlug() and collection.getSlugSourceField() %}
+    // Slug edit toggle (Shopify pattern: readonly by default, click Edit to unlock)
+    {% if collection.hasSlug() %}
+    var slugInput = document.getElementById('entry-slug');
+    var slugEditBtn = document.getElementById('slug-edit-btn');
+    var slugRedirectRow = document.getElementById('slug-redirect-row');
+    if (slugInput && slugEditBtn) {
+        slugEditBtn.addEventListener('click', function() {
+            slugInput.readOnly = false;
+            slugInput.style.background = '';
+            slugInput.style.cursor = '';
+            slugInput.focus();
+            slugInput.select();
+            slugEditBtn.style.display = 'none';
+            if (slugRedirectRow && slugInput.value) slugRedirectRow.style.display = '';
+        });
+        // Mark as manual edit once user types
+        slugInput.addEventListener('input', function() {
+            this.dataset.manual = '1';
+        });
+    }
+
+    // Slug auto-generation (only for new entries without a slug)
+    {% if collection.getSlugSourceField() %}
     var sourceField = '{{ collection.getSlugSourceField() }}';
     var sourceInput = document.querySelector('[name="' + sourceField + '"]');
-    var slugInput = document.getElementById('entry-slug');
-    if (sourceInput && slugInput) {
+    if (sourceInput && slugInput && !slugInput.value) {
         sourceInput.addEventListener('input', function() {
-            if (!slugInput.dataset.manual) {
+            if (!slugInput.dataset.manual && !slugInput.readOnly) {
                 slugInput.value = this.value.toLowerCase()
                     .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
             }
         });
-        slugInput.addEventListener('input', function() {
-            this.dataset.manual = this.value ? '1' : '';
-        });
     }
+    {% endif %}
     {% endif %}
 
     // Boolean toggle label update
