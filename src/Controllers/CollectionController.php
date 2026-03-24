@@ -149,6 +149,8 @@ class CollectionController extends Controller
         $collection->setItemsPerPage($itemsPerPage > 0 ? $itemsPerPage : 10);
         $collection->setSeoEnabled($this->boolean('seo_enabled'));
         $collection->setIsTranslatable($this->boolean('is_translatable'));
+        $collection->setHasHierarchy($this->boolean('has_hierarchy'));
+        $collection->setHierarchyMaxDepth(max(0, (int) $this->input('hierarchy_max_depth', 0)));
         $collection->setCreatedBy(Auth::user()?->getId());
         $collection->save();
 
@@ -325,6 +327,18 @@ class CollectionController extends Controller
         $collection->setItemsPerPage($itemsPerPage > 0 ? $itemsPerPage : 10);
         $collection->setApiRateLimit($apiRateLimit);
 
+        // Handle hierarchy toggle
+        $hasHierarchy = $this->boolean('has_hierarchy');
+        $oldHasHierarchy = $collection->hasHierarchy();
+        $collection->setHasHierarchy($hasHierarchy);
+        $collection->setHierarchyMaxDepth(max(0, (int) $this->input('hierarchy_max_depth', 0)));
+
+        if ($hasHierarchy && !$oldHasHierarchy) {
+            $this->schema->addHierarchyColumn($tableName, $collection->isUuid());
+        } elseif (!$hasHierarchy && $oldHasHierarchy) {
+            $this->schema->removeHierarchyColumn($tableName);
+        }
+
         // Handle SEO toggle
         $seoEnabled = $this->boolean('seo_enabled');
         $oldSeoEnabled = $collection->isSeoEnabled();
@@ -468,7 +482,7 @@ class CollectionController extends Controller
         }
 
         // Check reserved column names
-        $reserved = ['id', 'slug', 'status', 'published_at', 'created_by', 'created_at', 'updated_at'];
+        $reserved = ['id', 'slug', 'status', 'published_at', 'created_by', 'created_at', 'updated_at', 'parent_id', 'deleted_at'];
         if (in_array($fieldSlug, $reserved)) {
             $errors['field_slug'] = "'{$fieldSlug}' is a reserved column name.";
         }

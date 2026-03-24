@@ -345,6 +345,29 @@
                 </div>
             </div>
 
+            {# --- Parent Selector Card (Hierarchy) --- #}
+            {% if collection.hasHierarchy() %}
+            <div class="ee-sidebar-card">
+                <div class="ee-sidebar-card-header">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M11 14v-1.33a2.67 2.67 0 0 0-2.67-2.67H3.33A2.67 2.67 0 0 0 .67 12.67V14" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><circle cx="6" cy="4.67" r="2.67" stroke="currentColor" stroke-width="1.2"/><path d="M15.33 14v-1.33a2.67 2.67 0 0 0-2-2.58" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M10.67 2.09a2.67 2.67 0 0 1 0 5.17" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                    <span>Parent</span>
+                </div>
+                <div class="ee-sidebar-card-body">
+                    <select name="parent_id" class="form-control">
+                        <option value="">None (top level)</option>
+                        {% for item in treeEntries %}
+                            {% set _indent = '' %}{% if item._depth > 0 %}{% for i in 1..item._depth %}{% set _indent = _indent ~ '── ' %}{% endfor %}{% endif %}
+                            {% set _label = item.name ?? item.title ?? item.slug ?? ('#' ~ item.id) %}
+                            <option value="{{ item.id }}"
+                                {% if entry.parent_id is defined and entry.parent_id == item.id %}selected{% endif %}
+                                {% if entry.id is defined and entry.id == item.id %}disabled{% endif %}>{{ _indent }}{{ _label }}</option>
+                        {% endfor %}
+                    </select>
+                    <p class="ee-field-hint">Select a parent entry or leave as top level.</p>
+                </div>
+            </div>
+            {% endif %}
+
             {# --- URL Slug Card --- #}
             {% if collection.hasSlug() %}
             <div class="ee-sidebar-card">

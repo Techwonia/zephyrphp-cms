@@ -166,6 +166,12 @@
             {% endif %}
 
             <div class="entries-toolbar__right">
+                {% if collection.hasHierarchy() %}
+                <button type="button" class="entries-btn entries-btn--outline entries-btn--sm" id="tree-toggle" data-mode="flat" title="Toggle tree view">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 2h3v3H2zM7 2h3v3H7zM7 7h3v3H7zM7 12h3v1H7z" fill="currentColor" opacity="0.6"/><path d="M5 3.5h2M5 8.5h2M10 5.5v2" stroke="currentColor" stroke-width="1"/></svg>
+                    Tree View
+                </button>
+                {% endif %}
                 {# Saved Views Dropdown #}
                 <div class="entries-dropdown" data-dropdown>
                     <button class="entries-btn entries-btn--outline entries-btn--sm" data-dropdown-trigger>
@@ -260,7 +266,7 @@
                 </thead>
                 <tbody>
                     {% for entry in entries.data %}
-                    <tr class="entries-table__row">
+                    <tr class="entries-table__row" data-entry-id="{{ entry.id }}" data-parent-id="{{ entry.parent_id ?? '' }}"{% if collection.hasHierarchy() %}{% set _entryDepth = 0 %}{% for tItem in treeEntries %}{% if tItem.id == entry.id %}{% set _entryDepth = tItem._depth %}{% endif %}{% endfor %} data-depth="{{ _entryDepth }}"{% endif %}>
                         <td class="entries-col-checkbox"><input type="checkbox" class="entry-checkbox entries-checkbox" value="{{ entry.id }}"></td>
                         {% for field in listableFields %}
                         <td class="entries-col-field" data-col="field-{{ field.getSlug() }}">
@@ -1637,5 +1643,46 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
 });
+
+{% if collection.hasHierarchy() %}
+// ── Tree View Toggle ──
+(function() {
+    var treeBtn = document.getElementById('tree-toggle');
+    if (!treeBtn) return;
+
+    var rows = document.querySelectorAll('.entries-table__row');
+    var isTreeMode = false;
+
+    treeBtn.addEventListener('click', function() {
+        isTreeMode = !isTreeMode;
+        treeBtn.dataset.mode = isTreeMode ? 'tree' : 'flat';
+        treeBtn.innerHTML = isTreeMode
+            ? '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1h12v2H1zM1 5h12v2H1zM1 9h12v2H1z" fill="currentColor" opacity="0.6"/></svg> Flat View'
+            : '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 2h3v3H2zM7 2h3v3H7zM7 7h3v3H7zM7 12h3v1H7z" fill="currentColor" opacity="0.6"/><path d="M5 3.5h2M5 8.5h2M10 5.5v2" stroke="currentColor" stroke-width="1"/></svg> Tree View';
+
+        rows.forEach(function(row) {
+            var depth = parseInt(row.dataset.depth || '0', 10);
+            var firstFieldCell = row.querySelector('.entries-col-field');
+            if (!firstFieldCell) return;
+
+            // Remove existing indent
+            var existingIndent = firstFieldCell.querySelector('.tree-indent');
+            if (existingIndent) existingIndent.remove();
+
+            if (isTreeMode && depth > 0) {
+                var indent = document.createElement('span');
+                indent.className = 'tree-indent';
+                indent.style.cssText = 'display:inline-block;width:' + (depth * 20) + 'px;flex-shrink:0;';
+                // Add tree connector
+                var connector = document.createElement('span');
+                connector.style.cssText = 'color:var(--text-disabled,#ccc);margin-right:4px;font-size:12px;';
+                connector.textContent = '\u2514\u2500 ';
+                indent.appendChild(connector);
+                firstFieldCell.insertBefore(indent, firstFieldCell.firstChild);
+            }
+        });
+    });
+})();
+{% endif %}
 </script>
 {% endblock %}

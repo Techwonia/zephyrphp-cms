@@ -921,6 +921,27 @@
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>
+
+                            <div class="feature-toggle">
+                                <div class="feature-info">
+                                    <span class="feature-label">Hierarchy</span>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" name="has_hierarchy" value="1" id="has_hierarchy_check"
+                                           {% if collection.hasHierarchy() %}checked{% endif %}>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        {# Hierarchy max depth config #}
+                        <div id="hierarchy-depth-group" style="{% if not collection.hasHierarchy() %}display:none;{% endif %}margin-top:var(--space-300);">
+                            <div class="form-group">
+                                <label>Max Depth</label>
+                                <input type="number" name="hierarchy_max_depth" class="form-control" min="0" max="20"
+                                       value="{{ collection.getHierarchyMaxDepth() }}" style="width: 120px;">
+                                <div class="form-hint">0 = unlimited depth. Limits how deep the tree can go.</div>
+                            </div>
                         </div>
 
                         {# Slug source info #}
@@ -1706,6 +1727,7 @@
     }
     toggleVisibility('has_slug_check', 'slug-source-group');
     toggleVisibility('is_submittable_check', 'submit-settings-group');
+    toggleVisibility('has_hierarchy_check', 'hierarchy-depth-group');
     toggleVisibility('enable_custom_perms', 'permissions-grid');
     toggleVisibility('workflow_enabled_check', 'workflow-config');
 

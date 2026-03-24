@@ -189,6 +189,22 @@ class ContentApiController extends Controller
             $query->locale($locale);
         }
 
+        // Tree response: return nested structure if ?tree=true
+        if ($this->input('tree') === 'true' && $collection->hasHierarchy()) {
+            $treeData = EntryQuery::collection($slug)
+                ->noCache()
+                ->withRelations(1)
+                ->tree();
+            $this->json([
+                'data' => $treeData,
+                'meta' => [
+                    'tree' => true,
+                    'locale' => $locale ?: TranslationService::getDefaultLocale(),
+                ],
+            ]);
+            return '';
+        }
+
         $result = $query->paginate($page, $perPage);
 
         $this->json([

@@ -74,6 +74,12 @@ class Collection extends Model
     #[ORM\Column(name: 'workflow_reviewers', type: 'json', nullable: true)]
     protected ?array $workflowReviewers = null;
 
+    #[ORM\Column(name: 'has_hierarchy', type: 'boolean')]
+    protected bool $hasHierarchy = false;
+
+    #[ORM\Column(name: 'hierarchy_max_depth', type: 'integer')]
+    protected int $hierarchyMaxDepth = 0;
+
     #[ORM\Column(name: 'sort_order', type: 'integer')]
     protected int $sortOrder = 0;
 
@@ -215,6 +221,16 @@ class Collection extends Model
     public function getWorkflowReviewers(): array
     {
         return $this->workflowReviewers ?? [];
+    }
+
+    public function hasHierarchy(): bool
+    {
+        return $this->hasHierarchy;
+    }
+
+    public function getHierarchyMaxDepth(): int
+    {
+        return $this->hierarchyMaxDepth;
     }
 
     public function getSortOrder(): int
@@ -386,6 +402,18 @@ class Collection extends Model
     public function setWorkflowReviewers(?array $workflowReviewers): self
     {
         $this->workflowReviewers = $workflowReviewers;
+        return $this;
+    }
+
+    public function setHasHierarchy(bool $hasHierarchy): self
+    {
+        $this->hasHierarchy = $hasHierarchy;
+        return $this;
+    }
+
+    public function setHierarchyMaxDepth(int $hierarchyMaxDepth): self
+    {
+        $this->hierarchyMaxDepth = max(0, $hierarchyMaxDepth);
         return $this;
     }
 

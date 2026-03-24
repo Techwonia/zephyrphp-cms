@@ -1245,6 +1245,12 @@ class CmsServiceProvider
                 if (!isset($columns['workflow_reviewers'])) {
                     $conn->executeStatement("ALTER TABLE `cms_collections` ADD COLUMN `workflow_reviewers` JSON NULL DEFAULT NULL");
                 }
+                if (!isset($columns['has_hierarchy'])) {
+                    $conn->executeStatement("ALTER TABLE `cms_collections` ADD COLUMN `has_hierarchy` TINYINT(1) NOT NULL DEFAULT 0");
+                }
+                if (!isset($columns['hierarchy_max_depth'])) {
+                    $conn->executeStatement("ALTER TABLE `cms_collections` ADD COLUMN `hierarchy_max_depth` INT NOT NULL DEFAULT 0");
+                }
             }
 
             // Migrate cms_media: add alt_text and thumbnail_path columns

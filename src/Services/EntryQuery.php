@@ -863,6 +863,39 @@ class EntryQuery
     }
 
     /**
+     * Get entries as a nested tree structure (for collections with hierarchy).
+     * Each entry will have a 'children' key containing its child entries.
+     *
+     * Usage in Twig: {% set categories = entry_query('categories').tree() %}
+     *
+     * @return array Nested tree array
+     */
+    public function tree(): array
+    {
+        $entries = $this->orderBy('parent_id')->thenBy('id')->get();
+        return $this->buildTreeStructure($entries);
+    }
+
+    /**
+     * Build nested tree structure from a flat list of entries.
+     */
+    private function buildTreeStructure(array $entries, $parentId = null): array
+    {
+        $tree = [];
+        foreach ($entries as $entry) {
+            $pid = $entry['parent_id'] ?? null;
+            if ($pid === '' || $pid === '0' || $pid === 0) {
+                $pid = null;
+            }
+            if ($pid == $parentId) {
+                $entry['children'] = $this->buildTreeStructure($entries, $entry['id']);
+                $tree[] = $entry;
+            }
+        }
+        return $tree;
+    }
+
+    /**
      * Get the first matching entry.
      */
     public function first(): ?array

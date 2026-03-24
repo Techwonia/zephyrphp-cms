@@ -210,6 +210,16 @@ class SchemaManager
             $table->addColumn('scheduled_at', Types::DATETIME_MUTABLE, ['notnull' => false]);
         }
 
+        // Hierarchy (parent-child)
+        if ($collection->hasHierarchy()) {
+            if ($collection->isUuid()) {
+                $table->addColumn('parent_id', Types::STRING, ['length' => 36, 'fixed' => true, 'notnull' => false]);
+            } else {
+                $table->addColumn('parent_id', Types::INTEGER, ['unsigned' => true, 'notnull' => false]);
+            }
+            $table->addIndex(['parent_id'], 'idx_' . $collection->getTableName() . '_parent');
+        }
+
         // Audit columns
         $table->addColumn('created_by', Types::INTEGER, ['notnull' => false]);
         $table->addColumn('created_at', Types::DATETIME_MUTABLE, ['notnull' => false]);
@@ -301,6 +311,51 @@ class SchemaManager
             if (isset($columns[$colName])) {
                 $this->connection->executeStatement("ALTER TABLE `{$tableName}` DROP COLUMN `{$colName}`");
             }
+        }
+    }
+
+    /**
+     * Add hierarchy (parent_id) column to a collection table.
+     */
+    public function addHierarchyColumn(string $tableName, bool $isUuid = false): void
+    {
+        $tableName = $this->safeTable($tableName);
+        $sm = $this->connection->createSchemaManager();
+        $columns = $sm->listTableColumns($tableName);
+
+        if (!isset($columns['parent_id'])) {
+            $colType = $isUuid ? 'CHAR(36)' : 'INT UNSIGNED';
+            $this->connection->executeStatement(
+                "ALTER TABLE `{$tableName}` ADD COLUMN `parent_id` {$colType} NULL DEFAULT NULL"
+            );
+            $indexName = $this->safeIndex("idx_{$tableName}_parent");
+            try {
+                $this->connection->executeStatement(
+                    "ALTER TABLE `{$tableName}` ADD INDEX `{$indexName}` (`parent_id`)"
+                );
+            } catch (\Exception $e) {
+                // Index may already exist
+            }
+        }
+    }
+
+    /**
+     * Remove hierarchy (parent_id) column from a collection table.
+     */
+    public function removeHierarchyColumn(string $tableName): void
+    {
+        $tableName = $this->safeTable($tableName);
+        $sm = $this->connection->createSchemaManager();
+        $columns = $sm->listTableColumns($tableName);
+
+        if (isset($columns['parent_id'])) {
+            $indexName = $this->safeIndex("idx_{$tableName}_parent");
+            try {
+                $this->connection->executeStatement("ALTER TABLE `{$tableName}` DROP INDEX `{$indexName}`");
+            } catch (\Exception $e) {
+                // Index may not exist
+            }
+            $this->connection->executeStatement("ALTER TABLE `{$tableName}` DROP COLUMN `parent_id`");
         }
     }
 

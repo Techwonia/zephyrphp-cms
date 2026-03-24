@@ -620,6 +620,21 @@
                     </label>
                 </div>
 
+                <div class="toggle-row">
+                    <div class="toggle-icon" style="background: rgba(121, 85, 72, 0.1); color: #795548;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    </div>
+                    <div class="toggle-info">
+                        <div class="toggle-name">Hierarchy (Parent/Child)</div>
+                        <div class="toggle-desc">Enable tree structure with parent-child relationships</div>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" name="has_hierarchy" value="1" data-feature="hierarchy">
+                        <div class="toggle-track"></div>
+                        <div class="toggle-thumb"></div>
+                    </label>
+                </div>
+
                 {# Submit #}
                 <div class="create-actions">
                     <button type="submit" class="btn-primary">
@@ -710,11 +725,12 @@
     var previewFields = document.getElementById('previewFields');
 
     var featureConfig = {
-        api:     { label: 'REST API',     badgeClass: 'badge-api' },
-        publish: { label: 'Publishable',  badgeClass: 'badge-publish' },
-        slug:    { label: 'URL Slugs',    badgeClass: 'badge-slug' },
-        seo:     { label: 'SEO Fields',   badgeClass: 'badge-seo' },
-        i18n:    { label: 'Translatable', badgeClass: 'badge-i18n' }
+        api:       { label: 'REST API',     badgeClass: 'badge-api' },
+        publish:   { label: 'Publishable',  badgeClass: 'badge-publish' },
+        slug:      { label: 'URL Slugs',    badgeClass: 'badge-slug' },
+        seo:       { label: 'SEO Fields',   badgeClass: 'badge-seo' },
+        i18n:      { label: 'Translatable', badgeClass: 'badge-i18n' },
+        hierarchy: { label: 'Hierarchy',    badgeClass: 'badge-slug' }
     };
 
     var extraFields = {
@@ -731,6 +747,9 @@
         ],
         i18n: [
             { name: 'locale', type: 'varchar' }
+        ],
+        hierarchy: [
+            { name: 'parent_id', type: 'integer/char(36)' }
         ]
     };
 

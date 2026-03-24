@@ -81,6 +81,113 @@ class EntryController extends Controller
         return $collection;
     }
 
+    // ========================================================================
+    // HIERARCHY HELPERS
+    // ========================================================================
+
+    /**
+     * Build a nested tree structure from a flat list of entries.
+     *
+     * @param array $entries Flat list of entries (must have 'id' and 'parent_id')
+     * @param int|string|null $parentId The parent ID to start from (null = top-level)
+     * @param int $depth Current depth level
+     * @return array Nested tree with _depth and _children keys
+     */
+    private function buildTree(array $entries, $parentId = null, int $depth = 0): array
+    {
+        $tree = [];
+        foreach ($entries as $entry) {
+            $pid = $entry['parent_id'] ?? null;
+            // Normalize: treat empty string and '0' as null (top-level)
+            if ($pid === '' || $pid === '0' || $pid === 0) {
+                $pid = null;
+            }
+            if ($parentId === '' || $parentId === '0' || $parentId === 0) {
+                $parentId = null;
+            }
+            if ($pid == $parentId) {
+                $entry['_depth'] = $depth;
+                $entry['_children'] = $this->buildTree($entries, $entry['id'], $depth + 1);
+                $tree[] = $entry;
+            }
+        }
+        return $tree;
+    }
+
+    /**
+     * Flatten a nested tree into a flat list preserving _depth for indentation.
+     */
+    private function flattenTree(array $tree): array
+    {
+        $flat = [];
+        foreach ($tree as $item) {
+            $children = $item['_children'];
+            unset($item['_children']);
+            $flat[] = $item;
+            if (!empty($children)) {
+                $flat = array_merge($flat, $this->flattenTree($children));
+            }
+        }
+        return $flat;
+    }
+
+    /**
+     * Load flattened tree entries for hierarchy parent selector.
+     * Returns a flat array with _depth for indentation.
+     */
+    private function loadTreeEntries(string $slug): array
+    {
+        $allEntries = EntryQuery::collection($slug)->noCache()->orderBy('parent_id')->thenBy('id')->limit(1000)->get();
+        $tree = $this->buildTree($allEntries);
+        return $this->flattenTree($tree);
+    }
+
+    /**
+     * Get all descendant IDs of a given entry (to prevent circular references).
+     */
+    private function getDescendantIds(array $entries, $entryId): array
+    {
+        $ids = [];
+        foreach ($entries as $entry) {
+            $pid = $entry['parent_id'] ?? null;
+            if ($pid == $entryId) {
+                $ids[] = $entry['id'];
+                $ids = array_merge($ids, $this->getDescendantIds($entries, $entry['id']));
+            }
+        }
+        return $ids;
+    }
+
+    /**
+     * Calculate the depth of a given parent in the tree.
+     * Returns 0 if parent_id is null (top-level).
+     */
+    private function getParentDepth(array $entries, $parentId): int
+    {
+        if ($parentId === null || $parentId === '' || $parentId === '0' || $parentId === 0) {
+            return 0;
+        }
+        $depth = 0;
+        $currentId = $parentId;
+        $safety = 100; // prevent infinite loops
+        while ($currentId !== null && $safety-- > 0) {
+            foreach ($entries as $entry) {
+                if ($entry['id'] == $currentId) {
+                    $depth++;
+                    $currentId = $entry['parent_id'] ?? null;
+                    if ($currentId === '' || $currentId === '0' || $currentId === 0) {
+                        $currentId = null;
+                    }
+                    break;
+                }
+            }
+            if ($currentId === $parentId) {
+                break; // circular, bail
+            }
+        }
+        return $depth;
+    }
+
     public function index(string $slug): string
     {
         $collection = $this->resolveCollection($slug);
@@ -170,6 +277,14 @@ class EntryController extends Controller
             // Silently ignore if column check fails
         }
 
+        // Build tree data for hierarchy collections
+        $treeEntries = [];
+        if ($collection->hasHierarchy()) {
+            $allForTree = EntryQuery::collection($slug)->noCache()->orderBy('parent_id')->thenBy('id')->limit(1000)->get();
+            $tree = $this->buildTree($allForTree);
+            $treeEntries = $this->flattenTree($tree);
+        }
+
         return $this->render('cms::entries/index', [
             'collection' => $collection,
             'fields' => $fields,
@@ -183,6 +298,7 @@ class EntryController extends Controller
             'activeViewSlug' => $activeViewSlug,
             'user' => Auth::user(),
             'trashCount' => $trashCount,
+            'treeEntries' => $treeEntries,
         ]);
     }
 
@@ -219,6 +335,12 @@ class EntryController extends Controller
             }
         }
 
+        // Load tree entries for hierarchy parent selector
+        $treeEntries = [];
+        if ($collection->hasHierarchy()) {
+            $treeEntries = $this->loadTreeEntries($slug);
+        }
+
         return $this->render('cms::entries/create', [
             'collection' => $collection,
             'fields' => array_values($fields),
@@ -228,6 +350,7 @@ class EntryController extends Controller
             'templates' => $templates,
             'templateData' => $templateData,
             'selectedTemplateId' => $templateId,
+            'treeEntries' => $treeEntries,
         ]);
     }
 
@@ -294,6 +417,29 @@ class EntryController extends Controller
             $data['og_image'] = trim($this->input('og_image', ''));
             $data['canonical_url'] = trim($this->input('canonical_url', ''));
             $data['robots'] = trim($this->input('robots', 'index,follow'));
+        }
+
+        // Handle hierarchy parent_id
+        if ($collection->hasHierarchy()) {
+            $parentId = $this->input('parent_id', '');
+            if ($parentId !== '' && $parentId !== null) {
+                // Validate max depth
+                $maxDepth = $collection->getHierarchyMaxDepth();
+                if ($maxDepth > 0) {
+                    $allEntries = EntryQuery::collection($slug)->noCache()->limit(1000)->get();
+                    $parentDepth = $this->getParentDepth($allEntries, $parentId);
+                    if ($parentDepth >= $maxDepth) {
+                        $errors['parent_id'] = "Maximum hierarchy depth of {$maxDepth} reached.";
+                        $this->flash('errors', $errors);
+                        $this->flash('_old_input', $data);
+                        $this->back();
+                        return;
+                    }
+                }
+                $data['parent_id'] = $parentId;
+            } else {
+                $data['parent_id'] = null;
+            }
         }
 
         // Merge pivot data into data — EntryQuery handles pivot sync automatically
@@ -387,6 +533,12 @@ class EntryController extends Controller
         // Resolve media IDs to URLs for image/file field previews
         $mediaResolved = $this->resolveMediaUrls($fields, $entry);
 
+        // Load tree entries for hierarchy parent selector
+        $treeEntries = [];
+        if ($collection->hasHierarchy()) {
+            $treeEntries = $this->loadTreeEntries($slug);
+        }
+
         // Content locking — acquire or detect existing lock
         $lockInfo = $this->acquireLock($slug, $id);
 
@@ -397,6 +549,7 @@ class EntryController extends Controller
             'entry' => $entry,
             'relationData' => $relationData,
             'mediaResolved' => $mediaResolved,
+            'treeEntries' => $treeEntries,
             'user' => Auth::user(),
             'lockInfo' => $lockInfo,
         ]);
@@ -579,6 +732,40 @@ class EntryController extends Controller
             $data['og_image'] = trim($this->input('og_image', ''));
             $data['canonical_url'] = trim($this->input('canonical_url', ''));
             $data['robots'] = trim($this->input('robots', 'index,follow'));
+        }
+
+        // Handle hierarchy parent_id
+        if ($collection->hasHierarchy()) {
+            $parentId = $this->input('parent_id', '');
+            if ($parentId !== '' && $parentId !== null) {
+                // Prevent circular reference: can't set parent to self
+                if ($parentId == $id) {
+                    $this->flash('errors', ['parent_id' => 'An entry cannot be its own parent.']);
+                    $this->back();
+                    return;
+                }
+                // Prevent circular reference: can't set parent to a descendant
+                $allEntries = EntryQuery::collection($slug)->noCache()->limit(1000)->get();
+                $descendantIds = $this->getDescendantIds($allEntries, $id);
+                if (in_array($parentId, $descendantIds)) {
+                    $this->flash('errors', ['parent_id' => 'Cannot set parent to a descendant entry (circular reference).']);
+                    $this->back();
+                    return;
+                }
+                // Validate max depth
+                $maxDepth = $collection->getHierarchyMaxDepth();
+                if ($maxDepth > 0) {
+                    $parentDepth = $this->getParentDepth($allEntries, $parentId);
+                    if (($parentDepth + 1) > $maxDepth) {
+                        $this->flash('errors', ['parent_id' => "Maximum hierarchy depth of {$maxDepth} reached."]);
+                        $this->back();
+                        return;
+                    }
+                }
+                $data['parent_id'] = $parentId;
+            } else {
+                $data['parent_id'] = null;
+            }
         }
 
         // Determine changed fields for revision
