@@ -363,14 +363,22 @@ class SchemaManager
 
         // 1. Drop pivot tables and FK constraints for fields in THIS collection
         foreach ($collection->getFields() as $field) {
-            if ($field->getType() !== 'relation') {
-                continue;
-            }
-            $relationType = $field->getOptions()['relation_type'] ?? 'one_to_one';
-            if ($relationType === 'one_to_one') {
-                $this->dropForeignKey($tableName, $field->getSlug());
-            } else {
-                $this->dropPivotTable($tableName, $field->getSlug());
+            $type = $field->getType();
+            $options = $field->getOptions() ?? [];
+
+            if ($type === 'relation') {
+                $relationType = $options['relation_type'] ?? 'one_to_one';
+                if ($relationType === 'one_to_one') {
+                    $this->dropForeignKey($tableName, $field->getSlug());
+                } else {
+                    $this->dropPivotTable($tableName, $field->getSlug());
+                }
+            } elseif (in_array($type, ['image', 'file'])) {
+                if (!empty($options['multiple'])) {
+                    $this->dropPivotTable($tableName, $field->getSlug());
+                } else {
+                    $this->dropForeignKey($tableName, $field->getSlug());
+                }
             }
         }
 
