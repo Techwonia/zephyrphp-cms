@@ -3,828 +3,2050 @@
 {% block title %}Edit {{ collection.getName() }}{% endblock %}
 
 {% block content %}
-<div class="breadcrumb">
-    <a href="{{ admin_url('collections') }}">Collections</a> / {{ collection.getName() }}
+<style nonce="{{ csp_nonce() }}">
+    /* ============================================
+       Collection Edit — Sidebar Navigation Layout
+       ============================================ */
+    .edit-topbar {
+        display: flex;
+        align-items: center;
+        gap: var(--space-400);
+        margin-bottom: var(--space-600);
+    }
+    .edit-topbar .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-200);
+        color: var(--text-secondary);
+        font-size: var(--font-sm);
+        text-decoration: none;
+        transition: color 0.15s;
+    }
+    .edit-topbar .back-link:hover { color: var(--color-primary); text-decoration: none; }
+    .edit-topbar .back-link svg { width: 16px; height: 16px; }
+    .edit-topbar .collection-title {
+        font-size: var(--font-xl);
+        font-weight: 700;
+        color: var(--text);
+        flex: 1;
+    }
+    .edit-topbar .btn-view-entries {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-200);
+        padding: var(--space-200) var(--space-400);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-200);
+        background: var(--bg-surface);
+        color: var(--text);
+        font-size: var(--font-sm);
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.15s;
+    }
+    .edit-topbar .btn-view-entries:hover {
+        border-color: var(--color-primary);
+        color: var(--color-primary);
+        text-decoration: none;
+    }
+
+    /* Two-column layout */
+    .edit-layout {
+        display: grid;
+        grid-template-columns: 180px 1fr;
+        gap: var(--space-600);
+        align-items: start;
+    }
+
+    /* Section sidebar nav */
+    .section-nav {
+        position: sticky;
+        top: calc(var(--topbar-height) + var(--space-600));
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        background: var(--bg-surface);
+        border-radius: var(--radius-200);
+        padding: var(--space-200);
+        border: 1px solid var(--border);
+    }
+    .section-nav a {
+        display: block;
+        padding: var(--space-200) var(--space-300);
+        color: var(--text-secondary);
+        font-size: var(--font-sm);
+        font-weight: 500;
+        text-decoration: none;
+        border-radius: var(--radius-100);
+        border-left: 3px solid transparent;
+        transition: all 0.15s;
+    }
+    .section-nav a:hover {
+        color: var(--text);
+        background: var(--bg-surface-hover);
+        text-decoration: none;
+    }
+    .section-nav a.active {
+        color: var(--color-primary);
+        background: rgba(26, 123, 168, 0.06);
+        border-left-color: var(--color-primary);
+        font-weight: 600;
+    }
+
+    /* Content area */
+    .edit-content {
+        scroll-behavior: smooth;
+        min-width: 0;
+    }
+
+    /* Section cards */
+    .edit-section {
+        margin-bottom: var(--space-600);
+        scroll-margin-top: calc(var(--topbar-height) + var(--space-400));
+    }
+    .section-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-200);
+        overflow: hidden;
+    }
+    .section-header {
+        padding: var(--space-400) var(--space-500);
+        font-size: var(--font-sm);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-secondary);
+        border-bottom: 1px solid var(--border);
+        background: var(--bg-subdued);
+    }
+    .section-body {
+        padding: var(--space-500);
+    }
+
+    /* Form elements within sections */
+    .edit-section .form-group { margin-bottom: var(--space-400); }
+    .edit-section .form-group:last-child { margin-bottom: 0; }
+    .edit-section .form-group label {
+        display: block;
+        font-size: var(--font-sm);
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: var(--space-100);
+    }
+    .edit-section .form-control {
+        width: 100%;
+        padding: var(--space-200) var(--space-300);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-100);
+        font-size: var(--font-base);
+        background: var(--bg-surface);
+        color: var(--text);
+        transition: border-color 0.15s;
+    }
+    .edit-section .form-control:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 2px rgba(26, 123, 168, 0.12);
+    }
+    .edit-section .form-control:disabled,
+    .edit-section .form-control[readonly] {
+        background: var(--bg-subdued);
+        color: var(--text-secondary);
+        cursor: not-allowed;
+    }
+    .edit-section .form-hint {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        margin-top: var(--space-100);
+        line-height: 1.4;
+    }
+    .form-row-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-400);
+    }
+    .form-row-3 {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: var(--space-400);
+    }
+
+    /* Feature toggles grid */
+    .features-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-300);
+        margin-top: var(--space-400);
+        padding-top: var(--space-400);
+        border-top: 1px solid var(--border);
+    }
+    .feature-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--space-200) var(--space-300);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-100);
+        background: var(--bg-subdued);
+        transition: border-color 0.15s;
+    }
+    .feature-toggle:hover { border-color: var(--border-hover); }
+    .feature-toggle .feature-info {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+    }
+    .feature-toggle .feature-label {
+        font-size: var(--font-sm);
+        font-weight: 500;
+        color: var(--text);
+    }
+
+    /* ============================================
+       Fields Section
+       ============================================ */
+
+    /* System fields collapsible */
+    .system-fields-toggle {
+        display: flex;
+        align-items: center;
+        gap: var(--space-200);
+        padding: var(--space-300) var(--space-500);
+        background: var(--bg-subdued);
+        border-bottom: 1px solid var(--border);
+        cursor: pointer;
+        user-select: none;
+        font-size: var(--font-sm);
+        font-weight: 600;
+        color: var(--text-secondary);
+        transition: background 0.15s;
+    }
+    .system-fields-toggle:hover { background: var(--bg-surface-hover); }
+    .system-fields-toggle .chevron {
+        width: 16px;
+        height: 16px;
+        transition: transform 0.2s;
+        flex-shrink: 0;
+    }
+    .system-fields-toggle.open .chevron { transform: rotate(90deg); }
+    .system-fields-body {
+        display: none;
+        border-bottom: 1px solid var(--border);
+    }
+    .system-fields-body.open { display: block; }
+    .system-field-row {
+        display: flex;
+        align-items: center;
+        padding: var(--space-200) var(--space-500);
+        border-bottom: 1px solid var(--bg-subdued);
+        font-size: var(--font-sm);
+        gap: var(--space-300);
+    }
+    .system-field-row:last-child { border-bottom: none; }
+    .system-field-row .sf-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: var(--radius-100);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        font-weight: 700;
+        background: #f0f0f0;
+        color: #666;
+        flex-shrink: 0;
+    }
+    .system-field-row .sf-name {
+        font-weight: 600;
+        color: var(--text);
+        min-width: 100px;
+    }
+    .system-field-row .sf-slug {
+        font-family: monospace;
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        min-width: 100px;
+    }
+    .system-field-row .sf-badges {
+        display: flex;
+        gap: var(--space-100);
+        flex-wrap: wrap;
+        flex: 1;
+    }
+
+    /* Field badges */
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 1px 8px;
+        border-radius: var(--radius-full);
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+    }
+    .badge-type {
+        background: #EFF6FF;
+        color: #1D4ED8;
+    }
+    .badge-required {
+        background: #FEF2F2;
+        color: #DC2626;
+    }
+    .badge-unique {
+        background: #F5F3FF;
+        color: #7C3AED;
+    }
+    .badge-searchable {
+        background: #ECFDF5;
+        color: #059669;
+    }
+    .badge-sortable {
+        background: #FFF7ED;
+        color: #EA580C;
+    }
+    .badge-hidden {
+        background: #F3F4F6;
+        color: #6B7280;
+    }
+    .badge-system {
+        background: #F3F4F6;
+        color: #9CA3AF;
+        font-weight: 500;
+    }
+    .badge-slug-source {
+        background: var(--color-primary);
+        color: #fff;
+    }
+    .badge-relation {
+        background: #EDE9FE;
+        color: #6D28D9;
+    }
+    .badge-perm-view {
+        background: #E0F2FE;
+        color: #0369A1;
+    }
+    .badge-perm-edit {
+        background: #FEF3C7;
+        color: #92400E;
+    }
+    .badge-validation {
+        background: #F0FDF4;
+        color: #15803D;
+    }
+
+    /* Custom field rows */
+    .field-list { padding: 0; }
+    .custom-field-row {
+        display: flex;
+        align-items: center;
+        padding: var(--space-300) var(--space-500);
+        border-bottom: 1px solid var(--bg-subdued);
+        gap: var(--space-300);
+        transition: background 0.15s;
+    }
+    .custom-field-row:last-child { border-bottom: none; }
+    .custom-field-row:hover { background: var(--bg-surface-hover); }
+    .custom-field-row.dragging { opacity: 0.4; background: var(--bg-subdued); }
+    .custom-field-row.drag-over { border-top: 2px solid var(--color-primary); }
+
+    .drag-handle {
+        cursor: grab;
+        color: var(--border-hover);
+        display: flex;
+        align-items: center;
+        padding: var(--space-100);
+        border-radius: var(--radius-100);
+        transition: color 0.15s;
+        flex-shrink: 0;
+    }
+    .drag-handle:hover { color: var(--text-secondary); }
+    .drag-handle:active { cursor: grabbing; }
+    .drag-handle svg { width: 16px; height: 16px; }
+
+    .field-type-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: var(--radius-100);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 800;
+        flex-shrink: 0;
+        line-height: 1;
+    }
+    .fti-text { background: #DBEAFE; color: #1D4ED8; }
+    .fti-textarea { background: #E0E7FF; color: #4338CA; }
+    .fti-richtext { background: #EDE9FE; color: #6D28D9; }
+    .fti-number { background: #FEF3C7; color: #B45309; }
+    .fti-decimal { background: #FEF3C7; color: #92400E; }
+    .fti-boolean { background: #ECFDF5; color: #059669; }
+    .fti-date { background: #FFF7ED; color: #EA580C; }
+    .fti-datetime { background: #FFF7ED; color: #C2410C; }
+    .fti-email { background: #FCE7F3; color: #BE185D; }
+    .fti-url { background: #E0F2FE; color: #0369A1; }
+    .fti-select { background: #F3E8FF; color: #7C3AED; }
+    .fti-image { background: #CCFBF1; color: #0D9488; }
+    .fti-file { background: #F1F5F9; color: #475569; }
+    .fti-slug { background: #E2E8F0; color: #334155; }
+    .fti-json { background: #1E293B; color: #F8FAFC; }
+    .fti-relation { background: #EDE9FE; color: #7C3AED; }
+
+    .field-info-block {
+        flex: 1;
+        min-width: 0;
+    }
+    .field-name-line {
+        display: flex;
+        align-items: baseline;
+        gap: var(--space-200);
+    }
+    .field-name-text {
+        font-weight: 600;
+        font-size: var(--font-base);
+        color: var(--text);
+    }
+    .field-slug-text {
+        font-family: monospace;
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+    }
+    .field-badges-line {
+        display: flex;
+        gap: var(--space-100);
+        flex-wrap: wrap;
+        margin-top: 3px;
+    }
+
+    .field-actions {
+        display: flex;
+        gap: var(--space-100);
+        flex-shrink: 0;
+    }
+    .field-action-btn {
+        width: 30px;
+        height: 30px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid transparent;
+        border-radius: var(--radius-100);
+        background: transparent;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+    .field-action-btn:hover {
+        background: var(--bg-subdued);
+        border-color: var(--border);
+        color: var(--text);
+    }
+    .field-action-btn.btn-delete:hover {
+        background: #FEF2F2;
+        border-color: #FECACA;
+        color: #DC2626;
+    }
+    .field-action-btn svg { width: 15px; height: 15px; }
+
+    .add-field-bar {
+        padding: var(--space-400) var(--space-500);
+        text-align: center;
+        border-top: 1px solid var(--border);
+    }
+    .btn-add-field {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-200);
+        padding: var(--space-200) var(--space-500);
+        border: 1px dashed var(--border-hover);
+        border-radius: var(--radius-200);
+        background: transparent;
+        color: var(--color-primary);
+        font-size: var(--font-sm);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+    .btn-add-field:hover {
+        border-color: var(--color-primary);
+        background: rgba(26, 123, 168, 0.04);
+    }
+    .btn-add-field svg { width: 16px; height: 16px; }
+
+    .empty-fields-message {
+        text-align: center;
+        padding: var(--space-800) var(--space-500);
+        color: var(--text-secondary);
+        font-size: var(--font-sm);
+    }
+
+    .slug-warning {
+        padding: var(--space-200) var(--space-400);
+        margin: 0 var(--space-500) var(--space-300);
+        background: #FFF3CD;
+        border: 1px solid #FFC107;
+        border-radius: var(--radius-100);
+        font-size: 0.75rem;
+        color: #856404;
+        line-height: 1.5;
+    }
+
+    /* ============================================
+       Modal
+       ============================================ */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+    .modal-overlay.open {
+        display: flex;
+    }
+    .modal-dialog {
+        background: var(--bg-surface);
+        border-radius: var(--radius-300);
+        width: 580px;
+        max-height: 85vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--space-400) var(--space-500);
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        background: var(--bg-surface);
+        z-index: 1;
+        border-radius: var(--radius-300) var(--radius-300) 0 0;
+    }
+    .modal-header h3 {
+        font-size: var(--font-md);
+        font-weight: 700;
+    }
+    .modal-close {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        background: transparent;
+        color: var(--text-secondary);
+        cursor: pointer;
+        border-radius: var(--radius-100);
+        transition: all 0.15s;
+    }
+    .modal-close:hover { background: var(--bg-subdued); color: var(--text); }
+    .modal-close svg { width: 18px; height: 18px; }
+    .modal-body { padding: var(--space-500); }
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: var(--space-300);
+        padding: var(--space-400) var(--space-500);
+        border-top: 1px solid var(--border);
+        position: sticky;
+        bottom: 0;
+        background: var(--bg-surface);
+        border-radius: 0 0 var(--radius-300) var(--radius-300);
+    }
+    .modal-body .form-group { margin-bottom: var(--space-400); }
+    .modal-body .form-group:last-child { margin-bottom: 0; }
+    .modal-body .form-group label {
+        display: block;
+        font-size: var(--font-sm);
+        font-weight: 600;
+        margin-bottom: var(--space-100);
+        color: var(--text);
+    }
+    .modal-body .form-control {
+        width: 100%;
+        padding: var(--space-200) var(--space-300);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-100);
+        font-size: var(--font-base);
+        background: var(--bg-surface);
+        color: var(--text);
+    }
+    .modal-body .form-control:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 2px rgba(26, 123, 168, 0.12);
+    }
+    .modal-body .form-hint {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        margin-top: var(--space-100);
+    }
+
+    /* Type selector grid */
+    .type-selector-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: var(--space-200);
+    }
+    .type-selector-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        padding: var(--space-200) var(--space-100);
+        border: 2px solid var(--border);
+        border-radius: var(--radius-100);
+        background: var(--bg-surface);
+        cursor: pointer;
+        transition: all 0.15s;
+        text-align: center;
+    }
+    .type-selector-btn:hover { border-color: var(--border-hover); background: var(--bg-surface-hover); }
+    .type-selector-btn.selected {
+        border-color: var(--color-primary);
+        background: rgba(26, 123, 168, 0.06);
+    }
+    .type-selector-btn .type-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: var(--radius-100);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        font-weight: 800;
+        line-height: 1;
+    }
+    .type-selector-btn .type-name {
+        font-size: 0.68rem;
+        font-weight: 500;
+        color: var(--text-secondary);
+    }
+    .type-selector-btn.selected .type-name { color: var(--color-primary); font-weight: 600; }
+
+    /* Modal section dividers */
+    .modal-section-title {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-secondary);
+        margin: var(--space-400) 0 var(--space-300);
+        padding-bottom: var(--space-200);
+        border-bottom: 1px solid var(--border);
+    }
+
+    /* Properties toggles in modal */
+    .properties-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-200);
+    }
+    .property-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--space-200) var(--space-300);
+        border-radius: var(--radius-100);
+        background: var(--bg-subdued);
+    }
+    .property-toggle .prop-label {
+        font-size: var(--font-sm);
+        font-weight: 500;
+    }
+
+    /* ============================================
+       Permissions & Workflow cards
+       ============================================ */
+    .perm-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: var(--font-sm);
+    }
+    .perm-table th, .perm-table td {
+        padding: var(--space-200) var(--space-300);
+        border-bottom: 1px solid var(--bg-subdued);
+    }
+    .perm-table th {
+        text-align: center;
+        font-weight: 600;
+        text-transform: capitalize;
+        color: var(--text-secondary);
+        font-size: 0.75rem;
+    }
+    .perm-table th:first-child { text-align: left; }
+    .perm-table td { text-align: center; }
+    .perm-table td:first-child { text-align: left; font-weight: 500; }
+
+    .workflow-stage-row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-300);
+        margin-bottom: var(--space-200);
+    }
+    .workflow-stage-row .stage-label {
+        min-width: 120px;
+        font-weight: 500;
+        text-transform: capitalize;
+        font-size: var(--font-sm);
+    }
+    .workflow-stage-row .form-control { flex: 1; }
+
+    /* ============================================
+       Submit settings
+       ============================================ */
+    .submit-settings-panel {
+        margin-top: var(--space-400);
+        padding: var(--space-400);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-200);
+        background: var(--bg-subdued);
+    }
+    .submit-settings-panel h4 {
+        font-size: var(--font-sm);
+        font-weight: 700;
+        margin-bottom: var(--space-300);
+        color: var(--text);
+    }
+
+    /* ============================================
+       Save bar
+       ============================================ */
+    .save-bar {
+        padding: var(--space-500) 0 var(--space-300);
+    }
+    .btn-save {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-200);
+        padding: var(--space-300) var(--space-600);
+        background: var(--color-primary);
+        color: var(--color-primary-text);
+        border: none;
+        border-radius: var(--radius-200);
+        font-size: var(--font-base);
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+    .btn-save:hover { background: var(--color-primary-hover); }
+    .btn-save:active { background: var(--color-primary-pressed); }
+
+    .btn-secondary {
+        padding: var(--space-200) var(--space-400);
+        background: var(--bg-surface);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-200);
+        font-size: var(--font-sm);
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+    .btn-secondary:hover { border-color: var(--border-hover); background: var(--bg-surface-hover); }
+
+    .btn-primary-sm {
+        padding: var(--space-200) var(--space-400);
+        background: var(--color-primary);
+        color: var(--color-primary-text);
+        border: none;
+        border-radius: var(--radius-200);
+        font-size: var(--font-sm);
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+    .btn-primary-sm:hover { background: var(--color-primary-hover); }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .edit-layout { grid-template-columns: 1fr; }
+        .section-nav {
+            position: static;
+            flex-direction: row;
+            overflow-x: auto;
+            gap: 0;
+        }
+        .section-nav a {
+            border-left: none;
+            border-bottom: 3px solid transparent;
+            white-space: nowrap;
+        }
+        .section-nav a.active { border-bottom-color: var(--color-primary); border-left-color: transparent; }
+        .features-grid { grid-template-columns: 1fr; }
+        .form-row-2, .form-row-3 { grid-template-columns: 1fr; }
+        .type-selector-grid { grid-template-columns: repeat(3, 1fr); }
+        .properties-grid { grid-template-columns: 1fr; }
+    }
+</style>
+
+{# ===== PAGE TOPBAR ===== #}
+<div class="edit-topbar">
+    <a href="{{ admin_url('collections') }}" class="back-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Collections
+    </a>
+    <div class="collection-title">{{ collection.getName() }}</div>
+    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="btn-view-entries">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        View Entries ({{ entryCount }})
+    </a>
 </div>
 
-<div class="page-header">
-    <h1>{{ collection.getName() }}</h1>
-    <div class="page-actions">
-        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="btn btn-outline">View Entries ({{ entryCount }})</a>
-    </div>
-</div>
+{# ===== TWO-COLUMN LAYOUT ===== #}
+<div class="edit-layout">
+    {# Sidebar nav #}
+    <nav class="section-nav">
+        <a href="#section-general" class="active">General</a>
+        <a href="#section-fields">Fields</a>
+        <a href="#section-routing">API & Routing</a>
+        <a href="#section-permissions">Access Control</a>
+        <a href="#section-workflow">Workflow</a>
+    </nav>
 
-<div class="tab-nav">
-    <button class="tab-btn active" data-tab="tab-settings">Settings</button>
-    <button class="tab-btn" data-tab="tab-fields">Fields ({{ fields|length }})</button>
-    <button class="tab-btn" data-tab="tab-permissions">Permissions</button>
-    <button class="tab-btn" data-tab="tab-workflow">Workflow</button>
-</div>
+    {# Main content #}
+    <div class="edit-content">
+        <form id="main-settings-form" method="POST" action="{{ admin_url('collections/' ~ collection.getSlug()) }}">
+            {{ csrf_field() | raw }}
 
-{# ===== SETTINGS TAB ===== #}
-<div id="tab-settings" class="tab-panel active">
-    <div class="card">
-        <div class="card-body">
-            <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug()) }}">
-                {{ csrf_field() | raw }}
-
-                <div class="form-group">
-                    <label for="name">Collection Name *</label>
-                    <input type="text" id="name" name="name" class="form-control"
-                           value="{{ collection.getName() }}" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Slug</label>
-                    <input type="text" class="form-control" value="{{ collection.getSlug() }}" disabled>
-                    <p class="text-muted">Slug cannot be changed after creation (table: cms_{{ collection.getSlug() }}).</p>
-                </div>
-
-                <div class="form-group">
-                    <label for="description">Description</label>
-                    <textarea id="description" name="description" class="form-control"
-                              rows="3">{{ collection.getDescription() }}</textarea>
-                </div>
-
-                <div class="form-group">
-                    <label for="primary_key_type">Primary Key Type</label>
-                    <select id="primary_key_type" name="primary_key_type" class="form-control"
-                            {% if entryCount > 0 %}disabled{% endif %}>
-                        <option value="integer" {% if collection.getPrimaryKeyType() == 'integer' %}selected{% endif %}>Integer (Auto-Increment)</option>
-                        <option value="uuid" {% if collection.getPrimaryKeyType() == 'uuid' %}selected{% endif %}>UUID (CHAR 36)</option>
-                    </select>
-                    {% if entryCount > 0 %}
-                        <p class="text-muted">Primary key type cannot be changed when entries exist ({{ entryCount }} entries).</p>
-                        <input type="hidden" name="primary_key_type" value="{{ collection.getPrimaryKeyType() }}">
-                    {% else %}
-                        <p class="text-muted">Choose how entry IDs are generated. UUID provides globally unique identifiers.</p>
-                    {% endif %}
-                </div>
-
-                <div class="form-inline-checks">
-                    <label>
-                        <input type="checkbox" name="is_api_enabled" value="1"
-                               {% if collection.isApiEnabled() %}checked{% endif %}>
-                        Enable REST API
-                    </label>
-                    <label>
-                        <input type="checkbox" name="is_publishable" value="1"
-                               {% if collection.isPublishable() %}checked{% endif %}>
-                        Publishable
-                    </label>
-                    <label>
-                        <input type="checkbox" name="has_slug" value="1" id="has_slug_check"
-                               {% if collection.hasSlug() %}checked{% endif %}>
-                        Enable Slug Field
-                    </label>
-                    <label>
-                        <input type="checkbox" name="is_submittable" value="1" id="is_submittable_check"
-                               {% if collection.isSubmittable() %}checked{% endif %}>
-                        Public Submit
-                    </label>
-                    <label>
-                        <input type="checkbox" name="seo_enabled" value="1"
-                               {% if collection.isSeoEnabled() %}checked{% endif %}>
-                        SEO Meta Fields
-                    </label>
-                    <label>
-                        <input type="checkbox" name="is_translatable" value="1"
-                               {% if collection.isTranslatable() %}checked{% endif %}>
-                        Translatable
-                    </label>
-                </div>
-
-                <div id="slug-source-group" style="{% if not collection.hasSlug() %}display:none;{% endif %}">
-                    <p class="text-muted" style="padding:8px 0;">
-                        {% if collection.getSlugSourceField() %}
-                            Slug is auto-generated from the <strong>{{ collection.getSlugSourceField() }}</strong> field.
-                        {% else %}
-                            Add a field with type <strong>slug</strong> to auto-generate URL-friendly slugs for entries.
-                        {% endif %}
-                    </p>
-                </div>
-
-                <hr style="margin: var(--space-400) 0;">
-
-                <h4 style="margin-bottom: var(--space-300);">Frontend Routing</h4>
-
-                <div class="form-group">
-                    <label for="url_prefix">URL Prefix</label>
-                    <input type="text" id="url_prefix" name="url_prefix" class="form-control"
-                           value="{{ collection.getUrlPrefix() }}"
-                           placeholder="e.g. blog, products, news">
-                    <p class="text-muted">Auto-creates frontend routes: <code>/prefix</code> (list) and <code>/prefix/{slug}</code> (detail). Leave empty for no auto-routing.</p>
-                </div>
-
-                <div class="form-group">
-                    <label for="items_per_page">Items Per Page</label>
-                    <input type="number" id="items_per_page" name="items_per_page" class="form-control"
-                           value="{{ collection.getItemsPerPage() }}" min="1" max="100">
-                </div>
-
-                <div class="form-group">
-                    <label for="api_rate_limit">API Rate Limit (requests per minute)</label>
-                    <input type="number" id="api_rate_limit" name="api_rate_limit" class="form-control"
-                           value="{{ collection.getApiRateLimit() }}" min="0">
-                    <p class="text-muted">0 = no limit. Applies to <code>/api/admin/{{ collection.getSlug() }}</code> endpoints. Recommended: 60-120 for public APIs.</p>
-                </div>
-
-                <div id="submit-settings-group" style="{% if not collection.isSubmittable() %}display:none;{% endif %}">
-                    <hr style="margin: var(--space-400) 0;">
-                    <h4 style="margin-bottom: var(--space-300);">Public Submit Settings</h4>
-                    <p class="text-muted" style="margin-bottom: var(--space-300);">
-                        Allow visitors to submit entries via <code>POST /collections/{{ collection.getSlug() }}/submit</code>
-                        or use <code>{{ '{{' }} render_collection_form('{{ collection.getSlug() }}') {{ '}}' }}</code> in Twig templates.
-                    </p>
-
-                    {% set ss = collection.getSubmitSettings() ?? {} %}
-
-                    <div class="form-group">
-                        <label for="submit_button_text">Submit Button Text</label>
-                        <input type="text" id="submit_button_text" name="submit_button_text" class="form-control"
-                               value="{{ ss.submit_button_text ?? 'Submit' }}">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="submit_success_message">Success Message</label>
-                        <input type="text" id="submit_success_message" name="submit_success_message" class="form-control"
-                               value="{{ ss.success_message ?? 'Thank you for your submission.' }}">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="submit_redirect_url">Redirect URL (optional)</label>
-                        <input type="text" id="submit_redirect_url" name="submit_redirect_url" class="form-control"
-                               value="{{ ss.redirect_url ?? '' }}"
-                               placeholder="e.g. /thank-you">
-                        <p class="text-muted">Redirect after submission instead of showing success message.</p>
-                    </div>
-
-                    <div class="form-inline-checks">
-                        <label>
-                            <input type="checkbox" name="submit_email_notify" value="1"
-                                   {% if ss.email_notify ?? false %}checked{% endif %}>
-                            Email Notification
-                        </label>
-                        <label>
-                            <input type="checkbox" name="submit_honeypot_enabled" value="1"
-                                   {% if ss.honeypot_enabled ?? false %}checked{% endif %}>
-                            Honeypot (Bot Protection)
-                        </label>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="submit_email_to">Notify Email</label>
-                        <input type="email" id="submit_email_to" name="submit_email_to" class="form-control"
-                               value="{{ ss.email_to ?? '' }}"
-                               placeholder="admin@example.com">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="submit_rate_limit">Rate Limit (per IP, per hour)</label>
-                        <input type="number" id="submit_rate_limit" name="submit_rate_limit" class="form-control"
-                               value="{{ ss.rate_limit_per_ip ?? 0 }}" min="0">
-                        <p class="text-muted">0 = no limit. Recommended: 5-10 for contact forms.</p>
-                    </div>
-                </div>
-
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">Save Settings</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-{# ===== FIELDS TAB ===== #}
-<div id="tab-fields" class="tab-panel">
-    <div class="card">
-        <div class="card-header">
-            <h3>Fields</h3>
-        </div>
-        <div class="card-body">
-            {# ===== SYSTEM FIELDS (read-only) ===== #}
-            <div class="system-fields-section">
-                <h4 class="text-muted" style="margin-bottom: var(--space-200); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">System Fields</h4>
-
-                <div class="field-row field-system">
-                    <div class="field-info">
-                        <div class="field-name">ID</div>
-                        <div class="field-meta">
-                            <code>id</code>
-                            &middot; <span class="field-badge">{{ collection.isUuid() ? 'uuid (CHAR 36)' : 'integer (auto-increment)' }}</span>
-                            <span class="field-badge">primary key</span>
-                            <span class="field-badge required">required</span>
-                        </div>
-                    </div>
-                    <div><span class="field-badge" style="opacity: 0.5;">system</span></div>
-                </div>
-
-                {% if collection.hasSlug() %}
-                <div class="field-row field-system">
-                    <div class="field-info">
-                        <div class="field-name">Slug</div>
-                        <div class="field-meta">
-                            <code>slug</code>
-                            &middot; <span class="field-badge">string (255)</span>
-                            <span class="field-badge unique">unique</span>
-                            {% if collection.getSlugSourceField() %}
-                                <span class="field-badge" style="background:var(--color-primary,#047B5D);color:#fff;">source: {{ collection.getSlugSourceField() }}</span>
-                            {% else %}
-                                <span class="field-badge" style="background:#dc3545;color:#fff;">no source set</span>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div><span class="field-badge" style="opacity: 0.5;">system</span></div>
-                </div>
-                {% if not collection.getSlugSourceField() %}
-                <div style="padding:8px 12px; margin:4px 0 8px; background:#fff3cd; border:1px solid #ffc107; border-radius:6px; font-size:12px; color:#856404; line-height:1.5;">
-                    <strong>Slug source not set.</strong> Add a field with type <strong>slug</strong> below to auto-generate URL-friendly slugs from that field's value.
-                </div>
-                {% endif %}
-                {% endif %}
-
-                <div class="field-row field-system">
-                    <div class="field-info">
-                        <div class="field-name">Created By</div>
-                        <div class="field-meta">
-                            <code>created_by</code>
-                            &middot; <span class="field-badge">integer</span>
-                            <span class="field-badge">nullable</span>
-                        </div>
-                    </div>
-                    <div><span class="field-badge" style="opacity: 0.5;">system</span></div>
-                </div>
-
-                <div class="field-row field-system">
-                    <div class="field-info">
-                        <div class="field-name">Created At</div>
-                        <div class="field-meta">
-                            <code>created_at</code>
-                            &middot; <span class="field-badge">datetime</span>
-                            <span class="field-badge">auto</span>
-                        </div>
-                    </div>
-                    <div><span class="field-badge" style="opacity: 0.5;">system</span></div>
-                </div>
-
-                <div class="field-row field-system">
-                    <div class="field-info">
-                        <div class="field-name">Updated At</div>
-                        <div class="field-meta">
-                            <code>updated_at</code>
-                            &middot; <span class="field-badge">datetime</span>
-                            <span class="field-badge">auto</span>
-                        </div>
-                    </div>
-                    <div><span class="field-badge" style="opacity: 0.5;">system</span></div>
-                </div>
-
-                {% if collection.isPublishable() %}
-                <div class="field-row field-system">
-                    <div class="field-info">
-                        <div class="field-name">Status</div>
-                        <div class="field-meta">
-                            <code>status</code>
-                            &middot; <span class="field-badge">string</span>
-                            <span class="field-badge">default: draft</span>
-                        </div>
-                    </div>
-                    <div><span class="field-badge" style="opacity: 0.5;">system</span></div>
-                </div>
-
-                <div class="field-row field-system">
-                    <div class="field-info">
-                        <div class="field-name">Published At</div>
-                        <div class="field-meta">
-                            <code>published_at</code>
-                            &middot; <span class="field-badge">datetime</span>
-                            <span class="field-badge">nullable</span>
-                        </div>
-                    </div>
-                    <div><span class="field-badge" style="opacity: 0.5;">system</span></div>
-                </div>
-                {% endif %}
-            </div>
-
-            {# ===== USER-DEFINED FIELDS ===== #}
-            {% if fields|length > 0 %}
-                <h4 class="text-muted" style="margin: var(--space-400) 0 var(--space-200); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Custom Fields</h4>
-                {% for field in fields %}
-                <div class="field-row">
-                    <div class="field-info">
-                        <div class="field-name">{{ field.getName() }}</div>
-                        <div class="field-meta">
-                            <code>{{ field.getSlug() }}</code>
-                            &middot; <span class="field-badge">{{ field.getType() }}</span>
-                            {% if field.getType() == 'relation' and field.getOptions().relation_type is defined %}
-                                <span class="field-badge">{{ field.getOptions().relation_type|replace({'_': ' '}) }}</span>
-                                {% if field.getOptions().relation_collection is defined %}
-                                    <span class="field-badge">&rarr; {{ field.getOptions().relation_collection }}</span>
-                                {% endif %}
-                                {% if field.getOptions().display_field is defined and field.getOptions().display_field %}
-                                    <span class="field-badge">display: {{ field.getOptions().display_field }}</span>
-                                {% endif %}
-                            {% endif %}
-                            {% if field.isRequired() %}<span class="field-badge required">required</span>{% endif %}
-                            {% if field.isUnique() %}<span class="field-badge">unique</span>{% endif %}
-                            {% if field.isSearchable() %}<span class="field-badge">searchable</span>{% endif %}
-                            {% if field.isSortable() %}<span class="field-badge">sortable</span>{% endif %}
-                            {% if not field.isListable() %}<span class="field-badge">hidden</span>{% endif %}
-                            {% if collection.hasSlug() and collection.getSlugSourceField() == field.getSlug() %}
-                                <span class="field-badge slug-source">slug source</span>
-                            {% endif %}
-                            {% set fOpts = field.getOptions() ?? {} %}
-                            {% if fOpts.min_length is defined %}<span class="field-badge">min: {{ fOpts.min_length }} chars</span>{% endif %}
-                            {% if fOpts.max_length is defined %}<span class="field-badge">max: {{ fOpts.max_length }} chars</span>{% endif %}
-                            {% if fOpts.min_value is defined %}<span class="field-badge">min: {{ fOpts.min_value }}</span>{% endif %}
-                            {% if fOpts.max_value is defined %}<span class="field-badge">max: {{ fOpts.max_value }}</span>{% endif %}
-                            {% if fOpts.pattern is defined %}<span class="field-badge">pattern</span>{% endif %}
-                            {% if fOpts.field_permissions is defined %}
-                                {% if fOpts.field_permissions.view is defined and fOpts.field_permissions.view is not empty %}
-                                    <span class="field-badge" style="background:#e0f2fe;color:#0369a1;">view: {{ fOpts.field_permissions.view|join(', ') }}</span>
-                                {% endif %}
-                                {% if fOpts.field_permissions.edit is defined and fOpts.field_permissions.edit is not empty %}
-                                    <span class="field-badge" style="background:#fef3c7;color:#92400e;">edit: {{ fOpts.field_permissions.edit|join(', ') }}</span>
-                                {% endif %}
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div>
-                        <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/fields/' ~ field.getId() ~ '/delete') }}"
-                              style="display:inline"
-                              class="confirm-delete"
-                              data-message="{% if collection.hasSlug() and collection.getSlugSourceField() == field.getSlug() %}WARNING: This field is the slug source. Deleting it will also remove the slug column and all slug data from entries. Continue?{% else %}Delete field {{ field.getName() }}? Column data will be lost!{% endif %}">
-                            {{ csrf_field() | raw }}
-                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
-                        </form>
-                    </div>
-                </div>
-                {% endfor %}
-            {% else %}
-                <div class="empty-state" style="margin-top: var(--space-400);">
-                    <p>No custom fields defined yet. Add your first field below.</p>
-                </div>
-            {% endif %}
-
-            {# ADD FIELD FORM #}
-            <div class="add-field-form">
-                <h4>Add New Field</h4>
-                <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/fields') }}">
-                    {{ csrf_field() | raw }}
-
-                    <div class="form-row">
+            {# ===== GENERAL SECTION ===== #}
+            <div id="section-general" class="edit-section">
+                <div class="section-card">
+                    <div class="section-header">General</div>
+                    <div class="section-body">
                         <div class="form-group">
-                            <label for="field_name">Name *</label>
-                            <input type="text" id="field_name" name="field_name" class="form-control"
-                                   placeholder="e.g. Title" required>
+                            <label for="name">Collection Name</label>
+                            <input type="text" id="name" name="name" class="form-control"
+                                   value="{{ collection.getName() }}" required>
                         </div>
+
                         <div class="form-group">
-                            <label for="field_slug">Slug</label>
-                            <input type="text" id="field_slug" name="field_slug" class="form-control"
-                                   placeholder="Auto from name">
+                            <label>Slug</label>
+                            <input type="text" class="form-control" value="{{ collection.getSlug() }}" disabled readonly>
+                            <div class="form-hint">Slug cannot be changed after creation. Table: <code>cms_{{ collection.getSlug() }}</code></div>
                         </div>
+
                         <div class="form-group">
-                            <label for="field_type">Type</label>
-                            <select id="field_type" name="field_type" class="form-control">
-                                {% for typeKey, typeLabel in fieldTypes %}
-                                    <option value="{{ typeKey }}">{{ typeLabel }}</option>
-                                {% endfor %}
+                            <label for="description">Description</label>
+                            <textarea id="description" name="description" class="form-control"
+                                      rows="3">{{ collection.getDescription() }}</textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="primary_key_type">Primary Key Type</label>
+                            <select id="primary_key_type" name="primary_key_type" class="form-control"
+                                    {% if entryCount > 0 %}disabled{% endif %}>
+                                <option value="integer" {% if collection.getPrimaryKeyType() == 'integer' %}selected{% endif %}>Integer (Auto-Increment)</option>
+                                <option value="uuid" {% if collection.getPrimaryKeyType() == 'uuid' %}selected{% endif %}>UUID (CHAR 36)</option>
                             </select>
-                        </div>
-                    </div>
-
-                    <div class="form-inline-checks">
-                        <label><input type="checkbox" name="field_required" value="1"> Required</label>
-                        <label><input type="checkbox" name="field_listable" value="1" checked> Show in list</label>
-                        <label><input type="checkbox" name="field_searchable" value="1"> Searchable</label>
-                        <label><input type="checkbox" name="field_sortable" value="1"> Sortable</label>
-                        <label><input type="checkbox" name="field_unique" value="1"> Unique</label>
-                    </div>
-
-                    <div class="form-group" id="select-options-group" style="display: none;">
-                        <label for="field_options_select">Options (one per line)</label>
-                        <textarea id="field_options_select" name="field_options" class="form-control" rows="3"
-                                  placeholder="Option 1&#10;Option 2&#10;Option 3"></textarea>
-                    </div>
-
-                    <div id="relation-options-group" style="display: none;">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="field_relation_type">Relation Type</label>
-                                <select id="field_relation_type" name="field_relation_type" class="form-control">
-                                    <option value="one_to_one">One to One</option>
-                                    <option value="one_to_many">One to Many</option>
-                                    <option value="many_to_many">Many to Many</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="field_options_relation">Related Collection</label>
-                                <select id="field_options_relation" name="field_options" class="form-control">
-                                    <option value="">-- Select a collection --</option>
-                                    {% for col in collections %}
-                                        {% if col.getSlug() != collection.getSlug() %}
-                                        <option value="{{ col.getSlug() }}">{{ col.getName() }} ({{ col.getSlug() }})</option>
-                                        {% endif %}
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="field_display_field">Display Field</label>
-                                <select id="field_display_field" name="field_display_field" class="form-control">
-                                    <option value="">-- Select collection first --</option>
-                                </select>
-                                <p class="text-muted">Which field from the related collection to show as the label (e.g. title, name).</p>
-                            </div>
-                        </div>
-                        <p class="text-muted" id="relation-type-hint">One to One: Pick a single related entry.</p>
-                    </div>
-
-                    {# ===== VALIDATION RULES ===== #}
-                    <div id="validation-rules-group" style="display: none; margin-top: var(--space-300);">
-                        <h5 style="margin-bottom: var(--space-200); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary);">Validation Rules</h5>
-
-                        <div class="form-row" id="validation-length-group" style="display: none;">
-                            <div class="form-group">
-                                <label for="field_min_length">Min Length</label>
-                                <input type="number" id="field_min_length" name="field_min_length" class="form-control"
-                                       min="0" placeholder="e.g. 5">
-                            </div>
-                            <div class="form-group">
-                                <label for="field_max_length">Max Length</label>
-                                <input type="number" id="field_max_length" name="field_max_length" class="form-control"
-                                       min="0" placeholder="e.g. 500">
-                            </div>
+                            {% if entryCount > 0 %}
+                                <div class="form-hint">Cannot be changed when entries exist ({{ entryCount }} entries).</div>
+                                <input type="hidden" name="primary_key_type" value="{{ collection.getPrimaryKeyType() }}">
+                            {% else %}
+                                <div class="form-hint">Choose how entry IDs are generated. UUID provides globally unique identifiers.</div>
+                            {% endif %}
                         </div>
 
-                        <div class="form-row" id="validation-value-group" style="display: none;">
-                            <div class="form-group">
-                                <label for="field_min_value">Min Value</label>
-                                <input type="number" id="field_min_value" name="field_min_value" class="form-control"
-                                       step="any" placeholder="e.g. 0">
-                            </div>
-                            <div class="form-group">
-                                <label for="field_max_value">Max Value</label>
-                                <input type="number" id="field_max_value" name="field_max_value" class="form-control"
-                                       step="any" placeholder="e.g. 1000">
-                            </div>
-                        </div>
-
-                        <div id="validation-pattern-group" style="display: none;">
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="field_pattern">Pattern (Regex)</label>
-                                    <input type="text" id="field_pattern" name="field_pattern" class="form-control"
-                                           placeholder="e.g. ^[a-zA-Z]+$">
+                        {# Feature toggles #}
+                        <div class="features-grid">
+                            <div class="feature-toggle">
+                                <div class="feature-info">
+                                    <span class="feature-label">REST API</span>
                                 </div>
-                                <div class="form-group">
-                                    <label for="field_pattern_message">Pattern Error Message</label>
-                                    <input type="text" id="field_pattern_message" name="field_pattern_message" class="form-control"
-                                           placeholder="e.g. Only letters allowed">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" name="is_api_enabled" value="1"
+                                           {% if collection.isApiEnabled() %}checked{% endif %}>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="feature-toggle">
+                                <div class="feature-info">
+                                    <span class="feature-label">Publishable</span>
                                 </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" name="is_publishable" value="1"
+                                           {% if collection.isPublishable() %}checked{% endif %}>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="feature-toggle">
+                                <div class="feature-info">
+                                    <span class="feature-label">URL Slugs</span>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" name="has_slug" value="1" id="has_slug_check"
+                                           {% if collection.hasSlug() %}checked{% endif %}>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="feature-toggle">
+                                <div class="feature-info">
+                                    <span class="feature-label">SEO Meta Fields</span>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" name="seo_enabled" value="1"
+                                           {% if collection.isSeoEnabled() %}checked{% endif %}>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="feature-toggle">
+                                <div class="feature-info">
+                                    <span class="feature-label">Translatable</span>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" name="is_translatable" value="1"
+                                           {% if collection.isTranslatable() %}checked{% endif %}>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="feature-toggle">
+                                <div class="feature-info">
+                                    <span class="feature-label">Public Submit</span>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" name="is_submittable" value="1" id="is_submittable_check"
+                                           {% if collection.isSubmittable() %}checked{% endif %}>
+                                    <span class="toggle-slider"></span>
+                                </label>
                             </div>
                         </div>
 
-                        <div class="form-group">
-                            <label for="field_custom_message">Custom Required Message</label>
-                            <input type="text" id="field_custom_message" name="field_custom_message" class="form-control"
-                                   placeholder="Override default required/validation message">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="field_default">Default Value</label>
-                        <input type="text" id="field_default" name="field_default" class="form-control"
-                               placeholder="Optional">
-                    </div>
-
-                    {# ===== FIELD-LEVEL PERMISSIONS ===== #}
-                    {% if roles is not empty %}
-                    <div style="margin-top: var(--space-300); padding-top: var(--space-300); border-top: 1px solid var(--border);">
-                        <h5 style="margin-bottom: var(--space-200); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary);">Field Permissions</h5>
-                        <p class="text-muted" style="margin-bottom: var(--space-200); font-size: var(--font-sm);">
-                            Restrict which roles can view or edit this field. Leave empty for no restriction (all roles can access).
-                        </p>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="field_perm_view">Restrict View to Roles</label>
-                                <select id="field_perm_view" name="field_perm_view[]" class="form-control" multiple size="4">
-                                    {% for role in roles %}
-                                        {% if role.slug != 'admin' %}
-                                        <option value="{{ role.slug }}">{{ role.name }}</option>
-                                        {% endif %}
-                                    {% endfor %}
-                                </select>
-                                <p class="text-muted">Empty = all roles can view. Hold Ctrl to select multiple.</p>
-                            </div>
-                            <div class="form-group">
-                                <label for="field_perm_edit">Restrict Edit to Roles</label>
-                                <select id="field_perm_edit" name="field_perm_edit[]" class="form-control" multiple size="4">
-                                    {% for role in roles %}
-                                        {% if role.slug != 'admin' %}
-                                        <option value="{{ role.slug }}">{{ role.name }}</option>
-                                        {% endif %}
-                                    {% endfor %}
-                                </select>
-                                <p class="text-muted">Empty = all roles can edit. Hold Ctrl to select multiple.</p>
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    <button type="submit" class="btn btn-primary">Add Field</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-{# ===== PERMISSIONS TAB ===== #}
-<div id="tab-permissions" class="tab-panel">
-    <div class="card">
-        <div class="card-header">
-            <h3>Per-Collection Permissions</h3>
-        </div>
-        <div class="card-body">
-            <p class="text-muted" style="margin-bottom: var(--space-300);">
-                Override global entry permissions for this collection. When configured, only roles
-                with explicitly granted actions can interact with entries in this collection.
-                Leave unchecked to use global permissions. Admin role always has full access.
-            </p>
-
-            <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug()) }}">
-                {{ csrf_field() | raw }}
-                <input type="hidden" name="_save_permissions" value="1">
-
-                {% set collPerms = collection.getPermissions() ?? {} %}
-                {% set actions = ['view', 'create', 'edit', 'delete', 'publish'] %}
-
-                <div class="form-inline-checks" style="margin-bottom: var(--space-300);">
-                    <label>
-                        <input type="checkbox" name="enable_custom_permissions" value="1"
-                               id="enable_custom_perms"
-                               {% if collPerms is not empty %}checked{% endif %}>
-                        Enable per-collection permissions
-                    </label>
-                </div>
-
-                <div id="permissions-grid" style="{% if collPerms is empty %}display:none;{% endif %}">
-                    {% if roles is not empty %}
-                    <table class="data-table" style="margin-top: var(--space-200);">
-                        <thead>
-                            <tr>
-                                <th>Role</th>
-                                {% for action in actions %}
-                                    <th style="text-align:center; text-transform:capitalize;">{{ action }}</th>
-                                {% endfor %}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for role in roles %}
-                                {% if role.slug != 'admin' %}
-                                <tr>
-                                    <td><strong>{{ role.name }}</strong></td>
-                                    {% set rolePerms = collPerms[role.slug] ?? [] %}
-                                    {% for action in actions %}
-                                        <td style="text-align:center;">
-                                            <input type="checkbox"
-                                                   name="perms[{{ role.slug }}][]"
-                                                   value="{{ action }}"
-                                                   {% if action in rolePerms %}checked{% endif %}>
-                                        </td>
-                                    {% endfor %}
-                                </tr>
+                        {# Slug source info #}
+                        <div id="slug-source-group" style="{% if not collection.hasSlug() %}display:none;{% endif %}margin-top:var(--space-300);">
+                            <div class="form-hint">
+                                {% if collection.getSlugSourceField() %}
+                                    Slug is auto-generated from the <strong>{{ collection.getSlugSourceField() }}</strong> field.
+                                {% else %}
+                                    Add a field with type <strong>slug</strong> to auto-generate URL-friendly slugs for entries.
                                 {% endif %}
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                    {% else %}
-                        <p class="text-muted">No roles found. Create roles in <a href="{{ admin_url('roles') }}">Roles</a> first.</p>
-                    {% endif %}
-                </div>
+                            </div>
+                        </div>
 
-                <div class="form-actions" style="margin-top: var(--space-300);">
-                    <button type="submit" class="btn btn-primary">Save Permissions</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+                        {# Public Submit Settings — collapsible #}
+                        <div id="submit-settings-group" style="{% if not collection.isSubmittable() %}display:none;{% endif %}">
+                            {% set ss = collection.getSubmitSettings() ?? {} %}
+                            <div class="submit-settings-panel">
+                                <h4>Public Submit Settings</h4>
+                                <div class="form-hint" style="margin-bottom:var(--space-300);">
+                                    Allow visitors to submit entries via <code>POST /collections/{{ collection.getSlug() }}/submit</code>
+                                    or use <code>{{ '{{' }} render_collection_form('{{ collection.getSlug() }}') {{ '}}' }}</code> in Twig templates.
+                                </div>
 
-{# ===== WORKFLOW TAB ===== #}
-<div id="tab-workflow" class="tab-panel">
-    <div class="card">
-        <div class="card-header">
-            <h3>Workflow & Content Approval</h3>
-        </div>
-        <div class="card-body">
-            <p class="text-muted" style="margin-bottom: var(--space-300);">
-                Enable workflow to require entries to pass through approval stages before publishing.
-                The entry's status field becomes the workflow stage name.
-            </p>
+                                <div class="form-row-2">
+                                    <div class="form-group">
+                                        <label for="submit_button_text">Submit Button Text</label>
+                                        <input type="text" id="submit_button_text" name="submit_button_text" class="form-control"
+                                               value="{{ ss.submit_button_text ?? 'Submit' }}">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="submit_success_message">Success Message</label>
+                                        <input type="text" id="submit_success_message" name="submit_success_message" class="form-control"
+                                               value="{{ ss.success_message ?? 'Thank you for your submission.' }}">
+                                    </div>
+                                </div>
 
-            <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug()) }}">
-                {{ csrf_field() | raw }}
-                <input type="hidden" name="_save_workflow" value="1">
+                                <div class="form-group">
+                                    <label for="submit_redirect_url">Redirect URL (optional)</label>
+                                    <input type="text" id="submit_redirect_url" name="submit_redirect_url" class="form-control"
+                                           value="{{ ss.redirect_url ?? '' }}" placeholder="e.g. /thank-you">
+                                    <div class="form-hint">Redirect after submission instead of showing success message.</div>
+                                </div>
 
-                <div class="form-inline-checks" style="margin-bottom: var(--space-400);">
-                    <label>
-                        <input type="checkbox" name="workflow_enabled" value="1"
-                               id="workflow_enabled_check"
-                               {% if collection.isWorkflowEnabled() %}checked{% endif %}>
-                        Enable Workflow
-                    </label>
-                </div>
+                                <div class="form-row-2" style="margin-bottom:var(--space-300);">
+                                    <div class="feature-toggle">
+                                        <span class="feature-label" style="font-size:var(--font-sm);">Email Notification</span>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" name="submit_email_notify" value="1"
+                                                   {% if ss.email_notify ?? false %}checked{% endif %}>
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </div>
+                                    <div class="feature-toggle">
+                                        <span class="feature-label" style="font-size:var(--font-sm);">Honeypot (Bot Protection)</span>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" name="submit_honeypot_enabled" value="1"
+                                                   {% if ss.honeypot_enabled ?? false %}checked{% endif %}>
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
 
-                <div id="workflow-config" style="{% if not collection.isWorkflowEnabled() %}display:none;{% endif %}">
-                    <div class="form-group" style="margin-bottom: var(--space-400);">
-                        <label class="form-label">Stages (comma-separated)</label>
-                        <input type="text" name="workflow_stages" class="form-control"
-                               value="{{ collection.getWorkflowStages()|join(', ') }}"
-                               placeholder="draft, review, approved, published">
-                        <small style="color: var(--text-secondary);">
-                            Minimum 2 stages. First stage is the entry default, last is the final published state.
-                        </small>
+                                <div class="form-row-2">
+                                    <div class="form-group">
+                                        <label for="submit_email_to">Notify Email</label>
+                                        <input type="email" id="submit_email_to" name="submit_email_to" class="form-control"
+                                               value="{{ ss.email_to ?? '' }}" placeholder="admin@example.com">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="submit_rate_limit">Rate Limit (per IP, per hour)</label>
+                                        <input type="number" id="submit_rate_limit" name="submit_rate_limit" class="form-control"
+                                               value="{{ ss.rate_limit_per_ip ?? 0 }}" min="0">
+                                        <div class="form-hint">0 = no limit. Recommended: 5-10 for contact forms.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+                </div>
+            </div>
 
-                    <div style="margin-bottom: var(--space-400);">
-                        <label class="form-label">Reviewers per Stage</label>
-                        <small style="color: var(--text-secondary); display: block; margin-bottom: var(--space-200);">
-                            Enter user IDs (comma-separated) who can advance/reject entries at each stage. Leave empty to allow any user.
-                        </small>
-                        {% for stage in collection.getWorkflowStages() %}
-                        {% if not loop.last %}
-                        <div style="display: flex; align-items: center; gap: var(--space-300); margin-bottom: var(--space-200);">
-                            <span style="min-width: 120px; font-weight: 500; text-transform: capitalize;">{{ stage }}:</span>
-                            <input type="text" name="reviewers_{{ stage }}" class="form-control" style="flex: 1;"
-                                   value="{{ collection.getWorkflowReviewers()[stage] is defined ? collection.getWorkflowReviewers()[stage]|join(', ') : '' }}"
-                                   placeholder="e.g., 1, 3, 5">
+            {# ===== FIELDS SECTION ===== #}
+            <div id="section-fields" class="edit-section">
+                <div class="section-card">
+                    <div class="section-header">Fields</div>
+
+                    {# System fields — collapsible #}
+                    {% set systemFieldCount = 4 + (collection.hasSlug() ? 1 : 0) + (collection.isPublishable() ? 2 : 0) %}
+                    <div class="system-fields-toggle" id="system-fields-toggle">
+                        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+                        System Fields ({{ systemFieldCount }})
+                    </div>
+                    <div class="system-fields-body" id="system-fields-body">
+                        <div class="system-field-row">
+                            <div class="sf-icon">#</div>
+                            <div class="sf-name">ID</div>
+                            <div class="sf-slug">id</div>
+                            <div class="sf-badges">
+                                <span class="badge badge-type">{{ collection.isUuid() ? 'uuid' : 'integer' }}</span>
+                                <span class="badge badge-system">primary key</span>
+                                <span class="badge badge-required">required</span>
+                            </div>
+                        </div>
+
+                        {% if collection.hasSlug() %}
+                        <div class="system-field-row">
+                            <div class="sf-icon">/</div>
+                            <div class="sf-name">Slug</div>
+                            <div class="sf-slug">slug</div>
+                            <div class="sf-badges">
+                                <span class="badge badge-type">string (255)</span>
+                                <span class="badge badge-unique">unique</span>
+                                {% if collection.getSlugSourceField() %}
+                                    <span class="badge badge-slug-source">source: {{ collection.getSlugSourceField() }}</span>
+                                {% else %}
+                                    <span class="badge badge-required">no source set</span>
+                                {% endif %}
+                            </div>
                         </div>
                         {% endif %}
+
+                        <div class="system-field-row">
+                            <div class="sf-icon">U</div>
+                            <div class="sf-name">Created By</div>
+                            <div class="sf-slug">created_by</div>
+                            <div class="sf-badges">
+                                <span class="badge badge-type">integer</span>
+                                <span class="badge badge-system">nullable</span>
+                            </div>
+                        </div>
+
+                        <div class="system-field-row">
+                            <div class="sf-icon">C</div>
+                            <div class="sf-name">Created At</div>
+                            <div class="sf-slug">created_at</div>
+                            <div class="sf-badges">
+                                <span class="badge badge-type">datetime</span>
+                                <span class="badge badge-system">auto</span>
+                            </div>
+                        </div>
+
+                        <div class="system-field-row">
+                            <div class="sf-icon">U</div>
+                            <div class="sf-name">Updated At</div>
+                            <div class="sf-slug">updated_at</div>
+                            <div class="sf-badges">
+                                <span class="badge badge-type">datetime</span>
+                                <span class="badge badge-system">auto</span>
+                            </div>
+                        </div>
+
+                        {% if collection.isPublishable() %}
+                        <div class="system-field-row">
+                            <div class="sf-icon">S</div>
+                            <div class="sf-name">Status</div>
+                            <div class="sf-slug">status</div>
+                            <div class="sf-badges">
+                                <span class="badge badge-type">string</span>
+                                <span class="badge badge-system">default: draft</span>
+                            </div>
+                        </div>
+
+                        <div class="system-field-row">
+                            <div class="sf-icon">P</div>
+                            <div class="sf-name">Published At</div>
+                            <div class="sf-slug">published_at</div>
+                            <div class="sf-badges">
+                                <span class="badge badge-type">datetime</span>
+                                <span class="badge badge-system">nullable</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    {% if collection.hasSlug() and not collection.getSlugSourceField() %}
+                    <div class="slug-warning">
+                        <strong>Slug source not set.</strong> Add a field with type <strong>slug</strong> below to auto-generate URL-friendly slugs from that field's value.
+                    </div>
+                    {% endif %}
+
+                    {# Custom fields — draggable #}
+                    <div class="field-list" id="field-list">
+                        {% if fields|length > 0 %}
+                            {% for field in fields %}
+                            <div class="custom-field-row" draggable="true" data-field-id="{{ field.getId() }}">
+                                <div class="drag-handle" title="Drag to reorder">
+                                    <svg viewBox="0 0 16 16" fill="currentColor"><circle cx="5" cy="3" r="1.2"/><circle cx="11" cy="3" r="1.2"/><circle cx="5" cy="8" r="1.2"/><circle cx="11" cy="8" r="1.2"/><circle cx="5" cy="13" r="1.2"/><circle cx="11" cy="13" r="1.2"/></svg>
+                                </div>
+
+                                {% set fType = field.getType() %}
+                                <div class="field-type-icon fti-{{ fType }}">
+                                    {% if fType == 'text' %}Aa
+                                    {% elseif fType == 'textarea' %}&para;
+                                    {% elseif fType == 'richtext' %}T
+                                    {% elseif fType == 'number' %}#
+                                    {% elseif fType == 'decimal' %}#.0
+                                    {% elseif fType == 'boolean' %}<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><rect x="1" y="4" width="14" height="8" rx="4"/><circle cx="11" cy="8" r="2.5" fill="white"/></svg>
+                                    {% elseif fType == 'date' %}<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="1.5"/><line x1="2" y1="7" x2="14" y2="7"/><line x1="5" y1="1" x2="5" y2="4"/><line x1="11" y1="1" x2="11" y2="4"/></svg>
+                                    {% elseif fType == 'datetime' %}<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><polyline points="8,4 8,8 11,10"/></svg>
+                                    {% elseif fType == 'email' %}@
+                                    {% elseif fType == 'url' %}<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6.5 9.5a3.5 3.5 0 005-5l-1-1a3.5 3.5 0 00-5 0"/><path d="M9.5 6.5a3.5 3.5 0 00-5 5l1 1a3.5 3.5 0 005 0"/></svg>
+                                    {% elseif fType == 'select' %}<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="3" y1="4" x2="13" y2="4"/><line x1="3" y1="8" x2="13" y2="8"/><line x1="3" y1="12" x2="13" y2="12"/></svg>
+                                    {% elseif fType == 'image' %}<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="1.5"/><circle cx="5.5" cy="5.5" r="1.5"/><path d="M14 10l-3-3-7 7"/></svg>
+                                    {% elseif fType == 'file' %}<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 9.5V14a1 1 0 01-1 1H3a1 1 0 01-1-1V2a1 1 0 011-1h7l4 4v4.5z"/></svg>
+                                    {% elseif fType == 'slug' %}/
+                                    {% elseif fType == 'json' %}{}
+                                    {% elseif fType == 'relation' %}<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="4" cy="8" r="2.5"/><circle cx="12" cy="8" r="2.5"/><line x1="6.5" y1="8" x2="9.5" y2="8"/></svg>
+                                    {% else %}?{% endif %}
+                                </div>
+
+                                <div class="field-info-block">
+                                    <div class="field-name-line">
+                                        <span class="field-name-text">{{ field.getName() }}</span>
+                                        <span class="field-slug-text">{{ field.getSlug() }}</span>
+                                    </div>
+                                    <div class="field-badges-line">
+                                        <span class="badge badge-type">{{ fType }}</span>
+                                        {% if fType == 'relation' and field.getOptions().relation_type is defined %}
+                                            <span class="badge badge-relation">{{ field.getOptions().relation_type|replace({'_': ' '}) }}</span>
+                                            {% if field.getOptions().relation_collection is defined %}
+                                                <span class="badge badge-relation">&rarr; {{ field.getOptions().relation_collection }}</span>
+                                            {% endif %}
+                                            {% if field.getOptions().display_field is defined and field.getOptions().display_field %}
+                                                <span class="badge badge-system">display: {{ field.getOptions().display_field }}</span>
+                                            {% endif %}
+                                        {% endif %}
+                                        {% if field.isRequired() %}<span class="badge badge-required">required</span>{% endif %}
+                                        {% if field.isUnique() %}<span class="badge badge-unique">unique</span>{% endif %}
+                                        {% if field.isSearchable() %}<span class="badge badge-searchable">searchable</span>{% endif %}
+                                        {% if field.isSortable() %}<span class="badge badge-sortable">sortable</span>{% endif %}
+                                        {% if not field.isListable() %}<span class="badge badge-hidden">hidden</span>{% endif %}
+                                        {% if collection.hasSlug() and collection.getSlugSourceField() == field.getSlug() %}
+                                            <span class="badge badge-slug-source">slug source</span>
+                                        {% endif %}
+                                        {% set fOpts = field.getOptions() ?? {} %}
+                                        {% if fOpts.min_length is defined %}<span class="badge badge-validation">min: {{ fOpts.min_length }} chars</span>{% endif %}
+                                        {% if fOpts.max_length is defined %}<span class="badge badge-validation">max: {{ fOpts.max_length }} chars</span>{% endif %}
+                                        {% if fOpts.min_value is defined %}<span class="badge badge-validation">min: {{ fOpts.min_value }}</span>{% endif %}
+                                        {% if fOpts.max_value is defined %}<span class="badge badge-validation">max: {{ fOpts.max_value }}</span>{% endif %}
+                                        {% if fOpts.pattern is defined %}<span class="badge badge-validation">pattern</span>{% endif %}
+                                        {% if fOpts.field_permissions is defined %}
+                                            {% if fOpts.field_permissions.view is defined and fOpts.field_permissions.view is not empty %}
+                                                <span class="badge badge-perm-view">view: {{ fOpts.field_permissions.view|join(', ') }}</span>
+                                            {% endif %}
+                                            {% if fOpts.field_permissions.edit is defined and fOpts.field_permissions.edit is not empty %}
+                                                <span class="badge badge-perm-edit">edit: {{ fOpts.field_permissions.edit|join(', ') }}</span>
+                                            {% endif %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="field-actions">
+                                    <button type="button" class="field-action-btn btn-edit-field"
+                                            data-field-id="{{ field.getId() }}"
+                                            data-field-slug="{{ collection.getSlug() }}"
+                                            title="Edit field">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                    </button>
+                                    <button type="button" class="field-action-btn btn-delete"
+                                            data-field-name="{{ field.getName() }}"
+                                            data-delete-url="{{ admin_url('collections/' ~ collection.getSlug() ~ '/fields/' ~ field.getId() ~ '/delete') }}"
+                                            data-is-slug-source="{{ (collection.hasSlug() and collection.getSlugSourceField() == field.getSlug()) ? '1' : '0' }}"
+                                            title="Delete field">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-fields-message">
+                                No custom fields defined yet. Add your first field below.
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="add-field-bar">
+                        <button type="button" class="btn-add-field" id="btn-open-add-field">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Add Field
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {# ===== API & ROUTING SECTION ===== #}
+            <div id="section-routing" class="edit-section">
+                <div class="section-card">
+                    <div class="section-header">API & Routing</div>
+                    <div class="section-body">
+                        <div class="form-group">
+                            <label for="url_prefix">URL Prefix</label>
+                            <input type="text" id="url_prefix" name="url_prefix" class="form-control"
+                                   value="{{ collection.getUrlPrefix() }}"
+                                   placeholder="e.g. blog, products, news">
+                            <div class="form-hint">Auto-creates frontend routes: <code>/prefix</code> (list) and <code>/prefix/{slug}</code> (detail). Leave empty for no auto-routing.</div>
+                        </div>
+
+                        <div class="form-row-2">
+                            <div class="form-group">
+                                <label for="items_per_page">Items Per Page</label>
+                                <input type="number" id="items_per_page" name="items_per_page" class="form-control"
+                                       value="{{ collection.getItemsPerPage() }}" min="1" max="100">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="api_rate_limit">API Rate Limit (req/min)</label>
+                                <input type="number" id="api_rate_limit" name="api_rate_limit" class="form-control"
+                                       value="{{ collection.getApiRateLimit() }}" min="0">
+                                <div class="form-hint">0 = no limit. Applies to <code>/api/admin/{{ collection.getSlug() }}</code></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# Save button for main settings form #}
+            <div class="save-bar" id="main-save-bar" style="display:none;">
+                {# This is positioned before permissions/workflow which have their own forms #}
+            </div>
+        </form>
+
+        {# ===== ACCESS CONTROL SECTION ===== #}
+        <div id="section-permissions" class="edit-section">
+            <div class="section-card">
+                <div class="section-header">Access Control</div>
+                <div class="section-body">
+                    <div class="form-hint" style="margin-bottom:var(--space-300);">
+                        Override global entry permissions for this collection. When configured, only roles
+                        with explicitly granted actions can interact with entries. Leave unchecked to use global permissions.
+                        Admin role always has full access.
+                    </div>
+
+                    <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug()) }}">
+                        {{ csrf_field() | raw }}
+                        <input type="hidden" name="_save_permissions" value="1">
+
+                        {% set collPerms = collection.getPermissions() ?? {} %}
+                        {% set actions = ['view', 'create', 'edit', 'delete', 'publish'] %}
+
+                        <div class="feature-toggle" style="margin-bottom:var(--space-400);">
+                            <span class="feature-label">Enable per-collection permissions</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="enable_custom_permissions" value="1"
+                                       id="enable_custom_perms"
+                                       {% if collPerms is not empty %}checked{% endif %}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div id="permissions-grid" style="{% if collPerms is empty %}display:none;{% endif %}">
+                            {% if roles is not empty %}
+                            <table class="perm-table">
+                                <thead>
+                                    <tr>
+                                        <th>Role</th>
+                                        {% for action in actions %}
+                                            <th>{{ action }}</th>
+                                        {% endfor %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for role in roles %}
+                                        {% if role.slug != 'admin' %}
+                                        <tr>
+                                            <td><strong>{{ role.name }}</strong></td>
+                                            {% set rolePerms = collPerms[role.slug] ?? [] %}
+                                            {% for action in actions %}
+                                                <td>
+                                                    <input type="checkbox"
+                                                           name="perms[{{ role.slug }}][]"
+                                                           value="{{ action }}"
+                                                           {% if action in rolePerms %}checked{% endif %}>
+                                                </td>
+                                            {% endfor %}
+                                        </tr>
+                                        {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                            {% else %}
+                                <div class="form-hint">No roles found. Create roles in <a href="{{ admin_url('roles') }}">Roles</a> first.</div>
+                            {% endif %}
+                        </div>
+
+                        <div style="margin-top:var(--space-400);">
+                            <button type="submit" class="btn-primary-sm">Save Permissions</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {# ===== WORKFLOW SECTION ===== #}
+        <div id="section-workflow" class="edit-section">
+            <div class="section-card">
+                <div class="section-header">Workflow</div>
+                <div class="section-body">
+                    <div class="form-hint" style="margin-bottom:var(--space-300);">
+                        Enable workflow to require entries to pass through approval stages before publishing.
+                        The entry's status field becomes the workflow stage name.
+                    </div>
+
+                    <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug()) }}">
+                        {{ csrf_field() | raw }}
+                        <input type="hidden" name="_save_workflow" value="1">
+
+                        <div class="feature-toggle" style="margin-bottom:var(--space-400);">
+                            <span class="feature-label">Enable Workflow</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="workflow_enabled" value="1"
+                                       id="workflow_enabled_check"
+                                       {% if collection.isWorkflowEnabled() %}checked{% endif %}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div id="workflow-config" style="{% if not collection.isWorkflowEnabled() %}display:none;{% endif %}">
+                            <div class="form-group" style="margin-bottom:var(--space-400);">
+                                <label>Stages (comma-separated)</label>
+                                <input type="text" name="workflow_stages" class="form-control"
+                                       value="{{ collection.getWorkflowStages()|join(', ') }}"
+                                       placeholder="draft, review, approved, published">
+                                <div class="form-hint">Minimum 2 stages. First stage is the entry default, last is the final published state.</div>
+                            </div>
+
+                            <div style="margin-bottom:var(--space-400);">
+                                <label style="display:block;font-size:var(--font-sm);font-weight:600;margin-bottom:var(--space-200);">Reviewers per Stage</label>
+                                <div class="form-hint" style="margin-bottom:var(--space-200);">
+                                    Enter user IDs (comma-separated) who can advance/reject entries at each stage. Leave empty to allow any user.
+                                </div>
+                                {% for stage in collection.getWorkflowStages() %}
+                                {% if not loop.last %}
+                                <div class="workflow-stage-row">
+                                    <span class="stage-label">{{ stage }}:</span>
+                                    <input type="text" name="reviewers_{{ stage }}" class="form-control"
+                                           value="{{ collection.getWorkflowReviewers()[stage] is defined ? collection.getWorkflowReviewers()[stage]|join(', ') : '' }}"
+                                           placeholder="e.g., 1, 3, 5">
+                                </div>
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div>
+                            <button type="submit" class="btn-primary-sm">Save Workflow</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {# Main save button — at the very bottom #}
+        <div class="save-bar">
+            <button type="submit" form="main-settings-form" class="btn-save">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                Save Changes
+            </button>
+        </div>
+
+    </div>
+</div>
+
+{# ===== FIELD MODAL ===== #}
+<div class="modal-overlay" id="field-modal">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h3 id="modal-title">Add New Field</h3>
+            <button type="button" class="modal-close" id="modal-close-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <form method="POST" id="field-form" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/fields') }}">
+            {{ csrf_field() | raw }}
+            <input type="hidden" name="_method" value="POST" id="field-form-method">
+
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="modal_field_name">Field Name *</label>
+                    <input type="text" id="modal_field_name" name="field_name" class="form-control"
+                           placeholder="e.g. Title" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="modal_field_slug">API Identifier</label>
+                    <input type="text" id="modal_field_slug" name="field_slug" class="form-control"
+                           placeholder="Auto-generated from name">
+                    <div class="form-hint">Used as the database column name and API key.</div>
+                </div>
+
+                <div class="form-group">
+                    <label>Type</label>
+                    <input type="hidden" name="field_type" id="modal_field_type" value="text">
+                    <div class="type-selector-grid">
+                        {% for typeKey, typeLabel in fieldTypes %}
+                        <div class="type-selector-btn{% if typeKey == 'text' %} selected{% endif %}" data-type="{{ typeKey }}">
+                            <div class="type-icon fti-{{ typeKey }}">
+                                {% if typeKey == 'text' %}Aa
+                                {% elseif typeKey == 'textarea' %}&para;
+                                {% elseif typeKey == 'richtext' %}T
+                                {% elseif typeKey == 'number' %}#
+                                {% elseif typeKey == 'decimal' %}#.0
+                                {% elseif typeKey == 'boolean' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor"><rect x="1" y="4" width="14" height="8" rx="4"/><circle cx="11" cy="8" r="2.5" fill="white"/></svg>
+                                {% elseif typeKey == 'date' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="1.5"/><line x1="2" y1="7" x2="14" y2="7"/></svg>
+                                {% elseif typeKey == 'datetime' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><polyline points="8,4 8,8 11,10"/></svg>
+                                {% elseif typeKey == 'email' %}@
+                                {% elseif typeKey == 'url' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6.5 9.5a3.5 3.5 0 005-5l-1-1a3.5 3.5 0 00-5 0"/><path d="M9.5 6.5a3.5 3.5 0 00-5 5l1 1a3.5 3.5 0 005 0"/></svg>
+                                {% elseif typeKey == 'select' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="3" y1="4" x2="13" y2="4"/><line x1="3" y1="8" x2="13" y2="8"/><line x1="3" y1="12" x2="13" y2="12"/></svg>
+                                {% elseif typeKey == 'image' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="1.5"/><circle cx="5.5" cy="5.5" r="1.5"/><path d="M14 10l-3-3-7 7"/></svg>
+                                {% elseif typeKey == 'file' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 9.5V14a1 1 0 01-1 1H3a1 1 0 01-1-1V2a1 1 0 011-1h7l4 4v4.5z"/></svg>
+                                {% elseif typeKey == 'slug' %}/
+                                {% elseif typeKey == 'json' %}{}
+                                {% elseif typeKey == 'relation' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="4" cy="8" r="2.5"/><circle cx="12" cy="8" r="2.5"/><line x1="6.5" y1="8" x2="9.5" y2="8"/></svg>
+                                {% else %}?{% endif %}
+                            </div>
+                            <span class="type-name">{{ typeLabel }}</span>
+                        </div>
                         {% endfor %}
                     </div>
                 </div>
 
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">Save Workflow</button>
+                {# Properties #}
+                <div class="modal-section-title">Properties</div>
+                <div class="properties-grid">
+                    <div class="property-toggle">
+                        <span class="prop-label">Required</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="field_required" value="1" id="modal_field_required">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="property-toggle">
+                        <span class="prop-label">Show in list</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="field_listable" value="1" id="modal_field_listable" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="property-toggle">
+                        <span class="prop-label">Searchable</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="field_searchable" value="1" id="modal_field_searchable">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="property-toggle">
+                        <span class="prop-label">Sortable</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="field_sortable" value="1" id="modal_field_sortable">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="property-toggle">
+                        <span class="prop-label">Unique</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="field_unique" value="1" id="modal_field_unique">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
                 </div>
-            </form>
-        </div>
+
+                {# Select options #}
+                <div id="modal-select-options-group" style="display:none;">
+                    <div class="modal-section-title">Select Options</div>
+                    <div class="form-group">
+                        <label for="modal_field_options_select">Options (one per line)</label>
+                        <textarea id="modal_field_options_select" name="" class="form-control" rows="3"
+                                  placeholder="Option 1&#10;Option 2&#10;Option 3"></textarea>
+                    </div>
+                </div>
+
+                {# Relation options #}
+                <div id="modal-relation-options-group" style="display:none;">
+                    <div class="modal-section-title">Relation Configuration</div>
+                    <div class="form-group">
+                        <label for="modal_field_relation_type">Relation Type</label>
+                        <select id="modal_field_relation_type" name="field_relation_type" class="form-control">
+                            <option value="one_to_one">One to One</option>
+                            <option value="one_to_many">One to Many</option>
+                            <option value="many_to_many">Many to Many</option>
+                        </select>
+                        <div class="form-hint" id="modal-relation-type-hint">One to One: Pick a single related entry.</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="modal_field_options_relation">Related Collection</label>
+                        <select id="modal_field_options_relation" name="" class="form-control">
+                            <option value="">-- Select a collection --</option>
+                            {% for col in collections %}
+                                {% if col.getSlug() != collection.getSlug() %}
+                                <option value="{{ col.getSlug() }}">{{ col.getName() }} ({{ col.getSlug() }})</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="modal_field_display_field">Display Field</label>
+                        <select id="modal_field_display_field" name="field_display_field" class="form-control">
+                            <option value="">-- Select collection first --</option>
+                        </select>
+                        <div class="form-hint">Which field from the related collection to show as the label.</div>
+                    </div>
+                </div>
+
+                {# Validation Rules #}
+                <div id="modal-validation-group" style="display:none;">
+                    <div class="modal-section-title">Validation</div>
+                    <div class="form-row-2" id="modal-validation-length" style="display:none;">
+                        <div class="form-group">
+                            <label for="modal_field_min_length">Min Length</label>
+                            <input type="number" id="modal_field_min_length" name="field_min_length" class="form-control" min="0" placeholder="e.g. 5">
+                        </div>
+                        <div class="form-group">
+                            <label for="modal_field_max_length">Max Length</label>
+                            <input type="number" id="modal_field_max_length" name="field_max_length" class="form-control" min="0" placeholder="e.g. 500">
+                        </div>
+                    </div>
+                    <div class="form-row-2" id="modal-validation-value" style="display:none;">
+                        <div class="form-group">
+                            <label for="modal_field_min_value">Min Value</label>
+                            <input type="number" id="modal_field_min_value" name="field_min_value" class="form-control" step="any" placeholder="e.g. 0">
+                        </div>
+                        <div class="form-group">
+                            <label for="modal_field_max_value">Max Value</label>
+                            <input type="number" id="modal_field_max_value" name="field_max_value" class="form-control" step="any" placeholder="e.g. 1000">
+                        </div>
+                    </div>
+                    <div id="modal-validation-pattern" style="display:none;">
+                        <div class="form-row-2">
+                            <div class="form-group">
+                                <label for="modal_field_pattern">Pattern (Regex)</label>
+                                <input type="text" id="modal_field_pattern" name="field_pattern" class="form-control" placeholder="e.g. ^[a-zA-Z]+$">
+                            </div>
+                            <div class="form-group">
+                                <label for="modal_field_pattern_message">Pattern Error Message</label>
+                                <input type="text" id="modal_field_pattern_message" name="field_pattern_message" class="form-control" placeholder="e.g. Only letters allowed">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="modal_field_custom_message">Custom Required Message</label>
+                        <input type="text" id="modal_field_custom_message" name="field_custom_message" class="form-control"
+                               placeholder="Override default required/validation message">
+                    </div>
+                </div>
+
+                {# Advanced #}
+                <div class="modal-section-title">Advanced</div>
+                <div class="form-group">
+                    <label for="modal_field_default">Default Value</label>
+                    <input type="text" id="modal_field_default" name="field_default" class="form-control" placeholder="Optional">
+                </div>
+
+                {# Field-level permissions #}
+                {% if roles is not empty %}
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label for="modal_field_perm_view">Restrict View to Roles</label>
+                        <select id="modal_field_perm_view" name="field_perm_view[]" class="form-control" multiple size="3">
+                            {% for role in roles %}
+                                {% if role.slug != 'admin' %}
+                                <option value="{{ role.slug }}">{{ role.name }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                        <div class="form-hint">Empty = all roles. Ctrl+click to multi-select.</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="modal_field_perm_edit">Restrict Edit to Roles</label>
+                        <select id="modal_field_perm_edit" name="field_perm_edit[]" class="form-control" multiple size="3">
+                            {% for role in roles %}
+                                {% if role.slug != 'admin' %}
+                                <option value="{{ role.slug }}">{{ role.name }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                        <div class="form-hint">Empty = all roles. Ctrl+click to multi-select.</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" id="modal-cancel-btn">Cancel</button>
+                <button type="submit" class="btn-primary-sm" id="modal-save-btn">Save Field</button>
+            </div>
+        </form>
     </div>
 </div>
 
+{# Hidden delete form — reused via JS #}
+<form id="delete-field-form" method="POST" action="" style="display:none;">
+    {{ csrf_field() | raw }}
+</form>
+
 {% block scripts %}
 <script nonce="{{ csp_nonce() }}">
-document.getElementById('field_name').addEventListener('input', function() {
-    const slugField = document.getElementById('field_slug');
-    if (!slugField.dataset.manual) {
-        slugField.value = this.value.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
-    }
-});
-document.getElementById('field_slug').addEventListener('input', function() {
-    this.dataset.manual = '1';
-});
+(function() {
+    'use strict';
 
-var fieldTypeSelect = document.getElementById('field_type');
+    var adminBase = '{{ admin_url("") }}';
+    var collectionSlug = '{{ collection.getSlug() }}';
 
-fieldTypeSelect.addEventListener('change', function() {
-    var selectGroup = document.getElementById('select-options-group');
-    var relationGroup = document.getElementById('relation-options-group');
-    var selectInput = document.getElementById('field_options_select');
-    var relationInput = document.getElementById('field_options_relation');
+    // ========================================================================
+    // Scroll Spy
+    // ========================================================================
+    var sections = document.querySelectorAll('.edit-section');
+    var navLinks = document.querySelectorAll('.section-nav a');
+    var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+                navLinks.forEach(function(link) { link.classList.remove('active'); });
+                var activeLink = document.querySelector('.section-nav a[href="#' + entry.target.id + '"]');
+                if (activeLink) activeLink.classList.add('active');
+            }
+        });
+    }, { rootMargin: '-20% 0px -70% 0px' });
+    sections.forEach(function(section) { observer.observe(section); });
 
-    selectGroup.style.display = 'none';
-    relationGroup.style.display = 'none';
-    selectInput.name = '';
-    relationInput.name = '';
-
-    if (this.value === 'select') {
-        selectGroup.style.display = 'block';
-        selectInput.name = 'field_options';
-    } else if (this.value === 'relation') {
-        relationGroup.style.display = 'block';
-        relationInput.name = 'field_options';
-    }
-
-    // Toggle validation rule groups based on field type
-    var validationGroup = document.getElementById('validation-rules-group');
-    var lengthGroup = document.getElementById('validation-length-group');
-    var valueGroup = document.getElementById('validation-value-group');
-    var patternGroup = document.getElementById('validation-pattern-group');
-
-    var textTypes = ['text', 'textarea', 'richtext', 'email', 'url', 'slug'];
-    var numberTypes = ['number', 'decimal'];
-    var hasLength = textTypes.indexOf(this.value) !== -1;
-    var hasValue = numberTypes.indexOf(this.value) !== -1;
-    var hasPattern = textTypes.indexOf(this.value) !== -1;
-    var showValidation = hasLength || hasValue || hasPattern;
-
-    validationGroup.style.display = showValidation ? 'block' : 'none';
-    lengthGroup.style.display = hasLength ? 'flex' : 'none';
-    valueGroup.style.display = hasValue ? 'flex' : 'none';
-    patternGroup.style.display = hasPattern ? 'block' : 'none';
-});
-
-// Trigger on page load to show validation fields for default type
-fieldTypeSelect.dispatchEvent(new Event('change'));
-
-var relationTypeHints = {
-    'one_to_one': 'One to One: Pick a single related entry.',
-    'one_to_many': 'One to Many: This entry can link to multiple entries in the related collection.',
-    'many_to_many': 'Many to Many: Entries in both collections can link to each other.'
-};
-var relTypeSelect = document.getElementById('field_relation_type');
-if (relTypeSelect) {
-    relTypeSelect.addEventListener('change', function() {
-        document.getElementById('relation-type-hint').textContent = relationTypeHints[this.value] || '';
-    });
-}
-
-// Load related collection's fields when a collection is selected
-var relCollSelect = document.getElementById('field_options_relation');
-var displayFieldSelect = document.getElementById('field_display_field');
-if (relCollSelect && displayFieldSelect) {
-    relCollSelect.addEventListener('change', function() {
-        var collSlug = this.value;
-        displayFieldSelect.innerHTML = '<option value="">-- Loading... --</option>';
-        if (!collSlug) {
-            displayFieldSelect.innerHTML = '<option value="">-- Select collection first --</option>';
-            return;
-        }
-        fetch('/admin/collections/' + collSlug + '/fields-json')
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                displayFieldSelect.innerHTML = '<option value="">-- Auto-detect --</option>';
-                (data.fields || []).forEach(function(f) {
-                    var opt = document.createElement('option');
-                    opt.value = f.slug;
-                    opt.textContent = f.name + ' (' + f.type + ')';
-                    displayFieldSelect.appendChild(opt);
-                });
-            })
-            .catch(function() {
-                displayFieldSelect.innerHTML = '<option value="">-- Failed to load --</option>';
-            });
-    });
-}
-
-// Toggle slug source dropdown when checkbox changes
-var hasSlugCheck = document.getElementById('has_slug_check');
-var slugSourceGroup = document.getElementById('slug-source-group');
-if (hasSlugCheck && slugSourceGroup) {
-    hasSlugCheck.addEventListener('change', function() {
-        slugSourceGroup.style.display = this.checked ? '' : 'none';
-    });
-}
-
-// Toggle submit settings when checkbox changes
-var submitCheck = document.getElementById('is_submittable_check');
-var submitGroup = document.getElementById('submit-settings-group');
-if (submitCheck && submitGroup) {
-    submitCheck.addEventListener('change', function() {
-        submitGroup.style.display = this.checked ? '' : 'none';
-    });
-}
-
-// Toggle per-collection permissions grid
-var customPermsCheck = document.getElementById('enable_custom_perms');
-var permsGrid = document.getElementById('permissions-grid');
-if (customPermsCheck && permsGrid) {
-    customPermsCheck.addEventListener('change', function() {
-        permsGrid.style.display = this.checked ? '' : 'none';
-    });
-}
-
-var workflowCheck = document.getElementById('workflow_enabled_check');
-var workflowConfig = document.getElementById('workflow-config');
-if (workflowCheck && workflowConfig) {
-    workflowCheck.addEventListener('change', function() {
-        workflowConfig.style.display = this.checked ? '' : 'none';
-    });
-}
-
-document.querySelectorAll('.confirm-delete').forEach(function(form) {
-    form.addEventListener('submit', function(e) {
-        if (!confirm(form.dataset.message || 'Are you sure?')) {
+    // Smooth scroll on nav click
+    navLinks.forEach(function(link) {
+        link.addEventListener('click', function(e) {
             e.preventDefault();
+            var target = document.querySelector(this.getAttribute('href'));
+            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    });
+
+    // ========================================================================
+    // System Fields Toggle
+    // ========================================================================
+    var sysToggle = document.getElementById('system-fields-toggle');
+    var sysBody = document.getElementById('system-fields-body');
+    if (sysToggle && sysBody) {
+        sysToggle.addEventListener('click', function() {
+            sysToggle.classList.toggle('open');
+            sysBody.classList.toggle('open');
+        });
+    }
+
+    // ========================================================================
+    // Toggle visibility helpers
+    // ========================================================================
+    function toggleVisibility(checkId, targetId) {
+        var check = document.getElementById(checkId);
+        var target = document.getElementById(targetId);
+        if (check && target) {
+            check.addEventListener('change', function() {
+                target.style.display = this.checked ? '' : 'none';
+            });
+        }
+    }
+    toggleVisibility('has_slug_check', 'slug-source-group');
+    toggleVisibility('is_submittable_check', 'submit-settings-group');
+    toggleVisibility('enable_custom_perms', 'permissions-grid');
+    toggleVisibility('workflow_enabled_check', 'workflow-config');
+
+    // ========================================================================
+    // Field Modal
+    // ========================================================================
+    var modal = document.getElementById('field-modal');
+    var fieldForm = document.getElementById('field-form');
+    var modalTitle = document.getElementById('modal-title');
+    var modalSaveBtn = document.getElementById('modal-save-btn');
+    var editingFieldId = null;
+
+    function openModal() { modal.classList.add('open'); }
+    function closeModal() {
+        modal.classList.remove('open');
+        resetModal();
+    }
+
+    function resetModal() {
+        editingFieldId = null;
+        modalTitle.textContent = 'Add New Field';
+        modalSaveBtn.textContent = 'Save Field';
+        fieldForm.action = adminBase + 'collections/' + collectionSlug + '/fields';
+
+        document.getElementById('modal_field_name').value = '';
+        document.getElementById('modal_field_slug').value = '';
+        document.getElementById('modal_field_slug').dataset.manual = '';
+        document.getElementById('modal_field_type').value = 'text';
+        document.getElementById('modal_field_required').checked = false;
+        document.getElementById('modal_field_listable').checked = true;
+        document.getElementById('modal_field_searchable').checked = false;
+        document.getElementById('modal_field_sortable').checked = false;
+        document.getElementById('modal_field_unique').checked = false;
+        document.getElementById('modal_field_default').value = '';
+        document.getElementById('modal_field_min_length') && (document.getElementById('modal_field_min_length').value = '');
+        document.getElementById('modal_field_max_length') && (document.getElementById('modal_field_max_length').value = '');
+        document.getElementById('modal_field_min_value') && (document.getElementById('modal_field_min_value').value = '');
+        document.getElementById('modal_field_max_value') && (document.getElementById('modal_field_max_value').value = '');
+        document.getElementById('modal_field_pattern') && (document.getElementById('modal_field_pattern').value = '');
+        document.getElementById('modal_field_pattern_message') && (document.getElementById('modal_field_pattern_message').value = '');
+        document.getElementById('modal_field_custom_message') && (document.getElementById('modal_field_custom_message').value = '');
+        document.getElementById('modal_field_options_select') && (document.getElementById('modal_field_options_select').value = '');
+        document.getElementById('modal_field_relation_type') && (document.getElementById('modal_field_relation_type').value = 'one_to_one');
+        document.getElementById('modal_field_options_relation') && (document.getElementById('modal_field_options_relation').value = '');
+        document.getElementById('modal_field_display_field') && (document.getElementById('modal_field_display_field').innerHTML = '<option value="">-- Select collection first --</option>');
+
+        // Reset role selects
+        var permView = document.getElementById('modal_field_perm_view');
+        var permEdit = document.getElementById('modal_field_perm_edit');
+        if (permView) { Array.from(permView.options).forEach(function(o) { o.selected = false; }); }
+        if (permEdit) { Array.from(permEdit.options).forEach(function(o) { o.selected = false; }); }
+
+        // Reset type selector visual
+        document.querySelectorAll('.type-selector-btn').forEach(function(btn) {
+            btn.classList.toggle('selected', btn.dataset.type === 'text');
+        });
+        updateTypeSpecificFields('text');
+    }
+
+    document.getElementById('btn-open-add-field').addEventListener('click', function() {
+        resetModal();
+        openModal();
+    });
+    document.getElementById('modal-close-btn').addEventListener('click', closeModal);
+    document.getElementById('modal-cancel-btn').addEventListener('click', closeModal);
+
+    // Close on backdrop click
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) closeModal();
+    });
+
+    // Close on Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && modal.classList.contains('open')) closeModal();
+    });
+
+    // ========================================================================
+    // Type Selector
+    // ========================================================================
+    document.querySelectorAll('.type-selector-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.type-selector-btn').forEach(function(b) { b.classList.remove('selected'); });
+            btn.classList.add('selected');
+            var type = btn.dataset.type;
+            document.getElementById('modal_field_type').value = type;
+            updateTypeSpecificFields(type);
+        });
+    });
+
+    function updateTypeSpecificFields(type) {
+        var selectGroup = document.getElementById('modal-select-options-group');
+        var relationGroup = document.getElementById('modal-relation-options-group');
+        var selectInput = document.getElementById('modal_field_options_select');
+        var relationInput = document.getElementById('modal_field_options_relation');
+
+        selectGroup.style.display = 'none';
+        relationGroup.style.display = 'none';
+        selectInput.name = '';
+        relationInput.name = '';
+
+        if (type === 'select') {
+            selectGroup.style.display = '';
+            selectInput.name = 'field_options';
+        } else if (type === 'relation') {
+            relationGroup.style.display = '';
+            relationInput.name = 'field_options';
+        }
+
+        var textTypes = ['text', 'textarea', 'richtext', 'email', 'url', 'slug'];
+        var numberTypes = ['number', 'decimal'];
+        var hasLength = textTypes.indexOf(type) !== -1;
+        var hasValue = numberTypes.indexOf(type) !== -1;
+        var hasPattern = textTypes.indexOf(type) !== -1;
+        var showValidation = hasLength || hasValue || hasPattern;
+
+        var vg = document.getElementById('modal-validation-group');
+        var vl = document.getElementById('modal-validation-length');
+        var vv = document.getElementById('modal-validation-value');
+        var vp = document.getElementById('modal-validation-pattern');
+
+        if (vg) vg.style.display = showValidation ? '' : 'none';
+        if (vl) vl.style.display = hasLength ? '' : 'none';
+        if (vv) vv.style.display = hasValue ? '' : 'none';
+        if (vp) vp.style.display = hasPattern ? '' : 'none';
+    }
+
+    // ========================================================================
+    // Slug auto-generation in modal
+    // ========================================================================
+    var modalName = document.getElementById('modal_field_name');
+    var modalSlug = document.getElementById('modal_field_slug');
+    modalName.addEventListener('input', function() {
+        if (!modalSlug.dataset.manual) {
+            modalSlug.value = this.value.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
         }
     });
-});
-</script>
+    modalSlug.addEventListener('input', function() {
+        this.dataset.manual = '1';
+    });
 
-<style nonce="{{ csp_nonce() }}">
-    .field-system {
-        opacity: 0.7;
-        border-left: 3px solid var(--color-primary);
-        padding-left: var(--space-200);
+    // ========================================================================
+    // Relation type hints
+    // ========================================================================
+    var relationTypeHints = {
+        'one_to_one': 'One to One: Pick a single related entry.',
+        'one_to_many': 'One to Many: This entry can link to multiple entries in the related collection.',
+        'many_to_many': 'Many to Many: Entries in both collections can link to each other.'
+    };
+    var relTypeSelect = document.getElementById('modal_field_relation_type');
+    if (relTypeSelect) {
+        relTypeSelect.addEventListener('change', function() {
+            var hint = document.getElementById('modal-relation-type-hint');
+            if (hint) hint.textContent = relationTypeHints[this.value] || '';
+        });
     }
-    .field-system .field-name {
-        font-size: 0.9rem;
+
+    // ========================================================================
+    // Load related collection fields
+    // ========================================================================
+    var relCollSelect = document.getElementById('modal_field_options_relation');
+    var displayFieldSelect = document.getElementById('modal_field_display_field');
+    if (relCollSelect && displayFieldSelect) {
+        relCollSelect.addEventListener('change', function() {
+            var collSlug = this.value;
+            displayFieldSelect.innerHTML = '<option value="">-- Loading... --</option>';
+            if (!collSlug) {
+                displayFieldSelect.innerHTML = '<option value="">-- Select collection first --</option>';
+                return;
+            }
+            fetch(adminBase + 'collections/' + collSlug + '/fields-json')
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    displayFieldSelect.innerHTML = '<option value="">-- Auto-detect --</option>';
+                    (data.fields || []).forEach(function(f) {
+                        var opt = document.createElement('option');
+                        opt.value = f.slug;
+                        opt.textContent = f.name + ' (' + f.type + ')';
+                        displayFieldSelect.appendChild(opt);
+                    });
+                })
+                .catch(function() {
+                    displayFieldSelect.innerHTML = '<option value="">-- Failed to load --</option>';
+                });
+        });
     }
-    .field-badge.slug-source {
-        background: var(--color-primary, #6366f1);
-        color: #fff;
-        font-weight: 600;
-    }
-</style>
+
+    // ========================================================================
+    // Edit field — load data into modal
+    // ========================================================================
+    document.querySelectorAll('.btn-edit-field').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var fieldId = this.dataset.fieldId;
+            var slug = this.dataset.fieldSlug;
+            editingFieldId = fieldId;
+
+            modalTitle.textContent = 'Edit Field';
+            modalSaveBtn.textContent = 'Update Field';
+            fieldForm.action = adminBase + 'collections/' + slug + '/fields/' + fieldId;
+
+            // Fetch field data
+            fetch(adminBase + 'collections/' + slug + '/fields/' + fieldId + '/json')
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    document.getElementById('modal_field_name').value = data.name || '';
+                    document.getElementById('modal_field_slug').value = data.slug || '';
+                    document.getElementById('modal_field_slug').dataset.manual = '1';
+
+                    // Set type
+                    document.getElementById('modal_field_type').value = data.type || 'text';
+                    document.querySelectorAll('.type-selector-btn').forEach(function(b) {
+                        b.classList.toggle('selected', b.dataset.type === data.type);
+                    });
+                    updateTypeSpecificFields(data.type);
+
+                    // Properties
+                    document.getElementById('modal_field_required').checked = !!data.is_required;
+                    document.getElementById('modal_field_listable').checked = data.is_listable !== false;
+                    document.getElementById('modal_field_searchable').checked = !!data.is_searchable;
+                    document.getElementById('modal_field_sortable').checked = !!data.is_sortable;
+                    document.getElementById('modal_field_unique').checked = !!data.is_unique;
+
+                    // Default value
+                    document.getElementById('modal_field_default').value = data.default_value || '';
+
+                    var opts = data.options || {};
+
+                    // Select options
+                    if (data.type === 'select' && opts.choices) {
+                        document.getElementById('modal_field_options_select').value = opts.choices.join('\n');
+                    }
+
+                    // Relation options
+                    if (data.type === 'relation') {
+                        if (opts.relation_type) {
+                            document.getElementById('modal_field_relation_type').value = opts.relation_type;
+                            var hint = document.getElementById('modal-relation-type-hint');
+                            if (hint) hint.textContent = relationTypeHints[opts.relation_type] || '';
+                        }
+                        if (opts.relation_collection) {
+                            document.getElementById('modal_field_options_relation').value = opts.relation_collection;
+                            // Trigger loading of display fields
+                            fetch(adminBase + 'collections/' + opts.relation_collection + '/fields-json')
+                                .then(function(r) { return r.json(); })
+                                .then(function(fd) {
+                                    var dfs = document.getElementById('modal_field_display_field');
+                                    dfs.innerHTML = '<option value="">-- Auto-detect --</option>';
+                                    (fd.fields || []).forEach(function(f) {
+                                        var opt = document.createElement('option');
+                                        opt.value = f.slug;
+                                        opt.textContent = f.name + ' (' + f.type + ')';
+                                        if (opts.display_field === f.slug) opt.selected = true;
+                                        dfs.appendChild(opt);
+                                    });
+                                }).catch(function() {});
+                        }
+                    }
+
+                    // Validation
+                    if (opts.min_length !== undefined) document.getElementById('modal_field_min_length').value = opts.min_length;
+                    if (opts.max_length !== undefined) document.getElementById('modal_field_max_length').value = opts.max_length;
+                    if (opts.min_value !== undefined) document.getElementById('modal_field_min_value').value = opts.min_value;
+                    if (opts.max_value !== undefined) document.getElementById('modal_field_max_value').value = opts.max_value;
+                    if (opts.pattern) document.getElementById('modal_field_pattern').value = opts.pattern;
+                    if (opts.pattern_message) document.getElementById('modal_field_pattern_message').value = opts.pattern_message;
+                    if (opts.custom_message) document.getElementById('modal_field_custom_message').value = opts.custom_message;
+
+                    // Field permissions
+                    if (opts.field_permissions) {
+                        var permView = document.getElementById('modal_field_perm_view');
+                        var permEdit = document.getElementById('modal_field_perm_edit');
+                        if (permView && opts.field_permissions.view) {
+                            Array.from(permView.options).forEach(function(o) {
+                                o.selected = opts.field_permissions.view.indexOf(o.value) !== -1;
+                            });
+                        }
+                        if (permEdit && opts.field_permissions.edit) {
+                            Array.from(permEdit.options).forEach(function(o) {
+                                o.selected = opts.field_permissions.edit.indexOf(o.value) !== -1;
+                            });
+                        }
+                    }
+
+                    openModal();
+                })
+                .catch(function(err) {
+                    console.error('Failed to load field data:', err);
+                    alert('Failed to load field data. Please try again.');
+                });
+        });
+    });
+
+    // ========================================================================
+    // Delete field
+    // ========================================================================
+    document.querySelectorAll('.btn-delete').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var name = this.dataset.fieldName;
+            var url = this.dataset.deleteUrl;
+            var isSlugSource = this.dataset.isSlugSource === '1';
+            var msg = isSlugSource
+                ? 'WARNING: This field is the slug source. Deleting it will also remove the slug column and all slug data from entries. Continue?'
+                : 'Delete field "' + name + '"? Column data will be lost!';
+            if (confirm(msg)) {
+                var form = document.getElementById('delete-field-form');
+                form.action = url;
+                form.submit();
+            }
+        });
+    });
+
+    // ========================================================================
+    // Drag and Drop Reorder
+    // ========================================================================
+    var fieldList = document.getElementById('field-list');
+    var dragItem = null;
+
+    fieldList.addEventListener('dragstart', function(e) {
+        var row = e.target.closest('.custom-field-row');
+        if (!row) return;
+        dragItem = row;
+        row.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', '');
+    });
+
+    fieldList.addEventListener('dragend', function(e) {
+        var row = e.target.closest('.custom-field-row');
+        if (row) row.classList.remove('dragging');
+        document.querySelectorAll('.custom-field-row').forEach(function(r) { r.classList.remove('drag-over'); });
+        dragItem = null;
+    });
+
+    fieldList.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        var row = e.target.closest('.custom-field-row');
+        if (row && row !== dragItem) {
+            document.querySelectorAll('.custom-field-row').forEach(function(r) { r.classList.remove('drag-over'); });
+            row.classList.add('drag-over');
+        }
+    });
+
+    fieldList.addEventListener('drop', function(e) {
+        e.preventDefault();
+        var row = e.target.closest('.custom-field-row');
+        if (!row || !dragItem || row === dragItem) return;
+
+        var rows = Array.from(fieldList.querySelectorAll('.custom-field-row'));
+        var dragIdx = rows.indexOf(dragItem);
+        var dropIdx = rows.indexOf(row);
+
+        if (dragIdx < dropIdx) {
+            row.parentNode.insertBefore(dragItem, row.nextSibling);
+        } else {
+            row.parentNode.insertBefore(dragItem, row);
+        }
+
+        document.querySelectorAll('.custom-field-row').forEach(function(r) { r.classList.remove('drag-over'); });
+
+        // Save new order
+        var newOrder = Array.from(fieldList.querySelectorAll('.custom-field-row')).map(function(r) {
+            return parseInt(r.dataset.fieldId, 10);
+        });
+
+        fetch(adminBase + 'collections/' + collectionSlug + '/fields/reorder', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ order: newOrder })
+        }).catch(function(err) {
+            console.error('Failed to save field order:', err);
+        });
+    });
+
+})();
+</script>
 {% endblock %}
 {% endblock %}

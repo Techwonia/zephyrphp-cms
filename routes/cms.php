@@ -78,6 +78,8 @@ Route::group(['prefix' => '/' . admin_path(), 'middleware' => [\ZephyrPHP\Middle
     Route::post('/collections/{slug}/delete', [CollectionController::class, 'destroy']);
 
     // Collection fields API (JSON)
+    Route::get('/collections/{slug}/fields/{id}/json', [CollectionController::class, 'fieldJson']);
+    Route::post('/collections/{slug}/fields/reorder', [CollectionController::class, 'reorderFields']);
     Route::get('/collections/{slug}/fields-json', [CollectionController::class, 'fieldsJson']);
 
     // Fields (nested under collection)

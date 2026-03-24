@@ -3,63 +3,523 @@
 {% block title %}Collections{% endblock %}
 
 {% block content %}
+<style nonce="{{ csp_nonce() }}">
+    .collections-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: var(--space-800);
+    }
+    .collections-header h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text);
+        margin: 0 0 var(--space-100) 0;
+    }
+    .collections-header p {
+        color: var(--text-secondary);
+        font-size: var(--font-sm);
+        margin: 0;
+    }
+
+    /* Card Grid */
+    .collections-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: var(--space-500);
+    }
+
+    /* Card */
+    .collection-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-300);
+        display: flex;
+        flex-direction: column;
+        transition: box-shadow 0.2s ease, border-color 0.2s ease;
+        position: relative;
+    }
+    .collection-card:hover {
+        box-shadow: var(--shadow-card-hover);
+        border-color: var(--border-hover);
+    }
+
+    .collection-card-body {
+        padding: var(--space-600);
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Icon */
+    .collection-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: var(--radius-200);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: var(--space-400);
+        background: var(--color-info-bg);
+        color: var(--color-info);
+        flex-shrink: 0;
+    }
+    .collection-icon svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    /* Name & description */
+    .collection-name {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text);
+        margin: 0 0 var(--space-100) 0;
+        line-height: 1.3;
+    }
+    .collection-slug {
+        font-family: var(--font-mono);
+        font-size: var(--font-xs);
+        color: var(--text-secondary);
+        margin: 0 0 var(--space-200) 0;
+    }
+    .collection-description {
+        font-size: var(--font-sm);
+        color: var(--text-secondary);
+        margin: 0 0 var(--space-400) 0;
+        line-height: 1.5;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        flex-grow: 1;
+    }
+
+    /* Stats row */
+    .collection-stats {
+        display: flex;
+        gap: var(--space-400);
+        margin-bottom: var(--space-400);
+    }
+    .collection-stat {
+        display: flex;
+        align-items: center;
+        gap: var(--space-100);
+        font-size: var(--font-xs);
+        color: var(--text-secondary);
+    }
+    .collection-stat svg {
+        width: 14px;
+        height: 14px;
+        opacity: 0.6;
+    }
+    .collection-stat strong {
+        font-weight: 600;
+        color: var(--text);
+    }
+
+    /* Feature badges */
+    .collection-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-100);
+        margin-bottom: 0;
+    }
+    .feature-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        padding: 2px 8px;
+        border-radius: var(--radius-full);
+        font-size: 0.6875rem;
+        font-weight: 500;
+        line-height: 1.6;
+        white-space: nowrap;
+    }
+    .feature-badge svg {
+        width: 11px;
+        height: 11px;
+    }
+    .badge-api {
+        background: rgba(44, 110, 203, 0.1);
+        color: #2C6ECB;
+    }
+    .badge-publishable {
+        background: rgba(4, 123, 93, 0.1);
+        color: #047B5D;
+    }
+    .badge-seo {
+        background: rgba(185, 137, 0, 0.1);
+        color: #9a7400;
+    }
+    .badge-translatable {
+        background: rgba(139, 92, 246, 0.1);
+        color: #7C3AED;
+    }
+    .badge-submittable {
+        background: rgba(215, 44, 13, 0.1);
+        color: #c4260b;
+    }
+
+    /* Card footer */
+    .collection-footer {
+        display: flex;
+        align-items: center;
+        border-top: 1px solid var(--border);
+        padding: var(--space-300) var(--space-600);
+        gap: var(--space-200);
+    }
+    .collection-footer .btn-entries {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-100);
+        padding: var(--space-100) var(--space-300);
+        border-radius: var(--radius-100);
+        font-size: var(--font-sm);
+        font-weight: 500;
+        color: var(--color-primary);
+        text-decoration: none;
+        transition: background 0.15s ease;
+    }
+    .collection-footer .btn-entries:hover {
+        background: rgba(26, 123, 168, 0.08);
+    }
+    .collection-footer .btn-entries svg {
+        width: 14px;
+        height: 14px;
+    }
+    .collection-footer .btn-edit {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-100);
+        padding: var(--space-100) var(--space-300);
+        border-radius: var(--radius-100);
+        font-size: var(--font-sm);
+        font-weight: 500;
+        color: var(--text-secondary);
+        text-decoration: none;
+        transition: background 0.15s ease, color 0.15s ease;
+    }
+    .collection-footer .btn-edit:hover {
+        background: var(--bg-surface-hover);
+        color: var(--text);
+    }
+    .collection-footer .btn-edit svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    /* Dropdown menu */
+    .dropdown-wrapper {
+        position: relative;
+        margin-left: auto;
+    }
+    .dropdown-trigger {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        border-radius: var(--radius-100);
+        border: none;
+        background: none;
+        cursor: pointer;
+        color: var(--text-secondary);
+        transition: background 0.15s ease, color 0.15s ease;
+    }
+    .dropdown-trigger:hover {
+        background: var(--bg-surface-hover);
+        color: var(--text);
+    }
+    .dropdown-trigger svg {
+        width: 16px;
+        height: 16px;
+    }
+    .dropdown-menu {
+        display: none;
+        position: absolute;
+        right: 0;
+        bottom: 100%;
+        margin-bottom: 4px;
+        min-width: 160px;
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-200);
+        box-shadow: var(--shadow-dropdown);
+        z-index: 50;
+        padding: var(--space-100) 0;
+    }
+    .dropdown-menu.open {
+        display: block;
+    }
+    .dropdown-menu .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: var(--space-200);
+        width: 100%;
+        padding: var(--space-200) var(--space-400);
+        border: none;
+        background: none;
+        font-family: var(--font);
+        font-size: var(--font-sm);
+        color: var(--text);
+        cursor: pointer;
+        text-align: left;
+        transition: background 0.1s ease;
+    }
+    .dropdown-menu .dropdown-item:hover {
+        background: var(--bg-surface-hover);
+    }
+    .dropdown-menu .dropdown-item.danger {
+        color: var(--color-critical);
+    }
+    .dropdown-menu .dropdown-item.danger:hover {
+        background: var(--color-critical-bg);
+    }
+    .dropdown-menu .dropdown-item svg {
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+    }
+    .dropdown-divider {
+        height: 1px;
+        background: var(--border);
+        margin: var(--space-100) 0;
+    }
+
+    /* Empty state */
+    .collections-empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: var(--space-1000) var(--space-600);
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-300);
+    }
+    .collections-empty-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: var(--color-info-bg);
+        color: var(--color-info);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: var(--space-600);
+    }
+    .collections-empty-icon svg {
+        width: 36px;
+        height: 36px;
+    }
+    .collections-empty h2 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text);
+        margin: 0 0 var(--space-200) 0;
+    }
+    .collections-empty p {
+        color: var(--text-secondary);
+        font-size: var(--font-sm);
+        max-width: 380px;
+        line-height: 1.6;
+        margin: 0 0 var(--space-600) 0;
+    }
+    .collections-empty .btn-cta {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-200);
+        padding: var(--space-300) var(--space-600);
+        background: var(--color-primary);
+        color: var(--color-primary-text);
+        border: none;
+        border-radius: var(--radius-200);
+        font-family: var(--font);
+        font-size: var(--font-sm);
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        transition: background 0.15s ease;
+    }
+    .collections-empty .btn-cta:hover {
+        background: var(--color-primary-hover);
+    }
+    .collections-empty .btn-cta svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    @media (max-width: 900px) {
+        .collections-grid {
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        }
+    }
+    @media (max-width: 600px) {
+        .collections-grid {
+            grid-template-columns: 1fr;
+        }
+        .collections-header {
+            flex-direction: column;
+            gap: var(--space-400);
+        }
+    }
+</style>
+
 <div class="breadcrumb">
     <a href="{{ admin_url() }}">Dashboard</a> / Collections
 </div>
 
-<div class="page-header">
-    <h1>Collections</h1>
-    <div class="page-actions">
-        <a href="{{ admin_url('collections/create') }}" class="btn btn-primary">+ New Collection</a>
+<div class="collections-header">
+    <div>
+        <h1>Collections</h1>
+        <p>Manage your content types</p>
     </div>
+    <a href="{{ admin_url('collections/create') }}" class="btn btn-primary">+ New Collection</a>
 </div>
 
 {% if collections|length > 0 %}
-<div class="card">
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Slug</th>
-                        <th>Fields</th>
-                        <th>Entries</th>
-                        <th>API</th>
-                        <th>Publishable</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for collection in collections %}
-                    <tr>
-                        <td><strong>{{ collection.getName() }}</strong></td>
-                        <td><code>{{ collection.getSlug() }}</code></td>
-                        <td>{{ collection.getFields()|length }}</td>
-                        <td>{{ stats[collection.getSlug()] ?? 0 }}</td>
-                        <td>{% if collection.isApiEnabled() %}<span class="badge badge-info">API</span>{% else %}<span class="text-muted">&mdash;</span>{% endif %}</td>
-                        <td>{% if collection.isPublishable() %}<span class="badge badge-success">Yes</span>{% else %}<span class="text-muted">&mdash;</span>{% endif %}</td>
-                        <td class="actions-cell">
-                            <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="btn btn-sm btn-outline">Entries</a>
-                            <a href="{{ admin_url('collections/' ~ collection.getSlug()) }}" class="btn btn-sm btn-outline">Edit</a>
-                            <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/delete') }}"
-                                  style="display:inline" class="confirm-delete" data-message="Delete collection {{ collection.getName() }}? This will drop the table and all data!">
-                                {{ csrf_field() | raw }}
-                                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+<div class="collections-grid">
+    {% for collection in collections %}
+    <div class="collection-card">
+        <div class="collection-card-body">
+            <div class="collection-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125v-3.75" />
+                </svg>
+            </div>
+
+            <h3 class="collection-name">{{ collection.getName() }}</h3>
+            <p class="collection-slug">{{ collection.getSlug() }}</p>
+            <p class="collection-description">{{ collection.getDescription() | default('No description provided') }}</p>
+
+            <div class="collection-stats">
+                <span class="collection-stat">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zm0 9.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zm0 9.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25a2.25 2.25 0 01-2.25-2.25v-2.25z" />
+                    </svg>
+                    <strong>{{ collection.getFields()|length }}</strong> fields
+                </span>
+                <span class="collection-stat">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                    </svg>
+                    <strong>{{ stats[collection.getSlug()] ?? 0 }}</strong> entries
+                </span>
+            </div>
+
+            <div class="collection-badges">
+                {% if collection.isApiEnabled() %}
+                <span class="feature-badge badge-api">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>
+                    API
+                </span>
+                {% endif %}
+                {% if collection.isPublishable() %}
+                <span class="feature-badge badge-publishable">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
+                    Publishable
+                </span>
+                {% endif %}
+                {% if collection.isSeoEnabled() is defined and collection.isSeoEnabled() %}
+                <span class="feature-badge badge-seo">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
+                    SEO
+                </span>
+                {% endif %}
+                {% if collection.isTranslatable() is defined and collection.isTranslatable() %}
+                <span class="feature-badge badge-translatable">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 21l5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 016-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m3.334 2.364C11.176 10.658 7.69 15.08 3 17.502m9.334-12.138c.896.061 1.785.147 2.666.257m-4.589 8.495a18.023 18.023 0 01-3.827-5.802" /></svg>
+                    Translatable
+                </span>
+                {% endif %}
+                {% if collection.isSubmittable() is defined and collection.isSubmittable() %}
+                <span class="feature-badge badge-submittable">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 3.75H6.912a2.25 2.25 0 00-2.15 1.588L2.35 13.177a2.25 2.25 0 00-.1.661V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 00-2.15-1.588H15M2.25 13.5h3.86a2.25 2.25 0 012.012 1.244l.256.512a2.25 2.25 0 002.013 1.244h3.218a2.25 2.25 0 002.013-1.244l.256-.512a2.25 2.25 0 012.013-1.244h3.859" /></svg>
+                    Submittable
+                </span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="collection-footer">
+            <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="btn-entries">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" /></svg>
+                View Entries
+            </a>
+            <a href="{{ admin_url('collections/' ~ collection.getSlug()) }}" class="btn-edit">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" /></svg>
+                Edit
+            </a>
+
+            <div class="dropdown-wrapper">
+                <button type="button" class="dropdown-trigger" aria-label="More actions" data-dropdown-toggle>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zm0 5.25a.75.75 0 110-1.5.75.75 0 010 1.5zm0 5.25a.75.75 0 110-1.5.75.75 0 010 1.5z" /></svg>
+                </button>
+                <div class="dropdown-menu">
+                    <a href="{{ admin_url('collections/' ~ collection.getSlug()) }}" class="dropdown-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                        Settings
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/delete') }}" class="confirm-delete" data-message="Delete collection '{{ collection.getName() }}'? This will drop the table and all data permanently!">
+                        {{ csrf_field() | raw }}
+                        <button type="submit" class="dropdown-item danger">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+                            Delete Collection
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
+    {% endfor %}
 </div>
 {% else %}
-<div class="empty-state">
-    <h3>No collections yet</h3>
-    <p>Collections define your content types — like blog posts, products, or pages.</p>
-    <a href="{{ admin_url('collections/create') }}" class="btn btn-primary">+ Create Your First Collection</a>
+<div class="collections-empty">
+    <div class="collections-empty-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125v-3.75" />
+        </svg>
+    </div>
+    <h2>No collections yet</h2>
+    <p>Collections define your content structure -- like blog posts, products, or pages. Create one to start managing your content.</p>
+    <a href="{{ admin_url('collections/create') }}" class="btn-cta">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+        Create Your First Collection
+    </a>
 </div>
 {% endif %}
+
+<script nonce="{{ csp_nonce() }}">
+(function() {
+    // Dropdown toggle
+    document.querySelectorAll('[data-dropdown-toggle]').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var menu = this.nextElementSibling;
+            // Close all other dropdowns
+            document.querySelectorAll('.dropdown-menu.open').forEach(function(m) {
+                if (m !== menu) m.classList.remove('open');
+            });
+            menu.classList.toggle('open');
+        });
+    });
+
+    // Close dropdowns on outside click
+    document.addEventListener('click', function() {
+        document.querySelectorAll('.dropdown-menu.open').forEach(function(m) {
+            m.classList.remove('open');
+        });
+    });
+
+    // Prevent dropdown menu clicks from closing
+    document.querySelectorAll('.dropdown-menu').forEach(function(menu) {
+        menu.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    });
+})();
+</script>
 {% endblock %}

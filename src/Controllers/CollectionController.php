@@ -797,6 +797,80 @@ class CollectionController extends Controller
     }
 
     /**
+     * Return a single field's full data as JSON (for modal field editor).
+     */
+    public function fieldJson(string $slug, int $id): void
+    {
+        $this->requirePermission('collections.view');
+
+        header('Content-Type: application/json');
+
+        $collection = Collection::findOneBy(['slug' => $slug]);
+        if (!$collection) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Collection not found']);
+            return;
+        }
+
+        $field = Field::find($id);
+        if (!$field || $field->getCollection()->getId() !== $collection->getId()) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Field not found']);
+            return;
+        }
+
+        echo json_encode([
+            'id' => $field->getId(),
+            'name' => $field->getName(),
+            'slug' => $field->getSlug(),
+            'type' => $field->getType(),
+            'options' => $field->getOptions(),
+            'is_required' => $field->isRequired(),
+            'is_unique' => $field->isUnique(),
+            'is_listable' => $field->isListable(),
+            'is_searchable' => $field->isSearchable(),
+            'is_sortable' => $field->isSortable(),
+            'default_value' => $field->getDefaultValue(),
+            'sort_order' => $field->getSortOrder(),
+        ]);
+    }
+
+    /**
+     * Reorder fields via a JSON array of field IDs.
+     */
+    public function reorderFields(string $slug): void
+    {
+        $this->requirePermission('collections.edit');
+
+        header('Content-Type: application/json');
+
+        $collection = Collection::findOneBy(['slug' => $slug]);
+        if (!$collection) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Collection not found']);
+            return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        if (!is_array($input) || !isset($input['order']) || !is_array($input['order'])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Invalid input. Expected {"order": [id1, id2, ...]}']);
+            return;
+        }
+
+        $order = $input['order'];
+        foreach ($order as $position => $fieldId) {
+            $field = Field::find((int) $fieldId);
+            if ($field && $field->getCollection()->getId() === $collection->getId()) {
+                $field->setSortOrder($position);
+                $field->save();
+            }
+        }
+
+        echo json_encode(['success' => true]);
+    }
+
+    /**
      * Return a collection's fields as JSON (for AJAX use in relation setup)
      */
     public function fieldsJson(string $slug): void

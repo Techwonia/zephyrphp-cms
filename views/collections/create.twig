@@ -3,90 +3,849 @@
 {% block title %}Create Collection{% endblock %}
 
 {% block content %}
-<div class="breadcrumb">
-    <a href="{{ admin_url('collections') }}">Collections</a> / Create
-</div>
+<style nonce="{{ csp_nonce() }}">
+/* ── Page Header ── */
+.create-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-300);
+    margin-bottom: var(--space-800);
+}
+.create-header-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-200);
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s;
+    flex-shrink: 0;
+}
+.create-header-back:hover {
+    background: var(--bg-surface-hover);
+    color: var(--text);
+}
+.create-header-back svg { width: 20px; height: 20px; }
+.create-header-text h1 {
+    font-size: var(--font-xl, 1.25rem);
+    font-weight: 600;
+    color: var(--text);
+    margin: 0;
+    line-height: 1.3;
+}
+.create-header-text .create-breadcrumb {
+    font-size: var(--font-sm);
+    color: var(--text-secondary);
+    margin: 0;
+}
+.create-header-text .create-breadcrumb a {
+    color: var(--text-link);
+    text-decoration: none;
+}
+.create-header-text .create-breadcrumb a:hover {
+    text-decoration: underline;
+}
 
-<div class="page-header">
-    <h1>Create Collection</h1>
-</div>
+/* ── Two-Column Layout ── */
+.create-layout {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: var(--space-600);
+    align-items: start;
+}
+@media (max-width: 900px) {
+    .create-layout {
+        grid-template-columns: 1fr;
+    }
+    .create-preview-wrapper {
+        order: -1;
+    }
+}
 
-<div class="card">
-    <div class="card-body">
-        <form method="POST" action="{{ admin_url('collections') }}">
-            {{ csrf_field() | raw }}
+/* ── Form Panel ── */
+.create-form-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-600);
+}
 
-            <div class="form-group">
-                <label for="name">Collection Name *</label>
-                <input type="text" id="name" name="name" class="form-control"
-                       value="{{ flash('_old_input').name ?? '' }}"
-                       placeholder="e.g. Blog Posts" required>
-                {% if flash('errors').name is defined %}
-                    <div class="invalid-feedback">{{ flash('errors').name }}</div>
-                {% endif %}
-            </div>
+/* ── Section Card ── */
+.form-section {
+    background: var(--bg-surface);
+    border-radius: var(--radius-300);
+    box-shadow: var(--shadow-card);
+    padding: var(--space-600);
+}
+.form-section-title {
+    font-size: var(--font-base, 0.9375rem);
+    font-weight: 600;
+    color: var(--text);
+    margin: 0 0 var(--space-100) 0;
+}
+.form-section-desc {
+    font-size: var(--font-sm);
+    color: var(--text-secondary);
+    margin: 0 0 var(--space-500) 0;
+    line-height: 1.5;
+}
 
-            <div class="form-group">
-                <label for="slug">Slug</label>
-                <input type="text" id="slug" name="slug" class="form-control"
-                       value="{{ flash('_old_input').slug ?? '' }}"
-                       placeholder="Auto-generated from name (e.g. blog_posts)">
-                <p class="text-muted">Used for table name (cms_slug) and URLs. Leave empty to auto-generate.</p>
-                {% if flash('errors').slug is defined %}
-                    <div class="invalid-feedback">{{ flash('errors').slug }}</div>
-                {% endif %}
-            </div>
+/* ── Form Groups ── */
+.fg { margin-bottom: var(--space-500); }
+.fg:last-child { margin-bottom: 0; }
+.fg label {
+    display: block;
+    font-size: var(--font-sm);
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: var(--space-100);
+}
+.fg label .required { color: var(--color-critical); margin-left: 2px; }
+.fg .form-control {
+    width: 100%;
+    padding: var(--space-200) var(--space-300);
+    font-size: var(--font-sm);
+    font-family: var(--font);
+    color: var(--text);
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-200);
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    box-sizing: border-box;
+}
+.fg .form-control:focus {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 2px rgba(26, 123, 168, 0.15);
+}
+.fg .form-control::placeholder { color: var(--text-disabled); }
+.fg .form-hint {
+    font-size: var(--font-xs);
+    color: var(--text-secondary);
+    margin-top: var(--space-100);
+    line-height: 1.4;
+}
+.fg .form-hint code {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    background: var(--bg-subdued);
+    padding: 1px 5px;
+    border-radius: var(--radius-100);
+    border: 1px solid var(--border);
+}
+.fg .form-error {
+    font-size: var(--font-xs);
+    color: var(--color-critical);
+    margin-top: var(--space-100);
+}
+.fg textarea.form-control {
+    resize: vertical;
+    min-height: 80px;
+}
 
-            <div class="form-group">
-                <label for="description">Description</label>
-                <textarea id="description" name="description" class="form-control"
-                          rows="3" placeholder="Optional description">{{ flash('_old_input').description ?? '' }}</textarea>
-            </div>
+/* ── Primary Key Radio Group ── */
+.pk-options {
+    display: flex;
+    gap: var(--space-300);
+}
+.pk-option {
+    flex: 1;
+    position: relative;
+    cursor: pointer;
+}
+.pk-option input { position: absolute; opacity: 0; pointer-events: none; }
+.pk-option-card {
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-400);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-200);
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+.pk-option input:checked + .pk-option-card {
+    border-color: var(--color-primary);
+    background: rgba(26, 123, 168, 0.04);
+    box-shadow: 0 0 0 1px var(--color-primary);
+}
+.pk-option:hover .pk-option-card {
+    border-color: var(--border-hover);
+}
+.pk-option input:checked + .pk-option-card .pk-icon {
+    color: var(--color-primary);
+}
+.pk-icon {
+    width: 28px;
+    height: 28px;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-200);
+    transition: color 0.15s;
+}
+.pk-name {
+    font-size: var(--font-sm);
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 2px;
+}
+.pk-desc {
+    font-size: var(--font-xs);
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
 
-            <div class="form-group">
-                <label for="primary_key_type">Primary Key Type</label>
-                <select id="primary_key_type" name="primary_key_type" class="form-control">
-                    <option value="integer">Integer (Auto-Increment)</option>
-                    <option value="uuid">UUID (CHAR 36)</option>
-                </select>
-                <p class="text-muted">Choose how entry IDs are generated. Cannot be changed after entries are created.</p>
-            </div>
+/* ── Toggle Switch ── */
+.toggle-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-400);
+    padding: var(--space-400) 0;
+    border-bottom: 1px solid var(--border);
+}
+.toggle-row:first-child { padding-top: 0; }
+.toggle-row:last-child { border-bottom: none; padding-bottom: 0; }
+.toggle-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-200);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1rem;
+}
+.toggle-icon.icon-api { background: rgba(44, 110, 203, 0.1); color: #2C6ECB; }
+.toggle-icon.icon-publish { background: rgba(4, 123, 93, 0.1); color: #047B5D; }
+.toggle-icon.icon-slug { background: rgba(185, 137, 0, 0.1); color: #B98900; }
+.toggle-icon.icon-seo { background: rgba(156, 39, 176, 0.1); color: #9C27B0; }
+.toggle-icon.icon-i18n { background: rgba(26, 123, 168, 0.1); color: #1A7BA8; }
+.toggle-info { flex: 1; min-width: 0; }
+.toggle-name {
+    font-size: var(--font-sm);
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1.3;
+}
+.toggle-desc {
+    font-size: var(--font-xs);
+    color: var(--text-secondary);
+    line-height: 1.4;
+    margin-top: 1px;
+}
+.toggle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.toggle input { display: none; }
+.toggle-track {
+    width: 36px;
+    height: 20px;
+    background: #D4D4D4;
+    border-radius: 10px;
+    transition: background 0.2s;
+}
+.toggle input:checked + .toggle-track {
+    background: var(--color-primary);
+}
+.toggle-thumb {
+    position: absolute;
+    left: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    background: white;
+    border-radius: 50%;
+    transition: left 0.2s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+.toggle input:checked ~ .toggle-thumb {
+    left: 18px;
+}
 
-            <div class="form-inline-checks">
-                <label>
-                    <input type="checkbox" name="is_api_enabled" value="1">
-                    Enable REST API
-                </label>
-                <label>
-                    <input type="checkbox" name="is_publishable" value="1">
-                    Publishable (draft/published status)
-                </label>
-                <label>
-                    <input type="checkbox" name="has_slug" value="1">
-                    Enable Slug Field
-                    <small style="display:block;font-weight:normal;color:var(--text-secondary,#616161);">Auto-generates a URL-friendly slug for each entry. You can set the source field after adding fields.</small>
-                </label>
-            </div>
+/* ── Preview Panel ── */
+.create-preview-wrapper {
+    position: sticky;
+    top: calc(var(--topbar-height) + var(--space-400));
+    align-self: start;
+}
+.preview-card {
+    background: var(--bg-surface);
+    border-radius: var(--radius-300);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+}
+.preview-header {
+    padding: var(--space-400) var(--space-500);
+    background: var(--bg-subdued);
+    border-bottom: 1px solid var(--border);
+    font-size: var(--font-xs);
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.preview-body {
+    padding: var(--space-500);
+}
+.preview-collection-name {
+    display: flex;
+    align-items: center;
+    gap: var(--space-300);
+    margin-bottom: var(--space-500);
+    padding-bottom: var(--space-400);
+    border-bottom: 1px solid var(--border);
+}
+.preview-collection-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-200);
+    background: rgba(26, 123, 168, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--color-primary);
+}
+.preview-collection-icon svg { width: 20px; height: 20px; }
+.preview-name-text {
+    font-size: var(--font-base, 0.9375rem);
+    font-weight: 600;
+    color: var(--text);
+    word-break: break-word;
+}
+.preview-name-placeholder {
+    color: var(--text-disabled);
+    font-style: italic;
+}
+.preview-meta { margin-bottom: var(--space-400); }
+.preview-meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-200) 0;
+    font-size: var(--font-xs);
+}
+.preview-meta-label { color: var(--text-secondary); }
+.preview-meta-value {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text);
+    background: var(--bg-subdued);
+    padding: 2px 8px;
+    border-radius: var(--radius-100);
+    border: 1px solid var(--border);
+}
 
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Create Collection</button>
-                <a href="{{ admin_url('collections') }}" class="btn btn-outline">Cancel</a>
-            </div>
-        </form>
+.preview-section-label {
+    font-size: var(--font-xs);
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-200);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.preview-features {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-200);
+    margin-bottom: var(--space-400);
+    min-height: 26px;
+}
+.preview-feature-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--font-xs);
+    padding: 3px 10px;
+    border-radius: var(--radius-full);
+    font-weight: 500;
+    transition: opacity 0.2s, transform 0.2s;
+}
+.preview-feature-badge.badge-api { background: rgba(44, 110, 203, 0.1); color: #2C6ECB; }
+.preview-feature-badge.badge-publish { background: rgba(4, 123, 93, 0.1); color: #047B5D; }
+.preview-feature-badge.badge-slug { background: rgba(185, 137, 0, 0.1); color: #B98900; }
+.preview-feature-badge.badge-seo { background: rgba(156, 39, 176, 0.1); color: #9C27B0; }
+.preview-feature-badge.badge-i18n { background: rgba(26, 123, 168, 0.1); color: #1A7BA8; }
+.preview-no-features {
+    font-size: var(--font-xs);
+    color: var(--text-disabled);
+    font-style: italic;
+    padding: 4px 0;
+}
+
+.preview-fields { list-style: none; margin: 0; padding: 0; }
+.preview-fields li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-200);
+    padding: var(--space-100) 0;
+    font-size: var(--font-xs);
+    color: var(--text-secondary);
+}
+.preview-fields li svg {
+    width: 14px;
+    height: 14px;
+    color: var(--text-disabled);
+    flex-shrink: 0;
+}
+.preview-field-name {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text);
+}
+.preview-field-type {
+    margin-left: auto;
+    font-size: 0.65rem;
+    color: var(--text-disabled);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+/* ── Submit Area ── */
+.create-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-300);
+    padding-top: var(--space-500);
+    border-top: 1px solid var(--border);
+    margin-top: var(--space-200);
+}
+.create-actions .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-200);
+    padding: var(--space-200) var(--space-500);
+    font-size: var(--font-sm);
+    font-weight: 600;
+    font-family: var(--font);
+    color: var(--color-primary-text);
+    background: var(--color-primary);
+    border: none;
+    border-radius: var(--radius-200);
+    cursor: pointer;
+    transition: background 0.15s;
+    height: 36px;
+}
+.create-actions .btn-primary:hover { background: var(--color-primary-hover); }
+.create-actions .btn-primary:active { background: var(--color-primary-pressed); }
+.create-actions .btn-primary svg { width: 16px; height: 16px; }
+.create-actions .btn-cancel {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-200) var(--space-500);
+    font-size: var(--font-sm);
+    font-weight: 500;
+    font-family: var(--font);
+    color: var(--text-secondary);
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-200);
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s;
+    height: 36px;
+    box-sizing: border-box;
+}
+.create-actions .btn-cancel:hover {
+    background: var(--bg-surface-hover);
+    color: var(--text);
+}
+
+/* ── Animations ── */
+@keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.preview-feature-badge { animation: fadeSlideIn 0.2s ease; }
+</style>
+
+{# ── Page Header ── #}
+<div class="create-header">
+    <a href="{{ admin_url('collections') }}" class="create-header-back" title="Back to Collections">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+    </a>
+    <div class="create-header-text">
+        <p class="create-breadcrumb"><a href="{{ admin_url('collections') }}">Collections</a></p>
+        <h1>Create New Collection</h1>
     </div>
 </div>
 
+<form method="POST" action="{{ admin_url('collections') }}" id="createForm">
+    {{ csrf_field() | raw }}
+
+    <div class="create-layout">
+        {# ── Left: Form Panel ── #}
+        <div class="create-form-panel">
+
+            {# Section: Basic Information #}
+            <div class="form-section">
+                <h2 class="form-section-title">Basic Information</h2>
+                <p class="form-section-desc">Define the identity of your collection. The name and slug determine how it appears and how the database table is named.</p>
+
+                <div class="fg">
+                    <label for="name">Collection Name <span class="required">*</span></label>
+                    <input type="text" id="name" name="name" class="form-control"
+                           value="{{ flash('_old_input').name ?? '' }}"
+                           placeholder="e.g. Blog Posts" required autocomplete="off">
+                    {% if flash('errors').name is defined %}
+                        <div class="form-error">{{ flash('errors').name }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="fg">
+                    <label for="slug">API Identifier</label>
+                    <input type="text" id="slug" name="slug" class="form-control"
+                           value="{{ flash('_old_input').slug ?? '' }}"
+                           placeholder="blog_posts" autocomplete="off">
+                    <p class="form-hint">Auto-generated from name. Used for the database table <code id="tableHint">cms_...</code> and API endpoints.</p>
+                    {% if flash('errors').slug is defined %}
+                        <div class="form-error">{{ flash('errors').slug }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="fg">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="description" class="form-control"
+                              rows="3" placeholder="Briefly describe what this collection stores...">{{ flash('_old_input').description ?? '' }}</textarea>
+                </div>
+            </div>
+
+            {# Section: Configuration #}
+            <div class="form-section">
+                <h2 class="form-section-title">Configuration</h2>
+                <p class="form-section-desc">Choose how primary keys are generated. This cannot be changed after entries are created.</p>
+
+                <div class="fg">
+                    <label>Primary Key Type</label>
+                    <div class="pk-options">
+                        <label class="pk-option">
+                            <input type="radio" name="primary_key_type" value="integer" checked>
+                            <div class="pk-option-card">
+                                <svg class="pk-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
+                                <span class="pk-name">Auto-increment</span>
+                                <span class="pk-desc">Sequential integer IDs (1, 2, 3...)</span>
+                            </div>
+                        </label>
+                        <label class="pk-option">
+                            <input type="radio" name="primary_key_type" value="uuid">
+                            <div class="pk-option-card">
+                                <svg class="pk-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                                <span class="pk-name">UUID</span>
+                                <span class="pk-desc">Universally unique identifiers (CHAR 36)</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            {# Section: Features #}
+            <div class="form-section">
+                <h2 class="form-section-title">Features</h2>
+                <p class="form-section-desc">Enable optional capabilities for this collection. These add extra fields and functionality.</p>
+
+                <div class="toggle-row">
+                    <div class="toggle-icon icon-api">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                    </div>
+                    <div class="toggle-info">
+                        <div class="toggle-name">REST API</div>
+                        <div class="toggle-desc">Expose CRUD endpoints for this collection</div>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" name="is_api_enabled" value="1" data-feature="api">
+                        <div class="toggle-track"></div>
+                        <div class="toggle-thumb"></div>
+                    </label>
+                </div>
+
+                <div class="toggle-row">
+                    <div class="toggle-icon icon-publish">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </div>
+                    <div class="toggle-info">
+                        <div class="toggle-name">Publishable</div>
+                        <div class="toggle-desc">Add draft/published status to entries</div>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" name="is_publishable" value="1" data-feature="publish">
+                        <div class="toggle-track"></div>
+                        <div class="toggle-thumb"></div>
+                    </label>
+                </div>
+
+                <div class="toggle-row">
+                    <div class="toggle-icon icon-slug">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                    </div>
+                    <div class="toggle-info">
+                        <div class="toggle-name">URL Slugs</div>
+                        <div class="toggle-desc">Auto-generate URL-friendly slugs for each entry</div>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" name="has_slug" value="1" data-feature="slug">
+                        <div class="toggle-track"></div>
+                        <div class="toggle-thumb"></div>
+                    </label>
+                </div>
+
+                <div class="toggle-row">
+                    <div class="toggle-icon icon-seo">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    </div>
+                    <div class="toggle-info">
+                        <div class="toggle-name">SEO Fields</div>
+                        <div class="toggle-desc">Add meta title, description, and OG fields</div>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" name="has_seo" value="1" data-feature="seo">
+                        <div class="toggle-track"></div>
+                        <div class="toggle-thumb"></div>
+                    </label>
+                </div>
+
+                <div class="toggle-row">
+                    <div class="toggle-icon icon-i18n">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    </div>
+                    <div class="toggle-info">
+                        <div class="toggle-name">Translatable (i18n)</div>
+                        <div class="toggle-desc">Enable multi-language content support</div>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" name="is_translatable" value="1" data-feature="i18n">
+                        <div class="toggle-track"></div>
+                        <div class="toggle-thumb"></div>
+                    </label>
+                </div>
+
+                {# Submit #}
+                <div class="create-actions">
+                    <button type="submit" class="btn-primary">
+                        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+                        Create Collection
+                    </button>
+                    <a href="{{ admin_url('collections') }}" class="btn-cancel">Cancel</a>
+                </div>
+            </div>
+
+        </div>
+
+        {# ── Right: Preview Panel ── #}
+        <div class="create-preview-wrapper">
+            <div class="preview-card">
+                <div class="preview-header">Preview</div>
+                <div class="preview-body">
+
+                    <div class="preview-collection-name">
+                        <div class="preview-collection-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                        </div>
+                        <div id="previewName" class="preview-name-text preview-name-placeholder">Untitled Collection</div>
+                    </div>
+
+                    <div class="preview-meta">
+                        <div class="preview-meta-row">
+                            <span class="preview-meta-label">Table</span>
+                            <span class="preview-meta-value" id="previewTable">cms_...</span>
+                        </div>
+                        <div class="preview-meta-row">
+                            <span class="preview-meta-label">Primary Key</span>
+                            <span class="preview-meta-value" id="previewPK">Integer (AI)</span>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: var(--space-400);">
+                        <div class="preview-section-label">Features</div>
+                        <div class="preview-features" id="previewFeatures">
+                            <span class="preview-no-features" id="noFeaturesMsg">No features enabled</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="preview-section-label">System Fields</div>
+                        <ul class="preview-fields" id="previewFields">
+                            <li>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/></svg>
+                                <span class="preview-field-name">id</span>
+                                <span class="preview-field-type" id="previewIdType">integer</span>
+                            </li>
+                            <li>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/></svg>
+                                <span class="preview-field-name">created_at</span>
+                                <span class="preview-field-type">timestamp</span>
+                            </li>
+                            <li>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/></svg>
+                                <span class="preview-field-name">updated_at</span>
+                                <span class="preview-field-type">timestamp</span>
+                            </li>
+                            <li>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/></svg>
+                                <span class="preview-field-name">created_by</span>
+                                <span class="preview-field-type">integer</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
 {% block scripts %}
 <script nonce="{{ csp_nonce() }}">
-document.getElementById('name').addEventListener('input', function() {
-    const slugField = document.getElementById('slug');
-    if (!slugField.dataset.manual) {
-        slugField.value = this.value.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+(function() {
+    var nameInput = document.getElementById('name');
+    var slugInput = document.getElementById('slug');
+    var tableHint = document.getElementById('tableHint');
+    var previewName = document.getElementById('previewName');
+    var previewTable = document.getElementById('previewTable');
+    var previewPK = document.getElementById('previewPK');
+    var previewIdType = document.getElementById('previewIdType');
+    var previewFeatures = document.getElementById('previewFeatures');
+    var noFeaturesMsg = document.getElementById('noFeaturesMsg');
+    var previewFields = document.getElementById('previewFields');
+
+    var featureConfig = {
+        api:     { label: 'REST API',     badgeClass: 'badge-api' },
+        publish: { label: 'Publishable',  badgeClass: 'badge-publish' },
+        slug:    { label: 'URL Slugs',    badgeClass: 'badge-slug' },
+        seo:     { label: 'SEO Fields',   badgeClass: 'badge-seo' },
+        i18n:    { label: 'Translatable', badgeClass: 'badge-i18n' }
+    };
+
+    var extraFields = {
+        publish: [
+            { name: 'status', type: 'enum' },
+            { name: 'published_at', type: 'timestamp' }
+        ],
+        slug: [
+            { name: 'slug', type: 'varchar' }
+        ],
+        seo: [
+            { name: 'meta_title', type: 'varchar' },
+            { name: 'meta_description', type: 'text' }
+        ],
+        i18n: [
+            { name: 'locale', type: 'varchar' }
+        ]
+    };
+
+    function toSlug(str) {
+        return str.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
     }
-});
-document.getElementById('slug').addEventListener('input', function() {
-    this.dataset.manual = '1';
-});
+
+    function updatePreview() {
+        var name = nameInput.value.trim();
+        var slug = slugInput.value.trim() || toSlug(nameInput.value);
+
+        // Name
+        if (name) {
+            previewName.textContent = name;
+            previewName.classList.remove('preview-name-placeholder');
+        } else {
+            previewName.textContent = 'Untitled Collection';
+            previewName.classList.add('preview-name-placeholder');
+        }
+
+        // Table
+        var tableName = slug ? 'cms_' + slug : 'cms_...';
+        previewTable.textContent = tableName;
+        tableHint.textContent = tableName;
+
+        // Primary key
+        var pkRadios = document.querySelectorAll('input[name="primary_key_type"]');
+        var pkVal = 'integer';
+        for (var i = 0; i < pkRadios.length; i++) {
+            if (pkRadios[i].checked) { pkVal = pkRadios[i].value; break; }
+        }
+        previewPK.textContent = pkVal === 'uuid' ? 'UUID (CHAR 36)' : 'Integer (AI)';
+        previewIdType.textContent = pkVal === 'uuid' ? 'char(36)' : 'integer';
+
+        // Features
+        var toggles = document.querySelectorAll('[data-feature]');
+        var enabledFeatures = [];
+        for (var j = 0; j < toggles.length; j++) {
+            if (toggles[j].checked) {
+                enabledFeatures.push(toggles[j].getAttribute('data-feature'));
+            }
+        }
+
+        // Feature badges
+        previewFeatures.innerHTML = '';
+        if (enabledFeatures.length === 0) {
+            var span = document.createElement('span');
+            span.className = 'preview-no-features';
+            span.textContent = 'No features enabled';
+            previewFeatures.appendChild(span);
+        } else {
+            for (var k = 0; k < enabledFeatures.length; k++) {
+                var feat = enabledFeatures[k];
+                var cfg = featureConfig[feat];
+                var badge = document.createElement('span');
+                badge.className = 'preview-feature-badge ' + cfg.badgeClass;
+                badge.textContent = cfg.label;
+                previewFeatures.appendChild(badge);
+            }
+        }
+
+        // System fields
+        var dotSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/></svg>';
+        var baseFields = [
+            { name: 'id', type: pkVal === 'uuid' ? 'char(36)' : 'integer' },
+            { name: 'created_at', type: 'timestamp' },
+            { name: 'updated_at', type: 'timestamp' },
+            { name: 'created_by', type: 'integer' }
+        ];
+
+        for (var m = 0; m < enabledFeatures.length; m++) {
+            var ef = extraFields[enabledFeatures[m]];
+            if (ef) {
+                for (var n = 0; n < ef.length; n++) {
+                    baseFields.push(ef[n]);
+                }
+            }
+        }
+
+        previewFields.innerHTML = '';
+        for (var p = 0; p < baseFields.length; p++) {
+            var li = document.createElement('li');
+            li.innerHTML = dotSvg + '<span class="preview-field-name">' + baseFields[p].name + '</span><span class="preview-field-type">' + baseFields[p].type + '</span>';
+            previewFields.appendChild(li);
+        }
+    }
+
+    // Slug auto-generation
+    nameInput.addEventListener('input', function() {
+        if (!slugInput.dataset.manual) {
+            slugInput.value = toSlug(this.value);
+        }
+        updatePreview();
+    });
+
+    slugInput.addEventListener('input', function() {
+        this.dataset.manual = '1';
+        updatePreview();
+    });
+
+    // Primary key radios
+    var pkRadios = document.querySelectorAll('input[name="primary_key_type"]');
+    for (var i = 0; i < pkRadios.length; i++) {
+        pkRadios[i].addEventListener('change', updatePreview);
+    }
+
+    // Feature toggles
+    var toggleInputs = document.querySelectorAll('[data-feature]');
+    for (var j = 0; j < toggleInputs.length; j++) {
+        toggleInputs[j].addEventListener('change', updatePreview);
+    }
+
+    // Initial state
+    updatePreview();
+})();
 </script>
 {% endblock %}
 {% endblock %}
