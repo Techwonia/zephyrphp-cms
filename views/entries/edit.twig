@@ -35,13 +35,14 @@
     <span class="breadcrumb-sep">/</span>
     <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}">Entries</a>
     <span class="breadcrumb-sep">/</span>
-    <span>#{{ entry.id }}</span>
+    {% set _entryLabel = entry.slug ?? entry.title ?? entry.name ?? entry.label ?? ('#' ~ entry.id) %}
+    <span>{{ _entryLabel }}</span>
 </div>
 
 {# --- Page Header --- #}
 <div class="ee-page-header">
     <div class="ee-page-header-left">
-        <h1>Edit Entry <span class="ee-entry-id">#{{ entry.id }}</span></h1>
+        <h1>{{ _entryLabel }}</h1>
         <span id="autosave-indicator" class="ee-autosave-indicator"></span>
     </div>
     <div class="ee-page-header-right">

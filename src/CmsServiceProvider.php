@@ -115,6 +115,25 @@ class CmsServiceProvider
         $sidebar = SidebarManager::getInstance();
         $sidebar->registerDefaults();
 
+        // Add dynamic collection items under "Collection Types" section
+        $sidebar->addSection('collections', 'Collection Types', 5);
+        try {
+            $collections = \ZephyrPHP\Cms\Models\Collection::findAll();
+            foreach ($collections as $i => $col) {
+                $sidebar->addItem('collections', [
+                    'id' => 'collection-' . $col->getSlug(),
+                    'label' => $col->getName(),
+                    'url' => admin_url('collections/' . $col->getSlug() . '/entries'),
+                    'icon' => $col->getIcon() ?? 'file-text',
+                    'position' => $i + 1,
+                    'permission' => 'entries.view',
+                    'match' => 'prefix:' . admin_url('collections/' . $col->getSlug()),
+                ]);
+            }
+        } catch (\Throwable $e) {
+            // Collections table may not exist yet
+        }
+
         // Add Marketplace sidebar item (themes only)
         $sidebar->addItem('content', [
             'id' => 'marketplace',
