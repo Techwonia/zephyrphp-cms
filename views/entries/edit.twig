@@ -176,36 +176,45 @@
                         {% set relationType = field.getOptions().relation_type ?? 'one_to_one' %}
                         {% set displayField = field.getOptions().display_field ?? null %}
                         {% set isMulti = relationType != 'one_to_one' %}
-                        {% set selectedIds = isMulti and val is iterable ? val : [] %}
-                        <select id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}{% if isMulti %}[]{% endif %}"
-                                class="form-control{% if hasError %} is-invalid{% endif %}"
-                                {% if isMulti %}multiple size="6"{% endif %}
-                                {% if field.isRequired() %}required{% endif %}>
-                            {% if not isMulti %}<option value="">-- Select --</option>{% endif %}
-                            {% if relationData[field.getSlug()] is defined %}
-                                {% for relEntry in relationData[field.getSlug()].entries %}
-                                    {% if displayField and relEntry[displayField] is defined %}
-                                        {% set relLabel = relEntry[displayField] %}
-                                    {% else %}
-                                        {% set relLabel = '' %}
-                                        {% for rk, rv in relEntry %}
-                                            {% if rk not in ['id', 'slug', 'status', 'published_at', 'created_by', 'created_at', 'updated_at'] and rv is not null and relLabel == '' %}
-                                                {% set relLabel = rv %}
-                                            {% endif %}
-                                        {% endfor %}
-                                    {% endif %}
+                        {% set _relData = relationData[_fSlug]|default({}) %}
+                        {% set _relHasHierarchy = _relData.hasHierarchy|default(false) %}
+                        {% set _relDisplayField = _relData.displayField|default(displayField) %}
+
+                        {% if _relHasHierarchy and not isMulti %}
+                            {# Drill-down tree picker for hierarchy relation #}
+                            {% set _relTreeJson = [] %}
+                            {% for te in _relData.treeEntries|default([]) %}
+                                {% set _rl = (_relDisplayField and te[_relDisplayField] is defined) ? te[_relDisplayField] : (te.title ?? te.name ?? te.slug ?? '#' ~ te.id) %}
+                                {% set _relTreeJson = _relTreeJson|merge([{'id': te.id, 'label': _rl, 'parent_id': te.parent_id|default(''), 'depth': te._depth}]) %}
+                            {% endfor %}
+                            {% set _curRelLabel = 'Select...' %}
+                            {% if val %}{% for te in _relData.treeEntries|default([]) %}{% if te.id == val or te.id ~ '' == val ~ '' %}{% set _curRelLabel = (_relDisplayField and te[_relDisplayField] is defined) ? te[_relDisplayField] : (te.title ?? te.name ?? '#' ~ te.id) %}{% endif %}{% endfor %}{% endif %}
+                            <input type="hidden" name="{{ field.getSlug() }}" id="field_{{ field.getSlug() }}" value="{{ val }}">
+                            <div class="tree-picker rel-drill-picker" data-tree="{{ _relTreeJson|json_encode|e('html_attr') }}" data-current="{{ val }}" data-field="{{ _fSlug }}">
+                                <button type="button" class="tree-picker-btn">
+                                    <span class="tp-label">{{ _curRelLabel }}</span>
+                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4.5l3 3 3-3"/></svg>
+                                </button>
+                                <div class="tree-picker-dropdown" style="display:none"></div>
+                            </div>
+                        {% else %}
+                            {# Plain select for flat relations #}
+                            {% set selectedIds = isMulti and val is iterable ? val : [] %}
+                            <select id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}{% if isMulti %}[]{% endif %}"
+                                    class="form-control{% if hasError %} is-invalid{% endif %}"
+                                    {% if isMulti %}multiple size="6"{% endif %}
+                                    {% if field.isRequired() %}required{% endif %}>
+                                {% if not isMulti %}<option value="">Select...</option>{% endif %}
+                                {% for relEntry in _relData.entries|default([]) %}
+                                    {% set relLabel = (_relDisplayField and relEntry[_relDisplayField] is defined) ? relEntry[_relDisplayField] : (relEntry.title ?? relEntry.name ?? '#' ~ relEntry.id) %}
                                     {% if isMulti %}
-                                        <option value="{{ relEntry.id }}" {% if relEntry.id in selectedIds %}selected{% endif %}>
-                                            {{ relLabel ? relLabel : '#' ~ relEntry.id }}
-                                        </option>
+                                        <option value="{{ relEntry.id }}" {% if relEntry.id in selectedIds %}selected{% endif %}>{{ relLabel }}</option>
                                     {% else %}
-                                        <option value="{{ relEntry.id }}" {% if val == relEntry.id or val == relEntry.id ~ '' %}selected{% endif %}>
-                                            {{ relLabel ? relLabel : '#' ~ relEntry.id }}
-                                        </option>
+                                        <option value="{{ relEntry.id }}" {% if val == relEntry.id or val == relEntry.id ~ '' %}selected{% endif %}>{{ relLabel }}</option>
                                     {% endif %}
                                 {% endfor %}
-                            {% endif %}
-                        </select>
+                            </select>
+                        {% endif %}
                         {% if field.getOptions().relation_collection is defined %}
                             <p class="ee-field-hint">{{ relationType|replace({'_': ' '})|title }} -- Related to: {{ field.getOptions().relation_collection }}{% if isMulti %} (hold Ctrl to select multiple){% endif %}</p>
                         {% endif %}
@@ -1783,6 +1792,41 @@ function updateSeoCounter(el, counterId, recommended) {
             if (!e.target.closest('#parent-tree-picker')) dropdown.style.display = 'none';
         });
     })();
+
+    // Drill-down for relation fields pointing to hierarchy collections
+    document.querySelectorAll('.rel-drill-picker').forEach(function(picker) {
+        var treeData = JSON.parse(picker.dataset.tree || '[]');
+        var fieldSlug = picker.dataset.field;
+        var currentVal = picker.dataset.current || '';
+        var toggle = picker.querySelector('.tree-picker-btn');
+        var dropdown = picker.querySelector('.tree-picker-dropdown');
+        var hiddenInput = document.getElementById('field_' + fieldSlug);
+        var labelEl = picker.querySelector('.tp-label');
+        if (!toggle || !dropdown || !hiddenInput) return;
+        var childrenOf = {}, itemMap = {};
+        treeData.forEach(function(item) { itemMap[item.id] = item; var pid = item.parent_id || '__root__'; if (!childrenOf[pid]) childrenOf[pid] = []; childrenOf[pid].push(item); });
+        function renderLevel(parentId, parentLabel) {
+            var html = '';
+            if (parentId) {
+                var parent = itemMap[parentId]; var gpId = parent ? (parent.parent_id || '') : '';
+                html += '<div class="tp-back" data-go="' + gpId + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="15 18 9 12 15 6"/></svg>' + (parentLabel || 'Back') + '</div>';
+                html += '<div class="tp-select-current" data-select="' + parentId + '" data-label="' + (parentLabel || '').replace(/"/g, '&quot;') + '">● Select: ' + parentLabel + '</div>';
+            } else {
+                html += '<div class="tp-none' + (!currentVal ? ' active' : '') + '" data-select="" data-label="Select...">None</div>';
+            }
+            (childrenOf[parentId || '__root__'] || []).forEach(function(child) {
+                var hasKids = (childrenOf[child.id] || []).length > 0;
+                html += '<div class="tp-item' + (currentVal == child.id ? ' active' : '') + '" data-id="' + child.id + '" data-label="' + child.label.replace(/"/g, '&quot;') + '"' + (hasKids ? ' data-drill="1"' : '') + '><span>' + child.label + '</span>' + (hasKids ? '<span class="tp-item-arrow">›</span>' : '') + '</div>';
+            });
+            dropdown.innerHTML = html;
+            dropdown.querySelectorAll('.tp-back').forEach(function(el) { el.addEventListener('click', function(e) { e.stopPropagation(); var p = itemMap[el.dataset.go]; renderLevel(el.dataset.go || '', p ? p.label : ''); }); });
+            dropdown.querySelectorAll('[data-select]').forEach(function(el) { el.addEventListener('click', function(e) { e.stopPropagation(); currentVal = el.dataset.select; hiddenInput.value = currentVal; labelEl.textContent = el.dataset.label; dropdown.style.display = 'none'; }); });
+            dropdown.querySelectorAll('.tp-item[data-drill]').forEach(function(el) { el.addEventListener('click', function(e) { e.stopPropagation(); renderLevel(el.dataset.id, el.dataset.label); }); });
+            dropdown.querySelectorAll('.tp-item:not([data-drill])').forEach(function(el) { el.addEventListener('click', function(e) { e.stopPropagation(); currentVal = el.dataset.id; hiddenInput.value = currentVal; labelEl.textContent = el.dataset.label; dropdown.style.display = 'none'; }); });
+        }
+        toggle.addEventListener('click', function(e) { e.preventDefault(); if (dropdown.style.display === 'none') { renderLevel('', ''); dropdown.style.display = 'block'; } else { dropdown.style.display = 'none'; } });
+        document.addEventListener('click', function(e) { if (!e.target.closest('.rel-drill-picker[data-field="' + fieldSlug + '"]')) dropdown.style.display = 'none'; });
+    });
 
     // Slug edit toggle (Shopify pattern: readonly by default, click Edit to unlock)
     {% if collection.hasSlug() %}
