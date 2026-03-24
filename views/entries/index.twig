@@ -243,8 +243,18 @@
                         <td class="entries-table__cell">
                             {% if field.getType() == 'boolean' %}
                                 <span class="entries-bool entries-bool--{{ entry[field.getSlug()] ? 'yes' : 'no' }}">{{ entry[field.getSlug()] ? 'Yes' : 'No' }}</span>
-                            {% elseif field.getType() == 'image' and entry[field.getSlug()] %}
-                                <img src="/{{ entry[field.getSlug()] }}" alt="" class="entries-thumb">
+                            {% elseif (field.getType() == 'image' or field.getType() == 'file') and entry[field.getSlug()] %}
+                                {% set _imgVal = entry[field.getSlug()] %}
+                                {% if _imgVal starts with '[' %}
+                                    {% set _imgPaths = _imgVal|split('","') %}
+                                    {% for _ip in _imgPaths|slice(0, 3) %}
+                                        {% set _cleanPath = _ip|replace({'"': '', '[': '', ']': ''}) %}
+                                        {% if _cleanPath %}<img src="/{{ _cleanPath }}" alt="" class="entries-thumb">{% endif %}
+                                    {% endfor %}
+                                    {% if _imgPaths|length > 3 %}<span class="entries-text-muted" style="font-size:11px">+{{ _imgPaths|length - 3 }}</span>{% endif %}
+                                {% else %}
+                                    <img src="/{{ _imgVal }}" alt="" class="entries-thumb">
+                                {% endif %}
                             {% elseif field.getType() == 'richtext' and entry[field.getSlug()] %}
                                 {% set _rtVal = entry[field.getSlug()]|striptags %}
                                 <span class="entries-truncate entries-richtext-preview" data-content="{{ entry[field.getSlug()]|e('html_attr') }}" title="Click to preview">{{ _rtVal|slice(0, 60) }}{% if _rtVal|length > 60 %}...{% endif %}</span>
@@ -843,10 +853,15 @@
     vertical-align: middle;
 }
 .entries-thumb {
-    max-height: 32px;
-    border-radius: 4px;
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 6px;
     vertical-align: middle;
+    border: 1px solid var(--border, #E3E3E3);
+    flex-shrink: 0;
 }
+.entries-table__cell img.entries-thumb + img.entries-thumb { margin-left: 4px; }
 .entries-bool {
     font-size: 0.75rem;
     font-weight: 500;
