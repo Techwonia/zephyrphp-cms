@@ -39,10 +39,16 @@ class CmsController extends Controller
 
         $collections = Collection::findAll();
 
+        // Single-pass counts using direct SQL COUNT per table (no EntryQuery overhead)
+        $conn = SchemaManager::getInstance()->getConnection();
         $stats = [];
         $totalEntries = 0;
         foreach ($collections as $collection) {
-            $count = EntryQuery::collection($collection->getSlug())->noCache()->count();
+            try {
+                $count = (int) $conn->fetchOne("SELECT COUNT(*) FROM `{$collection->getTableName()}`");
+            } catch (\Throwable $e) {
+                $count = 0;
+            }
             $stats[$collection->getSlug()] = $count;
             $totalEntries += $count;
         }
@@ -114,7 +120,7 @@ class CmsController extends Controller
         }
 
         $collections = Collection::findAll();
-        $schema = new SchemaManager();
+        $schema = SchemaManager::getInstance();
         $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
         $now = date('Y-m-d H:i:s');
         $published = 0;

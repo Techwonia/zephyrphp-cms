@@ -1842,7 +1842,7 @@ class EntryQuery
             return;
         }
 
-        $this->schema = new SchemaManager();
+        $this->schema = SchemaManager::getInstance();
         $this->collection = Collection::findOneBy(['slug' => $this->collectionSlug]);
 
         if ($this->collection) {

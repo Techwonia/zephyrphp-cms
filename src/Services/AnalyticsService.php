@@ -10,6 +10,22 @@ use ZephyrPHP\Database\Connection;
 
 class AnalyticsService
 {
+    /** @var array|null Per-request cache for status counts */
+    private static ?array $statusCountsCache = null;
+
+    /**
+     * Get the display field for a collection (first text/email field, or 'id').
+     */
+    private static function getDisplayField(Collection $collection): string
+    {
+        foreach ($collection->getFields() as $field) {
+            if (in_array($field->getType(), ['text', 'email'])) {
+                return $field->getSlug();
+            }
+        }
+        return 'id';
+    }
+
     /**
      * Get recent entries across all collections, sorted by created_at DESC.
      */
@@ -20,14 +36,7 @@ class AnalyticsService
             $allEntries = [];
 
             foreach ($collections as $collection) {
-                // Determine display field (first text/email field, or 'id')
-                $displayField = 'id';
-                foreach ($collection->getFields() as $field) {
-                    if (in_array($field->getType(), ['text', 'email'])) {
-                        $displayField = $field->getSlug();
-                        break;
-                    }
-                }
+                $displayField = self::getDisplayField($collection);
 
                 $fields = [$displayField, 'created_at'];
                 if ($collection->isPublishable()) {
@@ -37,7 +46,6 @@ class AnalyticsService
                 $rows = EntryQuery::collection($collection->getSlug())
                     ->onlyFields(...$fields)
                     ->latest('created_at')
-                    ->noCache()
                     ->limit($limit)
                     ->get();
 
@@ -53,10 +61,7 @@ class AnalyticsService
                 }
             }
 
-            // Sort all by created_at DESC and limit
-            usort($allEntries, function ($a, $b) {
-                return strcmp($b['created_at'] ?? '', $a['created_at'] ?? '');
-            });
+            usort($allEntries, fn($a, $b) => strcmp($b['created_at'] ?? '', $a['created_at'] ?? ''));
 
             return array_slice($allEntries, 0, $limit);
         } catch (\Exception $e) {
@@ -65,8 +70,7 @@ class AnalyticsService
     }
 
     /**
-     * Get entry counts per collection.
-     * Uses a single query per collection via direct SQL COUNT to minimize overhead.
+     * Get entry counts per collection using direct SQL COUNT.
      */
     public static function getEntryCountsByCollection(): array
     {
@@ -80,9 +84,8 @@ class AnalyticsService
             $counts = [];
 
             foreach ($collections as $collection) {
-                $tableName = $collection->getTableName();
                 try {
-                    $count = (int) $conn->fetchOne("SELECT COUNT(*) FROM `{$tableName}`");
+                    $count = (int) $conn->fetchOne("SELECT COUNT(*) FROM `{$collection->getTableName()}`");
                 } catch (\Throwable $e) {
                     $count = 0;
                 }
@@ -101,11 +104,16 @@ class AnalyticsService
 
     /**
      * Count draft and scheduled entries across all publishable collections in one pass.
+     * Cached per-request so getDraftCount() + getScheduledCount() only run one query set.
      *
      * @return array{draft: int, scheduled: int}
      */
     private static function getStatusCounts(): array
     {
+        if (self::$statusCountsCache !== null) {
+            return self::$statusCountsCache;
+        }
+
         $result = ['draft' => 0, 'scheduled' => 0];
         try {
             $collections = Collection::findAll();
@@ -119,10 +127,10 @@ class AnalyticsService
             }
 
             if (empty($publishableTables)) {
+                self::$statusCountsCache = $result;
                 return $result;
             }
 
-            // Build a UNION ALL query to count both statuses across all publishable tables at once
             $unions = [];
             foreach ($publishableTables as $table) {
                 $unions[] = "SELECT status, COUNT(*) AS cnt FROM `{$table}` WHERE status IN ('draft', 'scheduled') GROUP BY status";
@@ -141,20 +149,15 @@ class AnalyticsService
             // Silently fail
         }
 
+        self::$statusCountsCache = $result;
         return $result;
     }
 
-    /**
-     * Count draft entries across all publishable collections.
-     */
     public static function getDraftCount(): int
     {
         return self::getStatusCounts()['draft'];
     }
 
-    /**
-     * Count scheduled entries across all publishable collections.
-     */
     public static function getScheduledCount(): int
     {
         return self::getStatusCounts()['scheduled'];
@@ -167,29 +170,18 @@ class AnalyticsService
     {
         try {
             $conn = Connection::getInstance()->getConnection();
-            $sm = $conn->createSchemaManager();
 
-            if (!$sm->tablesExist(['cms_media'])) {
-                return ['total' => 0, 'types' => []];
-            }
+            // Single query: get total + type breakdown together
+            $rows = $conn->fetchAllAssociative(
+                "SELECT SUBSTRING_INDEX(mime_type, '/', 1) as type_group, COUNT(*) as cnt FROM cms_media GROUP BY type_group"
+            );
 
-            $total = (int) $conn->createQueryBuilder()
-                ->select('COUNT(*)')
-                ->from('cms_media')
-                ->executeQuery()
-                ->fetchOne();
-
-            // Group by MIME type prefix (image, document, video, audio, other)
-            $rows = $conn->createQueryBuilder()
-                ->select("SUBSTRING_INDEX(mime_type, '/', 1) as type_group, COUNT(*) as cnt")
-                ->from('cms_media')
-                ->groupBy('type_group')
-                ->executeQuery()
-                ->fetchAllAssociative();
-
+            $total = 0;
             $types = [];
             foreach ($rows as $row) {
-                $types[$row['type_group'] ?? 'other'] = (int) $row['cnt'];
+                $cnt = (int) $row['cnt'];
+                $types[$row['type_group'] ?? 'other'] = $cnt;
+                $total += $cnt;
             }
 
             return ['total' => $total, 'types' => $types];
@@ -207,21 +199,17 @@ class AnalyticsService
             $conn = Connection::getInstance()->getConnection();
             $collections = Collection::findAll();
 
-            // Build a date range
             $dates = [];
             for ($i = $days - 1; $i >= 0; $i--) {
-                $date = date('Y-m-d', strtotime("-{$i} days"));
-                $dates[$date] = 0;
+                $dates[date('Y-m-d', strtotime("-{$i} days"))] = 0;
             }
 
             $startDate = date('Y-m-d', strtotime("-{$days} days"));
 
             if (!empty($collections)) {
-                // Build a single UNION ALL query across all collection tables
                 $unions = [];
                 foreach ($collections as $collection) {
-                    $table = $collection->getTableName();
-                    $unions[] = "SELECT DATE(created_at) AS day, COUNT(*) AS cnt FROM `{$table}` WHERE created_at >= ? GROUP BY day";
+                    $unions[] = "SELECT DATE(created_at) AS day, COUNT(*) AS cnt FROM `{$collection->getTableName()}` WHERE created_at >= ? GROUP BY day";
                 }
 
                 $sql = implode(' UNION ALL ', $unions);
@@ -254,20 +242,13 @@ class AnalyticsService
             foreach ($collections as $collection) {
                 if (!$collection->isPublishable()) continue;
 
-                $displayField = 'id';
-                foreach ($collection->getFields() as $field) {
-                    if (in_array($field->getType(), ['text', 'email'])) {
-                        $displayField = $field->getSlug();
-                        break;
-                    }
-                }
+                $displayField = self::getDisplayField($collection);
 
                 $rows = EntryQuery::collection($collection->getSlug())
                     ->where('status', 'scheduled')
                     ->whereCompare('scheduled_at', '>', date('Y-m-d H:i:s'))
                     ->onlyFields($displayField, 'scheduled_at')
                     ->orderBy('scheduled_at', 'ASC')
-                    ->noCache()
                     ->limit($limit)
                     ->get();
 
@@ -282,9 +263,7 @@ class AnalyticsService
                 }
             }
 
-            usort($scheduled, function ($a, $b) {
-                return strcmp($a['scheduled_at'] ?? '', $b['scheduled_at'] ?? '');
-            });
+            usort($scheduled, fn($a, $b) => strcmp($a['scheduled_at'] ?? '', $b['scheduled_at'] ?? ''));
 
             return array_slice($scheduled, 0, $limit);
         } catch (\Exception $e) {

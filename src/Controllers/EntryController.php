@@ -32,7 +32,7 @@ class EntryController extends Controller
     public function __construct()
     {
         parent::__construct();
-        $this->schema = new SchemaManager();
+        $this->schema = SchemaManager::getInstance();
     }
 
     private function requireCmsAccess(): void
@@ -2546,102 +2546,4 @@ class EntryController extends Controller
         echo json_encode(['ok' => false]);
     }
 
-    // ─── Autosave / Draft Recovery ─────────────────────────────────
-
-    /**
-     * Return the autosave storage directory path, creating it if needed.
-     */
-    private function autosaveDir(): string
-    {
-        $dir = (defined('BASE_PATH') ? BASE_PATH : sys_get_temp_dir()) . '/storage/autosaves';
-        if (!is_dir($dir)) {
-            mkdir($dir, 0700, true);
-        }
-        return $dir;
-    }
-
-    /**
-     * Build a safe autosave filename for the current user + collection + entry.
-     */
-    private function autosaveFilename(string $slug, string $id): string
-    {
-        $userId = Auth::user()?->getId() ?? 0;
-        $safeSlug = preg_replace('/[^a-z0-9_-]/i', '', $slug);
-        $safeId = preg_replace('/[^a-z0-9_-]/i', '', $id);
-        return $this->autosaveDir() . "/{$userId}_{$safeSlug}_{$safeId}.json";
-    }
-
-    /**
-     * POST — Save autosave data (AJAX).
-     */
-    public function autosave(string $slug, string $id = 'new'): string
-    {
-        $this->requireCmsAccess();
-
-        $raw = file_get_contents('php://input');
-        $data = json_decode($raw, true);
-
-        if (!is_array($data)) {
-            return $this->json(['success' => false, 'error' => 'Invalid data.'], 400);
-        }
-
-        $payload = [
-            'data' => $data,
-            'timestamp' => time(),
-            'datetime' => (new \DateTime())->format('Y-m-d H:i:s'),
-        ];
-
-        $file = $this->autosaveFilename($slug, $id);
-        file_put_contents($file, json_encode($payload, JSON_UNESCAPED_UNICODE), LOCK_EX);
-
-        return $this->json(['success' => true, 'time' => date('H:i')]);
-    }
-
-    /**
-     * GET — Retrieve autosave data (AJAX).
-     */
-    public function getAutosave(string $slug, string $id = 'new'): string
-    {
-        $this->requireCmsAccess();
-
-        $file = $this->autosaveFilename($slug, $id);
-
-        if (!file_exists($file)) {
-            return $this->json(['exists' => false]);
-        }
-
-        $payload = json_decode(file_get_contents($file), true);
-        if (!is_array($payload) || empty($payload['timestamp'])) {
-            @unlink($file);
-            return $this->json(['exists' => false]);
-        }
-
-        // Expire after 24 hours
-        if ((time() - $payload['timestamp']) > 86400) {
-            @unlink($file);
-            return $this->json(['exists' => false]);
-        }
-
-        return $this->json([
-            'exists' => true,
-            'data' => $payload['data'],
-            'datetime' => $payload['datetime'] ?? '',
-            'timestamp' => $payload['timestamp'],
-        ]);
-    }
-
-    /**
-     * POST — Delete autosave data (AJAX).
-     */
-    public function deleteAutosave(string $slug, string $id = 'new'): string
-    {
-        $this->requireCmsAccess();
-
-        $file = $this->autosaveFilename($slug, $id);
-        if (file_exists($file)) {
-            @unlink($file);
-        }
-
-        return $this->json(['success' => true]);
-    }
 }

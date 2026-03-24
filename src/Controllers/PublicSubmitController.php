@@ -18,7 +18,7 @@ class PublicSubmitController extends Controller
     public function __construct()
     {
         parent::__construct();
-        $this->schema = new SchemaManager();
+        $this->schema = SchemaManager::getInstance();
     }
 
     public function submit(string $slug): void

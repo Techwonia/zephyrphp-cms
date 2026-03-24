@@ -14,6 +14,70 @@ use Doctrine\Common\Collections\Collection as DoctrineCollection;
 #[ORM\HasLifecycleCallbacks]
 class Collection extends Model
 {
+    /** @var array|null Per-request cache for findAll() */
+    private static ?array $_allCache = null;
+
+    /** @var array<string, static|null> Per-request cache for findOneBy slug lookups */
+    private static array $_slugCache = [];
+
+    /**
+     * Cached findAll — avoids repeated DB queries within a single request.
+     */
+    public static function findAll(?int $limit = 1000, int $offset = 0): array
+    {
+        if (self::$_allCache !== null && $limit === 1000 && $offset === 0) {
+            return self::$_allCache;
+        }
+        $result = parent::findAll($limit, $offset);
+        if ($limit === 1000 && $offset === 0) {
+            self::$_allCache = $result;
+            // Also populate slug cache
+            foreach ($result as $col) {
+                self::$_slugCache[$col->getSlug()] = $col;
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Cached findOneBy — uses slug cache when looking up by slug.
+     */
+    public static function findOneBy(array $criteria): ?static
+    {
+        if (count($criteria) === 1 && isset($criteria['slug'])) {
+            $slug = $criteria['slug'];
+            if (array_key_exists($slug, self::$_slugCache)) {
+                return self::$_slugCache[$slug];
+            }
+            $result = parent::findOneBy($criteria);
+            self::$_slugCache[$slug] = $result;
+            return $result;
+        }
+        return parent::findOneBy($criteria);
+    }
+
+    /**
+     * Clear all per-request caches (call after save/delete).
+     */
+    public static function clearCache(): void
+    {
+        self::$_allCache = null;
+        self::$_slugCache = [];
+    }
+
+    public function save(): self
+    {
+        $result = parent::save();
+        self::clearCache();
+        return $result;
+    }
+
+    public function delete(): void
+    {
+        parent::delete();
+        self::clearCache();
+    }
+
     #[ORM\Column(type: 'string', length: 255)]
     protected string $name = '';
 

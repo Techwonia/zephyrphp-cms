@@ -20,7 +20,7 @@ class CollectionController extends Controller
     public function __construct()
     {
         parent::__construct();
-        $this->schema = new SchemaManager();
+        $this->schema = SchemaManager::getInstance();
     }
 
     private function requireCmsAccess(): void

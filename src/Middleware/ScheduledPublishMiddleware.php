@@ -50,7 +50,7 @@ class ScheduledPublishMiddleware
         }
 
         try {
-            $schema = new SchemaManager();
+            $schema = SchemaManager::getInstance();
             $conn = $schema->getConnection();
             $now = (new \DateTime())->format('Y-m-d H:i:s');
 
@@ -62,10 +62,11 @@ class ScheduledPublishMiddleware
                     continue;
                 }
 
-                $sm = $conn->createSchemaManager();
-                $columns = $sm->listTableColumns($tableName);
-                if (!isset($columns['scheduled_at'])) {
-                    continue;
+                // Quick check: try to query scheduled entries directly, skip if column doesn't exist
+                try {
+                    $testQuery = $conn->fetchOne("SELECT 1 FROM `{$tableName}` WHERE `scheduled_at` IS NOT NULL LIMIT 1");
+                } catch (\Throwable $e) {
+                    continue; // scheduled_at column doesn't exist
                 }
 
                 $entries = $conn->createQueryBuilder()

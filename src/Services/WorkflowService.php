@@ -249,7 +249,7 @@ class WorkflowService
 
         try {
             $collections = Collection::findBy(['workflowEnabled' => true]);
-            $schema = new SchemaManager();
+            $schema = SchemaManager::getInstance();
 
             foreach ($collections as $collection) {
                 $tableName = $collection->getTableName();

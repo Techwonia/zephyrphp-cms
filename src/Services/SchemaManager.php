@@ -16,6 +16,15 @@ class SchemaManager
 {
     private Connection $connection;
 
+    /** @var self|null Singleton instance */
+    private static ?self $instance = null;
+
+    /** @var array<string, bool> Per-request cache for tableExists() */
+    private array $tableExistsCache = [];
+
+    /** @var array<string, array> Per-request cache for listTableColumns() */
+    private array $columnsCache = [];
+
     /**
      * SQL reserved words that cannot be used as identifiers.
      */
@@ -33,6 +42,26 @@ class SchemaManager
     public function __construct()
     {
         $this->connection = ZephyrConnection::getInstance()->getConnection();
+    }
+
+    /**
+     * Get or create the singleton instance.
+     * Reuses the same connection and caches across the request.
+     */
+    public static function getInstance(): self
+    {
+        if (self::$instance === null) {
+            self::$instance = new self();
+        }
+        return self::$instance;
+    }
+
+    /**
+     * Invalidate the tableExists/columns cache for a specific table.
+     */
+    public function invalidateTableCache(string $tableName): void
+    {
+        unset($this->tableExistsCache[$tableName], $this->columnsCache[$tableName]);
     }
 
     public function getConnection(): Connection
@@ -499,8 +528,13 @@ class SchemaManager
     public function tableExists(string $tableName): bool
     {
         $tableName = $this->safeTable($tableName);
+        if (array_key_exists($tableName, $this->tableExistsCache)) {
+            return $this->tableExistsCache[$tableName];
+        }
         $sm = $this->connection->createSchemaManager();
-        return $sm->tablesExist([$tableName]);
+        $result = $sm->tablesExist([$tableName]);
+        $this->tableExistsCache[$tableName] = $result;
+        return $result;
     }
 
     /**
@@ -1434,12 +1468,7 @@ class SchemaManager
             return 0;
         }
 
-        $result = $this->connection->createQueryBuilder()
-            ->select('COUNT(*) as total')
-            ->from($tableName)
-            ->executeQuery();
-
-        return (int) $result->fetchOne();
+        return (int) $this->connection->fetchOne("SELECT COUNT(*) FROM `{$tableName}`");
     }
 
     // ========================================================================

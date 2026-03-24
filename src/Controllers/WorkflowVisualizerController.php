@@ -42,7 +42,7 @@ class WorkflowVisualizerController extends Controller
     {
         $this->requirePermission('entries.view');
 
-        $schema = new SchemaManager();
+        $schema = SchemaManager::getInstance();
         $conn = $schema->getConnection();
 
         $collections = Collection::findBy(['workflowEnabled' => true]);

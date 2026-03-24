@@ -22,7 +22,7 @@ class CmsServiceProvider
     public function register(Container $container): void
     {
         $container->singleton(SchemaManager::class, function () {
-            return new SchemaManager();
+            return SchemaManager::getInstance();
         });
 
         $container->alias('cms.schema', SchemaManager::class);
@@ -110,6 +110,43 @@ class CmsServiceProvider
         EntryQuery::addScope('featured', function (EntryQuery $q) {
             $q->where('featured', 1);
         });
+
+        // Detect admin vs frontend request for lazy-loading admin-only components
+        $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+        $isAdminRequest = str_starts_with($requestPath, '/' . admin_path());
+
+        // Register Twig helper functions (needed for all requests)
+        $this->registerTwigHelpers($view, $themeManager);
+
+        // Register redirect middleware for public routes
+        if (!$isAdminRequest) {
+            try {
+                $redirectMiddleware = new Middleware\RedirectMiddleware();
+                $redirectMiddleware->handle(null, function ($request) { return $request; });
+            } catch (\Throwable $e) {
+                // Redirect middleware may fail if DB not configured yet
+            }
+        }
+
+        // Load CMS routes (needed for all requests)
+        $routesFile = __DIR__ . '/../routes/cms.php';
+        if (file_exists($routesFile)) {
+            require $routesFile;
+        }
+
+        // Register theme page routes from pages.json
+        $this->registerThemePageRoutes($themeManager);
+
+        // Register frontend routes for collections with url_prefix
+        $this->registerCollectionRoutes($themeManager);
+
+        // Auto-create CMS tables if they don't exist
+        $this->ensureTablesExist();
+
+        // Skip sidebar and dashboard widget setup for non-admin requests (frontend performance)
+        if (!$isAdminRequest) {
+            return;
+        }
 
         // Initialize sidebar with default CMS items
         $sidebar = SidebarManager::getInstance();
@@ -463,32 +500,6 @@ class CmsServiceProvider
 
         // Register built-in dashboard widgets
         DashboardManager::getInstance()->registerBuiltInWidgets();
-
-        // Register Twig helper functions
-        $this->registerTwigHelpers($view, $themeManager);
-
-        // Register redirect middleware for public routes
-        try {
-            $redirectMiddleware = new Middleware\RedirectMiddleware();
-            $redirectMiddleware->handle(null, function ($request) { return $request; });
-        } catch (\Throwable $e) {
-            // Redirect middleware may fail if DB not configured yet
-        }
-
-        // Load CMS routes
-        $routesFile = __DIR__ . '/../routes/cms.php';
-        if (file_exists($routesFile)) {
-            require $routesFile;
-        }
-
-        // Register theme page routes from pages.json
-        $this->registerThemePageRoutes($themeManager);
-
-        // Register frontend routes for collections with url_prefix
-        $this->registerCollectionRoutes($themeManager);
-
-        // Auto-create CMS tables if they don't exist
-        $this->ensureTablesExist();
     }
 
     private function registerTwigHelpers(\ZephyrPHP\View\View $view, ThemeManager $themeManager): void
@@ -900,7 +911,7 @@ class CmsServiceProvider
         try {
             $collections = \ZephyrPHP\Cms\Models\Collection::findAll();
             $view = \ZephyrPHP\View\View::getInstance();
-            $schema = new SchemaManager();
+            $schema = SchemaManager::getInstance();
 
             foreach ($collections as $collection) {
                 $prefix = $collection->getUrlPrefix();

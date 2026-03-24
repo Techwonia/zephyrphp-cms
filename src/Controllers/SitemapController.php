@@ -13,7 +13,7 @@ class SitemapController extends Controller
 {
     public function index(): string
     {
-        $schema = new SchemaManager();
+        $schema = SchemaManager::getInstance();
         $urls = [];
 
         // Add homepage

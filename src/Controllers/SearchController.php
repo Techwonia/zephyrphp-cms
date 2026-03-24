@@ -60,7 +60,7 @@ class SearchController extends Controller
     private function searchEntries(string $query, int $limit): array
     {
         $results = [];
-        $schema = new SchemaManager();
+        $schema = SchemaManager::getInstance();
 
         try {
             $collections = Collection::findAll();
@@ -108,7 +108,7 @@ class SearchController extends Controller
         $results = [];
 
         try {
-            $conn = (new SchemaManager())->getConnection();
+            $conn = SchemaManager::getInstance()->getConnection();
             $qb = $conn->createQueryBuilder()
                 ->select('id', 'original_name', 'filename', 'mime_type')
                 ->from('cms_media')

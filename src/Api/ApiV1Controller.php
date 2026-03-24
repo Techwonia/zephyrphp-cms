@@ -40,7 +40,7 @@ class ApiV1Controller extends Controller
      */
     private function whitelistInput(array $input, string $slug): array
     {
-        $schema = new SchemaManager();
+        $schema = SchemaManager::getInstance();
         $collection = Collection::findBySlug($slug);
         if (!$collection) {
             return [];

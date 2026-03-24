@@ -123,14 +123,6 @@ Route::group(['prefix' => '/' . admin_path(), 'middleware' => [\ZephyrPHP\Middle
     Route::post('/collections/{slug}/entries/{id}/force-delete', [EntryController::class, 'forceDelete']);
     Route::post('/collections/{slug}/trash/empty', [EntryController::class, 'emptyTrash']);
 
-    // Autosave / Draft Recovery (for existing entries)
-    Route::get('/collections/{slug}/entries/{id}/autosave', [EntryController::class, 'getAutosave']);
-    Route::post('/collections/{slug}/entries/{id}/autosave', [EntryController::class, 'autosave']);
-    Route::post('/collections/{slug}/entries/{id}/autosave/delete', [EntryController::class, 'deleteAutosave']);
-    // Autosave for new entries (create mode)
-    Route::get('/collections/{slug}/autosave', [EntryController::class, 'getAutosave']);
-    Route::post('/collections/{slug}/autosave', [EntryController::class, 'autosave']);
-    Route::post('/collections/{slug}/autosave/delete', [EntryController::class, 'deleteAutosave']);
 
     // Languages
     Route::get('/languages', [LanguageController::class, 'index']);
