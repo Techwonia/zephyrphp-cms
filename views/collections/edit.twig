@@ -830,7 +830,7 @@
                         <div class="form-group">
                             <label>Slug</label>
                             <input type="text" class="form-control" value="{{ collection.getSlug() }}" disabled readonly>
-                            <div class="form-hint">Slug cannot be changed after creation. Table: <code>cms_{{ collection.getSlug() }}</code></div>
+                            <div class="form-hint">Slug cannot be changed after creation. Table: <code>{{ collection.getTableName() }}</code></div>
                         </div>
 
                         <div class="form-group">

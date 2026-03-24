@@ -499,7 +499,7 @@
                     <input type="text" id="slug" name="slug" class="form-control"
                            value="{{ flash('_old_input').slug ?? '' }}"
                            placeholder="blog_posts" autocomplete="off">
-                    <p class="form-hint">Auto-generated from name. Used for the database table <code id="tableHint">cms_...</code> and API endpoints.</p>
+                    <p class="form-hint">Auto-generated from name. Used for the database table <code id="tableHint">{{ tablePrefix ?? 'app_' }}...</code> and API endpoints.</p>
                     {% if flash('errors').slug is defined %}
                         <div class="form-error">{{ flash('errors').slug }}</div>
                     {% endif %}
@@ -648,7 +648,7 @@
                     <div class="preview-meta">
                         <div class="preview-meta-row">
                             <span class="preview-meta-label">Table</span>
-                            <span class="preview-meta-value" id="previewTable">cms_...</span>
+                            <span class="preview-meta-value" id="previewTable">{{ tablePrefix ?? 'app_' }}...</span>
                         </div>
                         <div class="preview-meta-row">
                             <span class="preview-meta-label">Primary Key</span>
@@ -752,7 +752,8 @@
         }
 
         // Table
-        var tableName = slug ? 'cms_' + slug : 'cms_...';
+        var tblPrefix = '{{ tablePrefix ?? "app_" }}';
+        var tableName = slug ? tblPrefix + slug : tblPrefix + '...';
         previewTable.textContent = tableName;
         tableHint.textContent = tableName;
 

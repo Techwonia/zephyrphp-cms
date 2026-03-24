@@ -67,8 +67,11 @@ class CollectionController extends Controller
     {
         $this->requirePermission('collections.create');
 
+        $tablePrefix = \ZephyrPHP\Config\Config::get('cms.content_prefix', 'app_');
+
         return $this->render('cms::collections/create', [
             'user' => Auth::user(),
+            'tablePrefix' => $tablePrefix,
         ]);
     }
 
