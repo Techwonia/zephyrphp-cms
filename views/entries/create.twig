@@ -338,7 +338,8 @@
                         <option value="">None (top level)</option>
                         {% for item in treeEntries %}
                             {% set _indent = '' %}{% if item._depth > 0 %}{% for i in 1..item._depth %}{% set _indent = _indent ~ '── ' %}{% endfor %}{% endif %}
-                            {% set _label = item.name ?? item.title ?? item.slug ?? ('#' ~ item.id) %}
+                            {% set _dfKey = collection.getDisplayField() %}
+                            {% set _label = (_dfKey and item[_dfKey] is defined and item[_dfKey]) ? item[_dfKey] : (item.title ?? item.name ?? item.slug ?? ('#' ~ item.id)) %}
                             <option value="{{ item.id }}">{{ _indent }}{{ _label }}</option>
                         {% endfor %}
                     </select>
