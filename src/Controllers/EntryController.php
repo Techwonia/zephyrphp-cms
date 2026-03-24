@@ -366,8 +366,11 @@ class EntryController extends Controller
         // For multi-relation fields, extract just the IDs for the edit form
         // (withRelations resolved full objects, but the form needs ID arrays)
         foreach ($fields as $field) {
-            if ($field->getType() === 'relation') {
-                $relationType = $field->getOptions()['relation_type'] ?? 'one_to_one';
+            $type = $field->getType();
+            $options = $field->getOptions() ?? [];
+
+            if ($type === 'relation') {
+                $relationType = $options['relation_type'] ?? 'one_to_one';
                 if ($relationType !== 'one_to_one') {
                     $resolved = $entry[$field->getSlug()] ?? [];
                     if (is_array($resolved) && !empty($resolved) && is_array($resolved[0] ?? null)) {
@@ -376,6 +379,9 @@ class EntryController extends Controller
                     }
                 }
             }
+
+            // Multi-image/file: entry data already has array of IDs from pivot loading
+            // (no extraction needed — IDs are loaded directly, not resolved to objects)
         }
 
         // Resolve media IDs to URLs for image/file field previews
@@ -1573,9 +1579,12 @@ class EntryController extends Controller
     {
         $data = [];
         foreach ($fields as $field) {
+            $type = $field->getType();
+            $options = $field->getOptions() ?? [];
+
             // Skip pivot relation fields — they have no column in the main table
-            if ($field->getType() === 'relation') {
-                $relationType = $field->getOptions()['relation_type'] ?? 'one_to_one';
+            if ($type === 'relation') {
+                $relationType = $options['relation_type'] ?? 'one_to_one';
                 if ($relationType !== 'one_to_one') {
                     continue;
                 }
@@ -1584,12 +1593,17 @@ class EntryController extends Controller
                 continue;
             }
 
+            // Skip multiple image/file fields — they use pivot tables, handled by collectPivotData
+            if (in_array($type, ['image', 'file']) && !empty($options['multiple'])) {
+                continue;
+            }
+
             $value = $this->input($field->getSlug());
-            $data[$field->getSlug()] = match ($field->getType()) {
+            $data[$field->getSlug()] = match ($type) {
                 'boolean' => $this->boolean($field->getSlug()) ? 1 : 0,
                 'number' => $value !== null && $value !== '' ? (int) $value : null,
                 'decimal' => $value !== null && $value !== '' ? (float) $value : null,
-                'image', 'file' => $this->handleFileOrMediaUpload($field, $existing),
+                'image', 'file' => $this->handleSingleMedia($field, $existing),
                 default => $value !== '' ? $value : null,
             };
         }
@@ -1603,8 +1617,11 @@ class EntryController extends Controller
     {
         $pivotData = [];
         foreach ($fields as $field) {
-            if ($field->getType() === 'relation') {
-                $relationType = $field->getOptions()['relation_type'] ?? 'one_to_one';
+            $type = $field->getType();
+            $options = $field->getOptions() ?? [];
+
+            if ($type === 'relation') {
+                $relationType = $options['relation_type'] ?? 'one_to_one';
                 if ($relationType !== 'one_to_one') {
                     $value = $this->input($field->getSlug());
                     if (is_array($value)) {
@@ -1612,6 +1629,17 @@ class EntryController extends Controller
                     } else {
                         $pivotData[$field->getSlug()] = [];
                     }
+                }
+            }
+
+            // Multiple image/file fields use pivot tables to cms_media
+            if (in_array($type, ['image', 'file']) && !empty($options['multiple'])) {
+                $value = $this->input($field->getSlug(), '');
+                $ids = is_array($value) ? $value : json_decode((string) $value, true);
+                if (is_array($ids)) {
+                    $pivotData[$field->getSlug()] = array_map('intval', array_filter($ids, 'is_numeric'));
+                } else {
+                    $pivotData[$field->getSlug()] = [];
                 }
             }
         }
@@ -1624,11 +1652,14 @@ class EntryController extends Controller
     private function syncAllPivotRelations(string $tableName, array $fields, int|string $entryId, array $pivotData): void
     {
         foreach ($fields as $field) {
-            if ($field->getType() === 'relation') {
-                $relationType = $field->getOptions()['relation_type'] ?? 'one_to_one';
+            $type = $field->getType();
+            $options = $field->getOptions() ?? [];
+
+            if ($type === 'relation') {
+                $relationType = $options['relation_type'] ?? 'one_to_one';
                 if ($relationType !== 'one_to_one' && isset($pivotData[$field->getSlug()])) {
                     $contentPrefix = \ZephyrPHP\Config\Config::get('cms.content_prefix', 'app_');
-                    $targetTable = $contentPrefix . ($field->getOptions()['relation_collection'] ?? '');
+                    $targetTable = $contentPrefix . ($options['relation_collection'] ?? '');
                     $this->schema->syncPivotRelations(
                         $tableName,
                         $field->getSlug(),
@@ -1638,6 +1669,17 @@ class EntryController extends Controller
                     );
                 }
             }
+
+            // Multiple image/file fields use pivot tables to cms_media
+            if (in_array($type, ['image', 'file']) && !empty($options['multiple']) && isset($pivotData[$field->getSlug()])) {
+                $this->schema->syncPivotRelations(
+                    $tableName,
+                    $field->getSlug(),
+                    'cms_media',
+                    $entryId,
+                    $pivotData[$field->getSlug()]
+                );
+            }
         }
     }
 
@@ -1645,15 +1687,26 @@ class EntryController extends Controller
     {
         $errors = [];
         foreach ($fields as $field) {
+            $type = $field->getType();
+            $options = $field->getOptions() ?? [];
+
             // Check pivot relations for required
-            if ($field->getType() === 'relation') {
-                $relationType = $field->getOptions()['relation_type'] ?? 'one_to_one';
+            if ($type === 'relation') {
+                $relationType = $options['relation_type'] ?? 'one_to_one';
                 if ($relationType !== 'one_to_one') {
                     if ($field->isRequired() && empty($pivotData[$field->getSlug()] ?? [])) {
                         $errors[$field->getSlug()] = "{$field->getName()} is required.";
                     }
                     continue;
                 }
+            }
+
+            // Check multiple image/file fields (pivot-based) for required
+            if (in_array($type, ['image', 'file']) && !empty($options['multiple'])) {
+                if ($field->isRequired() && empty($pivotData[$field->getSlug()] ?? [])) {
+                    $errors[$field->getSlug()] = "{$field->getName()} is required.";
+                }
+                continue;
             }
 
             $value = $data[$field->getSlug()] ?? null;
@@ -1708,48 +1761,28 @@ class EntryController extends Controller
     }
 
     /**
-     * Handle file upload or media library selection.
-     * The media-field component sends media IDs (numeric) or JSON arrays of IDs.
-     * For backwards compatibility, also handles legacy path-based values.
-     * Supports multiple files (JSON array of IDs) when the field has multiple option enabled.
+     * Handle a single image/file field. Returns the media ID (int) or null.
+     * The form sends the media ID from the media library picker.
      */
-    private function handleFileOrMediaUpload(Field $field, ?array $existing = null): ?string
+    private function handleSingleMedia(Field $field, ?array $existing = null): ?int
     {
-        $fieldOptions = $field->getOptions() ?? [];
-        $isMultiple = !empty($fieldOptions['multiple']);
+        $value = $this->input($field->getSlug());
 
-        $directValue = $this->input($field->getSlug());
-
-        if ($directValue === null) {
-            return $existing[$field->getSlug()] ?? null;
+        if ($value === null) {
+            // Field not submitted — keep existing value
+            $existingVal = $existing[$field->getSlug()] ?? null;
+            return $existingVal !== null && is_numeric($existingVal) ? (int) $existingVal : null;
         }
 
-        if ($directValue === '') {
+        if ($value === '') {
             return null; // User cleared the field
         }
 
-        if ($isMultiple) {
-            $decoded = json_decode($directValue, true);
-            if (is_array($decoded)) {
-                // Validate all values are numeric (media IDs)
-                $ids = array_values(array_filter($decoded, 'is_numeric'));
-                $maxFiles = $fieldOptions['max_files'] ?? 10;
-                $ids = array_slice($ids, 0, $maxFiles);
-                return !empty($ids) ? json_encode(array_map('intval', $ids)) : null;
-            }
+        if (is_numeric($value)) {
+            return (int) $value;
         }
 
-        // Single value — should be a media ID (numeric)
-        if (is_numeric($directValue)) {
-            return $directValue;
-        }
-
-        // Legacy path support
-        if (is_string($directValue) && strpos($directValue, '..') === false) {
-            return $directValue;
-        }
-
-        return $existing[$field->getSlug()] ?? null;
+        return null;
     }
 
     private function handleFileUpload(Field $field, ?array $existing = null): ?string
@@ -1802,7 +1835,8 @@ class EntryController extends Controller
 
     /**
      * Resolve media IDs to URLs for image/file fields.
-     * Handles both new ID-based values and legacy path-based values.
+     * Single fields store an INT media ID in the column.
+     * Multiple fields store IDs via pivot table (loaded as array by EntryQuery).
      */
     private function resolveMediaUrls(array $fields, array $entry): array
     {
@@ -1816,8 +1850,8 @@ class EntryController extends Controller
             $isMultiple = !empty($options['multiple']);
 
             if ($isMultiple) {
-                $ids = json_decode((string) $val, true);
-                if (!is_array($ids)) continue;
+                // Value is an array of media IDs (from pivot table)
+                $ids = is_array($val) ? $val : (json_decode((string) $val, true) ?: []);
                 $items = [];
                 foreach ($ids as $id) {
                     if (is_numeric($id)) {
@@ -1831,19 +1865,11 @@ class EntryController extends Controller
                                 'is_image' => $media->isImage(),
                             ];
                         }
-                    } else {
-                        // Legacy path
-                        $items[] = [
-                            'id' => 0,
-                            'url' => '/' . ltrim((string) $id, '/'),
-                            'thumb' => '/' . ltrim((string) $id, '/'),
-                            'name' => basename((string) $id),
-                            'is_image' => (bool) preg_match('/\.(jpe?g|png|gif|webp|svg)$/i', (string) $id),
-                        ];
                     }
                 }
                 $resolved[$field->getSlug()] = $items;
             } else {
+                // Single: value is a media ID (int)
                 if (is_numeric($val)) {
                     $media = Media::find((int) $val);
                     if ($media) {
@@ -1855,15 +1881,6 @@ class EntryController extends Controller
                             'is_image' => $media->isImage(),
                         ];
                     }
-                } else {
-                    // Legacy path
-                    $resolved[$field->getSlug()] = [
-                        'id' => 0,
-                        'url' => '/' . ltrim((string) $val, '/'),
-                        'thumb' => '/' . ltrim((string) $val, '/'),
-                        'name' => basename((string) $val),
-                        'is_image' => (bool) preg_match('/\.(jpe?g|png|gif|webp|svg)$/i', (string) $val),
-                    ];
                 }
             }
         }

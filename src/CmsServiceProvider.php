@@ -670,14 +670,18 @@ class CmsServiceProvider
             return '/' . ltrim((string) $idOrPath, '/');
         }, ['is_safe' => ['html']]);
 
-        // media_thumbs(value, max) — Resolve a JSON array of media IDs or single value to thumbnail URLs
+        // media_thumbs(value, max) — Resolve media IDs (array, JSON string, or single) to thumbnail URLs
         $view->addFunction('media_thumbs', function ($value, $max = 3) {
             if (empty($value)) return [];
-            // Try as JSON array first
-            $ids = json_decode((string) $value, true);
-            if (!is_array($ids)) {
-                // Single value
-                $ids = [$value];
+            // Accept array directly (from pivot-based multi-image fields)
+            if (is_array($value)) {
+                $ids = $value;
+            } else {
+                // Try as JSON string, fall back to single value
+                $ids = json_decode((string) $value, true);
+                if (!is_array($ids)) {
+                    $ids = [$value];
+                }
             }
             $result = [];
             foreach (array_slice($ids, 0, $max) as $idOrPath) {
@@ -693,9 +697,10 @@ class CmsServiceProvider
             return $result;
         });
 
-        // media_thumbs_count(value) — Count total media items in a value (JSON array or single)
+        // media_thumbs_count(value) — Count total media items in a value (array, JSON string, or single)
         $view->addFunction('media_thumbs_count', function ($value) {
             if (empty($value)) return 0;
+            if (is_array($value)) return count($value);
             $ids = json_decode((string) $value, true);
             if (is_array($ids)) return count($ids);
             return 1;

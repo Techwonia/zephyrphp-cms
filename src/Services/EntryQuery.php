@@ -2121,6 +2121,9 @@ class EntryQuery
             return $entries;
         }
 
+        // Always load media pivot data for multi-image/file fields
+        $entries = $this->loadMediaPivotData($entries, $fields);
+
         // Mode 1: Resolve ALL relations (withRelations(depth))
         if ($this->resolveAll && $this->resolveDepth > 0) {
             return _cms_resolve_relations($entries, $fields, $this->tableName, $this->schema, $this->resolveDepth);
@@ -2129,6 +2132,85 @@ class EntryQuery
         // Mode 2: Selective relation loading (with('author', 'categories'))
         if (!empty($this->withRelations)) {
             return $this->resolveSelectiveRelations($entries, $fields);
+        }
+
+        return $entries;
+    }
+
+    /**
+     * Load media IDs from pivot tables for multiple image/file fields.
+     * Sets each entry's field value to an array of media IDs.
+     */
+    private function loadMediaPivotData(array $entries, array $fields): array
+    {
+        if (empty($entries)) {
+            return $entries;
+        }
+
+        // Collect multi-image/file fields
+        $mediaFields = [];
+        foreach ($fields as $field) {
+            if (in_array($field->getType(), ['image', 'file'])) {
+                $options = $field->getOptions() ?? [];
+                if (!empty($options['multiple'])) {
+                    $mediaFields[] = $field;
+                }
+            }
+        }
+
+        if (empty($mediaFields)) {
+            return $entries;
+        }
+
+        // Collect all entry IDs
+        $entryIds = [];
+        foreach ($entries as $entry) {
+            if (isset($entry['id'])) {
+                $entryIds[] = $entry['id'];
+            }
+        }
+        if (empty($entryIds)) {
+            return $entries;
+        }
+
+        $conn = $this->schema->getConnection();
+
+        foreach ($mediaFields as $field) {
+            $fieldSlug = $field->getSlug();
+            $pivotTable = $this->schema->getPivotTableName($this->tableName, $fieldSlug);
+
+            if (!$this->schema->tableExists($pivotTable)) {
+                // No pivot table — set empty arrays
+                foreach ($entries as &$entry) {
+                    $entry[$fieldSlug] = [];
+                }
+                unset($entry);
+                continue;
+            }
+
+            $srcCol = SchemaManager::validateIdentifier("{$this->tableName}_id", 'pivot column');
+            $tgtCol = SchemaManager::validateIdentifier('cms_media_id', 'pivot column');
+
+            // Batch-fetch all pivot rows for these entries
+            $pivotRows = $conn->createQueryBuilder()
+                ->select("`{$srcCol}`, `{$tgtCol}`")
+                ->from($pivotTable)
+                ->where("`{$srcCol}` IN (:ids)")
+                ->setParameter('ids', $entryIds, \Doctrine\DBAL\ArrayParameterType::STRING)
+                ->executeQuery()
+                ->fetchAllAssociative();
+
+            // Group by source ID
+            $pivotMap = [];
+            foreach ($pivotRows as $row) {
+                $pivotMap[$row[$srcCol]][] = (int) $row[$tgtCol];
+            }
+
+            // Set media IDs on entries
+            foreach ($entries as &$entry) {
+                $entry[$fieldSlug] = $pivotMap[$entry['id']] ?? [];
+            }
+            unset($entry);
         }
 
         return $entries;
@@ -2375,6 +2457,15 @@ class EntryQuery
                 }
             }
 
+            // Multiple image/file fields use pivot tables
+            if ($field && in_array($field->getType(), ['image', 'file'])) {
+                $options = $field->getOptions() ?? [];
+                if (!empty($options['multiple']) && is_array($value)) {
+                    $pivotData[$key] = $value;
+                    continue;
+                }
+            }
+
             // Scalar field or one-to-one relation FK
             $entryData[$key] = $value;
         }
@@ -2399,24 +2490,42 @@ class EntryQuery
 
         foreach ($pivotData as $fieldSlug => $relatedIds) {
             $field = $fieldMap[$fieldSlug] ?? null;
-            if (!$field || $field->getType() !== 'relation') {
+            if (!$field) {
                 continue;
             }
 
-            $relSlug = $field->getOptions()['relation_collection'] ?? '';
-            if (empty($relSlug)) {
+            $type = $field->getType();
+            $options = $field->getOptions() ?? [];
+
+            // Relation many-to-many pivot sync
+            if ($type === 'relation') {
+                $relSlug = $options['relation_collection'] ?? '';
+                if (empty($relSlug)) {
+                    continue;
+                }
+
+                $targetTable = $this->schema->getTableName($relSlug);
+
+                $this->schema->syncPivotRelations(
+                    $this->tableName,
+                    $fieldSlug,
+                    $targetTable,
+                    $entryId,
+                    array_map('intval', $relatedIds)
+                );
                 continue;
             }
 
-            $targetTable = $this->schema->getTableName($relSlug);
-
-            $this->schema->syncPivotRelations(
-                $this->tableName,
-                $fieldSlug,
-                $targetTable,
-                $entryId,
-                array_map('intval', $relatedIds)
-            );
+            // Multiple image/file pivot sync (target = cms_media)
+            if (in_array($type, ['image', 'file']) && !empty($options['multiple'])) {
+                $this->schema->syncPivotRelations(
+                    $this->tableName,
+                    $fieldSlug,
+                    'cms_media',
+                    $entryId,
+                    array_map('intval', $relatedIds)
+                );
+            }
         }
     }
 

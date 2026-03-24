@@ -139,7 +139,8 @@ class SchemaManager
             'boolean' => Types::BOOLEAN,
             'date' => Types::DATE_MUTABLE,
             'datetime' => Types::DATETIME_MUTABLE,
-            'url', 'image', 'file' => Types::STRING,
+            'image', 'file' => Types::INTEGER,
+            'url' => Types::STRING,
             'relation' => Types::INTEGER,
             'json' => Types::JSON,
             default => Types::STRING,
@@ -155,7 +156,8 @@ class SchemaManager
         }
 
         return match ($field->getType()) {
-            'url', 'image', 'file' => array_merge($options, ['length' => 500]),
+            'image', 'file' => $options,
+            'url' => array_merge($options, ['length' => 500]),
             'text', 'email', 'slug', 'select' => array_merge($options, ['length' => 255]),
             'decimal' => array_merge($options, ['precision' => 10, 'scale' => 2]),
             default => $options,
@@ -445,7 +447,8 @@ class SchemaManager
     {
         $mysqlType = match ($field->getType()) {
             'text', 'email', 'slug', 'select' => 'VARCHAR(255)',
-            'url', 'image', 'file' => 'VARCHAR(500)',
+            'image', 'file' => 'INT UNSIGNED',
+            'url' => 'VARCHAR(500)',
             'textarea' => 'TEXT',
             'richtext' => 'LONGTEXT',
             'number' => 'INT',
@@ -461,7 +464,7 @@ class SchemaManager
         $nullable = $field->isRequired() ? 'NOT NULL' : 'NULL';
         $default = '';
 
-        $isNumericDefault = in_array($field->getType(), ['number', 'decimal', 'boolean']);
+        $isNumericDefault = in_array($field->getType(), ['number', 'decimal', 'boolean', 'image', 'file']);
         // Relation columns pointing to UUID targets are strings, not numeric
         if ($field->getType() === 'relation' && $mysqlType === 'INT UNSIGNED') {
             $isNumericDefault = true;

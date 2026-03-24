@@ -607,6 +607,26 @@ class CollectionController extends Controller
                     );
                 }
             }
+        } elseif (in_array($type, ['image', 'file'])) {
+            $isMultiple = !empty($options['multiple']);
+            if ($isMultiple) {
+                // Multiple: pivot table to cms_media
+                $this->schema->createPivotTable(
+                    $collection->getTableName(),
+                    'cms_media',
+                    $field->getSlug()
+                );
+            } else {
+                // Single: INT column (media ID) + foreign key
+                $this->schema->addColumn($collection->getTableName(), $field);
+                if ($this->schema->tableExists('cms_media')) {
+                    $this->schema->addForeignKey(
+                        $collection->getTableName(),
+                        $field->getSlug(),
+                        'cms_media'
+                    );
+                }
+            }
         } else {
             $this->schema->addColumn($collection->getTableName(), $field);
         }
@@ -801,6 +821,14 @@ class CollectionController extends Controller
                 $this->schema->dropColumn($collection->getTableName(), $fieldSlug);
             } else {
                 $this->schema->dropPivotTable($collection->getTableName(), $fieldSlug);
+            }
+        } elseif (in_array($field->getType(), ['image', 'file'])) {
+            $isMultiple = !empty(($field->getOptions() ?? [])['multiple']);
+            if ($isMultiple) {
+                $this->schema->dropPivotTable($collection->getTableName(), $fieldSlug);
+            } else {
+                $this->schema->dropForeignKey($collection->getTableName(), $fieldSlug);
+                $this->schema->dropColumn($collection->getTableName(), $fieldSlug);
             }
         } else {
             $this->schema->dropColumn($collection->getTableName(), $fieldSlug);
