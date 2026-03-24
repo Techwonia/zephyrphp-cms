@@ -1,104 +1,431 @@
 {% extends "@cms/layouts/cms.twig" %}
 
-{% block title %}Revision Comparison{% endblock %}
+{% block title %}Compare Revisions — Entry #{{ entry.id }}{% endblock %}
 
 {% block content %}
-<div class="breadcrumb">
-    <a href="{{ admin_url() }}">Dashboard</a> / <a href="{{ admin_url('collections') }}">Collections</a> / <a href="{{ admin_url('collections/' ~ collection.slug ~ '/entries') }}">{{ collection.name }}</a> / <a href="{{ admin_url('collections/' ~ collection.slug ~ '/entries/' ~ entry.id ~ '/history') }}">History</a> / Diff
-</div>
+<style nonce="{{ csp_nonce() }}">
+    .diff-header {
+        margin-bottom: var(--space-600);
+    }
+    .diff-back {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-200);
+        color: var(--text-secondary);
+        font-size: var(--font-sm);
+        font-weight: 500;
+        text-decoration: none;
+        margin-bottom: var(--space-200);
+    }
+    .diff-back:hover { color: var(--text-link); text-decoration: none; }
+    .diff-back svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; fill: none; }
+    .diff-title {
+        font-size: var(--font-xl);
+        font-weight: 700;
+        color: var(--text);
+        line-height: 1.3;
+    }
 
-<div class="page-header">
-    <h1>Revision Comparison</h1>
+    /* Selector Card */
+    .diff-selector {
+        background: var(--bg-surface);
+        border-radius: var(--radius-200);
+        box-shadow: var(--shadow-card);
+        padding: var(--space-400) var(--space-500);
+        margin-bottom: var(--space-500);
+    }
+    .diff-selector-form {
+        display: flex;
+        align-items: flex-end;
+        gap: var(--space-400);
+        flex-wrap: wrap;
+    }
+    .diff-selector-group {
+        flex: 1;
+        min-width: 200px;
+    }
+    .diff-selector-group label {
+        display: block;
+        font-size: var(--font-xs);
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: var(--space-200);
+    }
+    .diff-selector-group select {
+        width: 100%;
+        padding: 8px 12px;
+        font-size: var(--font-base);
+        font-family: var(--font);
+        color: var(--text);
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-100);
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23616161' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        padding-right: 32px;
+    }
+    .diff-selector-group select:focus {
+        outline: none;
+        border-color: var(--border-focus);
+        box-shadow: 0 0 0 2px rgba(26, 123, 168, 0.15);
+    }
+    .diff-swap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        padding-bottom: 2px;
+    }
+    .diff-swap svg {
+        width: 20px;
+        height: 20px;
+        stroke: var(--text-disabled);
+        stroke-width: 2;
+        fill: none;
+    }
+    .diff-selector-submit {
+        flex-shrink: 0;
+    }
+
+    /* Diff Table */
+    .diff-card {
+        background: var(--bg-surface);
+        border-radius: var(--radius-200);
+        box-shadow: var(--shadow-card);
+        overflow: hidden;
+    }
+    .diff-card-header {
+        padding: var(--space-300) var(--space-400);
+        background: var(--bg-subdued);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: var(--space-200);
+    }
+    .diff-card-title {
+        font-size: var(--font-base);
+        font-weight: 600;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: var(--space-200);
+    }
+    .diff-card-title .rev-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-radius: var(--radius-full);
+        font-size: var(--font-xs);
+        font-weight: 600;
+    }
+    .diff-stats {
+        font-size: var(--font-sm);
+        color: var(--text-secondary);
+    }
+    .diff-stats-changed {
+        color: var(--color-info);
+        font-weight: 600;
+    }
+
+    .diff-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .diff-table thead th {
+        padding: var(--space-300) var(--space-400);
+        text-align: left;
+        font-size: var(--font-xs);
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        background: var(--bg-subdued);
+        border-bottom: 1px solid var(--border);
+    }
+    .diff-table thead th:first-child { width: 18%; }
+    .diff-table thead th:nth-child(2),
+    .diff-table thead th:nth-child(3) { width: 41%; }
+    .diff-table tbody td {
+        padding: var(--space-300) var(--space-400);
+        font-size: var(--font-base);
+        color: var(--text);
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+    }
+    .diff-table tbody tr:last-child td { border-bottom: none; }
+
+    .diff-field-name {
+        font-weight: 600;
+        font-size: var(--font-sm);
+        color: var(--text);
+    }
+    .diff-row-changed .diff-field-name {
+        color: var(--color-info);
+    }
+    .diff-changed-dot {
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        background: var(--color-info);
+        border-radius: var(--radius-full);
+        margin-left: var(--space-200);
+        vertical-align: middle;
+    }
+
+    .diff-value {
+        font-family: var(--font-mono);
+        font-size: var(--font-xs);
+        line-height: 1.6;
+        white-space: pre-wrap;
+        word-break: break-word;
+        max-height: 200px;
+        overflow: auto;
+    }
+    .diff-value-empty {
+        color: var(--text-disabled);
+        font-style: italic;
+        font-family: var(--font);
+    }
+
+    .diff-row-unchanged td {
+        opacity: 0.5;
+    }
+    .diff-row-unchanged:hover td {
+        opacity: 0.8;
+    }
+
+    .diff-row-changed .diff-value-new {
+        background: rgba(4, 123, 93, 0.06);
+        border-left: 3px solid var(--color-success);
+        padding: var(--space-200) var(--space-300);
+        border-radius: 0 var(--radius-100) var(--radius-100) 0;
+    }
+    .diff-row-changed .diff-value-old {
+        background: rgba(215, 44, 13, 0.04);
+        border-left: 3px solid var(--color-critical);
+        padding: var(--space-200) var(--space-300);
+        border-radius: 0 var(--radius-100) var(--radius-100) 0;
+    }
+
+    /* Footer actions */
+    .diff-footer {
+        display: flex;
+        align-items: center;
+        gap: var(--space-300);
+        margin-top: var(--space-500);
+        flex-wrap: wrap;
+    }
+    .btn-restore-rev {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-200);
+        padding: 8px 16px;
+        font-size: var(--font-sm);
+        font-weight: 500;
+        color: var(--color-primary);
+        background: rgba(26, 123, 168, 0.06);
+        border: 1px solid var(--color-primary);
+        border-radius: var(--radius-100);
+        cursor: pointer;
+        font-family: var(--font);
+        transition: all 0.15s;
+    }
+    .btn-restore-rev:hover { background: rgba(26, 123, 168, 0.12); }
+    .btn-restore-rev svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; fill: none; }
+
+    /* Empty states */
+    .diff-empty {
+        background: var(--bg-surface);
+        border-radius: var(--radius-200);
+        box-shadow: var(--shadow-card);
+        padding: var(--space-1000) var(--space-600);
+        text-align: center;
+    }
+    .diff-empty-icon {
+        width: 56px;
+        height: 56px;
+        margin: 0 auto var(--space-400);
+        background: var(--bg-subdued);
+        border-radius: var(--radius-full);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .diff-empty-icon svg { width: 28px; height: 28px; stroke: var(--text-disabled); stroke-width: 1.5; fill: none; }
+    .diff-empty h3 {
+        font-size: var(--font-lg);
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: var(--space-200);
+    }
+    .diff-empty p {
+        font-size: var(--font-base);
+        color: var(--text-secondary);
+    }
+
+    @media (max-width: 768px) {
+        .diff-selector-form { flex-direction: column; }
+        .diff-swap { transform: rotate(90deg); }
+        .diff-table thead th:first-child { width: 100px; }
+    }
+</style>
+
+<div class="diff-header">
+    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/history') }}" class="diff-back">
+        <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        History
+    </a>
+    <h1 class="diff-title">Compare Revisions</h1>
 </div>
 
 {# Revision Selector #}
-<div class="card" style="margin-bottom: var(--space-500);">
-    <div class="card-body">
-        <form method="GET" action="{{ admin_url('collections/' ~ collection.slug ~ '/entries/' ~ entry.id ~ '/diff') }}" style="display: flex; gap: var(--space-300); align-items: flex-end;">
-            <div style="flex: 1;">
-                <label class="form-label">From (Older)</label>
-                <select name="a" class="form-control">
-                    {% for rev in revisions %}
-                    <option value="{{ rev.id }}" {{ revisionA == rev.id ? 'selected' : '' }}>#{{ rev.id }} — {{ rev.action }} — {{ rev.createdAt|date('Y-m-d H:i:s') }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div style="flex: 1;">
-                <label class="form-label">To (Newer)</label>
-                <select name="b" class="form-control">
-                    {% for rev in revisions %}
-                    <option value="{{ rev.id }}" {{ revisionB == rev.id ? 'selected' : '' }}>#{{ rev.id }} — {{ rev.action }} — {{ rev.createdAt|date('Y-m-d H:i:s') }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+<div class="diff-selector">
+    <form method="GET" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/diff') }}" class="diff-selector-form">
+        <div class="diff-selector-group">
+            <label for="rev-a">From (Older)</label>
+            <select name="a" id="rev-a">
+                {% for rev in revisions %}
+                <option value="{{ rev.id }}" {{ revisionA == rev.id ? 'selected' : '' }}>v{{ rev.id }} &mdash; {{ rev.action|capitalize }} &mdash; {{ rev.createdAt|date('M d, Y H:i') }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="diff-swap">
+            <svg viewBox="0 0 24 24"><path d="M8 3l4 4-4 4"/><path d="M16 21l-4-4 4-4"/><path d="M12 7H4"/><path d="M12 17h8"/></svg>
+        </div>
+        <div class="diff-selector-group">
+            <label for="rev-b">To (Newer)</label>
+            <select name="b" id="rev-b">
+                {% for rev in revisions %}
+                <option value="{{ rev.id }}" {{ revisionB == rev.id ? 'selected' : '' }}>v{{ rev.id }} &mdash; {{ rev.action|capitalize }} &mdash; {{ rev.createdAt|date('M d, Y H:i') }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="diff-selector-submit">
             <button type="submit" class="btn btn-primary">Compare</button>
-        </form>
-    </div>
+        </div>
+    </form>
 </div>
 
-{# Diff Table #}
+{# Diff Results #}
 {% if diff|length > 0 %}
-<div class="card">
-    <div class="card-header">
-        <h3 style="margin:0; font-size:1rem;">
-            {% if metaA and metaB %}
-            Revision #{{ metaA.id }} ({{ metaA.action }}) → #{{ metaB.id }} ({{ metaB.action }})
+{% set changedCount = 0 %}
+{% for row in diff %}
+    {% if row.changed %}{% set changedCount = changedCount + 1 %}{% endif %}
+{% endfor %}
+
+<div class="diff-card">
+    <div class="diff-card-header">
+        <div class="diff-card-title">
+            {% if metaA is defined and metaA and metaB is defined and metaB %}
+                <span class="rev-badge" style="background: var(--bg-subdued); border: 1px solid var(--border);">v{{ metaA.id }}</span>
+                <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:var(--text-disabled);stroke-width:2;fill:none;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                <span class="rev-badge" style="background: var(--color-info-bg); border: 1px solid var(--color-info); color: var(--color-info);">v{{ metaB.id }}</span>
             {% endif %}
-        </h3>
-    </div>
-    <div class="card-body" style="padding: 0;">
-        <div class="table-responsive">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th style="width: 20%;">Field</th>
-                        <th style="width: 40%;">Old Value</th>
-                        <th style="width: 40%;">New Value</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in diff %}
-                    <tr style="{{ row.changed ? 'background: rgba(255, 200, 50, 0.1);' : '' }}">
-                        <td>
-                            <strong>{{ row.field }}</strong>
-                            {% if row.changed %}
-                                <span class="badge" style="font-size: 0.6rem; margin-left: 4px; background: var(--warning); color: #333;">Changed</span>
-                            {% endif %}
-                        </td>
-                        <td style="font-size: 0.85rem; max-width: 350px; overflow: hidden; text-overflow: ellipsis; {{ row.changed ? 'color: var(--danger);' : 'color: var(--text-secondary);' }}">
-                            <pre style="margin: 0; white-space: pre-wrap; font-size: 0.8rem;">{{ row.old ?: '(empty)' }}</pre>
-                        </td>
-                        <td style="font-size: 0.85rem; max-width: 350px; overflow: hidden; text-overflow: ellipsis; {{ row.changed ? 'color: var(--success);' : 'color: var(--text-secondary);' }}">
-                            <pre style="margin: 0; white-space: pre-wrap; font-size: 0.8rem;">{{ row.new ?: '(empty)' }}</pre>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        </div>
+        <div class="diff-stats">
+            <span class="diff-stats-changed">{{ changedCount }} changed</span> / {{ diff|length }} fields
         </div>
     </div>
+
+    <div style="overflow-x: auto;">
+        <table class="diff-table">
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Revision {{ revisionA }}</th>
+                    <th>Revision {{ revisionB }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in diff %}
+                <tr class="{{ row.changed ? 'diff-row-changed' : 'diff-row-unchanged' }}">
+                    <td>
+                        <span class="diff-field-name">{{ row.field }}</span>
+                        {% if row.changed %}<span class="diff-changed-dot"></span>{% endif %}
+                    </td>
+                    <td>
+                        {% if row.old is not empty %}
+                            <div class="diff-value {{ row.changed ? 'diff-value-old' : '' }}">{{ row.old }}</div>
+                        {% else %}
+                            <span class="diff-value-empty">(empty)</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if row.new is not empty %}
+                            <div class="diff-value {{ row.changed ? 'diff-value-new' : '' }}">{{ row.new }}</div>
+                        {% else %}
+                            <span class="diff-value-empty">(empty)</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
-<div style="margin-top: var(--space-400); display: flex; gap: var(--space-300);">
-    <a href="{{ admin_url('collections/' ~ collection.slug ~ '/entries/' ~ entry.id ~ '/history') }}" class="btn btn-outline">Back to History</a>
+<div class="diff-footer">
+    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/history') }}" class="btn btn-outline">
+        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none;vertical-align:-2px;margin-right:4px;"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Back to History
+    </a>
     {% if revisionA %}
-    <form method="POST" action="{{ admin_url('collections/' ~ collection.slug ~ '/entries/' ~ entry.id ~ '/restore/' ~ revisionA) }}" onsubmit="return confirm('Restore to revision #{{ revisionA }}?')">
+    <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/restore/' ~ revisionA) }}" class="confirm-delete" data-message="Restore entry to revision v{{ revisionA }}?">
         {{ csrf_field() | raw }}
-        <button type="submit" class="btn btn-outline">Restore to #{{ revisionA }}</button>
+        <button type="submit" class="btn-restore-rev">
+            <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 109-9M3 3v6h6"/></svg>
+            Restore to v{{ revisionA }}
+        </button>
+    </form>
+    {% endif %}
+    {% if revisionB %}
+    <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/restore/' ~ revisionB) }}" class="confirm-delete" data-message="Restore entry to revision v{{ revisionB }}?">
+        {{ csrf_field() | raw }}
+        <button type="submit" class="btn-restore-rev">
+            <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 109-9M3 3v6h6"/></svg>
+            Restore to v{{ revisionB }}
+        </button>
     </form>
     {% endif %}
 </div>
 
 {% elseif revisions|length < 2 %}
-<div class="empty-state">
+<div class="diff-empty">
+    <div class="diff-empty-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"/><path d="M8 8l-5 4 5 4"/><path d="M16 8l5 4-5 4"/></svg>
+    </div>
     <h3>Not enough revisions</h3>
     <p>At least 2 revisions are needed to compare.</p>
 </div>
 {% else %}
-<div class="empty-state">
+<div class="diff-empty">
+    <div class="diff-empty-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"/><path d="M8 8l-5 4 5 4"/><path d="M16 8l5 4-5 4"/></svg>
+    </div>
     <h3>Select revisions to compare</h3>
-    <p>Choose two revisions above and click Compare.</p>
+    <p>Choose two different revisions above and click Compare.</p>
 </div>
 {% endif %}
 
+{% block scripts %}
+<script nonce="{{ csp_nonce() }}">
+document.addEventListener('DOMContentLoaded', function() {
+    // Confirm delete
+    document.querySelectorAll('.confirm-delete').forEach(function(form) {
+        form.addEventListener('submit', function(e) {
+            if (!confirm(form.dataset.message || 'Are you sure?')) {
+                e.preventDefault();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
 {% endblock %}

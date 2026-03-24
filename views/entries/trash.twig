@@ -3,90 +3,296 @@
 {% block title %}Trash — {{ collection.getName() }}{% endblock %}
 
 {% block content %}
-<div class="breadcrumb">
-    <a href="{{ admin_url('collections') }}">Collections</a> /
-    <a href="{{ admin_url('collections/' ~ collection.getSlug()) }}">{{ collection.getName() }}</a> /
-    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}">Entries</a> / Trash
-</div>
+<style nonce="{{ csp_nonce() }}">
+    .trash-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: var(--space-400);
+        margin-bottom: var(--space-600);
+    }
+    .trash-header-left { flex: 1; }
+    .trash-back {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-200);
+        color: var(--text-secondary);
+        font-size: var(--font-sm);
+        font-weight: 500;
+        text-decoration: none;
+        margin-bottom: var(--space-200);
+    }
+    .trash-back:hover { color: var(--text-link); text-decoration: none; }
+    .trash-back svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; fill: none; }
+    .trash-title {
+        font-size: var(--font-xl);
+        font-weight: 700;
+        color: var(--text);
+        line-height: 1.3;
+    }
+    .trash-subtitle {
+        font-size: var(--font-sm);
+        color: var(--text-secondary);
+        margin-top: var(--space-100);
+    }
+    .trash-actions {
+        display: flex;
+        gap: var(--space-200);
+        align-items: center;
+        flex-shrink: 0;
+        padding-top: var(--space-500);
+    }
 
-<div class="page-header">
-    <h1>Trash &mdash; {{ collection.getName() }}</h1>
-    <div class="page-actions">
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="btn btn-outline">&larr; Back to Entries</a>
-            {% if entries.total > 0 %}
-            <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/trash/empty') }}" style="display: inline;" class="confirm-delete" data-message="Permanently delete ALL {{ entries.total }} trashed entries? This cannot be undone.">
-                {{ csrf_field() | raw }}
-                <button type="submit" class="btn btn-danger">Empty Trash ({{ entries.total }})</button>
-            </form>
-            {% endif %}
-        </div>
+    .trash-table-card {
+        background: var(--bg-surface);
+        border-radius: var(--radius-200);
+        box-shadow: var(--shadow-card);
+        overflow: hidden;
+    }
+    .trash-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .trash-table thead th {
+        padding: var(--space-300) var(--space-400);
+        text-align: left;
+        font-size: var(--font-xs);
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        background: var(--bg-subdued);
+        border-bottom: 1px solid var(--border);
+        white-space: nowrap;
+    }
+    .trash-table tbody td {
+        padding: var(--space-300) var(--space-400);
+        font-size: var(--font-base);
+        color: var(--text);
+        border-bottom: 1px solid var(--border);
+        vertical-align: middle;
+    }
+    .trash-table tbody tr:last-child td { border-bottom: none; }
+    .trash-table tbody tr:hover { background: var(--bg-surface-hover); }
+    .trash-table .col-check { width: 40px; }
+    .trash-table .col-id { width: 60px; }
+    .trash-table .col-deleted { width: 140px; white-space: nowrap; }
+    .trash-table .col-actions { width: 200px; white-space: nowrap; text-align: right; }
+
+    .deleted-time {
+        display: flex;
+        align-items: center;
+        gap: var(--space-100);
+        color: var(--text-secondary);
+        font-size: var(--font-sm);
+    }
+    .deleted-time svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; fill: none; flex-shrink: 0; }
+
+    .action-group {
+        display: flex;
+        gap: var(--space-200);
+        justify-content: flex-end;
+    }
+    .btn-restore {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-100);
+        padding: 5px 12px;
+        font-size: var(--font-sm);
+        font-weight: 500;
+        color: var(--color-success);
+        background: var(--color-success-bg);
+        border: 1px solid transparent;
+        border-radius: var(--radius-100);
+        cursor: pointer;
+        font-family: var(--font);
+        transition: all 0.15s;
+    }
+    .btn-restore:hover { border-color: var(--color-success); }
+    .btn-restore svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; fill: none; }
+    .btn-destroy {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-100);
+        padding: 5px 12px;
+        font-size: var(--font-sm);
+        font-weight: 500;
+        color: var(--color-critical);
+        background: var(--color-critical-bg);
+        border: 1px solid transparent;
+        border-radius: var(--radius-100);
+        cursor: pointer;
+        font-family: var(--font);
+        transition: all 0.15s;
+    }
+    .btn-destroy:hover { border-color: var(--color-critical); }
+    .btn-destroy svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; fill: none; }
+
+    .trash-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--space-300) var(--space-400);
+        border-top: 1px solid var(--border);
+        background: var(--bg-subdued);
+    }
+    .trash-footer-info {
+        font-size: var(--font-sm);
+        color: var(--text-secondary);
+    }
+
+    .trash-empty-state {
+        background: var(--bg-surface);
+        border-radius: var(--radius-200);
+        box-shadow: var(--shadow-card);
+        padding: var(--space-1000) var(--space-600);
+        text-align: center;
+    }
+    .trash-empty-icon {
+        width: 56px;
+        height: 56px;
+        margin: 0 auto var(--space-400);
+        background: var(--bg-subdued);
+        border-radius: var(--radius-full);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .trash-empty-icon svg {
+        width: 28px;
+        height: 28px;
+        stroke: var(--text-disabled);
+        stroke-width: 1.5;
+        fill: none;
+    }
+    .trash-empty-state h3 {
+        font-size: var(--font-lg);
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: var(--space-200);
+    }
+    .trash-empty-state p {
+        font-size: var(--font-base);
+        color: var(--text-secondary);
+        margin-bottom: var(--space-500);
+    }
+
+    .truncate {
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        display: inline-block;
+        vertical-align: middle;
+    }
+
+    @media (max-width: 768px) {
+        .trash-header { flex-direction: column; }
+        .trash-actions { padding-top: 0; }
+        .action-group { flex-direction: column; gap: var(--space-100); }
+        .trash-footer { flex-direction: column; gap: var(--space-200); text-align: center; }
+    }
+</style>
+
+<div class="trash-header">
+    <div class="trash-header-left">
+        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="trash-back">
+            <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Entries
+        </a>
+        <h1 class="trash-title">Trash &mdash; {{ collection.getName() }}</h1>
+        <p class="trash-subtitle">{{ entries.total }} deleted {{ entries.total == 1 ? 'entry' : 'entries' }}</p>
     </div>
+    {% if entries.total > 0 %}
+    <div class="trash-actions">
+        <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/trash/empty') }}" class="confirm-delete" data-message="Permanently delete ALL {{ entries.total }} trashed entries? This cannot be undone.">
+            {{ csrf_field() | raw }}
+            <button type="submit" class="btn btn-danger">
+                <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none;vertical-align:-2px;margin-right:4px;"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                Empty Trash
+            </button>
+        </form>
+    </div>
+    {% endif %}
 </div>
 
 {% if entries.data|length > 0 %}
-<div class="card">
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        {% for field in listableFields %}
-                        <th>{{ field.getName() }}</th>
-                        {% endfor %}
-                        <th>Deleted At</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for entry in entries.data %}
-                    <tr>
-                        <td>{{ entry.id }}</td>
-                        {% for field in listableFields %}
-                        <td>
-                            {% if field.getType() == 'boolean' %}
-                                {{ entry[field.getSlug()] ? 'Yes' : 'No' }}
-                            {% elseif field.getType() == 'image' and entry[field.getSlug()] %}
-                                <img src="/{{ entry[field.getSlug()] }}" alt="" style="max-height: 30px;">
-                            {% elseif field.getType() == 'relation' and entry[field.getSlug()] %}
-                                {% if relationLabels[field.getSlug()] is defined and relationLabels[field.getSlug()][entry[field.getSlug()]] is defined %}
-                                    <span class="truncate">{{ relationLabels[field.getSlug()][entry[field.getSlug()]] }}</span>
-                                {% else %}
-                                    <span class="truncate text-muted">#{{ entry[field.getSlug()] }}</span>
-                                {% endif %}
-                            {% else %}
-                                <span class="truncate">{{ entry[field.getSlug()] ?? '—' }}</span>
-                            {% endif %}
-                        </td>
-                        {% endfor %}
-                        <td>
-                            <span class="text-muted">{{ entry.deleted_at ?? '—' }}</span>
-                        </td>
-                        <td class="actions-cell">
-                            <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/restore') }}" style="display: inline;">
-                                {{ csrf_field() | raw }}
-                                <button type="submit" class="btn btn-sm btn-outline">Restore</button>
-                            </form>
-                            <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/force-delete') }}"
-                                  style="display: inline;" class="confirm-delete" data-message="Permanently delete this entry? This cannot be undone.">
-                                {{ csrf_field() | raw }}
-                                <button type="submit" class="btn btn-sm btn-danger">Delete Forever</button>
-                            </form>
-                        </td>
-                    </tr>
+<div class="trash-table-card">
+    <div style="overflow-x: auto;">
+        <table class="trash-table">
+            <thead>
+                <tr>
+                    <th class="col-check"><input type="checkbox" id="select-all"></th>
+                    <th class="col-id">ID</th>
+                    {% for field in listableFields %}
+                    <th>{{ field.getName() }}</th>
                     {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                    <th class="col-deleted">Deleted</th>
+                    <th class="col-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in entries.data %}
+                <tr>
+                    <td class="col-check"><input type="checkbox" class="entry-checkbox" value="{{ entry.id }}"></td>
+                    <td class="col-id"><strong>{{ entry.id }}</strong></td>
+                    {% for field in listableFields %}
+                    <td>
+                        {% if field.getType() == 'boolean' %}
+                            <span class="badge {{ entry[field.getSlug()] ? 'badge-success' : 'badge-default' }}">{{ entry[field.getSlug()] ? 'Yes' : 'No' }}</span>
+                        {% elseif field.getType() == 'image' and entry[field.getSlug()] %}
+                            <img src="/{{ entry[field.getSlug()] }}" alt="" style="max-height: 30px; border-radius: var(--radius-100);">
+                        {% elseif field.getType() == 'relation' and entry[field.getSlug()] %}
+                            {% if relationLabels[field.getSlug()] is defined and relationLabels[field.getSlug()][entry[field.getSlug()]] is defined %}
+                                <span class="truncate">{{ relationLabels[field.getSlug()][entry[field.getSlug()]] }}</span>
+                            {% else %}
+                                <span class="truncate" style="color: var(--text-secondary);">#{{ entry[field.getSlug()] }}</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="truncate">{{ entry[field.getSlug()] ?? '&mdash;' }}</span>
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                    <td class="col-deleted">
+                        <span class="deleted-time" data-datetime="{{ entry.deleted_at }}">
+                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                            <span class="relative-time">{{ entry.deleted_at ?? '&mdash;' }}</span>
+                        </span>
+                    </td>
+                    <td class="col-actions">
+                        <div class="action-group">
+                            <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/restore') }}">
+                                {{ csrf_field() | raw }}
+                                <button type="submit" class="btn-restore" title="Restore entry">
+                                    <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 109-9M3 3v6h6"/></svg>
+                                    Restore
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/force-delete') }}" class="confirm-delete" data-message="Permanently delete this entry? This cannot be undone.">
+                                {{ csrf_field() | raw }}
+                                <button type="submit" class="btn-destroy" title="Delete forever">
+                                    <svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                                    Delete
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
-        {# Pagination #}
+    {% if entries.last_page > 1 or entries.total > 0 %}
+    <div class="trash-footer">
+        <span class="trash-footer-info">
+            Showing {{ ((entries.current_page - 1) * entries.per_page) + 1 }}&ndash;{{ [entries.current_page * entries.per_page, entries.total]|min }} of {{ entries.total }}
+        </span>
         {% if entries.last_page > 1 %}
-        <div class="pagination">
+        <div class="pagination" style="margin: 0; padding: 0; border: none;">
             {% if entries.current_page > 1 %}
                 <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/trash?page=' ~ (entries.current_page - 1)) }}">&laquo; Prev</a>
             {% endif %}
-
             {% for p in 1..entries.last_page %}
                 {% if p == entries.current_page %}
                     <span class="active">{{ p }}</span>
@@ -94,25 +300,32 @@
                     <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/trash?page=' ~ p) }}">{{ p }}</a>
                 {% endif %}
             {% endfor %}
-
             {% if entries.current_page < entries.last_page %}
                 <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/trash?page=' ~ (entries.current_page + 1)) }}">Next &raquo;</a>
             {% endif %}
         </div>
         {% endif %}
     </div>
+    {% endif %}
 </div>
 {% else %}
-<div class="empty-state">
+<div class="trash-empty-state">
+    <div class="trash-empty-icon">
+        <svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+    </div>
     <h3>Trash is empty</h3>
     <p>No deleted entries found for this collection.</p>
-    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="btn btn-outline">&larr; Back to Entries</a>
+    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="btn btn-outline">
+        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none;vertical-align:-2px;margin-right:4px;"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Back to Entries
+    </a>
 </div>
 {% endif %}
 
 {% block scripts %}
 <script nonce="{{ csp_nonce() }}">
 document.addEventListener('DOMContentLoaded', function() {
+    // Confirm delete
     document.querySelectorAll('.confirm-delete').forEach(function(form) {
         form.addEventListener('submit', function(e) {
             if (!confirm(form.dataset.message || 'Are you sure?')) {
@@ -120,6 +333,44 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    // Relative dates
+    function timeAgo(dateStr) {
+        if (!dateStr) return '';
+        var date = new Date(dateStr);
+        if (isNaN(date.getTime())) return dateStr;
+        var now = new Date();
+        var seconds = Math.floor((now - date) / 1000);
+        if (seconds < 60) return 'Just now';
+        var minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return minutes + 'm ago';
+        var hours = Math.floor(minutes / 60);
+        if (hours < 24) return hours + 'h ago';
+        var days = Math.floor(hours / 24);
+        if (days < 7) return days + 'd ago';
+        var weeks = Math.floor(days / 7);
+        if (weeks < 4) return weeks + 'w ago';
+        var months = Math.floor(days / 30);
+        if (months < 12) return months + 'mo ago';
+        return Math.floor(days / 365) + 'y ago';
+    }
+
+    document.querySelectorAll('.deleted-time[data-datetime]').forEach(function(el) {
+        var dt = el.getAttribute('data-datetime');
+        if (dt) {
+            var span = el.querySelector('.relative-time');
+            if (span) span.textContent = timeAgo(dt);
+        }
+    });
+
+    // Select all checkboxes
+    var selectAll = document.getElementById('select-all');
+    var checkboxes = document.querySelectorAll('.entry-checkbox');
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            checkboxes.forEach(function(cb) { cb.checked = selectAll.checked; });
+        });
+    }
 });
 </script>
 {% endblock %}

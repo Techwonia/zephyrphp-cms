@@ -9,257 +9,1086 @@
     <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}">Entries</a> / New
 </div>
 
-<div class="page-header">
+<div class="page-header" style="margin-bottom: var(--space-500);">
     <h1>New {{ collection.getName() }} Entry</h1>
 </div>
 
-{% if templates is defined and templates|length > 0 %}
-<div class="card" style="margin-bottom: var(--space-400);">
-    <div class="card-body" style="padding: var(--space-300) var(--space-400);">
-        <div style="display: flex; align-items: center; gap: var(--space-300); flex-wrap: wrap;">
-            <label style="font-weight: 600; font-size: var(--font-sm); white-space: nowrap; margin: 0;">Start from template:</label>
-            <select id="template-selector" class="form-control" style="max-width: 300px; margin: 0;"
-                    onchange="if(this.value){window.location='{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/create') }}?template='+this.value}else{window.location='{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/create') }}'}">
-                <option value="">Blank (no template)</option>
-                {% for tpl in templates %}
-                    <option value="{{ tpl.getId() }}" {% if selectedTemplateId is defined and selectedTemplateId == tpl.getId() ~ '' %}selected{% endif %}>{{ tpl.getName() }}</option>
-                {% endfor %}
-            </select>
-            <div style="margin-left: auto; display: flex; gap: var(--space-100); align-items: center;">
-                <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('template-manage-panel').style.display=document.getElementById('template-manage-panel').style.display==='none'?'':'none'" style="font-size: var(--font-xs);">
-                    Manage Templates
-                </button>
-            </div>
-        </div>
-        <div id="template-manage-panel" style="display: none; margin-top: var(--space-300); padding-top: var(--space-300); border-top: 1px solid var(--border);">
-            <p style="font-size: var(--font-sm); color: var(--text-secondary); margin: 0 0 var(--space-200);">Available templates for {{ collection.getName() }}:</p>
-            {% for tpl in templates %}
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--space-100) 0; border-bottom: 1px solid var(--bg-subdued); font-size: var(--font-sm);">
-                <span>{{ tpl.getName() }}</span>
-                <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/templates/' ~ tpl.getId() ~ '/delete') }}" style="display: inline;" class="confirm-delete" data-message="Delete template '{{ tpl.getName()|e('html_attr') }}'?">
-                    {{ csrf_field() | raw }}
-                    <button type="submit" class="btn btn-sm btn-danger" style="padding: 2px 8px; font-size: var(--font-xs);">Delete</button>
-                </form>
-            </div>
-            {% endfor %}
-        </div>
+{# Autosave Recovery Banner #}
+<div id="autosave-banner" class="ec-autosave-banner">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    <span id="autosave-banner-text"></span>
+    <div style="margin-left: auto; display: flex; gap: var(--space-200);">
+        <button type="button" id="autosave-restore-btn" class="btn btn-sm btn-primary">Restore</button>
+        <button type="button" id="autosave-dismiss-btn" class="btn btn-sm btn-outline">Dismiss</button>
     </div>
 </div>
-{% endif %}
 
-<div class="card">
-    <div class="card-body">
-        <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" enctype="multipart/form-data">
-            {{ csrf_field() | raw }}
+<form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" enctype="multipart/form-data" id="entry-form">
+    {{ csrf_field() | raw }}
 
-            {% if collection.hasSlug() %}
-            <div class="form-group">
-                <label for="entry-slug">Slug</label>
-                <input type="text" id="entry-slug" name="slug" class="form-control"
-                       value="{{ flash('_old_input').slug ?? '' }}"
-                       placeholder="Auto-generated from {{ collection.getSlugSourceField() ?? 'title' }}">
-                <p class="text-muted">Leave blank to auto-generate. Edit to customize.</p>
-            </div>
-            {% endif %}
-
+    <div class="ec-layout">
+        {# ============================================
+           LEFT COLUMN — Main Form Fields
+           ============================================ #}
+        <div class="ec-main">
             {% for field in fields %}
             {% set fieldEditable = editableFields is not defined or field.getSlug() in (editableFields ?? []) %}
-            <div class="form-group">
-                <label for="field_{{ field.getSlug() }}">
-                    {{ field.getName() }}
-                    {% if field.isRequired() %} *{% endif %}
-                    {% if not fieldEditable %}<span style="font-size: var(--font-xs); color: var(--text-secondary); font-weight: normal;">(read-only)</span>{% endif %}
-                </label>
+            {% set oldVal = flash('_old_input')[field.getSlug()] ?? (templateData[field.getSlug()] ?? field.getDefaultValue()) ?? '' %}
+            {% set hasError = flash('errors')[field.getSlug()] is defined %}
 
-                {% set oldVal = flash('_old_input')[field.getSlug()] ?? (templateData[field.getSlug()] ?? field.getDefaultValue()) ?? '' %}
-                {% set hasError = flash('errors')[field.getSlug()] is defined %}
+            <div class="ec-field-card{% if hasError %} ec-field-card--error{% endif %}">
+                <div class="ec-field-header">
+                    <label class="ec-field-label" for="field_{{ field.getSlug() }}">
+                        {{ field.getName() }}
+                        {% if field.isRequired() %}<span class="ec-required">*</span>{% endif %}
+                        {% if not fieldEditable %}<span class="ec-readonly-badge">Read-only</span>{% endif %}
+                    </label>
+                    <span class="ec-field-type">{{ field.getType() }}</span>
+                </div>
 
-                {% if not fieldEditable %}
-                    {# Show as read-only display #}
-                    {% if field.getType() == 'boolean' %}
-                        <div class="form-control-plaintext">{{ oldVal == '1' or oldVal == 1 ? 'Yes' : 'No' }}</div>
+                <div class="ec-field-body">
+                    {% if not fieldEditable %}
+                        {# Read-only display #}
+                        {% if field.getType() == 'boolean' %}
+                            <div class="ec-readonly-value">{{ oldVal == '1' or oldVal == 1 ? 'Yes' : 'No' }}</div>
+                        {% elseif field.getType() == 'richtext' %}
+                            <div class="ec-readonly-value ec-readonly-richtext">{{ oldVal|raw }}</div>
+                        {% else %}
+                            <div class="ec-readonly-value">{{ oldVal ?: '---' }}</div>
+                        {% endif %}
+
+                    {% elseif field.getType() == 'textarea' %}
+                        <textarea id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                                  class="form-control{% if hasError %} is-invalid{% endif %}"
+                                  rows="4" {% if field.isRequired() %}required{% endif %}
+                                  placeholder="Enter {{ field.getName()|lower }}...">{{ oldVal }}</textarea>
+
                     {% elseif field.getType() == 'richtext' %}
-                        <div class="form-control-plaintext" style="border: 1px solid var(--border); padding: var(--space-200); border-radius: var(--radius-200); background: var(--bg-subdued);">{{ oldVal|raw }}</div>
-                    {% else %}
-                        <div class="form-control-plaintext" style="padding: var(--space-200) 0; color: var(--text-secondary);">{{ oldVal ?: '—' }}</div>
-                    {% endif %}
-                {% elseif field.getType() == 'textarea' %}
-                    <textarea id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
-                              class="form-control{% if hasError %} is-invalid{% endif %}"
-                              rows="4" {% if field.isRequired() %}required{% endif %}>{{ oldVal }}</textarea>
+                        <textarea id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                                  class="form-control richtext-editor{% if hasError %} is-invalid{% endif %}"
+                                  rows="10" {% if field.isRequired() %}required{% endif %}
+                                  placeholder="Write your content here...">{{ oldVal }}</textarea>
 
-                {% elseif field.getType() == 'richtext' %}
-                    <textarea id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
-                              class="form-control richtext-editor{% if hasError %} is-invalid{% endif %}"
-                              rows="8" {% if field.isRequired() %}required{% endif %}>{{ oldVal }}</textarea>
-
-                {% elseif field.getType() == 'boolean' %}
-                    <div>
-                        <label style="display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                    {% elseif field.getType() == 'boolean' %}
+                        <div class="ec-toggle-wrap">
                             <input type="hidden" name="{{ field.getSlug() }}" value="0">
-                            <input type="checkbox" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}" value="1"
-                                   {% if oldVal == '1' or oldVal == 1 %}checked{% endif %}>
-                            Yes
-                        </label>
-                    </div>
+                            <label class="ec-toggle">
+                                <input type="checkbox" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}" value="1"
+                                       {% if oldVal == '1' or oldVal == 1 %}checked{% endif %}>
+                                <span class="ec-toggle-slider"></span>
+                            </label>
+                            <span class="ec-toggle-label">{{ oldVal == '1' or oldVal == 1 ? 'Enabled' : 'Disabled' }}</span>
+                        </div>
 
-                {% elseif field.getType() == 'number' %}
-                    <input type="number" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
-                           class="form-control{% if hasError %} is-invalid{% endif %}"
-                           value="{{ oldVal }}" step="1"
-                           {% if field.isRequired() %}required{% endif %}>
+                    {% elseif field.getType() == 'number' %}
+                        <input type="number" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                               class="form-control{% if hasError %} is-invalid{% endif %}"
+                               value="{{ oldVal }}" step="1"
+                               placeholder="0"
+                               {% if field.isRequired() %}required{% endif %}>
 
-                {% elseif field.getType() == 'decimal' %}
-                    <input type="number" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
-                           class="form-control{% if hasError %} is-invalid{% endif %}"
-                           value="{{ oldVal }}" step="0.01"
-                           {% if field.isRequired() %}required{% endif %}>
+                    {% elseif field.getType() == 'decimal' %}
+                        <input type="number" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                               class="form-control{% if hasError %} is-invalid{% endif %}"
+                               value="{{ oldVal }}" step="0.01"
+                               placeholder="0.00"
+                               {% if field.isRequired() %}required{% endif %}>
 
-                {% elseif field.getType() == 'email' %}
-                    <input type="email" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
-                           class="form-control{% if hasError %} is-invalid{% endif %}"
-                           value="{{ oldVal }}"
-                           {% if field.isRequired() %}required{% endif %}>
+                    {% elseif field.getType() == 'email' %}
+                        <input type="email" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                               class="form-control{% if hasError %} is-invalid{% endif %}"
+                               value="{{ oldVal }}"
+                               placeholder="email@example.com"
+                               {% if field.isRequired() %}required{% endif %}>
 
-                {% elseif field.getType() == 'url' %}
-                    <input type="url" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
-                           class="form-control{% if hasError %} is-invalid{% endif %}"
-                           value="{{ oldVal }}" placeholder="https://"
-                           {% if field.isRequired() %}required{% endif %}>
+                    {% elseif field.getType() == 'url' %}
+                        <input type="url" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                               class="form-control{% if hasError %} is-invalid{% endif %}"
+                               value="{{ oldVal }}" placeholder="https://"
+                               {% if field.isRequired() %}required{% endif %}>
 
-                {% elseif field.getType() == 'date' %}
-                    <input type="date" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
-                           class="form-control{% if hasError %} is-invalid{% endif %}"
-                           value="{{ oldVal }}"
-                           {% if field.isRequired() %}required{% endif %}>
+                    {% elseif field.getType() == 'date' %}
+                        <input type="date" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                               class="form-control{% if hasError %} is-invalid{% endif %}"
+                               value="{{ oldVal }}"
+                               {% if field.isRequired() %}required{% endif %}>
 
-                {% elseif field.getType() == 'datetime' %}
-                    <input type="datetime-local" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
-                           class="form-control{% if hasError %} is-invalid{% endif %}"
-                           value="{{ oldVal }}"
-                           {% if field.isRequired() %}required{% endif %}>
+                    {% elseif field.getType() == 'datetime' %}
+                        <input type="datetime-local" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                               class="form-control{% if hasError %} is-invalid{% endif %}"
+                               value="{{ oldVal }}"
+                               {% if field.isRequired() %}required{% endif %}>
 
-                {% elseif field.getType() == 'select' %}
-                    <select id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
-                            class="form-control{% if hasError %} is-invalid{% endif %}"
-                            {% if field.isRequired() %}required{% endif %}>
-                        <option value="">— Select —</option>
-                        {% if field.getOptions() and field.getOptions().choices is defined %}
-                            {% for choice in field.getOptions().choices %}
-                                <option value="{{ choice }}" {% if oldVal == choice %}selected{% endif %}>{{ choice }}</option>
-                            {% endfor %}
+                    {% elseif field.getType() == 'select' %}
+                        <select id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                                class="form-control{% if hasError %} is-invalid{% endif %}"
+                                {% if field.isRequired() %}required{% endif %}>
+                            <option value="">-- Select --</option>
+                            {% if field.getOptions() and field.getOptions().choices is defined %}
+                                {% for choice in field.getOptions().choices %}
+                                    <option value="{{ choice }}" {% if oldVal == choice %}selected{% endif %}>{{ choice }}</option>
+                                {% endfor %}
+                            {% endif %}
+                        </select>
+
+                    {% elseif field.getType() == 'relation' %}
+                        {% set relationType = field.getOptions().relation_type ?? 'one_to_one' %}
+                        {% set displayField = field.getOptions().display_field ?? null %}
+                        {% set isMulti = relationType != 'one_to_one' %}
+                        <select id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}{% if isMulti %}[]{% endif %}"
+                                class="form-control{% if hasError %} is-invalid{% endif %}"
+                                {% if isMulti %}multiple size="6"{% endif %}
+                                {% if field.isRequired() %}required{% endif %}>
+                            {% if not isMulti %}<option value="">-- Select --</option>{% endif %}
+                            {% if relationData[field.getSlug()] is defined %}
+                                {% for relEntry in relationData[field.getSlug()].entries %}
+                                    {% if displayField and relEntry[displayField] is defined %}
+                                        {% set relLabel = relEntry[displayField] %}
+                                    {% else %}
+                                        {% set relLabel = '' %}
+                                        {% for rk, rv in relEntry %}
+                                            {% if rk not in ['id', 'slug', 'status', 'published_at', 'created_by', 'created_at', 'updated_at'] and rv is not null and relLabel == '' %}
+                                                {% set relLabel = rv %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
+                                    <option value="{{ relEntry.id }}" {% if oldVal == relEntry.id ~ '' %}selected{% endif %}>
+                                        {{ relLabel ? relLabel : '#' ~ relEntry.id }}
+                                    </option>
+                                {% endfor %}
+                            {% endif %}
+                        </select>
+                        {% if field.getOptions().relation_collection is defined %}
+                            <p class="ec-field-hint">{{ relationType|replace({'_': ' '})|title }} -- Related to: {{ field.getOptions().relation_collection }}{% if isMulti %} (hold Ctrl to select multiple){% endif %}</p>
                         {% endif %}
-                    </select>
 
-                {% elseif field.getType() == 'relation' %}
-                    {% set relationType = field.getOptions().relation_type ?? 'one_to_one' %}
-                    {% set displayField = field.getOptions().display_field ?? null %}
-                    {% set isMulti = relationType != 'one_to_one' %}
-                    <select id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}{% if isMulti %}[]{% endif %}"
-                            class="form-control{% if hasError %} is-invalid{% endif %}"
-                            {% if isMulti %}multiple size="6"{% endif %}
-                            {% if field.isRequired() %}required{% endif %}>
-                        {% if not isMulti %}<option value="">— Select —</option>{% endif %}
-                        {% if relationData[field.getSlug()] is defined %}
-                            {% for relEntry in relationData[field.getSlug()].entries %}
-                                {% if displayField and relEntry[displayField] is defined %}
-                                    {% set relLabel = relEntry[displayField] %}
-                                {% else %}
-                                    {% set relLabel = '' %}
-                                    {% for rk, rv in relEntry %}
-                                        {% if rk not in ['id', 'slug', 'status', 'published_at', 'created_by', 'created_at', 'updated_at'] and rv is not null and relLabel == '' %}
-                                            {% set relLabel = rv %}
-                                        {% endif %}
-                                    {% endfor %}
-                                {% endif %}
-                                <option value="{{ relEntry.id }}" {% if oldVal == relEntry.id ~ '' %}selected{% endif %}>
-                                    {{ relLabel ? relLabel : '#' ~ relEntry.id }}
-                                </option>
-                            {% endfor %}
-                        {% endif %}
-                    </select>
-                    {% if field.getOptions().relation_collection is defined %}
-                        <p class="text-muted">{{ relationType|replace({'_': ' '})|title }} — Related to: {{ field.getOptions().relation_collection }}{% if isMulti %} (hold Ctrl to select multiple){% endif %}</p>
+                    {% elseif field.getType() == 'image' or field.getType() == 'file' %}
+                        <input type="hidden" id="field_{{ field.getSlug() }}_path" name="{{ field.getSlug() }}_from_media" value="">
+                        <div class="ec-upload-zone" id="upload-zone-{{ field.getSlug() }}">
+                            <div class="ec-upload-zone-inner">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    {% if field.getType() == 'image' %}
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+                                    {% else %}
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                                    {% endif %}
+                                </svg>
+                                <p class="ec-upload-text">Drag & drop or <label for="field_{{ field.getSlug() }}" class="ec-upload-link">browse files</label></p>
+                                <p class="ec-upload-hint">{% if field.getType() == 'image' %}PNG, JPG, GIF, WEBP{% else %}Any file type{% endif %}</p>
+                                <input type="file" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                                       class="ec-upload-input{% if hasError %} is-invalid{% endif %}"
+                                       {% if field.getType() == 'image' %}accept="image/*"{% endif %}>
+                            </div>
+                            <button type="button" class="btn btn-outline btn-sm media-browse-btn ec-media-btn"
+                                    data-field="{{ field.getSlug() }}"
+                                    data-filter="{{ field.getType() == 'image' ? 'images' : 'all' }}">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></svg>
+                                Media Library
+                            </button>
+                        </div>
+                        <div id="media-preview-{{ field.getSlug() }}" class="ec-media-preview" style="display: none;">
+                            <img src="" alt="Selected">
+                            <div class="ec-media-preview-info">
+                                <span class="media-selected-name"></span>
+                                <button type="button" class="btn btn-sm btn-outline media-clear-btn" data-field="{{ field.getSlug() }}">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                    Remove
+                                </button>
+                            </div>
+                        </div>
+
+                    {% elseif field.getType() == 'json' %}
+                        <textarea id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                                  class="form-control ec-json-editor{% if hasError %} is-invalid{% endif %}"
+                                  rows="5"
+                                  placeholder='{"key": "value"}'
+                                  {% if field.isRequired() %}required{% endif %}>{{ oldVal }}</textarea>
+
+                    {% else %}
+                        {# text, slug, and any other type #}
+                        <input type="text" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                               class="form-control{% if hasError %} is-invalid{% endif %}"
+                               value="{{ oldVal }}"
+                               placeholder="Enter {{ field.getName()|lower }}..."
+                               {% if field.isRequired() %}required{% endif %}>
                     {% endif %}
 
-                {% elseif field.getType() == 'image' or field.getType() == 'file' %}
-                    <input type="hidden" id="field_{{ field.getSlug() }}_path" name="{{ field.getSlug() }}_from_media" value="">
-                    <div style="display: flex; gap: 8px; align-items: flex-start;">
-                        <input type="file" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
-                               class="form-control{% if hasError %} is-invalid{% endif %}"
-                               {% if field.getType() == 'image' %}accept="image/*"{% endif %}
-                               style="flex: 1;">
-                        <button type="button" class="btn btn-outline media-browse-btn"
-                                data-field="{{ field.getSlug() }}"
-                                data-filter="{{ field.getType() == 'image' ? 'images' : 'all' }}">
-                            Browse Media
-                        </button>
-                    </div>
-                    <div id="media-preview-{{ field.getSlug() }}" style="margin-top: 8px; display: none;">
-                        <img src="" alt="Selected" style="max-height: 80px; border-radius: 4px; border: 1px solid var(--border);">
-                        <span class="media-selected-name" style="margin-left: 8px;"></span>
-                        <button type="button" class="btn btn-sm btn-outline media-clear-btn" data-field="{{ field.getSlug() }}" style="margin-left: 4px;">Clear</button>
-                    </div>
-
-                {% elseif field.getType() == 'json' %}
-                    <textarea id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
-                              class="form-control{% if hasError %} is-invalid{% endif %}"
-                              rows="5" style="font-family: monospace; font-size: 0.85rem;"
-                              placeholder='{"key": "value"}'
-                              {% if field.isRequired() %}required{% endif %}>{{ oldVal }}</textarea>
-
-                {% else %}
-                    {# text, slug, and any other type #}
-                    <input type="text" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
-                           class="form-control{% if hasError %} is-invalid{% endif %}"
-                           value="{{ oldVal }}"
-                           {% if field.isRequired() %}required{% endif %}>
-                {% endif %}
-
-                {% if hasError %}
-                    <div class="invalid-feedback">{{ flash('errors')[field.getSlug()] }}</div>
-                {% endif %}
+                    {% if hasError %}
+                        <div class="ec-field-error">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                            {{ flash('errors')[field.getSlug()] }}
+                        </div>
+                    {% endif %}
+                </div>
             </div>
             {% endfor %}
+        </div>
 
-            {% if collection.isPublishable() %}
-            <div class="form-group">
-                <label for="status">Status</label>
-                <select id="status" name="status" class="form-control" onchange="document.getElementById('schedule-group').style.display=this.value==='scheduled'?'':'none'">
-                    <option value="draft">Draft</option>
-                    <option value="published">Published</option>
-                    <option value="scheduled">Scheduled</option>
-                </select>
+        {# ============================================
+           RIGHT COLUMN — Sidebar
+           ============================================ #}
+        <div class="ec-sidebar">
+            {# Publishing Card #}
+            <div class="ec-sidebar-card">
+                <div class="ec-sidebar-card-header">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                    Publishing
+                </div>
+                <div class="ec-sidebar-card-body">
+                    {% if collection.isPublishable() %}
+                    <div class="ec-status-group">
+                        <label class="ec-status-option">
+                            <input type="radio" name="status" value="draft" checked onchange="document.getElementById('schedule-group').style.display='none'">
+                            <span class="ec-status-pill ec-status-draft">
+                                <span class="ec-status-dot"></span>
+                                Draft
+                            </span>
+                        </label>
+                        <label class="ec-status-option">
+                            <input type="radio" name="status" value="published" onchange="document.getElementById('schedule-group').style.display='none'">
+                            <span class="ec-status-pill ec-status-published">
+                                <span class="ec-status-dot"></span>
+                                Published
+                            </span>
+                        </label>
+                        <label class="ec-status-option">
+                            <input type="radio" name="status" value="scheduled" onchange="document.getElementById('schedule-group').style.display=''">
+                            <span class="ec-status-pill ec-status-scheduled">
+                                <span class="ec-status-dot"></span>
+                                Scheduled
+                            </span>
+                        </label>
+                    </div>
+                    <div id="schedule-group" style="display: none; margin-top: var(--space-300);">
+                        <label class="ec-sidebar-label" for="scheduled_at">Publish At</label>
+                        <input type="datetime-local" id="scheduled_at" name="scheduled_at" class="form-control">
+                        <p class="ec-field-hint">Auto-published at this date/time.</p>
+                    </div>
+                    {% endif %}
+
+                    <div class="ec-publish-actions">
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            Create Entry
+                        </button>
+                        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="btn btn-outline" style="width: 100%; text-align: center;">Cancel</a>
+                    </div>
+                    <div id="autosave-indicator" class="ec-autosave-status"></div>
+                </div>
             </div>
-            <div class="form-group" id="schedule-group" style="display: none;">
-                <label for="scheduled_at">Publish At</label>
-                <input type="datetime-local" id="scheduled_at" name="scheduled_at" class="form-control">
-                <p class="text-muted">Entry will be auto-published at this date and time.</p>
+
+            {# Template Card #}
+            {% if templates is defined and templates|length > 0 %}
+            <div class="ec-sidebar-card">
+                <div class="ec-sidebar-card-header">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+                    Template
+                </div>
+                <div class="ec-sidebar-card-body">
+                    <select id="template-selector" class="form-control"
+                            onchange="if(this.value){window.location='{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/create') }}?template='+this.value}else{window.location='{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/create') }}'}">
+                        <option value="">Blank (no template)</option>
+                        {% for tpl in templates %}
+                            <option value="{{ tpl.getId() }}" {% if selectedTemplateId is defined and selectedTemplateId == tpl.getId() ~ '' %}selected{% endif %}>{{ tpl.getName() }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="button" class="ec-manage-link" onclick="document.getElementById('template-manage-panel').style.display=document.getElementById('template-manage-panel').style.display==='none'?'':'none'">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                        Manage Templates
+                    </button>
+                    <div id="template-manage-panel" style="display: none;" class="ec-template-manage">
+                        {% for tpl in templates %}
+                        <div class="ec-template-item">
+                            <span>{{ tpl.getName() }}</span>
+                            <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/templates/' ~ tpl.getId() ~ '/delete') }}" style="display: inline;" class="confirm-delete" data-message="Delete template '{{ tpl.getName()|e('html_attr') }}'?">
+                                {{ csrf_field() | raw }}
+                                <button type="submit" class="btn btn-sm btn-danger" style="padding: 2px 8px; font-size: var(--font-xs);">Delete</button>
+                            </form>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
             {% endif %}
 
+            {# Slug Card #}
+            {% if collection.hasSlug() %}
+            <div class="ec-sidebar-card">
+                <div class="ec-sidebar-card-header">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                    URL Slug
+                </div>
+                <div class="ec-sidebar-card-body">
+                    <input type="text" id="entry-slug" name="slug" class="form-control"
+                           value="{{ flash('_old_input').slug ?? '' }}"
+                           placeholder="Auto-generated from {{ collection.getSlugSourceField() ?? 'title' }}">
+                    <p class="ec-field-hint">Leave blank to auto-generate from the {{ collection.getSlugSourceField() ?? 'title' }} field.</p>
+                </div>
+            </div>
+            {% endif %}
+
+            {# SEO Card #}
             {% if collection.isSeoEnabled() %}
-                {% include "@cms/partials/seo-panel.twig" with {entry: {}, collection_slug: collection.getSlug()} %}
-            {% endif %}
-
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Create Entry</button>
-                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="btn btn-outline">Cancel</a>
-                <span id="autosave-indicator" style="margin-left: var(--space-300); font-size: var(--font-sm); color: var(--text-secondary);"></span>
+            <div class="ec-sidebar-card">
+                <div class="ec-sidebar-card-header ec-sidebar-card-header--collapsible" onclick="this.parentElement.querySelector('.ec-sidebar-card-body').classList.toggle('ec-collapsed'); this.classList.toggle('ec-header-collapsed');">
+                    <div style="display: flex; align-items: center; gap: var(--space-200);">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        SEO
+                        <span class="seo-score-badge" id="seo-score-badge" style="display: none; padding: 2px 8px; border-radius: var(--radius-full); font-size: var(--font-xs);"></span>
+                    </div>
+                    <svg class="ec-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="ec-sidebar-card-body">
+                    <div class="ec-sidebar-field">
+                        <label class="ec-sidebar-label" for="meta_title">Meta Title</label>
+                        <input type="text" id="meta_title" name="meta_title" class="form-control"
+                               value="" maxlength="255"
+                               placeholder="Page title for search engines"
+                               oninput="updateSeoCounter(this, 'meta-title-counter', 60)">
+                        <div class="ec-counter-row">
+                            <span>30-60 chars recommended</span>
+                            <span id="meta-title-counter">0 / 60</span>
+                        </div>
+                    </div>
+                    <div class="ec-sidebar-field">
+                        <label class="ec-sidebar-label" for="meta_description">Meta Description</label>
+                        <textarea id="meta_description" name="meta_description" class="form-control"
+                                  rows="3" maxlength="500"
+                                  placeholder="Brief description for search results"
+                                  oninput="updateSeoCounter(this, 'meta-desc-counter', 160)"></textarea>
+                        <div class="ec-counter-row">
+                            <span>120-160 chars recommended</span>
+                            <span id="meta-desc-counter">0 / 160</span>
+                        </div>
+                    </div>
+                    <div class="ec-sidebar-field">
+                        <label class="ec-sidebar-label" for="og_image">OG Image URL</label>
+                        <input type="text" id="og_image" name="og_image" class="form-control"
+                               value="" placeholder="https://example.com/image.jpg">
+                        <p class="ec-field-hint">1200x630px recommended.</p>
+                    </div>
+                    <div class="ec-sidebar-field">
+                        <label class="ec-sidebar-label" for="canonical_url">Canonical URL</label>
+                        <input type="url" id="canonical_url" name="canonical_url" class="form-control"
+                               value="" placeholder="https://...">
+                    </div>
+                    <div class="ec-sidebar-field">
+                        <label class="ec-sidebar-label" for="robots">Robots</label>
+                        <select id="robots" name="robots" class="form-control">
+                            <option value="index,follow" selected>Index, Follow</option>
+                            <option value="index,nofollow">Index, No Follow</option>
+                            <option value="noindex,follow">No Index, Follow</option>
+                            <option value="noindex,nofollow">No Index, No Follow</option>
+                        </select>
+                    </div>
+                </div>
             </div>
-        </form>
-
-        {# Autosave Recovery Banner #}
-        <div id="autosave-banner" style="display: none; margin-top: var(--space-300); padding: var(--space-300) var(--space-400); background: var(--bg-warning, #fff8e1); border: 1px solid var(--border-warning, #ffe082); border-radius: var(--radius-200, 6px); font-size: var(--font-sm);">
-            <span id="autosave-banner-text"></span>
-            <button type="button" id="autosave-restore-btn" class="btn btn-sm btn-primary" style="margin-left: var(--space-200);">Restore</button>
-            <button type="button" id="autosave-dismiss-btn" class="btn btn-sm btn-outline" style="margin-left: var(--space-100);">Dismiss</button>
+            {% endif %}
         </div>
     </div>
-</div>
+</form>
 {% endblock %}
 
 {% block scripts %}
+<style nonce="{{ csp_nonce() }}">
+/* ============================================
+   Entry Create — Two-Column Layout
+   ============================================ */
+.ec-layout {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: var(--space-600);
+    align-items: start;
+}
+
+.ec-main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-400);
+    min-width: 0;
+}
+
+.ec-sidebar {
+    position: sticky;
+    top: 80px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-400);
+}
+
+/* ============================================
+   Field Cards
+   ============================================ */
+.ec-field-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-200);
+    overflow: hidden;
+    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.ec-field-card:hover {
+    box-shadow: var(--shadow-card);
+}
+
+.ec-field-card--error {
+    border-color: var(--color-critical);
+}
+
+.ec-field-card--error:hover {
+    border-color: var(--color-critical);
+}
+
+.ec-field-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-300) var(--space-400);
+    background: var(--bg-subdued);
+    border-bottom: 1px solid var(--border);
+}
+
+.ec-field-label {
+    font-weight: 600;
+    font-size: var(--font-sm);
+    color: var(--text);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--space-100);
+}
+
+.ec-required {
+    color: var(--color-critical);
+    font-weight: 700;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.ec-readonly-badge {
+    font-size: var(--font-xs);
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: var(--bg-app);
+    padding: 1px 8px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border);
+}
+
+.ec-field-type {
+    font-size: var(--font-xs);
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    padding: 1px 8px;
+    border-radius: var(--radius-full);
+    text-transform: lowercase;
+}
+
+.ec-field-body {
+    padding: var(--space-400);
+}
+
+.ec-field-body .form-control {
+    width: 100%;
+}
+
+.ec-field-body textarea.form-control {
+    resize: vertical;
+    min-height: 60px;
+}
+
+.ec-field-error {
+    display: flex;
+    align-items: center;
+    gap: var(--space-100);
+    margin-top: var(--space-200);
+    color: var(--color-critical);
+    font-size: var(--font-sm);
+    font-weight: 500;
+}
+
+.ec-field-hint {
+    margin: var(--space-200) 0 0;
+    font-size: var(--font-xs);
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.ec-readonly-value {
+    padding: var(--space-200) var(--space-300);
+    color: var(--text-secondary);
+    font-size: var(--font-sm);
+    background: var(--bg-subdued);
+    border-radius: var(--radius-100);
+    border: 1px solid var(--border);
+}
+
+.ec-readonly-richtext {
+    min-height: 60px;
+}
+
+/* ============================================
+   Toggle Switch
+   ============================================ */
+.ec-toggle-wrap {
+    display: flex;
+    align-items: center;
+    gap: var(--space-300);
+}
+
+.ec-toggle {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    cursor: pointer;
+    margin: 0;
+}
+
+.ec-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+
+.ec-toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: var(--border-hover);
+    border-radius: var(--radius-full);
+    transition: background 0.2s ease;
+}
+
+.ec-toggle-slider::before {
+    content: '';
+    position: absolute;
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.ec-toggle input:checked + .ec-toggle-slider {
+    background: var(--color-primary);
+}
+
+.ec-toggle input:checked + .ec-toggle-slider::before {
+    transform: translateX(20px);
+}
+
+.ec-toggle input:focus + .ec-toggle-slider {
+    box-shadow: 0 0 0 2px rgba(26, 123, 168, 0.3);
+}
+
+.ec-toggle-label {
+    font-size: var(--font-sm);
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* ============================================
+   Upload Zone
+   ============================================ */
+.ec-upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-200);
+    padding: var(--space-500);
+    text-align: center;
+    transition: border-color 0.2s ease, background 0.2s ease;
+    position: relative;
+}
+
+.ec-upload-zone:hover {
+    border-color: var(--color-primary);
+    background: rgba(26, 123, 168, 0.03);
+}
+
+.ec-upload-zone-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-100);
+}
+
+.ec-upload-text {
+    font-size: var(--font-sm);
+    color: var(--text-secondary);
+    margin: var(--space-200) 0 0;
+}
+
+.ec-upload-link {
+    color: var(--color-primary);
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.ec-upload-link:hover {
+    color: var(--color-primary-hover);
+}
+
+.ec-upload-hint {
+    font-size: var(--font-xs);
+    color: var(--text-disabled);
+    margin: 0;
+}
+
+.ec-upload-input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 1;
+}
+
+.ec-media-btn {
+    position: relative;
+    z-index: 2;
+    margin-top: var(--space-200);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-100);
+}
+
+.ec-media-preview {
+    display: flex;
+    align-items: center;
+    gap: var(--space-300);
+    margin-top: var(--space-300);
+    padding: var(--space-300);
+    background: var(--bg-subdued);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-200);
+}
+
+.ec-media-preview img {
+    max-height: 64px;
+    max-width: 80px;
+    border-radius: var(--radius-100);
+    object-fit: cover;
+    border: 1px solid var(--border);
+}
+
+.ec-media-preview-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-100);
+    font-size: var(--font-sm);
+    min-width: 0;
+}
+
+.ec-media-preview-info .media-selected-name {
+    font-weight: 500;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ec-media-preview-info .media-clear-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-100);
+    font-size: var(--font-xs);
+    color: var(--color-critical);
+    border-color: var(--color-critical);
+    padding: 2px 8px;
+    width: fit-content;
+}
+
+/* ============================================
+   JSON Editor
+   ============================================ */
+.ec-json-editor {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+}
+
+/* ============================================
+   Sidebar Cards
+   ============================================ */
+.ec-sidebar-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-200);
+    overflow: hidden;
+}
+
+.ec-sidebar-card-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-200);
+    padding: var(--space-300) var(--space-400);
+    background: var(--bg-subdued);
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+    font-size: var(--font-sm);
+    color: var(--text);
+}
+
+.ec-sidebar-card-header--collapsible {
+    cursor: pointer;
+    justify-content: space-between;
+    user-select: none;
+}
+
+.ec-sidebar-card-header--collapsible:hover {
+    background: var(--bg-surface-hover);
+}
+
+.ec-chevron {
+    transition: transform 0.2s ease;
+}
+
+.ec-header-collapsed .ec-chevron {
+    transform: rotate(-90deg);
+}
+
+.ec-collapsed {
+    display: none !important;
+}
+
+.ec-sidebar-card-body {
+    padding: var(--space-400);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-300);
+}
+
+.ec-sidebar-label {
+    display: block;
+    font-weight: 600;
+    font-size: var(--font-xs);
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--space-100);
+}
+
+.ec-sidebar-field {
+    display: flex;
+    flex-direction: column;
+}
+
+.ec-sidebar-field + .ec-sidebar-field {
+    padding-top: var(--space-300);
+    border-top: 1px solid var(--border);
+}
+
+/* ============================================
+   Status Selector
+   ============================================ */
+.ec-status-group {
+    display: flex;
+    gap: var(--space-200);
+    flex-wrap: wrap;
+}
+
+.ec-status-option {
+    cursor: pointer;
+    margin: 0;
+}
+
+.ec-status-option input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.ec-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: var(--radius-full);
+    font-size: var(--font-sm);
+    font-weight: 500;
+    border: 2px solid transparent;
+    transition: all 0.15s ease;
+    background: var(--bg-app);
+    color: var(--text-secondary);
+}
+
+.ec-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.5;
+}
+
+.ec-status-option input:checked + .ec-status-pill.ec-status-draft {
+    background: var(--color-warning-bg);
+    color: var(--color-warning);
+    border-color: var(--color-warning);
+}
+
+.ec-status-option input:checked + .ec-status-pill.ec-status-draft .ec-status-dot {
+    opacity: 1;
+}
+
+.ec-status-option input:checked + .ec-status-pill.ec-status-published {
+    background: var(--color-success-bg);
+    color: var(--color-success);
+    border-color: var(--color-success);
+}
+
+.ec-status-option input:checked + .ec-status-pill.ec-status-published .ec-status-dot {
+    opacity: 1;
+}
+
+.ec-status-option input:checked + .ec-status-pill.ec-status-scheduled {
+    background: var(--color-info-bg);
+    color: var(--color-info);
+    border-color: var(--color-info);
+}
+
+.ec-status-option input:checked + .ec-status-pill.ec-status-scheduled .ec-status-dot {
+    opacity: 1;
+}
+
+.ec-status-option input:focus + .ec-status-pill {
+    box-shadow: 0 0 0 2px rgba(26, 123, 168, 0.3);
+}
+
+/* ============================================
+   Publish Actions
+   ============================================ */
+.ec-publish-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-200);
+    margin-top: var(--space-200);
+}
+
+.ec-publish-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-200);
+}
+
+.ec-autosave-status {
+    text-align: center;
+    font-size: var(--font-xs);
+    color: var(--text-secondary);
+    min-height: 18px;
+    margin-top: var(--space-100);
+}
+
+/* ============================================
+   Template Management
+   ============================================ */
+.ec-manage-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-100);
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: var(--font-xs);
+    cursor: pointer;
+    padding: 0;
+    margin-top: var(--space-100);
+    transition: color 0.15s;
+}
+
+.ec-manage-link:hover {
+    color: var(--text);
+}
+
+.ec-template-manage {
+    margin-top: var(--space-300);
+    padding-top: var(--space-300);
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-200);
+}
+
+.ec-template-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-200);
+    background: var(--bg-subdued);
+    border-radius: var(--radius-100);
+    font-size: var(--font-sm);
+}
+
+/* ============================================
+   SEO Counter Row
+   ============================================ */
+.ec-counter-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--font-xs);
+    color: var(--text-secondary);
+    margin-top: var(--space-100);
+}
+
+/* ============================================
+   Autosave Recovery Banner
+   ============================================ */
+.ec-autosave-banner {
+    display: none;
+    align-items: center;
+    gap: var(--space-300);
+    margin-bottom: var(--space-500);
+    padding: var(--space-300) var(--space-400);
+    background: var(--color-warning-bg);
+    border: 1px solid var(--color-warning);
+    border-radius: var(--radius-200);
+    font-size: var(--font-sm);
+    color: var(--color-warning);
+}
+
+/* ============================================
+   Media Modal (improved)
+   ============================================ */
+.media-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+}
+
+.media-modal {
+    background: var(--bg-surface);
+    border-radius: var(--radius-300);
+    width: 90%;
+    max-width: 860px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    animation: ec-modal-in 0.2s ease;
+}
+
+@keyframes ec-modal-in {
+    from { opacity: 0; transform: scale(0.95) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.media-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-400) var(--space-500);
+    border-bottom: 1px solid var(--border);
+}
+
+.media-modal-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.media-modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: var(--space-100);
+    color: var(--text-secondary);
+    border-radius: var(--radius-100);
+    line-height: 1;
+    transition: background 0.15s, color 0.15s;
+}
+
+.media-modal-close:hover {
+    background: var(--bg-app);
+    color: var(--text);
+}
+
+.media-modal-body {
+    padding: var(--space-500);
+    overflow-y: auto;
+    flex: 1;
+}
+
+.media-modal-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: var(--space-300);
+}
+
+.media-modal-item {
+    border: 2px solid var(--border);
+    border-radius: var(--radius-200);
+    cursor: pointer;
+    overflow: hidden;
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+    background: var(--bg-surface);
+}
+
+.media-modal-item:hover {
+    border-color: var(--color-primary);
+    box-shadow: 0 4px 12px rgba(26, 123, 168, 0.15);
+    transform: translateY(-2px);
+}
+
+.media-modal-thumb {
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-subdued);
+    overflow: hidden;
+}
+
+.media-modal-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.2s ease;
+}
+
+.media-modal-item:hover .media-modal-thumb img {
+    transform: scale(1.05);
+}
+
+.media-modal-name {
+    padding: var(--space-200) var(--space-300);
+    font-size: var(--font-xs);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text);
+    border-top: 1px solid var(--border);
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+@media (max-width: 900px) {
+    .ec-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .ec-sidebar {
+        position: static;
+        order: -1;
+    }
+}
+</style>
+
 <script nonce="{{ csp_nonce() }}">
 (function() {
     {% if collection.hasSlug() and collection.getSlugSourceField() %}
@@ -279,9 +1108,19 @@
     }
     {% endif %}
 
+    // Toggle switch label update
+    document.querySelectorAll('.ec-toggle input[type="checkbox"]').forEach(function(cb) {
+        cb.addEventListener('change', function() {
+            var label = this.closest('.ec-toggle-wrap').querySelector('.ec-toggle-label');
+            if (label) label.textContent = this.checked ? 'Enabled' : 'Disabled';
+        });
+    });
+
     // Media Browser
     document.querySelectorAll('.media-browse-btn').forEach(function(btn) {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
             var fieldSlug = btn.dataset.field;
             var filter = btn.dataset.filter || 'all';
             openMediaBrowser(fieldSlug, filter);
@@ -320,7 +1159,7 @@
             .then(function(data) {
                 var body = modal.querySelector('.media-modal-body');
                 if (!data.data || data.data.length === 0) {
-                    body.innerHTML = '<p>No media files found. Upload files first.</p>';
+                    body.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No media files found. Upload files first.</p>';
                     return;
                 }
                 var html = '<div class="media-modal-grid">';
@@ -358,26 +1197,33 @@
     }
 })();
 </script>
-<style nonce="{{ csp_nonce() }}">
-.media-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center; }
-.media-modal { background: #fff; border-radius: 12px; width: 90%; max-width: 800px; max-height: 80vh; display: flex; flex-direction: column; }
-.media-modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #e8e8e8; }
-.media-modal-header h3 { margin: 0; font-size: 1.1rem; }
-.media-modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; padding: 0 4px; }
-.media-modal-body { padding: 20px; overflow-y: auto; flex: 1; }
-.media-modal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
-.media-modal-item { border: 2px solid #e8e8e8; border-radius: 8px; cursor: pointer; overflow: hidden; transition: border-color 0.2s; }
-.media-modal-item:hover { border-color: #008060; }
-.media-modal-thumb { height: 100px; display: flex; align-items: center; justify-content: center; background: #f8f9fa; overflow: hidden; }
-.media-modal-thumb img { width: 100%; height: 100%; object-fit: cover; }
-.media-modal-name { padding: 6px 8px; font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-</style>
+
+{# SEO counter script #}
+{% if collection.isSeoEnabled() %}
+<script nonce="{{ csp_nonce() }}">
+function updateSeoCounter(el, counterId, recommended) {
+    var counter = document.getElementById(counterId);
+    if (!counter) return;
+    var len = el.value.length;
+    counter.textContent = len + ' / ' + recommended;
+    if (len > 0 && len <= recommended) {
+        counter.style.color = '#047B5D';
+    } else if (len > recommended) {
+        counter.style.color = '#D72C0D';
+    } else {
+        counter.style.color = '';
+    }
+}
+</script>
+{% endif %}
+
+{# Autosave Script #}
 <script nonce="{{ csp_nonce() }}">
 (function() {
     var collectionSlug = '{{ collection.getSlug()|e('js') }}';
     var autosaveBaseUrl = '{{ admin_url('collections/' ~ collection.getSlug() ~ '/autosave') }}';
     var csrfMeta = document.querySelector('meta[name="csrf-token"]');
-    var form = document.querySelector('form[method="POST"][enctype]');
+    var form = document.getElementById('entry-form');
     var indicator = document.getElementById('autosave-indicator');
     var banner = document.getElementById('autosave-banner');
     var bannerText = document.getElementById('autosave-banner-text');
@@ -399,6 +1245,8 @@
                     if (el.options[j].selected) selected.push(el.options[j].value);
                 }
                 data[el.name] = selected;
+            } else if (el.type === 'radio') {
+                if (el.checked) data[el.name] = el.value;
             } else {
                 data[el.name] = el.value;
             }
@@ -449,9 +1297,20 @@
             if (!el) continue;
             if (el.type === 'checkbox') {
                 el.checked = data[key] === '1' || data[key] === 1;
+                // Update toggle label
+                var wrap = el.closest('.ec-toggle-wrap');
+                if (wrap) {
+                    var lbl = wrap.querySelector('.ec-toggle-label');
+                    if (lbl) lbl.textContent = el.checked ? 'Enabled' : 'Disabled';
+                }
             } else if (el.type === 'select-multiple' && Array.isArray(data[key])) {
                 for (var j = 0; j < el.options.length; j++) {
                     el.options[j].selected = data[key].indexOf(el.options[j].value) !== -1;
+                }
+            } else if (el.length && el[0] && el[0].type === 'radio') {
+                // Handle radio groups (like status)
+                for (var r = 0; r < el.length; r++) {
+                    el[r].checked = el[r].value === data[key];
                 }
             } else if (el.tagName) {
                 el.value = data[key];
@@ -468,7 +1327,7 @@
             autosaveData = resp.data;
             var dt = resp.datetime || 'unknown time';
             bannerText.textContent = 'You have unsaved changes from ' + dt + '.';
-            banner.style.display = '';
+            banner.style.display = 'flex';
         }
         lastSnapshot = snapshot();
     }).catch(function() {

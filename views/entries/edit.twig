@@ -1,401 +1,1353 @@
 {% extends "@cms/layouts/cms.twig" %}
 
-{% block title %}Edit Entry #{{ entry.id }} — {{ collection.getName() }}{% endblock %}
+{% block title %}Edit Entry #{{ entry.id }} -- {{ collection.getName() }}{% endblock %}
 
 {% block content %}
+{# --- Lock Warning Banner --- #}
 {% if lockInfo %}
-<div class="alert alert-warning" style="display: flex; align-items: center; gap: var(--space-200); padding: var(--space-300) var(--space-400); margin-bottom: var(--space-400); background: #fff3cd; border: 1px solid #ffecb5; border-radius: var(--radius-200); color: #664d03; font-size: var(--font-sm);">
-    <span style="font-size: 1.25rem;">&#9888;</span>
-    <span><strong>{{ lockInfo.user_name }}</strong> is currently editing this entry (since {{ lockInfo.locked_at|date('H:i') }}). Your changes may be overwritten.</span>
+<div class="ee-lock-banner">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style="flex-shrink: 0;">
+        <path d="M10 2L1 18h18L10 2z" fill="#f59e0b" stroke="#d97706" stroke-width="1"/>
+        <text x="10" y="15" text-anchor="middle" font-size="11" font-weight="700" fill="#92400e">!</text>
+    </svg>
+    <span><strong>{{ lockInfo.user_name }}</strong> is currently editing this entry (since {{ lockInfo.locked_at|date('g:i A') }}). Your changes may be overwritten.</span>
 </div>
 {% endif %}
-<div class="breadcrumb">
-    <a href="{{ admin_url('collections') }}">Collections</a> /
-    <a href="{{ admin_url('collections/' ~ collection.getSlug()) }}">{{ collection.getName() }}</a> /
-    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}">Entries</a> / #{{ entry.id }}
-</div>
 
-<div class="page-header">
-    <h1>Edit Entry #{{ entry.id }}</h1>
-    <div class="page-actions">
-        {% if collection.isTranslatable() %}
-        {% set activeLangs = available_locales() %}
-        {% if activeLangs|length > 1 %}
-        <div style="display: inline-flex; align-items: center; gap: var(--space-100); margin-right: var(--space-200);">
-            <span style="font-size: var(--font-sm); color: var(--text-secondary);">Translate:</span>
-            {% for lang in activeLangs %}
-                {% if not lang.isDefault() %}
-                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/translate/' ~ lang.getCode()) }}"
-                   class="btn btn-outline btn-sm" style="padding: 2px 8px; font-size: var(--font-xs);">
-                    {{ lang.getCode()|upper }}
-                </a>
-                {% endif %}
-            {% endfor %}
-        </div>
-        {% endif %}
-        {% endif %}
-        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/history') }}" class="btn btn-outline">History</a>
-        <button type="button" class="btn btn-outline" onclick="document.getElementById('save-template-modal').style.display='flex'">Save as Template</button>
-        <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/duplicate') }}"
-              style="display:inline">
-            {{ csrf_field() | raw }}
-            <button type="submit" class="btn btn-outline" onclick="return confirm('Duplicate this entry?')">Duplicate</button>
-        </form>
-        <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/delete') }}"
-              style="display:inline" class="confirm-delete" data-message="Delete this entry?">
-            {{ csrf_field() | raw }}
-            <button type="submit" class="btn btn-danger">Delete</button>
-        </form>
+{# --- Autosave Recovery Banner --- #}
+<div id="autosave-banner" class="ee-autosave-banner" style="display: none;">
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style="flex-shrink: 0;">
+        <circle cx="10" cy="10" r="9" stroke="#6366f1" stroke-width="2" fill="#eef2ff"/>
+        <path d="M10 6v5l3 2" stroke="#6366f1" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    <span id="autosave-banner-text"></span>
+    <div class="ee-autosave-actions">
+        <button type="button" id="autosave-restore-btn" class="btn btn-sm btn-primary">Restore</button>
+        <button type="button" id="autosave-dismiss-btn" class="btn btn-sm btn-outline">Dismiss</button>
     </div>
 </div>
 
-<div class="card">
-    <div class="card-body">
-        <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id) }}" enctype="multipart/form-data">
-            {{ csrf_field() | raw }}
+{# --- Breadcrumb --- #}
+<div class="breadcrumb">
+    <a href="{{ admin_url('collections') }}">Collections</a>
+    <span class="breadcrumb-sep">/</span>
+    <a href="{{ admin_url('collections/' ~ collection.getSlug()) }}">{{ collection.getName() }}</a>
+    <span class="breadcrumb-sep">/</span>
+    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}">Entries</a>
+    <span class="breadcrumb-sep">/</span>
+    <span>#{{ entry.id }}</span>
+</div>
 
+{# --- Page Header --- #}
+<div class="ee-page-header">
+    <div class="ee-page-header-left">
+        <h1>Edit Entry <span class="ee-entry-id">#{{ entry.id }}</span></h1>
+        <span id="autosave-indicator" class="ee-autosave-indicator"></span>
+    </div>
+    <div class="ee-page-header-right">
+        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="btn btn-outline">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="vertical-align: -2px; margin-right: 4px;">
+                <path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Back
+        </a>
+    </div>
+</div>
+
+{# --- Two-Column Layout --- #}
+<form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id) }}" enctype="multipart/form-data" id="entry-form">
+    {{ csrf_field() | raw }}
+
+    <div class="ee-layout">
+        {# ==================== MAIN COLUMN ==================== #}
+        <div class="ee-main">
+
+            {# --- Slug Field Card --- #}
             {% if collection.hasSlug() %}
-            <div class="form-group">
-                <label for="entry-slug">Slug</label>
-                <input type="text" id="entry-slug" name="slug" class="form-control"
-                       value="{{ entry.slug ?? '' }}"
-                       placeholder="Auto-generated from {{ collection.getSlugSourceField() ?? 'title' }}">
-                <p class="text-muted">Leave blank to keep current slug.</p>
+            <div class="ee-card">
+                <div class="ee-card-header">
+                    <span class="ee-card-title">URL Slug</span>
+                    <span class="ee-field-badge ee-badge-slug">slug</span>
+                </div>
+                <div class="ee-card-body">
+                    <input type="text" id="entry-slug" name="slug" class="form-control"
+                           value="{{ entry.slug ?? '' }}"
+                           placeholder="Auto-generated from {{ collection.getSlugSourceField() ?? 'title' }}">
+                    <p class="ee-field-hint">Leave blank to keep current slug.</p>
+                </div>
             </div>
             {% endif %}
 
+            {# --- Field Cards --- #}
             {% for field in fields %}
             {% set fieldEditable = editableFields is not defined or field.getSlug() in (editableFields ?? []) %}
-            <div class="form-group">
-                <label for="field_{{ field.getSlug() }}">
-                    {{ field.getName() }}
-                    {% if field.isRequired() %} *{% endif %}
-                    {% if not fieldEditable %}<span style="font-size: var(--font-xs); color: var(--text-secondary); font-weight: normal;">(read-only)</span>{% endif %}
-                </label>
+            {% set val = entry[field.getSlug()] ?? field.getDefaultValue() ?? '' %}
+            {% set hasError = flash('errors')[field.getSlug()] is defined %}
 
-                {% set val = entry[field.getSlug()] ?? field.getDefaultValue() ?? '' %}
-                {% set hasError = flash('errors')[field.getSlug()] is defined %}
+            <div class="ee-card{% if hasError %} ee-card-error{% endif %}">
+                <div class="ee-card-header">
+                    <span class="ee-card-title">
+                        {{ field.getName() }}
+                        {% if field.isRequired() %}<span class="ee-required">*</span>{% endif %}
+                        {% if not fieldEditable %}<span class="ee-readonly-badge">Read-only</span>{% endif %}
+                    </span>
+                    <span class="ee-field-badge ee-badge-{{ field.getType() }}">{{ field.getType() }}</span>
+                </div>
+                <div class="ee-card-body">
 
-                {% if not fieldEditable %}
-                    {# Show as read-only display #}
-                    {% if field.getType() == 'boolean' %}
-                        <div class="form-control-plaintext">{{ val == '1' or val == 1 or val == true ? 'Yes' : 'No' }}</div>
-                    {% elseif field.getType() == 'image' and val %}
-                        <div><img src="/{{ val }}" alt="" style="max-height: 100px; border-radius: 4px; border: 1px solid var(--border);"></div>
+                    {% if not fieldEditable %}
+                        {# Read-only display #}
+                        {% if field.getType() == 'boolean' %}
+                            <div class="ee-readonly-value">
+                                <span class="ee-bool-indicator {{ val == '1' or val == 1 or val == true ? 'ee-bool-yes' : 'ee-bool-no' }}">
+                                    {{ val == '1' or val == 1 or val == true ? 'Yes' : 'No' }}
+                                </span>
+                            </div>
+                        {% elseif field.getType() == 'image' and val %}
+                            <div class="ee-readonly-value">
+                                <img src="/{{ val }}" alt="" class="ee-readonly-image">
+                            </div>
+                        {% elseif field.getType() == 'richtext' %}
+                            <div class="ee-readonly-richtext">{{ val|raw }}</div>
+                        {% else %}
+                            <div class="ee-readonly-value">{{ val ?: '--' }}</div>
+                        {% endif %}
+
+                    {% elseif field.getType() == 'textarea' %}
+                        <textarea id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                                  class="form-control{% if hasError %} is-invalid{% endif %}"
+                                  rows="4" {% if field.isRequired() %}required{% endif %}>{{ val }}</textarea>
+
                     {% elseif field.getType() == 'richtext' %}
-                        <div class="form-control-plaintext" style="border: 1px solid var(--border); padding: var(--space-200); border-radius: var(--radius-200); background: var(--bg-subdued); max-height: 200px; overflow-y: auto;">{{ val|raw }}</div>
-                    {% else %}
-                        <div class="form-control-plaintext" style="padding: var(--space-200) 0; color: var(--text-secondary);">{{ val ?: '—' }}</div>
-                    {% endif %}
-                {% elseif field.getType() == 'textarea' %}
-                    <textarea id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
-                              class="form-control{% if hasError %} is-invalid{% endif %}"
-                              rows="4" {% if field.isRequired() %}required{% endif %}>{{ val }}</textarea>
+                        <textarea id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                                  class="form-control richtext-editor{% if hasError %} is-invalid{% endif %}"
+                                  rows="8" {% if field.isRequired() %}required{% endif %}>{{ val }}</textarea>
 
-                {% elseif field.getType() == 'richtext' %}
-                    <textarea id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
-                              class="form-control richtext-editor{% if hasError %} is-invalid{% endif %}"
-                              rows="8" {% if field.isRequired() %}required{% endif %}>{{ val }}</textarea>
-
-                {% elseif field.getType() == 'boolean' %}
-                    <div>
-                        <label style="display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                    {% elseif field.getType() == 'boolean' %}
+                        <div class="ee-toggle-wrap">
                             <input type="hidden" name="{{ field.getSlug() }}" value="0">
-                            <input type="checkbox" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}" value="1"
-                                   {% if val == '1' or val == 1 or val == true %}checked{% endif %}>
-                            Yes
-                        </label>
-                    </div>
+                            <label class="ee-toggle">
+                                <input type="checkbox" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}" value="1"
+                                       {% if val == '1' or val == 1 or val == true %}checked{% endif %}>
+                                <span class="ee-toggle-slider"></span>
+                                <span class="ee-toggle-label">{{ val == '1' or val == 1 or val == true ? 'Yes' : 'No' }}</span>
+                            </label>
+                        </div>
 
-                {% elseif field.getType() == 'number' %}
-                    <input type="number" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
-                           class="form-control{% if hasError %} is-invalid{% endif %}"
-                           value="{{ val }}" step="1"
-                           {% if field.isRequired() %}required{% endif %}>
+                    {% elseif field.getType() == 'number' %}
+                        <input type="number" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                               class="form-control{% if hasError %} is-invalid{% endif %}"
+                               value="{{ val }}" step="1"
+                               {% if field.isRequired() %}required{% endif %}>
 
-                {% elseif field.getType() == 'decimal' %}
-                    <input type="number" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
-                           class="form-control{% if hasError %} is-invalid{% endif %}"
-                           value="{{ val }}" step="0.01"
-                           {% if field.isRequired() %}required{% endif %}>
+                    {% elseif field.getType() == 'decimal' %}
+                        <input type="number" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                               class="form-control{% if hasError %} is-invalid{% endif %}"
+                               value="{{ val }}" step="0.01"
+                               {% if field.isRequired() %}required{% endif %}>
 
-                {% elseif field.getType() == 'email' %}
-                    <input type="email" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
-                           class="form-control{% if hasError %} is-invalid{% endif %}"
-                           value="{{ val }}"
-                           {% if field.isRequired() %}required{% endif %}>
+                    {% elseif field.getType() == 'email' %}
+                        <input type="email" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                               class="form-control{% if hasError %} is-invalid{% endif %}"
+                               value="{{ val }}"
+                               {% if field.isRequired() %}required{% endif %}>
 
-                {% elseif field.getType() == 'url' %}
-                    <input type="url" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
-                           class="form-control{% if hasError %} is-invalid{% endif %}"
-                           value="{{ val }}" placeholder="https://"
-                           {% if field.isRequired() %}required{% endif %}>
+                    {% elseif field.getType() == 'url' %}
+                        <input type="url" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                               class="form-control{% if hasError %} is-invalid{% endif %}"
+                               value="{{ val }}" placeholder="https://"
+                               {% if field.isRequired() %}required{% endif %}>
 
-                {% elseif field.getType() == 'date' %}
-                    <input type="date" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
-                           class="form-control{% if hasError %} is-invalid{% endif %}"
-                           value="{{ val }}"
-                           {% if field.isRequired() %}required{% endif %}>
+                    {% elseif field.getType() == 'date' %}
+                        <input type="date" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                               class="form-control{% if hasError %} is-invalid{% endif %}"
+                               value="{{ val }}"
+                               {% if field.isRequired() %}required{% endif %}>
 
-                {% elseif field.getType() == 'datetime' %}
-                    <input type="datetime-local" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
-                           class="form-control{% if hasError %} is-invalid{% endif %}"
-                           value="{{ val ? val|replace({' ': 'T'}) : '' }}"
-                           {% if field.isRequired() %}required{% endif %}>
+                    {% elseif field.getType() == 'datetime' %}
+                        <input type="datetime-local" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                               class="form-control{% if hasError %} is-invalid{% endif %}"
+                               value="{{ val ? val|replace({' ': 'T'}) : '' }}"
+                               {% if field.isRequired() %}required{% endif %}>
 
-                {% elseif field.getType() == 'select' %}
-                    <select id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
-                            class="form-control{% if hasError %} is-invalid{% endif %}"
-                            {% if field.isRequired() %}required{% endif %}>
-                        <option value="">— Select —</option>
-                        {% if field.getOptions() and field.getOptions().choices is defined %}
-                            {% for choice in field.getOptions().choices %}
-                                <option value="{{ choice }}" {% if val == choice %}selected{% endif %}>{{ choice }}</option>
-                            {% endfor %}
+                    {% elseif field.getType() == 'select' %}
+                        <select id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                                class="form-control{% if hasError %} is-invalid{% endif %}"
+                                {% if field.isRequired() %}required{% endif %}>
+                            <option value="">-- Select --</option>
+                            {% if field.getOptions() and field.getOptions().choices is defined %}
+                                {% for choice in field.getOptions().choices %}
+                                    <option value="{{ choice }}" {% if val == choice %}selected{% endif %}>{{ choice }}</option>
+                                {% endfor %}
+                            {% endif %}
+                        </select>
+
+                    {% elseif field.getType() == 'relation' %}
+                        {% set relationType = field.getOptions().relation_type ?? 'one_to_one' %}
+                        {% set displayField = field.getOptions().display_field ?? null %}
+                        {% set isMulti = relationType != 'one_to_one' %}
+                        {% set selectedIds = isMulti and val is iterable ? val : [] %}
+                        <select id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}{% if isMulti %}[]{% endif %}"
+                                class="form-control{% if hasError %} is-invalid{% endif %}"
+                                {% if isMulti %}multiple size="6"{% endif %}
+                                {% if field.isRequired() %}required{% endif %}>
+                            {% if not isMulti %}<option value="">-- Select --</option>{% endif %}
+                            {% if relationData[field.getSlug()] is defined %}
+                                {% for relEntry in relationData[field.getSlug()].entries %}
+                                    {% if displayField and relEntry[displayField] is defined %}
+                                        {% set relLabel = relEntry[displayField] %}
+                                    {% else %}
+                                        {% set relLabel = '' %}
+                                        {% for rk, rv in relEntry %}
+                                            {% if rk not in ['id', 'slug', 'status', 'published_at', 'created_by', 'created_at', 'updated_at'] and rv is not null and relLabel == '' %}
+                                                {% set relLabel = rv %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
+                                    {% if isMulti %}
+                                        <option value="{{ relEntry.id }}" {% if relEntry.id in selectedIds %}selected{% endif %}>
+                                            {{ relLabel ? relLabel : '#' ~ relEntry.id }}
+                                        </option>
+                                    {% else %}
+                                        <option value="{{ relEntry.id }}" {% if val == relEntry.id or val == relEntry.id ~ '' %}selected{% endif %}>
+                                            {{ relLabel ? relLabel : '#' ~ relEntry.id }}
+                                        </option>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                        </select>
+                        {% if field.getOptions().relation_collection is defined %}
+                            <p class="ee-field-hint">{{ relationType|replace({'_': ' '})|title }} -- Related to: {{ field.getOptions().relation_collection }}{% if isMulti %} (hold Ctrl to select multiple){% endif %}</p>
                         {% endif %}
-                    </select>
 
-                {% elseif field.getType() == 'relation' %}
-                    {% set relationType = field.getOptions().relation_type ?? 'one_to_one' %}
-                    {% set displayField = field.getOptions().display_field ?? null %}
-                    {% set isMulti = relationType != 'one_to_one' %}
-                    {% set selectedIds = isMulti and val is iterable ? val : [] %}
-                    <select id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}{% if isMulti %}[]{% endif %}"
-                            class="form-control{% if hasError %} is-invalid{% endif %}"
-                            {% if isMulti %}multiple size="6"{% endif %}
-                            {% if field.isRequired() %}required{% endif %}>
-                        {% if not isMulti %}<option value="">— Select —</option>{% endif %}
-                        {% if relationData[field.getSlug()] is defined %}
-                            {% for relEntry in relationData[field.getSlug()].entries %}
-                                {% if displayField and relEntry[displayField] is defined %}
-                                    {% set relLabel = relEntry[displayField] %}
-                                {% else %}
-                                    {% set relLabel = '' %}
-                                    {% for rk, rv in relEntry %}
-                                        {% if rk not in ['id', 'slug', 'status', 'published_at', 'created_by', 'created_at', 'updated_at'] and rv is not null and relLabel == '' %}
-                                            {% set relLabel = rv %}
-                                        {% endif %}
-                                    {% endfor %}
-                                {% endif %}
-                                {% if isMulti %}
-                                    <option value="{{ relEntry.id }}" {% if relEntry.id in selectedIds %}selected{% endif %}>
-                                        {{ relLabel ? relLabel : '#' ~ relEntry.id }}
-                                    </option>
-                                {% else %}
-                                    <option value="{{ relEntry.id }}" {% if val == relEntry.id or val == relEntry.id ~ '' %}selected{% endif %}>
-                                        {{ relLabel ? relLabel : '#' ~ relEntry.id }}
-                                    </option>
-                                {% endif %}
-                            {% endfor %}
-                        {% endif %}
-                    </select>
-                    {% if field.getOptions().relation_collection is defined %}
-                        <p class="text-muted">{{ relationType|replace({'_': ' '})|title }} — Related to: {{ field.getOptions().relation_collection }}{% if isMulti %} (hold Ctrl to select multiple){% endif %}</p>
-                    {% endif %}
-
-                {% elseif field.getType() == 'image' or field.getType() == 'file' %}
-                    {% if val %}
-                        <div style="margin-bottom: 0.5rem;">
+                    {% elseif field.getType() == 'image' or field.getType() == 'file' %}
+                        {% if val %}
+                        <div class="ee-current-file">
                             {% if field.getType() == 'image' %}
-                                <img src="/{{ val }}" alt="" style="max-height: 100px; border-radius: 4px; border: 1px solid var(--border);">
+                                <img src="/{{ val }}" alt="" class="ee-current-image">
                             {% else %}
-                                <a href="/{{ val }}" target="_blank">{{ val }}</a>
+                                <a href="/{{ val }}" target="_blank" class="ee-file-link">
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 1h5l4 4v9a1 1 0 01-1 1H4a1 1 0 01-1-1V2a1 1 0 011-1z" stroke="currentColor" stroke-width="1.2"/><path d="M9 1v4h4" stroke="currentColor" stroke-width="1.2"/></svg>
+                                    {{ val }}
+                                </a>
                             {% endif %}
                         </div>
-                    {% endif %}
-                    <input type="hidden" id="field_{{ field.getSlug() }}_path" name="{{ field.getSlug() }}_from_media" value="">
-                    <div style="display: flex; gap: 8px; align-items: flex-start;">
-                        <input type="file" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                        {% endif %}
+                        <input type="hidden" id="field_{{ field.getSlug() }}_path" name="{{ field.getSlug() }}_from_media" value="">
+                        <div class="ee-file-input-row">
+                            <input type="file" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                                   class="form-control{% if hasError %} is-invalid{% endif %}"
+                                   {% if field.getType() == 'image' %}accept="image/*"{% endif %}>
+                            <button type="button" class="btn btn-outline media-browse-btn"
+                                    data-field="{{ field.getSlug() }}"
+                                    data-filter="{{ field.getType() == 'image' ? 'images' : 'all' }}">
+                                Browse Media
+                            </button>
+                        </div>
+                        <div id="media-preview-{{ field.getSlug() }}" class="ee-media-preview" style="display: none;">
+                            <img src="" alt="Selected" class="ee-media-preview-img">
+                            <span class="media-selected-name"></span>
+                            <button type="button" class="btn btn-sm btn-outline media-clear-btn" data-field="{{ field.getSlug() }}">Clear</button>
+                        </div>
+                        {% if val %}
+                            <p class="ee-field-hint">Leave empty to keep current file.</p>
+                        {% endif %}
+
+                    {% elseif field.getType() == 'json' %}
+                        <textarea id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
+                                  class="form-control ee-json-field{% if hasError %} is-invalid{% endif %}"
+                                  rows="5"
+                                  placeholder='{"key": "value"}'
+                                  {% if field.isRequired() %}required{% endif %}>{{ val }}</textarea>
+
+                    {% else %}
+                        {# text, slug, and any other type #}
+                        <input type="text" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
                                class="form-control{% if hasError %} is-invalid{% endif %}"
-                               {% if field.getType() == 'image' %}accept="image/*"{% endif %}
-                               style="flex: 1;">
-                        <button type="button" class="btn btn-outline media-browse-btn"
-                                data-field="{{ field.getSlug() }}"
-                                data-filter="{{ field.getType() == 'image' ? 'images' : 'all' }}">
-                            Browse Media
-                        </button>
-                    </div>
-                    <div id="media-preview-{{ field.getSlug() }}" style="margin-top: 8px; display: none;">
-                        <img src="" alt="Selected" style="max-height: 80px; border-radius: 4px; border: 1px solid var(--border);">
-                        <span class="media-selected-name" style="margin-left: 8px;"></span>
-                        <button type="button" class="btn btn-sm btn-outline media-clear-btn" data-field="{{ field.getSlug() }}" style="margin-left: 4px;">Clear</button>
-                    </div>
-                    {% if val %}
-                        <p class="text-muted">Leave empty to keep current file.</p>
+                               value="{{ val }}"
+                               {% if field.isRequired() %}required{% endif %}>
                     {% endif %}
 
-                {% elseif field.getType() == 'json' %}
-                    <textarea id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
-                              class="form-control{% if hasError %} is-invalid{% endif %}"
-                              rows="5" style="font-family: monospace; font-size: 0.85rem;"
-                              {% if field.isRequired() %}required{% endif %}>{{ val }}</textarea>
-
-                {% else %}
-                    {# text, slug, and any other type #}
-                    <input type="text" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
-                           class="form-control{% if hasError %} is-invalid{% endif %}"
-                           value="{{ val }}"
-                           {% if field.isRequired() %}required{% endif %}>
-                {% endif %}
-
-                {% if hasError %}
-                    <div class="invalid-feedback">{{ flash('errors')[field.getSlug()] }}</div>
-                {% endif %}
+                    {% if hasError %}
+                        <div class="invalid-feedback">{{ flash('errors')[field.getSlug()] }}</div>
+                    {% endif %}
+                </div>
             </div>
             {% endfor %}
 
-            {% if collection.isPublishable() %}
-            <div class="form-group">
-                <label for="status">Status</label>
-                <select id="status" name="status" class="form-control" onchange="document.getElementById('schedule-group').style.display=this.value==='scheduled'?'':'none'">
-                    <option value="draft" {% if entry.status is defined and entry.status == 'draft' %}selected{% endif %}>Draft</option>
-                    <option value="published" {% if entry.status is defined and entry.status == 'published' %}selected{% endif %}>Published</option>
-                    <option value="scheduled" {% if entry.status is defined and entry.status == 'scheduled' %}selected{% endif %}>Scheduled</option>
-                </select>
-                {% if entry.published_at is defined and entry.published_at %}
-                    <p class="text-muted">Published at: {{ entry.published_at }}</p>
-                {% endif %}
-            </div>
-            <div class="form-group" id="schedule-group" style="{% if entry.status is not defined or entry.status != 'scheduled' %}display: none;{% endif %}">
-                <label for="scheduled_at">Publish At</label>
-                <input type="datetime-local" id="scheduled_at" name="scheduled_at" class="form-control"
-                       value="{{ entry.scheduled_at is defined and entry.scheduled_at ? entry.scheduled_at|replace({' ': 'T'}) : '' }}">
-                <p class="text-muted">Entry will be auto-published at this date and time.</p>
-            </div>
-            {% endif %}
-
-            {% if collection.isSeoEnabled() %}
-                {% include "@cms/partials/seo-panel.twig" with {entry: entry, collection_slug: collection.getSlug()} %}
-            {% endif %}
-
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Save Changes</button>
-                <button type="button" class="btn btn-outline" id="preview-btn">Preview</button>
-                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="btn btn-outline">Cancel</a>
-                <span id="autosave-indicator" style="margin-left: var(--space-300); font-size: var(--font-sm); color: var(--text-secondary);"></span>
-            </div>
-        </form>
-
-        {# Autosave Recovery Banner #}
-        <div id="autosave-banner" style="display: none; margin-top: var(--space-300); padding: var(--space-300) var(--space-400); background: var(--bg-warning, #fff8e1); border: 1px solid var(--border-warning, #ffe082); border-radius: var(--radius-200, 6px); font-size: var(--font-sm);">
-            <span id="autosave-banner-text"></span>
-            <button type="button" id="autosave-restore-btn" class="btn btn-sm btn-primary" style="margin-left: var(--space-200);">Restore</button>
-            <button type="button" id="autosave-dismiss-btn" class="btn btn-sm btn-outline" style="margin-left: var(--space-100);">Dismiss</button>
         </div>
 
-        {# Workflow Panel #}
-        {% if collection.isWorkflowEnabled() %}
-        {% set currentStage = entry.status ?? 'draft' %}
-        {% set stages = workflow_stages(collection) %}
-        <div style="margin-top: var(--space-600); border-top: 2px solid var(--border); padding-top: var(--space-500);">
-            <h3 style="margin: 0 0 var(--space-300);">Workflow</h3>
+        {# ==================== SIDEBAR ==================== #}
+        <div class="ee-sidebar">
 
-            {# Stage indicator #}
-            <div style="display: flex; gap: var(--space-100); margin-bottom: var(--space-400);">
-                {% for stage in stages %}
-                <div style="flex: 1; text-align: center; padding: var(--space-200) var(--space-100); border-radius: var(--radius-100);
-                    {% if stage == currentStage %}
-                        background: var(--color-primary); color: var(--color-primary-text); font-weight: 600;
-                    {% elseif loop.index < stages|length %}
-                        {% set stageIdx = 0 %}{% set currentIdx = 0 %}
-                        background: var(--bg-subdued); color: var(--text-secondary);
-                    {% else %}
-                        background: var(--bg-subdued); color: var(--text-disabled);
-                    {% endif %}
-                    font-size: var(--font-sm); text-transform: capitalize;">
-                    {{ stage }}
+            {# --- Publishing Card --- #}
+            <div class="ee-sidebar-card">
+                <div class="ee-sidebar-card-header">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" fill="currentColor"/></svg>
+                    <span>Publishing</span>
                 </div>
-                {% endfor %}
+                <div class="ee-sidebar-card-body">
+                    {% if collection.isPublishable() %}
+                    <div class="ee-sidebar-field">
+                        <label for="status" class="ee-sidebar-label">Status</label>
+                        <select id="status" name="status" class="form-control ee-status-select" onchange="document.getElementById('schedule-group').style.display=this.value==='scheduled'?'':'none'; this.className='form-control ee-status-select ee-status-'+this.value;">
+                            <option value="draft" {% if entry.status is defined and entry.status == 'draft' %}selected{% endif %}>Draft</option>
+                            <option value="published" {% if entry.status is defined and entry.status == 'published' %}selected{% endif %}>Published</option>
+                            <option value="scheduled" {% if entry.status is defined and entry.status == 'scheduled' %}selected{% endif %}>Scheduled</option>
+                        </select>
+                    </div>
+                    {% if entry.published_at is defined and entry.published_at %}
+                    <div class="ee-sidebar-meta-row">
+                        <span class="ee-sidebar-meta-label">Published at</span>
+                        <span class="ee-sidebar-meta-value">{{ entry.published_at }}</span>
+                    </div>
+                    {% endif %}
+                    <div id="schedule-group" class="ee-sidebar-field" style="{% if entry.status is not defined or entry.status != 'scheduled' %}display: none;{% endif %}">
+                        <label for="scheduled_at" class="ee-sidebar-label">Publish At</label>
+                        <input type="datetime-local" id="scheduled_at" name="scheduled_at" class="form-control"
+                               value="{{ entry.scheduled_at is defined and entry.scheduled_at ? entry.scheduled_at|replace({' ': 'T'}) : '' }}">
+                        <p class="ee-field-hint">Auto-publishes at this date/time.</p>
+                    </div>
+                    {% endif %}
+
+                    <div class="ee-sidebar-btn-group">
+                        <button type="submit" class="btn btn-primary ee-btn-save">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="vertical-align: -2px; margin-right: 4px;">
+                                <path d="M13.3 4.7L6.3 11.7 2.7 8.1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            Save Changes
+                        </button>
+                        <button type="button" class="btn btn-outline ee-btn-preview" id="preview-btn">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="vertical-align: -2px; margin-right: 4px;">
+                                <path d="M1 8s3-5.5 7-5.5S15 8 15 8s-3 5.5-7 5.5S1 8 1 8z" stroke="currentColor" stroke-width="1.2"/><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/>
+                            </svg>
+                            Preview
+                        </button>
+                    </div>
+                </div>
             </div>
 
-            {# Advance/Reject buttons #}
-            <div style="display: flex; gap: var(--space-300); align-items: flex-start;">
-                <div style="flex: 1;">
-                    <label class="form-label" style="font-size: var(--font-sm);">Comment (optional)</label>
-                    <input type="text" id="workflow-comment" class="form-control" placeholder="Add a comment...">
+            {# --- Actions Card --- #}
+            <div class="ee-sidebar-card">
+                <div class="ee-sidebar-card-header">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="3" r="1.5" fill="currentColor"/><circle cx="8" cy="8" r="1.5" fill="currentColor"/><circle cx="8" cy="13" r="1.5" fill="currentColor"/></svg>
+                    <span>Actions</span>
                 </div>
-                <div style="display: flex; gap: var(--space-200); padding-top: 22px;">
-                    {% set canReject = workflow_current(entry) != stages|first %}
-                    {% if canReject %}
-                    <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/workflow/reject') }}" id="workflow-reject-form">
-                        <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                        <input type="hidden" name="workflow_comment" id="reject-comment" value="">
-                        <button type="submit" class="btn btn-outline" style="border-color: var(--color-critical); color: var(--color-critical);">Reject</button>
+                <div class="ee-sidebar-card-body ee-actions-body">
+                    <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/duplicate') }}" style="display:contents">
+                        {{ csrf_field() | raw }}
+                        <button type="submit" class="ee-action-btn" onclick="return confirm('Duplicate this entry?')">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="5" y="5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M3 11V3a1.5 1.5 0 011.5-1.5H11" stroke="currentColor" stroke-width="1.2"/></svg>
+                            Duplicate
+                        </button>
                     </form>
+
+                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/history') }}" class="ee-action-btn">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.2"/><path d="M8 4.5V8l2.5 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                        History
+                    </a>
+
+                    <button type="button" class="ee-action-btn" onclick="document.getElementById('save-template-modal').style.display='flex'">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 2h8l4 4v8a1 1 0 01-1 1H2a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.2"/><path d="M5 1v4h5" stroke="currentColor" stroke-width="1.2"/><path d="M5 10h6M5 12.5h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                        Save as Template
+                    </button>
+
+                    {% if collection.isTranslatable() %}
+                    {% set activeLangs = available_locales() %}
+                    {% if activeLangs|length > 1 %}
+                    <div class="ee-action-group">
+                        <div class="ee-action-group-label">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.2"/><path d="M1.5 8h13M8 1.5c-2 2-2 11 0 13M8 1.5c2 2 2 11 0 13" stroke="currentColor" stroke-width="1.2"/></svg>
+                            Translate
+                        </div>
+                        <div class="ee-lang-links">
+                            {% for lang in activeLangs %}
+                                {% if not lang.isDefault() %}
+                                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/translate/' ~ lang.getCode()) }}"
+                                   class="ee-lang-btn">{{ lang.getCode()|upper }}</a>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
                     {% endif %}
 
-                    {% set canAdvance = workflow_current(entry) != stages|last %}
-                    {% if canAdvance %}
-                    <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/workflow/advance') }}" id="workflow-advance-form">
-                        <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                        <input type="hidden" name="workflow_comment" id="advance-comment" value="">
-                        {% set nextStage = null %}
+                    <div class="ee-action-divider"></div>
+
+                    <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/delete') }}"
+                          style="display:contents" class="confirm-delete" data-message="Delete this entry?">
+                        {{ csrf_field() | raw }}
+                        <button type="submit" class="ee-action-btn ee-action-danger">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5.3 4V2.7a1 1 0 011-1h3.4a1 1 0 011 1V4M6.5 7v4.5M9.5 7v4.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M3.5 4l.7 9.3a1 1 0 001 .9h5.6a1 1 0 001-.9L12.5 4" stroke="currentColor" stroke-width="1.2"/></svg>
+                            Delete Entry
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            {# --- Workflow Card --- #}
+            {% if collection.isWorkflowEnabled() %}
+            {% set currentStage = entry.status ?? 'draft' %}
+            {% set stages = workflow_stages(collection) %}
+            <div class="ee-sidebar-card">
+                <div class="ee-sidebar-card-header">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M1 8h3l2-5 4 10 2-5h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span>Workflow</span>
+                </div>
+                <div class="ee-sidebar-card-body">
+                    {# Stage progress indicator #}
+                    <div class="ee-workflow-stages">
                         {% for stage in stages %}
-                            {% if stage == currentStage and not loop.last %}
-                                {% set nextStage = stages[loop.index] %}
+                        {% set isCurrent = stage == currentStage %}
+                        {% set isPast = false %}
+                        {% for s in stages %}
+                            {% if s == currentStage %}
+                                {% set isPast = false %}
                             {% endif %}
                         {% endfor %}
-                        <button type="submit" class="btn btn-primary">Advance{% if nextStage is defined and nextStage %} to {{ nextStage|capitalize }}{% endif %}</button>
-                    </form>
-                    {% endif %}
-                </div>
-            </div>
+                        <div class="ee-workflow-stage {% if isCurrent %}ee-stage-active{% endif %}">
+                            <div class="ee-stage-dot {% if isCurrent %}ee-dot-active{% endif %}"></div>
+                            <span class="ee-stage-name">{{ stage|capitalize }}</span>
+                        </div>
+                        {% if not loop.last %}
+                        <div class="ee-stage-connector"></div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
 
-            {# Transition History #}
-            {% set history = workflow_history(collection.getTableName(), entry.id) %}
-            {% if history|length > 0 %}
-            <div style="margin-top: var(--space-400);">
-                <h4 style="margin: 0 0 var(--space-200); font-size: var(--font-sm); color: var(--text-secondary);">Transition History</h4>
-                {% for t in history %}
-                <div style="display: flex; gap: var(--space-300); padding: var(--space-200) 0; border-bottom: 1px solid var(--bg-subdued); font-size: var(--font-sm);">
-                    <span style="color: {% if t.getAction() == 'advance' %}var(--color-success){% else %}var(--color-critical){% endif %}; font-weight: 500; min-width: 60px;">
-                        {{ t.getAction()|capitalize }}
-                    </span>
-                    <span>{{ t.getFromStage()|capitalize }} &rarr; {{ t.getToStage()|capitalize }}</span>
-                    <span style="color: var(--text-secondary);">by {{ t.getUserName() ?? 'System' }}</span>
-                    {% if t.getComment() %}
-                    <span style="color: var(--text-secondary); font-style: italic;">"{{ t.getComment() }}"</span>
+                    {# Comment input #}
+                    <div class="ee-sidebar-field" style="margin-top: var(--space-300);">
+                        <label class="ee-sidebar-label">Comment (optional)</label>
+                        <input type="text" id="workflow-comment" class="form-control" placeholder="Add a comment...">
+                    </div>
+
+                    {# Advance/Reject buttons #}
+                    <div class="ee-workflow-actions">
+                        {% set canReject = workflow_current(entry) != stages|first %}
+                        {% if canReject %}
+                        <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/workflow/reject') }}" id="workflow-reject-form" style="flex:1">
+                            <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="workflow_comment" id="reject-comment" value="">
+                            <button type="submit" class="btn btn-outline ee-btn-reject">Reject</button>
+                        </form>
+                        {% endif %}
+
+                        {% set canAdvance = workflow_current(entry) != stages|last %}
+                        {% if canAdvance %}
+                        <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/workflow/advance') }}" id="workflow-advance-form" style="flex:1">
+                            <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="workflow_comment" id="advance-comment" value="">
+                            {% set nextStage = null %}
+                            {% for stage in stages %}
+                                {% if stage == currentStage and not loop.last %}
+                                    {% set nextStage = stages[loop.index] %}
+                                {% endif %}
+                            {% endfor %}
+                            <button type="submit" class="btn btn-primary ee-btn-advance">Advance{% if nextStage is defined and nextStage %} to {{ nextStage|capitalize }}{% endif %}</button>
+                        </form>
+                        {% endif %}
+                    </div>
+
+                    {# Transition History (collapsible) #}
+                    {% set history = workflow_history(collection.getTableName(), entry.id) %}
+                    {% if history|length > 0 %}
+                    <details class="ee-workflow-history">
+                        <summary class="ee-workflow-history-toggle">Transition History ({{ history|length }})</summary>
+                        <div class="ee-workflow-history-list">
+                            {% for t in history %}
+                            <div class="ee-history-item">
+                                <span class="ee-history-action ee-history-{{ t.getAction() }}">{{ t.getAction()|capitalize }}</span>
+                                <span class="ee-history-stages">{{ t.getFromStage()|capitalize }} &rarr; {{ t.getToStage()|capitalize }}</span>
+                                <span class="ee-history-user">{{ t.getUserName() ?? 'System' }}</span>
+                                {% if t.getComment() %}
+                                <span class="ee-history-comment">"{{ t.getComment() }}"</span>
+                                {% endif %}
+                                <span class="ee-history-time">{{ t.getCreatedAt()|date('M j, g:i A') }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </details>
                     {% endif %}
-                    <span style="color: var(--text-disabled); margin-left: auto;">{{ t.getCreatedAt()|date('M j, g:i A') }}</span>
                 </div>
-                {% endfor %}
             </div>
             {% endif %}
-        </div>
-        {% endif %}
 
-        {% if entry.created_at is defined or entry.updated_at is defined %}
-        <div class="text-muted" style="margin-top: var(--space-400);">
-            {% if entry.created_at is defined and entry.created_at %}Created: {{ entry.created_at }}{% endif %}
-            {% if entry.updated_at is defined and entry.updated_at %} &middot; Updated: {{ entry.updated_at }}{% endif %}
+            {# --- SEO Card --- #}
+            {% if collection.isSeoEnabled() %}
+            <div class="ee-sidebar-card">
+                <div class="ee-sidebar-card-header ee-seo-header" onclick="this.closest('.ee-sidebar-card').classList.toggle('ee-card-collapsed')">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.2"/><path d="M10.5 10.5L14.5 14.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                        <span>SEO</span>
+                    </div>
+                    <span class="seo-score-badge" id="seo-score-badge" style="display: none;"></span>
+                </div>
+                <div class="ee-sidebar-card-body ee-seo-body">
+                    <div class="ee-sidebar-field">
+                        <label for="meta_title" class="ee-sidebar-label">Meta Title</label>
+                        <input type="text" id="meta_title" name="meta_title" class="form-control"
+                               value="{{ entry.meta_title ?? '' }}" maxlength="255"
+                               oninput="updateSeoCounter(this, 'meta-title-counter', 60)">
+                        <div class="ee-seo-counter">
+                            <span>Recommended: 30-60 chars</span>
+                            <span id="meta-title-counter">{{ (entry.meta_title ?? '')|length }} / 60</span>
+                        </div>
+                    </div>
+
+                    <div class="ee-sidebar-field">
+                        <label for="meta_description" class="ee-sidebar-label">Meta Description</label>
+                        <textarea id="meta_description" name="meta_description" class="form-control"
+                                  rows="3" maxlength="500"
+                                  oninput="updateSeoCounter(this, 'meta-desc-counter', 160)">{{ entry.meta_description ?? '' }}</textarea>
+                        <div class="ee-seo-counter">
+                            <span>Recommended: 120-160 chars</span>
+                            <span id="meta-desc-counter">{{ (entry.meta_description ?? '')|length }} / 160</span>
+                        </div>
+                    </div>
+
+                    <div class="ee-sidebar-field">
+                        <label for="og_image" class="ee-sidebar-label">OG Image URL</label>
+                        <input type="text" id="og_image" name="og_image" class="form-control"
+                               value="{{ entry.og_image ?? '' }}" placeholder="https://example.com/image.jpg">
+                        <p class="ee-field-hint">Social media preview image. 1200x630px recommended.</p>
+                    </div>
+
+                    <div class="ee-sidebar-field">
+                        <label for="canonical_url" class="ee-sidebar-label">Canonical URL</label>
+                        <input type="url" id="canonical_url" name="canonical_url" class="form-control"
+                               value="{{ entry.canonical_url ?? '' }}" placeholder="https://...">
+                    </div>
+
+                    <div class="ee-sidebar-field">
+                        <label for="robots" class="ee-sidebar-label">Robots</label>
+                        <select id="robots" name="robots" class="form-control">
+                            <option value="index,follow" {% if (entry.robots ?? 'index,follow') == 'index,follow' %}selected{% endif %}>Index, Follow</option>
+                            <option value="index,nofollow" {% if (entry.robots ?? '') == 'index,nofollow' %}selected{% endif %}>Index, No Follow</option>
+                            <option value="noindex,follow" {% if (entry.robots ?? '') == 'noindex,follow' %}selected{% endif %}>No Index, Follow</option>
+                            <option value="noindex,nofollow" {% if (entry.robots ?? '') == 'noindex,nofollow' %}selected{% endif %}>No Index, No Follow</option>
+                        </select>
+                    </div>
+
+                    {% if entry.id is defined and entry.id %}
+                    <div id="seo-analysis" style="display: none;">
+                        <h4 class="ee-sidebar-label" style="margin-top:var(--space-300);">SEO Analysis</h4>
+                        <ul id="seo-issues" class="ee-seo-issues"></ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {# --- Info Card --- #}
+            <div class="ee-sidebar-card">
+                <div class="ee-sidebar-card-header">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.2"/><path d="M8 7v4.5M8 4.5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    <span>Information</span>
+                </div>
+                <div class="ee-sidebar-card-body">
+                    <div class="ee-sidebar-meta-row">
+                        <span class="ee-sidebar-meta-label">Entry ID</span>
+                        <span class="ee-sidebar-meta-value ee-mono">{{ entry.id }}</span>
+                    </div>
+                    {% if entry.created_at is defined and entry.created_at %}
+                    <div class="ee-sidebar-meta-row">
+                        <span class="ee-sidebar-meta-label">Created</span>
+                        <span class="ee-sidebar-meta-value">{{ entry.created_at }}</span>
+                    </div>
+                    {% endif %}
+                    {% if entry.updated_at is defined and entry.updated_at %}
+                    <div class="ee-sidebar-meta-row">
+                        <span class="ee-sidebar-meta-label">Updated</span>
+                        <span class="ee-sidebar-meta-value">{{ entry.updated_at }}</span>
+                    </div>
+                    {% endif %}
+                    {% if entry.created_by is defined and entry.created_by %}
+                    <div class="ee-sidebar-meta-row">
+                        <span class="ee-sidebar-meta-label">Created by</span>
+                        <span class="ee-sidebar-meta-value">{{ entry.created_by }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
         </div>
-        {% endif %}
+    </div>
+</form>
+
+{# --- Save as Template Modal --- #}
+<div id="save-template-modal" class="ee-modal-overlay" style="display: none;">
+    <div class="ee-modal">
+        <div class="ee-modal-header">
+            <h3>Save as Template</h3>
+            <button type="button" class="ee-modal-close" onclick="document.getElementById('save-template-modal').style.display='none'">&times;</button>
+        </div>
+        <div class="ee-modal-body">
+            <p class="ee-modal-desc">Save this entry's field values as a reusable template for new entries.</p>
+            <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/save-template') }}">
+                {{ csrf_field() | raw }}
+                <div class="form-group" style="margin-bottom: var(--space-400, 16px);">
+                    <label for="template_name" class="ee-sidebar-label">Template Name</label>
+                    <input type="text" id="template_name" name="template_name" class="form-control"
+                           placeholder="e.g. Blog Post Default" required>
+                </div>
+                <div class="ee-modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="document.getElementById('save-template-modal').style.display='none'">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Template</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
-{# Save as Template Modal #}
-<div id="save-template-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
-    <div style="background: var(--bg-surface, #fff); border-radius: var(--radius-300, 12px); padding: var(--space-500, 24px); width: 90%; max-width: 420px; box-shadow: 0 8px 30px rgba(0,0,0,0.12);">
-        <h3 style="margin: 0 0 var(--space-300, 12px);">Save as Template</h3>
-        <p style="font-size: var(--font-sm, 0.875rem); color: var(--text-secondary, #666); margin: 0 0 var(--space-400, 16px);">
-            Save this entry's field values as a reusable template for new entries.
-        </p>
-        <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/save-template') }}">
-            {{ csrf_field() | raw }}
-            <div class="form-group" style="margin-bottom: var(--space-400, 16px);">
-                <label for="template_name">Template Name</label>
-                <input type="text" id="template_name" name="template_name" class="form-control"
-                       placeholder="e.g. Blog Post Default" required>
-            </div>
-            <div style="display: flex; gap: var(--space-200, 8px); justify-content: flex-end;">
-                <button type="button" class="btn btn-outline" onclick="document.getElementById('save-template-modal').style.display='none'">Cancel</button>
-                <button type="submit" class="btn btn-primary">Save Template</button>
-            </div>
-        </form>
-    </div>
-</div>
+{% endblock %}
 
 {% block scripts %}
+<style nonce="{{ csp_nonce() }}">
+/* ============================================
+   EDIT ENTRY — Strapi-inspired two-column layout
+   ============================================ */
+
+/* --- Lock Banner --- */
+.ee-lock-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 8px;
+    color: #92400e;
+    font-size: var(--font-sm, 0.875rem);
+    line-height: 1.5;
+}
+
+/* --- Autosave Banner --- */
+.ee-autosave-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    background: #eef2ff;
+    border: 1px solid #c7d2fe;
+    border-radius: 8px;
+    font-size: var(--font-sm, 0.875rem);
+    color: #3730a3;
+}
+.ee-autosave-actions {
+    display: flex;
+    gap: 6px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+/* --- Page Header --- */
+.ee-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.ee-page-header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-primary, #1a1a2e);
+}
+.ee-page-header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.ee-page-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.ee-entry-id {
+    color: var(--text-secondary, #666);
+    font-weight: 400;
+}
+.ee-autosave-indicator {
+    font-size: var(--font-xs, 0.75rem);
+    color: var(--text-secondary, #888);
+    white-space: nowrap;
+}
+
+/* --- Two-Column Layout --- */
+.ee-layout {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 24px;
+    align-items: start;
+}
+
+/* --- Main Column --- */
+.ee-main {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+}
+
+/* --- Field Cards --- */
+.ee-card {
+    background: var(--bg-surface, #fff);
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: border-color 0.15s ease;
+}
+.ee-card:focus-within {
+    border-color: var(--color-primary, #4945ff);
+    box-shadow: 0 0 0 3px rgba(73, 69, 255, 0.08);
+}
+.ee-card-error {
+    border-color: var(--color-critical, #ee5e52) !important;
+}
+.ee-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--bg-muted, #f9fafb);
+    border-bottom: 1px solid var(--border, #e5e7eb);
+}
+.ee-card-title {
+    font-size: var(--font-sm, 0.875rem);
+    font-weight: 600;
+    color: var(--text-primary, #1a1a2e);
+}
+.ee-card-body {
+    padding: 16px;
+}
+.ee-required {
+    color: var(--color-critical, #ee5e52);
+    margin-left: 2px;
+}
+.ee-readonly-badge {
+    font-size: var(--font-xs, 0.75rem);
+    color: var(--text-secondary, #888);
+    font-weight: 400;
+    background: var(--bg-subdued, #f3f4f6);
+    padding: 1px 8px;
+    border-radius: 10px;
+    margin-left: 8px;
+}
+
+/* --- Field Type Badges --- */
+.ee-field-badge {
+    font-size: 0.7rem;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    background: #f0f0ff;
+    color: #4945ff;
+    flex-shrink: 0;
+}
+.ee-badge-text, .ee-badge-slug { background: #ecfdf5; color: #059669; }
+.ee-badge-richtext { background: #fdf4ff; color: #a855f7; }
+.ee-badge-number, .ee-badge-decimal { background: #fef3c7; color: #d97706; }
+.ee-badge-boolean { background: #e0f2fe; color: #0284c7; }
+.ee-badge-image, .ee-badge-file { background: #fce7f3; color: #db2777; }
+.ee-badge-date, .ee-badge-datetime { background: #f0fdf4; color: #16a34a; }
+.ee-badge-select { background: #ede9fe; color: #7c3aed; }
+.ee-badge-relation { background: #fff7ed; color: #ea580c; }
+.ee-badge-email { background: #ecfeff; color: #0891b2; }
+.ee-badge-url { background: #f0f9ff; color: #0369a1; }
+.ee-badge-json { background: #fefce8; color: #ca8a04; }
+
+/* --- Field Hints --- */
+.ee-field-hint {
+    font-size: var(--font-xs, 0.75rem);
+    color: var(--text-secondary, #888);
+    margin: 6px 0 0;
+}
+
+/* --- Boolean Toggle --- */
+.ee-toggle-wrap { padding: 4px 0; }
+.ee-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+}
+.ee-toggle input { display: none; }
+.ee-toggle-slider {
+    width: 40px;
+    height: 22px;
+    background: #d1d5db;
+    border-radius: 11px;
+    position: relative;
+    transition: background 0.2s;
+}
+.ee-toggle-slider::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+.ee-toggle input:checked + .ee-toggle-slider {
+    background: var(--color-primary, #4945ff);
+}
+.ee-toggle input:checked + .ee-toggle-slider::after {
+    transform: translateX(18px);
+}
+.ee-toggle-label {
+    font-size: var(--font-sm, 0.875rem);
+    color: var(--text-secondary, #666);
+}
+
+/* --- Read-only Display --- */
+.ee-readonly-value {
+    padding: 8px 0;
+    color: var(--text-secondary, #666);
+    font-size: var(--font-sm, 0.875rem);
+}
+.ee-readonly-image {
+    max-height: 100px;
+    border-radius: 6px;
+    border: 1px solid var(--border, #e5e7eb);
+}
+.ee-readonly-richtext {
+    border: 1px solid var(--border, #e5e7eb);
+    padding: 12px;
+    border-radius: 6px;
+    background: var(--bg-subdued, #f9fafb);
+    max-height: 200px;
+    overflow-y: auto;
+    font-size: var(--font-sm, 0.875rem);
+}
+.ee-bool-indicator {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-size: var(--font-sm, 0.875rem);
+    font-weight: 500;
+}
+.ee-bool-yes { background: #ecfdf5; color: #059669; }
+.ee-bool-no { background: #fef2f2; color: #dc2626; }
+
+/* --- File/Image Fields --- */
+.ee-current-file { margin-bottom: 10px; }
+.ee-current-image {
+    max-height: 100px;
+    border-radius: 6px;
+    border: 1px solid var(--border, #e5e7eb);
+}
+.ee-file-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--color-primary, #4945ff);
+    font-size: var(--font-sm, 0.875rem);
+}
+.ee-file-input-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+}
+.ee-file-input-row .form-control { flex: 1; }
+.ee-media-preview {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    padding: 8px;
+    background: var(--bg-subdued, #f9fafb);
+    border-radius: 6px;
+    font-size: var(--font-sm, 0.875rem);
+}
+.ee-media-preview-img {
+    max-height: 60px;
+    border-radius: 4px;
+    border: 1px solid var(--border, #e5e7eb);
+}
+.ee-json-field {
+    font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+    font-size: 0.85rem;
+}
+
+/* ============================================
+   SIDEBAR
+   ============================================ */
+.ee-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: sticky;
+    top: 20px;
+}
+
+.ee-sidebar-card {
+    background: var(--bg-surface, #fff);
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 8px;
+    overflow: hidden;
+}
+.ee-sidebar-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: var(--bg-muted, #f9fafb);
+    border-bottom: 1px solid var(--border, #e5e7eb);
+    font-size: var(--font-sm, 0.875rem);
+    font-weight: 600;
+    color: var(--text-primary, #1a1a2e);
+}
+.ee-sidebar-card-body {
+    padding: 16px;
+}
+
+/* --- Sidebar Fields --- */
+.ee-sidebar-field {
+    margin-bottom: 12px;
+}
+.ee-sidebar-field:last-child {
+    margin-bottom: 0;
+}
+.ee-sidebar-label {
+    display: block;
+    font-size: var(--font-xs, 0.75rem);
+    font-weight: 600;
+    color: var(--text-secondary, #666);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+}
+.ee-sidebar-meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--bg-subdued, #f3f4f6);
+    font-size: var(--font-sm, 0.875rem);
+}
+.ee-sidebar-meta-row:last-child { border-bottom: none; }
+.ee-sidebar-meta-label {
+    color: var(--text-secondary, #888);
+    font-size: var(--font-xs, 0.75rem);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 500;
+}
+.ee-sidebar-meta-value {
+    color: var(--text-primary, #1a1a2e);
+    font-weight: 500;
+    font-size: var(--font-sm, 0.875rem);
+}
+.ee-mono { font-family: 'SF Mono', 'Consolas', monospace; }
+
+/* --- Status Select --- */
+.ee-status-select { font-weight: 500; }
+.ee-status-draft { border-color: #d1d5db; }
+.ee-status-published { border-color: #34d399; background: #f0fdf4; }
+.ee-status-scheduled { border-color: #fbbf24; background: #fffbeb; }
+
+/* --- Sidebar Buttons --- */
+.ee-sidebar-btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 16px;
+}
+.ee-btn-save {
+    width: 100%;
+    justify-content: center;
+    font-weight: 600;
+}
+.ee-btn-preview {
+    width: 100%;
+    justify-content: center;
+}
+
+/* --- Actions Card --- */
+.ee-actions-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px !important;
+}
+.ee-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    font-size: var(--font-sm, 0.875rem);
+    color: var(--text-primary, #1a1a2e);
+    text-decoration: none;
+    border: none;
+    background: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.12s ease;
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+}
+.ee-action-btn:hover {
+    background: var(--bg-subdued, #f3f4f6);
+}
+.ee-action-btn svg {
+    color: var(--text-secondary, #888);
+    flex-shrink: 0;
+}
+.ee-action-danger {
+    color: var(--color-critical, #dc2626);
+}
+.ee-action-danger svg {
+    color: var(--color-critical, #dc2626);
+}
+.ee-action-danger:hover {
+    background: #fef2f2;
+}
+.ee-action-divider {
+    height: 1px;
+    background: var(--border, #e5e7eb);
+    margin: 4px 8px;
+}
+.ee-action-group {
+    padding: 6px 12px 10px;
+}
+.ee-action-group-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: var(--font-sm, 0.875rem);
+    color: var(--text-primary, #1a1a2e);
+    margin-bottom: 8px;
+}
+.ee-action-group-label svg {
+    color: var(--text-secondary, #888);
+}
+.ee-lang-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding-left: 26px;
+}
+.ee-lang-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    padding: 3px 10px;
+    font-size: var(--font-xs, 0.75rem);
+    font-weight: 600;
+    color: var(--color-primary, #4945ff);
+    background: #f0f0ff;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: background 0.12s;
+}
+.ee-lang-btn:hover {
+    background: #e0e0ff;
+}
+
+/* --- Workflow Card --- */
+.ee-workflow-stages {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 4px 0;
+}
+.ee-workflow-stage {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+.ee-stage-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #d1d5db;
+    flex-shrink: 0;
+}
+.ee-dot-active {
+    background: var(--color-primary, #4945ff);
+    box-shadow: 0 0 0 3px rgba(73, 69, 255, 0.2);
+}
+.ee-stage-name {
+    font-size: var(--font-xs, 0.75rem);
+    font-weight: 500;
+    color: var(--text-secondary, #666);
+    white-space: nowrap;
+}
+.ee-stage-active .ee-stage-name {
+    color: var(--color-primary, #4945ff);
+    font-weight: 700;
+}
+.ee-stage-connector {
+    width: 16px;
+    height: 2px;
+    background: #d1d5db;
+    flex-shrink: 0;
+    margin: 0 4px;
+}
+.ee-workflow-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+.ee-btn-reject {
+    width: 100%;
+    border-color: var(--color-critical, #dc2626) !important;
+    color: var(--color-critical, #dc2626) !important;
+}
+.ee-btn-advance {
+    width: 100%;
+}
+.ee-workflow-history {
+    margin-top: 12px;
+    border-top: 1px solid var(--border, #e5e7eb);
+    padding-top: 12px;
+}
+.ee-workflow-history-toggle {
+    font-size: var(--font-xs, 0.75rem);
+    font-weight: 600;
+    color: var(--text-secondary, #888);
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.ee-workflow-history-toggle::-webkit-details-marker { display: none; }
+.ee-workflow-history-toggle::before {
+    content: '';
+    display: inline-block;
+    width: 0;
+    height: 0;
+    border-left: 5px solid currentColor;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    transition: transform 0.15s;
+}
+details[open] > .ee-workflow-history-toggle::before {
+    transform: rotate(90deg);
+}
+.ee-workflow-history-list {
+    margin-top: 8px;
+}
+.ee-history-item {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--bg-subdued, #f3f4f6);
+    font-size: var(--font-xs, 0.75rem);
+    align-items: center;
+}
+.ee-history-item:last-child { border-bottom: none; }
+.ee-history-action {
+    font-weight: 600;
+    min-width: 52px;
+}
+.ee-history-advance { color: var(--color-success, #059669); }
+.ee-history-reject { color: var(--color-critical, #dc2626); }
+.ee-history-stages { color: var(--text-primary, #1a1a2e); }
+.ee-history-user { color: var(--text-secondary, #888); }
+.ee-history-comment { color: var(--text-secondary, #888); font-style: italic; }
+.ee-history-time { color: var(--text-disabled, #bbb); margin-left: auto; }
+
+/* --- SEO Card --- */
+.ee-seo-header {
+    cursor: pointer;
+    justify-content: space-between;
+    user-select: none;
+}
+.ee-card-collapsed .ee-seo-body {
+    display: none;
+}
+.seo-score-badge {
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: 600;
+}
+.ee-seo-counter {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--font-xs, 0.75rem);
+    color: var(--text-secondary, #888);
+    margin-top: 4px;
+}
+.ee-seo-issues {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0 0;
+}
+.ee-seo-issues li {
+    padding: 4px 0;
+    color: var(--text-secondary, #666);
+    font-size: var(--font-xs, 0.75rem);
+}
+
+/* --- Modal --- */
+.ee-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+.ee-modal {
+    background: var(--bg-surface, #fff);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 440px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+}
+.ee-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border, #e5e7eb);
+}
+.ee-modal-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+.ee-modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-secondary, #888);
+    padding: 0 4px;
+    line-height: 1;
+}
+.ee-modal-body {
+    padding: 20px;
+}
+.ee-modal-desc {
+    font-size: var(--font-sm, 0.875rem);
+    color: var(--text-secondary, #666);
+    margin: 0 0 16px;
+}
+.ee-modal-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+/* --- Media Browser Modal (reused from create) --- */
+.media-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+.media-modal { background: #fff; border-radius: 12px; width: 90%; max-width: 800px; max-height: 80vh; display: flex; flex-direction: column; }
+.media-modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #e8e8e8; }
+.media-modal-header h3 { margin: 0; font-size: 1.1rem; }
+.media-modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; padding: 0 4px; }
+.media-modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+.media-modal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
+.media-modal-item { border: 2px solid #e8e8e8; border-radius: 8px; cursor: pointer; overflow: hidden; transition: border-color 0.2s; }
+.media-modal-item:hover { border-color: var(--color-primary, #4945ff); }
+.media-modal-thumb { height: 100px; display: flex; align-items: center; justify-content: center; background: #f8f9fa; overflow: hidden; }
+.media-modal-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.media-modal-name { padding: 6px 8px; font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* --- Responsive --- */
+@media (max-width: 900px) {
+    .ee-layout {
+        grid-template-columns: 1fr;
+    }
+    .ee-sidebar {
+        position: static;
+        order: -1;
+    }
+}
+@media (max-width: 600px) {
+    .ee-page-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .ee-page-header-right {
+        width: 100%;
+    }
+    .ee-workflow-stages {
+        flex-wrap: wrap;
+    }
+}
+</style>
+
+{# ============================================
+   SCRIPTS
+   ============================================ #}
+
+{# --- SEO Counter Function --- #}
+<script nonce="{{ csp_nonce() }}">
+function updateSeoCounter(el, counterId, recommended) {
+    var counter = document.getElementById(counterId);
+    if (!counter) return;
+    var len = el.value.length;
+    counter.textContent = len + ' / ' + recommended;
+    if (len > 0 && len <= recommended) {
+        counter.style.color = '#28a745';
+    } else if (len > recommended) {
+        counter.style.color = '#dc3545';
+    } else {
+        counter.style.color = '';
+    }
+}
+</script>
+
+{# --- SEO Score Fetch --- #}
+{% if collection.isSeoEnabled() and entry.id is defined and entry.id %}
+<script nonce="{{ csp_nonce() }}">
+(function() {
+    var slug = '{{ collection.getSlug()|e('js') }}';
+    var entryId = '{{ entry.id|e('js') }}';
+    fetch('/admin/collections/' + slug + '/entries/' + entryId + '/seo-score')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var badge = document.getElementById('seo-score-badge');
+            if (badge && data.score !== undefined) {
+                badge.style.display = '';
+                badge.textContent = data.score + '/100';
+                if (data.score >= 80) {
+                    badge.style.background = '#d4edda'; badge.style.color = '#155724';
+                } else if (data.score >= 50) {
+                    badge.style.background = '#fff3cd'; badge.style.color = '#856404';
+                } else {
+                    badge.style.background = '#f8d7da'; badge.style.color = '#721c24';
+                }
+            }
+            var analysis = document.getElementById('seo-analysis');
+            var issuesList = document.getElementById('seo-issues');
+            if (analysis && issuesList && data.issues && data.issues.length > 0) {
+                analysis.style.display = '';
+                data.issues.forEach(function(issue) {
+                    var li = document.createElement('li');
+                    li.textContent = '-- ' + issue;
+                    issuesList.appendChild(li);
+                });
+            }
+        }).catch(function() {});
+})();
+</script>
+{% endif %}
+
+{# --- Template Modal, Preview, Content Lock --- #}
 <script nonce="{{ csp_nonce() }}">
 (function() {
     // Close template modal on overlay click
@@ -408,7 +1360,7 @@
 
     // Preview — submit form to preview endpoint in a new tab
     document.getElementById('preview-btn')?.addEventListener('click', function() {
-        var form = document.querySelector('form[enctype]');
+        var form = document.getElementById('entry-form');
         if (!form) return;
         var originalAction = form.action;
         var originalTarget = form.target;
@@ -420,20 +1372,16 @@
     });
 
     // Content Lock — heartbeat every 2 minutes, unlock on page leave
-    var lockSlug = '{{ collection.getSlug()|e('js') }}';
-    var lockId = '{{ entry.id|e('js') }}';
     var csrfToken = '{{ csrf_token() }}';
     var heartbeatUrl = '{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/heartbeat') }}';
     var unlockUrl = '{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/unlock') }}';
 
-    // Heartbeat — renew lock every 2 minutes
     var heartbeatInterval = setInterval(function() {
         var fd = new FormData();
         fd.append('_token', csrfToken);
         fetch(heartbeatUrl, { method: 'POST', body: fd, credentials: 'same-origin' });
     }, 120000);
 
-    // Release lock on page leave
     function releaseLock() {
         var fd = new FormData();
         fd.append('_token', csrfToken);
@@ -444,11 +1392,38 @@
         }
     }
     window.addEventListener('beforeunload', releaseLock);
+
+    // Slug auto-generation
+    {% if collection.hasSlug() and collection.getSlugSourceField() %}
+    var sourceField = '{{ collection.getSlugSourceField() }}';
+    var sourceInput = document.querySelector('[name="' + sourceField + '"]');
+    var slugInput = document.getElementById('entry-slug');
+    if (sourceInput && slugInput) {
+        sourceInput.addEventListener('input', function() {
+            if (!slugInput.dataset.manual) {
+                slugInput.value = this.value.toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+            }
+        });
+        slugInput.addEventListener('input', function() {
+            this.dataset.manual = this.value ? '1' : '';
+        });
+    }
+    {% endif %}
+
+    // Boolean toggle label update
+    document.querySelectorAll('.ee-toggle input[type="checkbox"]').forEach(function(cb) {
+        cb.addEventListener('change', function() {
+            var label = this.closest('.ee-toggle').querySelector('.ee-toggle-label');
+            if (label) label.textContent = this.checked ? 'Yes' : 'No';
+        });
+    });
 })();
 </script>
+
+{# --- Media Browser --- #}
 <script nonce="{{ csp_nonce() }}">
 (function() {
-    // Media Browser
     document.querySelectorAll('.media-browse-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
             openMediaBrowser(btn.dataset.field, btn.dataset.filter || 'all');
@@ -460,7 +1435,8 @@
             document.getElementById('media-preview-' + btn.dataset.field).style.display = 'none';
         });
     });
-    // Workflow comment → hidden fields
+
+    // Workflow comment -> hidden fields
     var wfComment = document.getElementById('workflow-comment');
     if (wfComment) {
         var advForm = document.getElementById('workflow-advance-form');
@@ -507,27 +1483,15 @@
     }
 })();
 </script>
-<style nonce="{{ csp_nonce() }}">
-.media-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center; }
-.media-modal { background: #fff; border-radius: 12px; width: 90%; max-width: 800px; max-height: 80vh; display: flex; flex-direction: column; }
-.media-modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #e8e8e8; }
-.media-modal-header h3 { margin: 0; font-size: 1.1rem; }
-.media-modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; padding: 0 4px; }
-.media-modal-body { padding: 20px; overflow-y: auto; flex: 1; }
-.media-modal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
-.media-modal-item { border: 2px solid #e8e8e8; border-radius: 8px; cursor: pointer; overflow: hidden; transition: border-color 0.2s; }
-.media-modal-item:hover { border-color: #008060; }
-.media-modal-thumb { height: 100px; display: flex; align-items: center; justify-content: center; background: #f8f9fa; overflow: hidden; }
-.media-modal-thumb img { width: 100%; height: 100%; object-fit: cover; }
-.media-modal-name { padding: 6px 8px; font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-</style>
+
+{# --- Autosave --- #}
 <script nonce="{{ csp_nonce() }}">
 (function() {
     var collectionSlug = '{{ collection.getSlug()|e('js') }}';
     var entryId = '{{ entry.id|e('js') }}';
     var autosaveBaseUrl = '{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/autosave') }}';
     var csrfMeta = document.querySelector('meta[name="csrf-token"]');
-    var form = document.querySelector('form[method="POST"][enctype]');
+    var form = document.getElementById('entry-form');
     var indicator = document.getElementById('autosave-indicator');
     var banner = document.getElementById('autosave-banner');
     var bannerText = document.getElementById('autosave-banner-text');
@@ -620,7 +1584,6 @@
             bannerText.textContent = 'You have unsaved changes from ' + dt + '.';
             banner.style.display = '';
         }
-        // Initialize snapshot after check
         lastSnapshot = snapshot();
     }).catch(function() {
         lastSnapshot = snapshot();
@@ -648,5 +1611,4 @@
     }
 })();
 </script>
-{% endblock %}
 {% endblock %}

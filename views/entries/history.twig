@@ -3,86 +3,338 @@
 {% block title %}Revision History — Entry #{{ entry.id }}{% endblock %}
 
 {% block content %}
-<div class="breadcrumb">
-    <a href="{{ admin_url('collections') }}">Collections</a> /
-    <a href="{{ admin_url('collections/' ~ collection.getSlug()) }}">{{ collection.getName() }}</a> /
-    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}">Entries</a> /
-    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id) }}">#{{ entry.id }}</a> / History
-</div>
+<style nonce="{{ csp_nonce() }}">
+    .history-header {
+        margin-bottom: var(--space-600);
+    }
+    .history-back {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-200);
+        color: var(--text-secondary);
+        font-size: var(--font-sm);
+        font-weight: 500;
+        text-decoration: none;
+        margin-bottom: var(--space-200);
+    }
+    .history-back:hover { color: var(--text-link); text-decoration: none; }
+    .history-back svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; fill: none; }
+    .history-title {
+        font-size: var(--font-xl);
+        font-weight: 700;
+        color: var(--text);
+        line-height: 1.3;
+    }
 
-<div class="page-header">
-    <h1>Revision History — Entry #{{ entry.id }}</h1>
-    <div class="page-actions">
-        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id) }}" class="btn btn-outline">Back to Entry</a>
-    </div>
+    /* Timeline */
+    .timeline {
+        position: relative;
+        padding-left: 32px;
+    }
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 11px;
+        top: 8px;
+        bottom: 8px;
+        width: 2px;
+        background: var(--border);
+        border-radius: 1px;
+    }
+
+    .timeline-item {
+        position: relative;
+        padding-bottom: var(--space-500);
+    }
+    .timeline-item:last-child { padding-bottom: 0; }
+
+    .timeline-dot {
+        position: absolute;
+        left: -32px;
+        top: 4px;
+        width: 24px;
+        height: 24px;
+        border-radius: var(--radius-full);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1;
+    }
+    .timeline-dot svg {
+        width: 12px;
+        height: 12px;
+        stroke: currentColor;
+        stroke-width: 2.5;
+        fill: none;
+    }
+    .timeline-dot-create {
+        background: var(--color-success-bg);
+        color: var(--color-success);
+        border: 2px solid var(--color-success);
+    }
+    .timeline-dot-update {
+        background: var(--color-info-bg);
+        color: var(--color-info);
+        border: 2px solid var(--color-info);
+    }
+    .timeline-dot-delete {
+        background: var(--color-critical-bg);
+        color: var(--color-critical);
+        border: 2px solid var(--color-critical);
+    }
+
+    .timeline-card {
+        background: var(--bg-surface);
+        border-radius: var(--radius-200);
+        box-shadow: var(--shadow-card);
+        overflow: hidden;
+        transition: box-shadow 0.15s;
+    }
+    .timeline-card:hover { box-shadow: var(--shadow-card-hover); }
+
+    .timeline-card-header {
+        display: flex;
+        align-items: center;
+        gap: var(--space-300);
+        padding: var(--space-300) var(--space-400);
+        flex-wrap: wrap;
+    }
+
+    .rev-version {
+        font-weight: 700;
+        font-size: var(--font-base);
+        color: var(--text);
+    }
+    .rev-action-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 10px;
+        border-radius: var(--radius-full);
+        font-size: var(--font-xs);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+    .rev-action-badge-create { background: var(--color-success-bg); color: var(--color-success); }
+    .rev-action-badge-update { background: var(--color-info-bg); color: var(--color-info); }
+    .rev-action-badge-delete { background: var(--color-critical-bg); color: var(--color-critical); }
+
+    .rev-fields {
+        display: flex;
+        gap: var(--space-100);
+        flex-wrap: wrap;
+    }
+    .rev-field-tag {
+        display: inline-block;
+        padding: 1px 8px;
+        background: var(--bg-subdued);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-100);
+        font-size: var(--font-xs);
+        font-family: var(--font-mono);
+        color: var(--text-secondary);
+    }
+
+    .rev-meta {
+        display: flex;
+        align-items: center;
+        gap: var(--space-300);
+        margin-left: auto;
+        flex-shrink: 0;
+    }
+    .rev-user {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-100);
+        font-size: var(--font-sm);
+        color: var(--text-secondary);
+    }
+    .rev-user svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; fill: none; }
+    .rev-time {
+        font-size: var(--font-sm);
+        color: var(--text-disabled);
+        white-space: nowrap;
+    }
+
+    .timeline-card-actions {
+        display: flex;
+        align-items: center;
+        gap: var(--space-200);
+        padding: 0 var(--space-400) var(--space-300);
+        flex-wrap: wrap;
+    }
+    .btn-timeline {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-100);
+        padding: 4px 12px;
+        font-size: var(--font-sm);
+        font-weight: 500;
+        border-radius: var(--radius-100);
+        cursor: pointer;
+        font-family: var(--font);
+        border: 1px solid var(--border);
+        background: var(--bg-surface);
+        color: var(--text-secondary);
+        text-decoration: none;
+        transition: all 0.15s;
+    }
+    .btn-timeline:hover { border-color: var(--border-hover); color: var(--text); background: var(--bg-surface-hover); text-decoration: none; }
+    .btn-timeline svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2; fill: none; }
+    .btn-timeline-restore {
+        color: var(--color-primary);
+        border-color: var(--color-primary);
+        background: rgba(26, 123, 168, 0.06);
+    }
+    .btn-timeline-restore:hover { background: rgba(26, 123, 168, 0.12); }
+
+    /* Expandable data */
+    .rev-data-panel {
+        display: none;
+        border-top: 1px solid var(--border);
+        padding: var(--space-400);
+        background: var(--bg-subdued);
+    }
+    .rev-data-panel.open { display: block; }
+    .rev-data-pre {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-200);
+        padding: var(--space-300) var(--space-400);
+        font-family: var(--font-mono);
+        font-size: var(--font-xs);
+        line-height: 1.6;
+        max-height: 320px;
+        overflow: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+        color: var(--text);
+        margin: 0;
+    }
+
+    /* Empty state */
+    .history-empty {
+        background: var(--bg-surface);
+        border-radius: var(--radius-200);
+        box-shadow: var(--shadow-card);
+        padding: var(--space-1000) var(--space-600);
+        text-align: center;
+    }
+    .history-empty-icon {
+        width: 56px;
+        height: 56px;
+        margin: 0 auto var(--space-400);
+        background: var(--bg-subdued);
+        border-radius: var(--radius-full);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .history-empty-icon svg { width: 28px; height: 28px; stroke: var(--text-disabled); stroke-width: 1.5; fill: none; }
+    .history-empty h3 {
+        font-size: var(--font-lg);
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: var(--space-200);
+    }
+    .history-empty p {
+        font-size: var(--font-base);
+        color: var(--text-secondary);
+    }
+
+    @media (max-width: 768px) {
+        .timeline-card-header { flex-direction: column; align-items: flex-start; }
+        .rev-meta { margin-left: 0; }
+    }
+</style>
+
+<div class="history-header">
+    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id) }}" class="history-back">
+        <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Entry #{{ entry.id }}
+    </a>
+    <h1 class="history-title">Revision History</h1>
 </div>
 
 {% if revisions|length > 0 %}
-<div class="card">
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Rev #</th>
-                        <th>Action</th>
-                        <th>Changed Fields</th>
-                        <th>By</th>
-                        <th>Date</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for revision in revisions %}
-                    <tr>
-                        <td><strong>#{{ revision.getId() }}</strong></td>
-                        <td>
-                            {% if revision.getAction() == 'create' %}
-                                <span class="badge" style="background: #d4edda; color: #155724;">Created</span>
-                            {% elseif revision.getAction() == 'update' %}
-                                <span class="badge" style="background: #cce5ff; color: #004085;">Updated</span>
-                            {% elseif revision.getAction() == 'delete' %}
-                                <span class="badge" style="background: #f8d7da; color: #721c24;">Deleted</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if revision.getChangedFields() %}
-                                {% for field in revision.getChangedFields() %}
-                                    <code>{{ field }}</code>{% if not loop.last %}, {% endif %}
-                                {% endfor %}
-                            {% else %}
-                                <span class="text-muted">All fields</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ revision.getUserName() ?? 'System' }}</td>
-                        <td>{{ revision.getCreatedAt()|date('M d, Y H:i') }}</td>
-                        <td class="actions-cell">
-                            {% if revision.getAction() != 'delete' %}
-                            <button class="btn btn-sm btn-outline toggle-data-btn" data-target="rev-{{ revision.getId() }}">
-                                View Data
-                            </button>
-                            <form method="POST"
-                                  action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/restore/' ~ revision.getId()) }}"
-                                  style="display:inline" class="confirm-delete" data-message="Restore entry to this revision?">
-                                {{ csrf_field() | raw }}
-                                <button type="submit" class="btn btn-sm btn-primary">Restore</button>
-                            </form>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    <tr id="rev-{{ revision.getId() }}" style="display: none;">
-                        <td colspan="6">
-                            <pre style="background: #f8f9fa; padding: 12px; border-radius: 6px; font-size: 0.8rem; max-height: 300px; overflow: auto;">{{ revision.getData()|json_encode(constant('JSON_PRETTY_PRINT') b-or constant('JSON_UNESCAPED_SLASHES')) }}</pre>
-                        </td>
-                    </tr>
+<div class="timeline">
+    {% for revision in revisions %}
+    {% set action = revision.getAction() %}
+    <div class="timeline-item">
+        <div class="timeline-dot timeline-dot-{{ action }}">
+            {% if action == 'create' %}
+                <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            {% elseif action == 'update' %}
+                <svg viewBox="0 0 24 24"><path d="M17 3a2.83 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+            {% elseif action == 'delete' %}
+                <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            {% endif %}
+        </div>
+
+        <div class="timeline-card">
+            <div class="timeline-card-header">
+                <span class="rev-version">v{{ revision.getId() }}</span>
+                <span class="rev-action-badge rev-action-badge-{{ action }}">
+                    {% if action == 'create' %}Created{% elseif action == 'update' %}Updated{% elseif action == 'delete' %}Deleted{% else %}{{ action }}{% endif %}
+                </span>
+
+                {% if revision.getChangedFields() %}
+                <div class="rev-fields">
+                    {% for field in revision.getChangedFields() %}
+                        <span class="rev-field-tag">{{ field }}</span>
                     {% endfor %}
-                </tbody>
-            </table>
+                </div>
+                {% endif %}
+
+                <div class="rev-meta">
+                    <span class="rev-user">
+                        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        {{ revision.getUserName() ?? 'System' }}
+                    </span>
+                    <span class="rev-time" data-datetime="{{ revision.getCreatedAt()|date('Y-m-d\\TH:i:sP') }}">
+                        {{ revision.getCreatedAt()|date('M d, Y H:i') }}
+                    </span>
+                </div>
+            </div>
+
+            {% if action != 'delete' %}
+            <div class="timeline-card-actions">
+                <button type="button" class="btn-timeline toggle-data-btn" data-target="rev-data-{{ revision.getId() }}">
+                    <svg viewBox="0 0 24 24"><path d="M16 18l6-6-6-6"/><path d="M8 6l-6 6 6 6"/></svg>
+                    View Data
+                </button>
+
+                <form method="POST"
+                      action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/restore/' ~ revision.getId()) }}"
+                      style="display:inline" class="confirm-delete" data-message="Restore entry to revision v{{ revision.getId() }}?">
+                    {{ csrf_field() | raw }}
+                    <button type="submit" class="btn-timeline btn-timeline-restore">
+                        <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 109-9M3 3v6h6"/></svg>
+                        Restore
+                    </button>
+                </form>
+
+                {% if revisions|length > 1 %}
+                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/diff?a=' ~ revision.getId() ~ '&b=' ~ (revisions|first).getId()) }}" class="btn-timeline">
+                    <svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"/><path d="M8 8l-5 4 5 4"/><path d="M16 8l5 4-5 4"/></svg>
+                    Compare
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <div class="rev-data-panel" id="rev-data-{{ revision.getId() }}">
+                <pre class="rev-data-pre">{{ revision.getData()|json_encode(constant('JSON_PRETTY_PRINT') b-or constant('JSON_UNESCAPED_SLASHES')) }}</pre>
+            </div>
         </div>
     </div>
+    {% endfor %}
 </div>
 {% else %}
-<div class="empty-state">
+<div class="history-empty">
+    <div class="history-empty-icon">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+    </div>
     <h3>No revision history</h3>
     <p>Changes to this entry will be tracked here.</p>
 </div>
@@ -90,12 +342,66 @@
 
 {% block scripts %}
 <script nonce="{{ csp_nonce() }}">
-document.querySelectorAll('.toggle-data-btn').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-        var target = document.getElementById(btn.dataset.target);
-        if (target) {
-            target.style.display = target.style.display === 'none' ? '' : 'none';
+document.addEventListener('DOMContentLoaded', function() {
+    // Toggle data panels
+    document.querySelectorAll('.toggle-data-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var target = document.getElementById(btn.dataset.target);
+            if (target) {
+                var isOpen = target.classList.contains('open');
+                target.classList.toggle('open');
+                btn.textContent = '';
+                var svgNS = 'http://www.w3.org/2000/svg';
+                var svg = document.createElementNS(svgNS, 'svg');
+                svg.setAttribute('viewBox', '0 0 24 24');
+                var path1 = document.createElementNS(svgNS, 'path');
+                path1.setAttribute('d', 'M16 18l6-6-6-6');
+                var path2 = document.createElementNS(svgNS, 'path');
+                path2.setAttribute('d', 'M8 6l-6 6 6 6');
+                svg.appendChild(path1);
+                svg.appendChild(path2);
+                btn.appendChild(svg);
+                btn.appendChild(document.createTextNode(isOpen ? ' View Data' : ' Hide Data'));
+            }
+        });
+    });
+
+    // Relative dates
+    function timeAgo(dateStr) {
+        if (!dateStr) return '';
+        var date = new Date(dateStr);
+        if (isNaN(date.getTime())) return dateStr;
+        var now = new Date();
+        var seconds = Math.floor((now - date) / 1000);
+        if (seconds < 60) return 'Just now';
+        var minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return minutes + 'm ago';
+        var hours = Math.floor(minutes / 60);
+        if (hours < 24) return hours + 'h ago';
+        var days = Math.floor(hours / 24);
+        if (days < 7) return days + 'd ago';
+        var weeks = Math.floor(days / 7);
+        if (weeks < 4) return weeks + 'w ago';
+        var months = Math.floor(days / 30);
+        if (months < 12) return months + 'mo ago';
+        return Math.floor(days / 365) + 'y ago';
+    }
+
+    document.querySelectorAll('.rev-time[data-datetime]').forEach(function(el) {
+        var dt = el.getAttribute('data-datetime');
+        if (dt) {
+            var relative = timeAgo(dt);
+            if (relative) el.textContent = relative;
         }
+    });
+
+    // Confirm delete
+    document.querySelectorAll('.confirm-delete').forEach(function(form) {
+        form.addEventListener('submit', function(e) {
+            if (!confirm(form.dataset.message || 'Are you sure?')) {
+                e.preventDefault();
+            }
+        });
     });
 });
 </script>
