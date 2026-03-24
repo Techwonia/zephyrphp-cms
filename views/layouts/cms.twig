@@ -466,6 +466,11 @@
         color: var(--text-sidebar-active);
         text-decoration: none;
     }
+    .sp-nav-add a:hover {
+        border-color: var(--color-primary, #1A7BA8) !important;
+        color: var(--color-primary, #1A7BA8) !important;
+        background: rgba(26,123,168,0.08) !important;
+    }
     .sp-nav-item a.active {
         background: rgba(255,255,255,0.1);
         color: var(--text-sidebar-active);
@@ -1279,6 +1284,13 @@
                         {% if item.is_header is defined and item.is_header %}
                         <li class="sp-nav-header">
                             <span style="display:block;padding:12px 16px 4px;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:#888;">{{ item.label }}</span>
+                        </li>
+                        {% elseif item.is_add_button is defined and item.is_add_button %}
+                        <li class="sp-nav-item sp-nav-add">
+                            <a href="{{ item.url }}" style="border:1px dashed rgba(255,255,255,0.2);border-radius:6px;margin:4px 8px 8px;padding:8px 12px;display:flex;align-items:center;gap:8px;justify-content:center;color:#aaa;font-size:12px;transition:all 0.15s;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                {{ item.label }}
+                            </a>
                         </li>
                         {% else %}
                         <li class="sp-nav-item">

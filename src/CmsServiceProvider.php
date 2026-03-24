@@ -119,6 +119,18 @@ class CmsServiceProvider
         $sidebar->addSection('collections', 'Collection Manager', 5, 'database');
         try {
             $collections = \ZephyrPHP\Cms\Models\Collection::findAll();
+
+            // "+ New Collection" always shown as first item
+            $sidebar->addItem('collections', [
+                'id' => 'collection-add',
+                'label' => '+ New Collection',
+                'url' => admin_url('collections/create'),
+                'icon' => 'plus',
+                'position' => 0,
+                'permission' => 'collections.create',
+                'is_add_button' => true,
+            ]);
+
             $pos = 1;
             foreach ($collections as $col) {
                 $sidebar->addItem('collections', [
@@ -134,7 +146,7 @@ class CmsServiceProvider
             // Separator — management links below collections
             $sidebar->addItem('collections', [
                 'id' => 'collections-manage-header',
-                'label' => '── Manage ──',
+                'label' => 'Manage',
                 'url' => '#',
                 'icon' => '',
                 'position' => 900,
