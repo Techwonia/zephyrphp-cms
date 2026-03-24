@@ -34,7 +34,8 @@
             {% for field in fields %}
             {% set fieldEditable = editableFields is not defined or field.getSlug() in (editableFields ?? []) %}
             {% set oldVal = flash('_old_input')[field.getSlug()] ?? (templateData[field.getSlug()] ?? field.getDefaultValue()) ?? '' %}
-            {% set hasError = flash('errors')[field.getSlug()] is defined %}
+            {% set _errs = flash('errors') ?? {} %}
+            {% set hasError = _errs[field.getSlug()] is defined %}
 
             <div class="ec-field-card{% if hasError %} ec-field-card--error{% endif %}">
                 <div class="ec-field-header">

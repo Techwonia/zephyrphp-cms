@@ -82,7 +82,8 @@
             {% for field in fields %}
             {% set fieldEditable = editableFields is not defined or field.getSlug() in (editableFields ?? []) %}
             {% set val = entry[field.getSlug()] ?? field.getDefaultValue() ?? '' %}
-            {% set hasError = flash('errors')[field.getSlug()] is defined %}
+            {% set _errs = flash('errors') ?? {} %}
+            {% set hasError = _errs[field.getSlug()] is defined %}
 
             <div class="ee-card{% if hasError %} ee-card-error{% endif %}">
                 <div class="ee-card-header">
