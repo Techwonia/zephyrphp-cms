@@ -1181,6 +1181,20 @@ class CmsServiceProvider
                 }
             }
 
+            // Migrate users: add 2FA columns
+            if ($sm->tablesExist(['users'])) {
+                $columns = $sm->listTableColumns('users');
+                if (!isset($columns['twofactorsecret'])) {
+                    $conn->executeStatement("ALTER TABLE `users` ADD COLUMN `twoFactorSecret` VARCHAR(255) NULL DEFAULT NULL");
+                }
+                if (!isset($columns['twofactorenabled'])) {
+                    $conn->executeStatement("ALTER TABLE `users` ADD COLUMN `twoFactorEnabled` TINYINT(1) NOT NULL DEFAULT 0");
+                }
+                if (!isset($columns['twofactorrecoverycodes'])) {
+                    $conn->executeStatement("ALTER TABLE `users` ADD COLUMN `twoFactorRecoveryCodes` TEXT NULL DEFAULT NULL");
+                }
+            }
+
             // API Keys table
             if (!$sm->tablesExist(['cms_api_keys'])) {
                 $conn->executeStatement("CREATE TABLE `cms_api_keys` (
