@@ -354,18 +354,36 @@
                     <span>Parent</span>
                 </div>
                 <div class="ee-sidebar-card-body">
-                    <select name="parent_id" class="form-control">
-                        <option value="">None (top level)</option>
+                    <input type="hidden" name="parent_id" id="parent-id-input" value="{{ entry.parent_id ?? '' }}">
+                    {% set _dfKey = collection.getDisplayField() %}
+                    {% set _currentParentLabel = 'None (top level)' %}
+                    {% if entry.parent_id is defined and entry.parent_id %}
                         {% for item in treeEntries %}
-                            {% set _indent = '' %}{% if item._depth > 0 %}{% for i in 1..item._depth %}{% set _indent = _indent ~ '── ' %}{% endfor %}{% endif %}
-                            {% set _dfKey = collection.getDisplayField() %}
-                            {% set _label = (_dfKey and item[_dfKey] is defined and item[_dfKey]) ? item[_dfKey] : (item.title ?? item.name ?? item.slug ?? ('#' ~ item.id)) %}
-                            <option value="{{ item.id }}"
-                                {% if entry.parent_id is defined and entry.parent_id == item.id %}selected{% endif %}
-                                {% if entry.id is defined and entry.id == item.id %}disabled{% endif %}>{{ _indent }}{{ _label }}</option>
+                            {% if item.id == entry.parent_id %}
+                                {% set _currentParentLabel = (_dfKey and item[_dfKey] is defined and item[_dfKey]) ? item[_dfKey] : (item.title ?? item.name ?? item.slug ?? ('#' ~ item.id)) %}
+                            {% endif %}
                         {% endfor %}
-                    </select>
-                    <p class="ee-field-hint">Select a parent entry or leave as top level.</p>
+                    {% endif %}
+                    <div class="tree-picker" id="parent-tree-picker">
+                        <button type="button" class="tree-picker-btn" id="tree-picker-toggle">
+                            <span id="tree-picker-label">{{ _currentParentLabel }}</span>
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4.5l3 3 3-3"/></svg>
+                        </button>
+                        <div class="tree-picker-dropdown" id="tree-picker-dropdown" style="display:none">
+                            <div class="tree-picker-item tree-picker-item--none{% if not entry.parent_id %} active{% endif %}" data-id="" data-label="None (top level)">
+                                <span class="tree-picker-item-label">None (top level)</span>
+                            </div>
+                            {% for item in treeEntries %}
+                                {% set _lbl = (_dfKey and item[_dfKey] is defined and item[_dfKey]) ? item[_dfKey] : (item.title ?? item.name ?? item.slug ?? ('#' ~ item.id)) %}
+                                {% set _isDisabled = entry.id is defined and entry.id == item.id %}
+                                {% set _isSelected = entry.parent_id is defined and entry.parent_id == item.id %}
+                                <div class="tree-picker-item{% if _isSelected %} active{% endif %}{% if _isDisabled %} disabled{% endif %}" data-id="{{ item.id }}" data-label="{{ _lbl|e('html_attr') }}" data-depth="{{ item._depth }}" style="padding-left:{{ 12 + item._depth * 20 }}px;">
+                                    {% if item._depth > 0 %}<span class="tree-connector">└</span>{% endif %}
+                                    <span class="tree-picker-item-label">{{ _lbl }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
                 </div>
             </div>
             {% endif %}
@@ -1094,6 +1112,33 @@
     padding: 16px;
 }
 
+/* --- Tree Picker (custom dropdown for parent selection) --- */
+.tree-picker { position: relative; }
+.tree-picker-btn {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    width: 100%; padding: 8px 12px; border: 1px solid var(--border, #E3E3E3);
+    border-radius: var(--radius-200, 8px); background: var(--bg-surface, #fff);
+    font-size: var(--font-sm, 0.8125rem); color: var(--text, #303030);
+    cursor: pointer; text-align: left; font-family: inherit; transition: border-color 0.15s;
+}
+.tree-picker-btn:hover { border-color: var(--color-primary, #1A7BA8); }
+.tree-picker-dropdown {
+    position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 100;
+    background: var(--bg-surface, #fff); border: 1px solid var(--border, #E3E3E3);
+    border-radius: var(--radius-200, 8px); box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    max-height: 260px; overflow-y: auto;
+}
+.tree-picker-item {
+    display: flex; align-items: center; gap: 6px; padding: 8px 12px;
+    font-size: var(--font-sm, 0.8125rem); cursor: pointer;
+    color: var(--text, #303030); transition: background 0.1s;
+}
+.tree-picker-item:hover { background: var(--bg-surface-hover, #F7F7F7); }
+.tree-picker-item.active { background: rgba(26,123,168,0.08); color: var(--color-primary, #1A7BA8); font-weight: 600; }
+.tree-picker-item.disabled { opacity: 0.35; pointer-events: none; }
+.tree-connector { color: var(--text-disabled, #ccc); font-size: 12px; flex-shrink: 0; }
+.tree-picker-item--none { border-bottom: 1px solid var(--border, #E3E3E3); }
+
 /* --- Sidebar Fields --- */
 .ee-sidebar-field {
     margin-bottom: 12px;
@@ -1608,6 +1653,36 @@ function updateSeoCounter(el, counterId, recommended) {
         input.addEventListener('input', update);
         update();
     });
+
+    // Tree picker for parent selection
+    (function() {
+        var toggle = document.getElementById('tree-picker-toggle');
+        var dropdown = document.getElementById('tree-picker-dropdown');
+        var hiddenInput = document.getElementById('parent-id-input');
+        var label = document.getElementById('tree-picker-label');
+        if (!toggle || !dropdown) return;
+
+        toggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#parent-tree-picker')) {
+                dropdown.style.display = 'none';
+            }
+        });
+
+        dropdown.querySelectorAll('.tree-picker-item:not(.disabled)').forEach(function(item) {
+            item.addEventListener('click', function() {
+                dropdown.querySelectorAll('.tree-picker-item').forEach(function(i) { i.classList.remove('active'); });
+                item.classList.add('active');
+                hiddenInput.value = item.dataset.id;
+                label.textContent = item.dataset.label;
+                dropdown.style.display = 'none';
+            });
+        });
+    })();
 
     // Slug edit toggle (Shopify pattern: readonly by default, click Edit to unlock)
     {% if collection.hasSlug() %}

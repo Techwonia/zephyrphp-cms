@@ -1655,7 +1655,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!treeBtn) return;
 
     var rows = document.querySelectorAll('.entries-table__row');
-    var isTreeMode = false;
+    var isTreeMode = true; // Start in tree mode for hierarchy collections
     var collapsed = {}; // Track collapsed parent IDs
 
     function applyTreeView() {
@@ -1743,6 +1743,12 @@ document.addEventListener('DOMContentLoaded', function() {
         treeBtn.style.color = isTreeMode ? '#fff' : '';
         applyTreeView();
     });
+
+    // Auto-apply tree mode on load
+    treeBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1h12v2H1zM1 5h12v2H1zM1 9h12v2H1z" fill="currentColor" opacity="0.6"/></svg> Flat View';
+    treeBtn.style.background = 'var(--color-primary,#1A7BA8)';
+    treeBtn.style.color = '#fff';
+    applyTreeView();
 })();
 {% endif %}
 </script>

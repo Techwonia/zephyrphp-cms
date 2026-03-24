@@ -334,16 +334,26 @@
                     Parent
                 </div>
                 <div class="ec-sidebar-card-body">
-                    <select name="parent_id" class="form-control">
-                        <option value="">None (top level)</option>
-                        {% for item in treeEntries %}
-                            {% set _indent = '' %}{% if item._depth > 0 %}{% for i in 1..item._depth %}{% set _indent = _indent ~ '── ' %}{% endfor %}{% endif %}
-                            {% set _dfKey = collection.getDisplayField() %}
-                            {% set _label = (_dfKey and item[_dfKey] is defined and item[_dfKey]) ? item[_dfKey] : (item.title ?? item.name ?? item.slug ?? ('#' ~ item.id)) %}
-                            <option value="{{ item.id }}">{{ _indent }}{{ _label }}</option>
-                        {% endfor %}
-                    </select>
-                    <p class="ec-field-hint">Select a parent entry to nest this entry under.</p>
+                    <input type="hidden" name="parent_id" id="parent-id-input" value="">
+                    {% set _dfKey = collection.getDisplayField() %}
+                    <div class="tree-picker" id="parent-tree-picker">
+                        <button type="button" class="tree-picker-btn" id="tree-picker-toggle">
+                            <span id="tree-picker-label">None (top level)</span>
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4.5l3 3 3-3"/></svg>
+                        </button>
+                        <div class="tree-picker-dropdown" id="tree-picker-dropdown" style="display:none">
+                            <div class="tree-picker-item tree-picker-item--none active" data-id="" data-label="None (top level)">
+                                <span class="tree-picker-item-label">None (top level)</span>
+                            </div>
+                            {% for item in treeEntries %}
+                                {% set _lbl = (_dfKey and item[_dfKey] is defined and item[_dfKey]) ? item[_dfKey] : (item.title ?? item.name ?? item.slug ?? ('#' ~ item.id)) %}
+                                <div class="tree-picker-item" data-id="{{ item.id }}" data-label="{{ _lbl|e('html_attr') }}" data-depth="{{ item._depth }}" style="padding-left:{{ 12 + item._depth * 20 }}px;">
+                                    {% if item._depth > 0 %}<span style="color:#ccc;font-size:12px;margin-right:4px;">└</span>{% endif %}
+                                    <span class="tree-picker-item-label">{{ _lbl }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
                 </div>
             </div>
             {% endif %}
@@ -828,6 +838,15 @@
 .ec-collapsed {
     display: none !important;
 }
+
+.tree-picker { position: relative; }
+.tree-picker-btn { display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:8px 12px;border:1px solid var(--border,#E3E3E3);border-radius:8px;background:var(--bg-surface,#fff);font-size:0.8125rem;color:var(--text,#303030);cursor:pointer;text-align:left;font-family:inherit;transition:border-color 0.15s; }
+.tree-picker-btn:hover { border-color:var(--color-primary,#1A7BA8); }
+.tree-picker-dropdown { position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:100;background:var(--bg-surface,#fff);border:1px solid var(--border,#E3E3E3);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.12);max-height:260px;overflow-y:auto; }
+.tree-picker-item { display:flex;align-items:center;gap:6px;padding:8px 12px;font-size:0.8125rem;cursor:pointer;color:var(--text,#303030);transition:background 0.1s; }
+.tree-picker-item:hover { background:var(--bg-surface-hover,#F7F7F7); }
+.tree-picker-item.active { background:rgba(26,123,168,0.08);color:var(--color-primary,#1A7BA8);font-weight:600; }
+.tree-picker-item--none { border-bottom:1px solid var(--border,#E3E3E3); }
 
 .ec-sidebar-card-body {
     padding: var(--space-400);
@@ -1570,6 +1589,33 @@ function updateSeoCounter(el, counterId, recommended) {
 }
 </script>
 {% endif %}
+
+{# Tree picker for parent selection #}
+<script nonce="{{ csp_nonce() }}">
+(function() {
+    var toggle = document.getElementById('tree-picker-toggle');
+    var dropdown = document.getElementById('tree-picker-dropdown');
+    var hiddenInput = document.getElementById('parent-id-input');
+    var label = document.getElementById('tree-picker-label');
+    if (!toggle || !dropdown) return;
+    toggle.addEventListener('click', function(e) {
+        e.preventDefault();
+        dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+    });
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('#parent-tree-picker')) dropdown.style.display = 'none';
+    });
+    dropdown.querySelectorAll('.tree-picker-item').forEach(function(item) {
+        item.addEventListener('click', function() {
+            dropdown.querySelectorAll('.tree-picker-item').forEach(function(i) { i.classList.remove('active'); });
+            item.classList.add('active');
+            hiddenInput.value = item.dataset.id;
+            label.textContent = item.dataset.label;
+            dropdown.style.display = 'none';
+        });
+    });
+})();
+</script>
 
 {# Character counter for max_length fields #}
 <script nonce="{{ csp_nonce() }}">
