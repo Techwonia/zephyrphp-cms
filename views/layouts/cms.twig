@@ -188,8 +188,7 @@
                                 <li>
                                     <a href="{{ item.url }}" class="sidebar-nav-item{% if cms_sidebar_active(current_path, item) %} active{% endif %}">
                                         {% if item.icon %}
-                                        <svg width="16" height="16"><use href="#icon-{{ item.icon }}"/></svg>
-                                        {% include '@cms/partials/sidebar-icon.twig' with {icon: item.icon} only %}
+                                        <span class="sidebar-nav-icon">{% include '@cms/partials/sidebar-icon.twig' with {icon: item.icon} only %}</span>
                                         {% endif %}
                                         {{ item.label }}
                                         {% if item.badge %}

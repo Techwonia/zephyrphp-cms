@@ -578,9 +578,10 @@ img, svg { display: block; max-width: 100%; }
   font-family: var(--font-sans);
 }
 
-.sidebar-nav-item svg { width: 16px; height: 16px; flex-shrink: 0; stroke-width: 1.75; }
+.sidebar-nav-icon { display: flex; align-items: center; flex-shrink: 0; }
+.sidebar-nav-icon svg, .sidebar-nav-item svg { width: 16px; height: 16px; flex-shrink: 0; stroke-width: 1.75; }
 .sidebar-nav-item:hover { color: #FFF; background: var(--chrome-hover); text-decoration: none; }
-.sidebar-nav-item.active { color: var(--chrome-text-active); background: var(--chrome-active); }
+.sidebar-nav-item.active { color: var(--chrome-text-active); background: var(--chrome-active); font-weight: 500; }
 
 .sidebar-nav-item .badge-count {
   margin-left: auto;
