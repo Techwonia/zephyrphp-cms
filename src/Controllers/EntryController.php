@@ -22,6 +22,7 @@ use ZephyrPHP\Cms\Services\NotificationService;
 use ZephyrPHP\Cms\Services\TranslationService;
 use ZephyrPHP\Cms\Services\WorkflowService;
 use ZephyrPHP\Cms\Services\AutomationService;
+use ZephyrPHP\Cms\Api\ContentApiController;
 use ZephyrPHP\Cms\Models\Language;
 
 class EntryController extends Controller
