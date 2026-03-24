@@ -249,11 +249,11 @@
                                     {% set _imgPaths = _imgVal|split('","') %}
                                     {% for _ip in _imgPaths|slice(0, 3) %}
                                         {% set _cleanPath = _ip|replace({'"': '', '[': '', ']': ''}) %}
-                                        {% if _cleanPath %}<img src="/{{ _cleanPath }}" alt="" class="entries-thumb">{% endif %}
+                                        {% if _cleanPath %}<img src="/{{ _cleanPath }}" alt="" class="entries-thumb" style="width:40px;height:40px;object-fit:cover;border-radius:6px;">{% endif %}
                                     {% endfor %}
                                     {% if _imgPaths|length > 3 %}<span class="entries-text-muted" style="font-size:11px">+{{ _imgPaths|length - 3 }}</span>{% endif %}
                                 {% else %}
-                                    <img src="/{{ _imgVal }}" alt="" class="entries-thumb">
+                                    <img src="/{{ _imgVal }}" alt="" class="entries-thumb" style="width:40px;height:40px;object-fit:cover;border-radius:6px;">
                                 {% endif %}
                             {% elseif field.getType() == 'richtext' and entry[field.getSlug()] %}
                                 {% set _rtVal = entry[field.getSlug()]|striptags %}
@@ -852,16 +852,21 @@
 .entries-content-modal-body td,.entries-content-modal-body th { border: 1px solid var(--border); padding: 6px 10px; }
     vertical-align: middle;
 }
-.entries-thumb {
-    width: 40px;
-    height: 40px;
+img.entries-thumb,
+.entries-table__cell img.entries-thumb,
+td img.entries-thumb {
+    width: 40px !important;
+    height: 40px !important;
+    max-width: 40px !important;
+    max-height: 40px !important;
     object-fit: cover;
     border-radius: 6px;
     vertical-align: middle;
     border: 1px solid var(--border, #E3E3E3);
     flex-shrink: 0;
+    display: inline-block;
 }
-.entries-table__cell img.entries-thumb + img.entries-thumb { margin-left: 4px; }
+img.entries-thumb + img.entries-thumb { margin-left: 4px; }
 .entries-bool {
     font-size: 0.75rem;
     font-weight: 500;
