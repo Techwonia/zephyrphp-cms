@@ -43,21 +43,49 @@ class RelationshipGraphController extends Controller
             ];
 
             foreach ($collection->getFields() as $field) {
-                if ($field->getType() === 'relation') {
-                    $options = $field->getOptions();
-                    $targetCollection = $options['collection'] ?? null;
-                    $relationType = $options['relation_type'] ?? 'one-to-one';
+                $type = $field->getType();
+                $options = $field->getOptions() ?? [];
+
+                if ($type === 'relation') {
+                    $targetCollection = $options['relation_collection'] ?? $options['collection'] ?? null;
+                    $relationType = $options['relation_type'] ?? 'one_to_one';
 
                     if ($targetCollection) {
                         $edges[] = [
                             'from' => $collection->getSlug(),
                             'to' => $targetCollection,
                             'field' => $field->getName(),
-                            'type' => $relationType,
+                            'type' => str_replace('_', '-', $relationType),
                         ];
                     }
+                } elseif (in_array($type, ['image', 'file'])) {
+                    $isMultiple = !empty($options['multiple']);
+                    $edges[] = [
+                        'from' => $collection->getSlug(),
+                        'to' => '__media__',
+                        'field' => $field->getName(),
+                        'type' => $isMultiple ? 'many-to-many' : 'one-to-one',
+                    ];
                 }
             }
+        }
+
+        // Add Media node if any image/file edges exist
+        $hasMediaEdge = false;
+        foreach ($edges as $edge) {
+            if ($edge['to'] === '__media__') {
+                $hasMediaEdge = true;
+                break;
+            }
+        }
+        if ($hasMediaEdge) {
+            $nodes[] = [
+                'id' => '__media__',
+                'name' => 'Media Library',
+                'fieldCount' => 0,
+                'icon' => 'image',
+                'isSystem' => true,
+            ];
         }
 
         return $this->render('cms::relationships/index', [
