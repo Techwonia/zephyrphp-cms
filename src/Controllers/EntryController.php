@@ -2100,10 +2100,18 @@ class EntryController extends Controller
                     $relCollection = Collection::findOneBy(['slug' => $relSlug]);
                     if ($relCollection && $this->schema->tableExists($relCollection->getTableName())) {
                         $entries = EntryQuery::collection($relSlug)->noCache()->limit(1000)->get();
-                        $relationData[$field->getSlug()] = [
+                        $data = [
                             'collection' => $relCollection,
                             'entries' => $entries,
+                            'hasHierarchy' => $relCollection->hasHierarchy(),
+                            'displayField' => $relCollection->getDisplayField(),
                         ];
+                        // If related collection has hierarchy, build tree
+                        if ($relCollection->hasHierarchy()) {
+                            $tree = $this->buildTree($entries);
+                            $data['treeEntries'] = $this->flattenTree($tree);
+                        }
+                        $relationData[$field->getSlug()] = $data;
                     }
                 }
             }
