@@ -80,10 +80,11 @@
 
             {# --- Field Cards --- #}
             {% for field in fields %}
-            {% set fieldEditable = editableFields is not defined or field.getSlug() in (editableFields ?? []) %}
-            {% set val = entry[field.getSlug()] ?? field.getDefaultValue() ?? '' %}
+            {% set fieldEditable = (editableFields is iterable) ? (field.getSlug() in editableFields) : true %}
+            {% set _fSlug = field.getSlug() %}
+            {% set val = entry[_fSlug] ?? field.getDefaultValue() ?? '' %}
             {% set _errs = flash('errors') ?? {} %}
-            {% set hasError = _errs[field.getSlug()] is defined %}
+            {% set hasError = _fSlug in (_errs|keys) %}
 
             <div class="ee-card{% if hasError %} ee-card-error{% endif %}">
                 <div class="ee-card-header">

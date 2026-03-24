@@ -32,10 +32,13 @@
            ============================================ #}
         <div class="ec-main">
             {% for field in fields %}
-            {% set fieldEditable = editableFields is not defined or field.getSlug() in (editableFields ?? []) %}
-            {% set oldVal = flash('_old_input')[field.getSlug()] ?? (templateData[field.getSlug()] ?? field.getDefaultValue()) ?? '' %}
+            {% set fieldEditable = (editableFields is iterable) ? (field.getSlug() in editableFields) : true %}
+            {% set _fSlug = field.getSlug() %}
+            {% set _oldInput = flash('_old_input') ?? {} %}
+            {% set _tplData = templateData ?? {} %}
+            {% set oldVal = _oldInput[_fSlug] ?? _tplData[_fSlug] ?? field.getDefaultValue() ?? '' %}
             {% set _errs = flash('errors') ?? {} %}
-            {% set hasError = _errs[field.getSlug()] is defined %}
+            {% set hasError = _fSlug in (_errs|keys) %}
 
             <div class="ec-field-card{% if hasError %} ec-field-card--error{% endif %}">
                 <div class="ec-field-header">
