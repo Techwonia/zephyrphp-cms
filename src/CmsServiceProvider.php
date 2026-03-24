@@ -1545,6 +1545,68 @@ class CmsServiceProvider
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
             }
 
+            // Content Templates (entry templates for quick creation)
+            if (!$sm->tablesExist(['cms_content_templates'])) {
+                $conn->executeStatement("CREATE TABLE `cms_content_templates` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `name` VARCHAR(255) NOT NULL,
+                    `collectionSlug` VARCHAR(255) NOT NULL,
+                    `data` JSON NULL DEFAULT NULL,
+                    `createdBy` INT NULL DEFAULT NULL,
+                    `createdAt` DATETIME NULL DEFAULT NULL,
+                    `updatedAt` DATETIME NULL DEFAULT NULL,
+                    INDEX `idx_ct_collection` (`collectionSlug`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            }
+
+            // Automation Rules
+            if (!$sm->tablesExist(['cms_automation_rules'])) {
+                $conn->executeStatement("CREATE TABLE `cms_automation_rules` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `name` VARCHAR(255) NOT NULL,
+                    `collectionSlug` VARCHAR(255) NOT NULL,
+                    `triggerType` VARCHAR(50) NOT NULL DEFAULT 'schedule',
+                    `conditions` TEXT NULL DEFAULT NULL,
+                    `actions` TEXT NULL DEFAULT NULL,
+                    `schedule` VARCHAR(100) NULL DEFAULT NULL,
+                    `lastRunAt` DATETIME NULL DEFAULT NULL,
+                    `isActive` TINYINT(1) NOT NULL DEFAULT 1,
+                    `createdAt` DATETIME NULL DEFAULT NULL,
+                    `updatedAt` DATETIME NULL DEFAULT NULL
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            }
+
+            // Redirects
+            if (!$sm->tablesExist(['cms_redirects'])) {
+                $conn->executeStatement("CREATE TABLE `cms_redirects` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `from_path` VARCHAR(2048) NOT NULL,
+                    `to_url` VARCHAR(2048) NOT NULL,
+                    `status_code` INT NOT NULL DEFAULT 301,
+                    `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+                    `hit_count` INT NOT NULL DEFAULT 0,
+                    `last_hit_at` DATETIME NULL DEFAULT NULL,
+                    `createdAt` DATETIME NULL DEFAULT NULL,
+                    `updatedAt` DATETIME NULL DEFAULT NULL
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            }
+
+            // Invitations
+            if (!$sm->tablesExist(['cms_invitations'])) {
+                $conn->executeStatement("CREATE TABLE `cms_invitations` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `email` VARCHAR(255) NOT NULL,
+                    `token` VARCHAR(255) NOT NULL,
+                    `roleId` INT NULL DEFAULT NULL,
+                    `invitedBy` INT NULL DEFAULT NULL,
+                    `expiresAt` DATETIME NOT NULL,
+                    `acceptedAt` DATETIME NULL DEFAULT NULL,
+                    `createdAt` DATETIME NULL DEFAULT NULL,
+                    `updatedAt` DATETIME NULL DEFAULT NULL,
+                    INDEX `idx_inv_email` (`email`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            }
+
             // Global Blocks (reusable content blocks)
             if (!$sm->tablesExist(['cms_global_blocks'])) {
                 $conn->executeStatement("CREATE TABLE `cms_global_blocks` (
