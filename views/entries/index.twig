@@ -281,7 +281,10 @@
                     <tr class="entries-table__row" data-entry-id="{{ _eId }}" data-parent-id="{{ _eParent }}" data-depth="{{ _eDepth }}" data-children="{{ _eChildren }}">
                         <td class="entries-col-checkbox"><input type="checkbox" class="entry-checkbox entries-checkbox" value="{{ entry.id }}"></td>
                         {% for field in listableFields %}
-                        <td class="entries-col-field" data-col="field-{{ field.getSlug() }}">
+                        <td class="entries-col-field" data-col="field-{{ field.getSlug() }}"{% if loop.first and collection.hasHierarchy() %} style="display:flex;align-items:center;gap:6px;"{% endif %}>
+                            {% if loop.first and collection.hasHierarchy() and _eChildren > 0 %}
+                                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?parent=' ~ entry.id) }}" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:4px;color:var(--color-primary,#1A7BA8);font-weight:700;font-size:16px;flex-shrink:0;transition:background 0.1s;" title="View {{ _eChildren }} children" onmouseover="this.style.background='rgba(26,123,168,0.1)'" onmouseout="this.style.background=''">›</a>
+                            {% endif %}
                             {% if field.getType() == 'boolean' %}
                                 <span class="entries-bool entries-bool--{{ entry[field.getSlug()] ? 'yes' : 'no' }}">{{ entry[field.getSlug()] ? 'Yes' : 'No' }}</span>
                             {% elseif (field.getType() == 'image' or field.getType() == 'file') and entry[field.getSlug()] %}
@@ -331,11 +334,6 @@
                                 <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id) }}" class="entries-icon-btn" title="Edit">
                                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M11.333 2a1.886 1.886 0 012.667 2.667L5.333 13.333 2 14l.667-3.333L11.333 2z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                 </a>
-                                {% if collection.hasHierarchy() and _eChildren > 0 %}
-                                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?parent=' ~ entry.id) }}" class="entries-icon-btn" title="View {{ _eChildren }} children" style="color:var(--color-primary,#1A7BA8);font-weight:700;font-size:16px;">
-                                    ›
-                                </a>
-                                {% endif %}
                                 <div class="entries-dropdown entries-dropdown--right" data-dropdown>
                                     <button class="entries-icon-btn" data-dropdown-trigger title="More actions">
                                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="3" r="1" fill="currentColor"/><circle cx="8" cy="8" r="1" fill="currentColor"/><circle cx="8" cy="13" r="1" fill="currentColor"/></svg>

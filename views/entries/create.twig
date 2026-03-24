@@ -353,23 +353,17 @@
                 <div class="ec-sidebar-card-body">
                     <input type="hidden" name="parent_id" id="parent-id-input" value="">
                     {% set _dfKey = collection.getDisplayField() %}
-                    <div class="tree-picker" id="parent-tree-picker">
+                    {% set _treeJson = [] %}
+                    {% for item in treeEntries %}
+                        {% set _lbl = (_dfKey and item[_dfKey] is defined and item[_dfKey]) ? item[_dfKey] : (item.title ?? item.name ?? item.slug ?? ('#' ~ item.id)) %}
+                        {% set _treeJson = _treeJson|merge([{'id': item.id, 'label': _lbl, 'parent_id': item.parent_id|default(''), 'depth': item._depth}]) %}
+                    {% endfor %}
+                    <div class="tree-picker" id="parent-tree-picker" data-tree="{{ _treeJson|json_encode|e('html_attr') }}" data-current="" data-self="">
                         <button type="button" class="tree-picker-btn" id="tree-picker-toggle">
                             <span id="tree-picker-label">None (top level)</span>
                             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4.5l3 3 3-3"/></svg>
                         </button>
-                        <div class="tree-picker-dropdown" id="tree-picker-dropdown" style="display:none">
-                            <div class="tree-picker-item tree-picker-item--none active" data-id="" data-label="None (top level)">
-                                <span class="tree-picker-item-label">None (top level)</span>
-                            </div>
-                            {% for item in treeEntries %}
-                                {% set _lbl = (_dfKey and item[_dfKey] is defined and item[_dfKey]) ? item[_dfKey] : (item.title ?? item.name ?? item.slug ?? ('#' ~ item.id)) %}
-                                <div class="tree-picker-item" data-id="{{ item.id }}" data-label="{{ _lbl|e('html_attr') }}" data-depth="{{ item._depth }}" style="padding-left:{{ 12 + item._depth * 20 }}px;">
-                                    {% if item._depth > 0 %}<span style="color:#ccc;font-size:12px;margin-right:4px;">└</span>{% endif %}
-                                    <span class="tree-picker-item-label">{{ _lbl }}</span>
-                                </div>
-                            {% endfor %}
-                        </div>
+                        <div class="tree-picker-dropdown" id="tree-picker-dropdown" style="display:none"></div>
                     </div>
                 </div>
             </div>
@@ -859,11 +853,19 @@
 .tree-picker { position: relative; }
 .tree-picker-btn { display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:8px 12px;border:1px solid var(--border,#E3E3E3);border-radius:8px;background:var(--bg-surface,#fff);font-size:0.8125rem;color:var(--text,#303030);cursor:pointer;text-align:left;font-family:inherit;transition:border-color 0.15s; }
 .tree-picker-btn:hover { border-color:var(--color-primary,#1A7BA8); }
-.tree-picker-dropdown { position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:100;background:var(--bg-surface,#fff);border:1px solid var(--border,#E3E3E3);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.12);max-height:260px;overflow-y:auto; }
-.tree-picker-item { display:flex;align-items:center;gap:6px;padding:8px 12px;font-size:0.8125rem;cursor:pointer;color:var(--text,#303030);transition:background 0.1s; }
-.tree-picker-item:hover { background:var(--bg-surface-hover,#F7F7F7); }
-.tree-picker-item.active { background:rgba(26,123,168,0.08);color:var(--color-primary,#1A7BA8);font-weight:600; }
-.tree-picker-item--none { border-bottom:1px solid var(--border,#E3E3E3); }
+.tree-picker-dropdown { position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:100;background:var(--bg-surface,#fff);border:1px solid var(--border,#E3E3E3);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.12);max-height:300px;overflow-y:auto;min-width:220px; }
+.tp-back { display:flex;align-items:center;gap:6px;padding:8px 12px;font-size:0.8125rem;font-weight:600;cursor:pointer;color:var(--color-primary,#1A7BA8);border-bottom:1px solid var(--border,#E3E3E3);transition:background 0.1s; }
+.tp-back:hover { background:rgba(26,123,168,0.05); }
+.tp-select-current { display:flex;align-items:center;gap:6px;padding:8px 12px;font-size:0.75rem;color:var(--color-primary,#1A7BA8);cursor:pointer;border-bottom:1px solid var(--border,#E3E3E3);font-weight:500;transition:background 0.1s; }
+.tp-select-current:hover { background:rgba(26,123,168,0.08); }
+.tp-item { display:flex;align-items:center;justify-content:space-between;padding:8px 12px;font-size:0.8125rem;cursor:pointer;color:var(--text,#303030);transition:background 0.1s; }
+.tp-item:hover { background:var(--bg-surface-hover,#F7F7F7); }
+.tp-item.active { background:rgba(26,123,168,0.08);color:var(--color-primary,#1A7BA8);font-weight:600; }
+.tp-item.disabled { opacity:0.35;pointer-events:none; }
+.tp-item-arrow { color:var(--text-disabled,#999);font-size:14px; }
+.tp-none { padding:8px 12px;font-size:0.8125rem;cursor:pointer;color:var(--text-secondary,#616161);border-bottom:1px solid var(--border,#E3E3E3);transition:background 0.1s; }
+.tp-none:hover { background:var(--bg-surface-hover,#F7F7F7); }
+.tp-none.active { background:rgba(26,123,168,0.08);color:var(--color-primary,#1A7BA8);font-weight:600; }
 
 .ec-sidebar-card-body {
     padding: var(--space-400);
@@ -1607,30 +1609,66 @@ function updateSeoCounter(el, counterId, recommended) {
 </script>
 {% endif %}
 
-{# Tree picker for parent selection #}
+{# Drill-down tree picker for parent selection #}
 <script nonce="{{ csp_nonce() }}">
 (function() {
+    var picker = document.getElementById('parent-tree-picker');
+    if (!picker) return;
     var toggle = document.getElementById('tree-picker-toggle');
     var dropdown = document.getElementById('tree-picker-dropdown');
     var hiddenInput = document.getElementById('parent-id-input');
-    var label = document.getElementById('tree-picker-label');
-    if (!toggle || !dropdown) return;
+    var labelEl = document.getElementById('tree-picker-label');
+    var treeData = JSON.parse(picker.dataset.tree || '[]');
+    var currentVal = picker.dataset.current || '';
+    var selfId = picker.dataset.self || '';
+    var childrenOf = {};
+    var itemMap = {};
+    treeData.forEach(function(item) {
+        itemMap[item.id] = item;
+        var pid = item.parent_id || '__root__';
+        if (!childrenOf[pid]) childrenOf[pid] = [];
+        childrenOf[pid].push(item);
+    });
+    function renderLevel(parentId, parentLabel) {
+        var html = '';
+        if (parentId) {
+            var parent = itemMap[parentId];
+            var gpId = parent ? (parent.parent_id || '') : '';
+            html += '<div class="tp-back" data-go="' + gpId + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="15 18 9 12 15 6"/></svg>' + (parentLabel || 'Back') + '</div>';
+            html += '<div class="tp-select-current" data-select="' + parentId + '" data-label="' + (parentLabel || '').replace(/"/g, '&quot;') + '">● Select: ' + (parentLabel || '#' + parentId) + '</div>';
+        } else {
+            html += '<div class="tp-none' + (!currentVal ? ' active' : '') + '" data-select="" data-label="None (top level)">None (top level)</div>';
+        }
+        var children = childrenOf[parentId || '__root__'] || [];
+        children.forEach(function(child) {
+            var hasKids = (childrenOf[child.id] || []).length > 0;
+            var isActive = currentVal == child.id;
+            var isDisabled = selfId && selfId == child.id;
+            html += '<div class="tp-item' + (isActive ? ' active' : '') + (isDisabled ? ' disabled' : '') + '" data-id="' + child.id + '" data-label="' + child.label.replace(/"/g, '&quot;') + '"' + (hasKids ? ' data-drill="1"' : '') + '><span>' + child.label + '</span>' + (hasKids ? '<span class="tp-item-arrow">›</span>' : '') + '</div>';
+        });
+        if (!children.length && parentId) html += '<div style="padding:12px;text-align:center;color:#999;font-size:12px;">No children</div>';
+        dropdown.innerHTML = html;
+        bindEvents();
+    }
+    function bindEvents() {
+        dropdown.querySelectorAll('.tp-back').forEach(function(el) {
+            el.addEventListener('click', function(e) { e.stopPropagation(); var p = itemMap[el.dataset.go]; renderLevel(el.dataset.go || '', p ? p.label : ''); });
+        });
+        dropdown.querySelectorAll('[data-select]').forEach(function(el) {
+            el.addEventListener('click', function(e) { e.stopPropagation(); currentVal = el.dataset.select; hiddenInput.value = currentVal; labelEl.textContent = el.dataset.label; dropdown.style.display = 'none'; });
+        });
+        dropdown.querySelectorAll('.tp-item[data-drill]').forEach(function(el) {
+            el.addEventListener('click', function(e) { e.stopPropagation(); renderLevel(el.dataset.id, el.dataset.label); });
+        });
+        dropdown.querySelectorAll('.tp-item:not([data-drill]):not(.disabled)').forEach(function(el) {
+            el.addEventListener('click', function(e) { e.stopPropagation(); currentVal = el.dataset.id; hiddenInput.value = currentVal; labelEl.textContent = el.dataset.label; dropdown.style.display = 'none'; });
+        });
+    }
     toggle.addEventListener('click', function(e) {
         e.preventDefault();
-        dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        if (dropdown.style.display === 'none') { renderLevel('', ''); dropdown.style.display = 'block'; } else { dropdown.style.display = 'none'; }
     });
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('#parent-tree-picker')) dropdown.style.display = 'none';
-    });
-    dropdown.querySelectorAll('.tree-picker-item').forEach(function(item) {
-        item.addEventListener('click', function() {
-            dropdown.querySelectorAll('.tree-picker-item').forEach(function(i) { i.classList.remove('active'); });
-            item.classList.add('active');
-            hiddenInput.value = item.dataset.id;
-            label.textContent = item.dataset.label;
-            dropdown.style.display = 'none';
-        });
-    });
+    document.addEventListener('click', function(e) { if (!e.target.closest('#parent-tree-picker')) dropdown.style.display = 'none'; });
 })();
 </script>
 
