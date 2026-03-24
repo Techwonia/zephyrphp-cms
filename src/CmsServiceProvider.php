@@ -116,7 +116,7 @@ class CmsServiceProvider
         $sidebar->registerDefaults();
 
         // "Collection Manager" section — dynamic collection links + management
-        $sidebar->addSection('collections', 'Collection Manager', 5);
+        $sidebar->addSection('collections', 'Collection Manager', 5, 'database');
         try {
             $collections = \ZephyrPHP\Cms\Models\Collection::findAll();
             $pos = 1;
@@ -208,25 +208,7 @@ class CmsServiceProvider
             'match' => 'prefix:' . admin_url('ai-builder'),
         ]);
 
-        // Add Global Blocks sidebar item
-        $sidebar->addItem('content', [
-            'id' => 'global-blocks',
-            'label' => 'Global Blocks',
-            'url' => admin_url('global-blocks'),
-            'icon' => 'layers',
-            'permission' => 'settings.view',
-            'match' => 'prefix:' . admin_url('global-blocks'),
-        ]);
-
-        // Add Relationships sidebar item
-        $sidebar->addItem('content', [
-            'id' => 'relationships',
-            'label' => 'Relationships',
-            'url' => admin_url('relationships'),
-            'icon' => 'share-2',
-            'permission' => 'collections.view',
-            'match' => 'exact:' . admin_url('relationships'),
-        ]);
+        // Global Blocks and Relationships moved to Collection Manager section
 
         // Add Languages sidebar item
         $sidebar->addItem('admin', [

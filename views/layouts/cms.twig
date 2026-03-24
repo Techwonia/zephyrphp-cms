@@ -1228,7 +1228,7 @@
                         </a>
                     {% elseif section.items|length > 1 and section.id != 'footer' %}
                         {# Multi-item section: toggle sidebar panel #}
-                        {% set section_icon = section.items[0].icon ?? 'folder' %}
+                        {% set section_icon = section.icon ?? section.items[0].icon ?? 'folder' %}
                         {% set section_active = false %}
                         {% for item in section.items %}
                             {% if cms_sidebar_active(current_path, item) %}
