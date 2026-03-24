@@ -1685,16 +1685,59 @@ class EntryController extends Controller
 
     /**
      * Handle file upload or media library selection.
-     * Checks for media library path first, then falls back to file upload.
+     * The new media-field component sends the value directly in the field slug input.
+     * For backwards compatibility, also checks the _from_media suffix.
+     * Supports multiple files (JSON array) when the field has multiple option enabled.
      */
     private function handleFileOrMediaUpload(Field $field, ?array $existing = null): ?string
     {
-        // Check for media library selection
+        $fieldOptions = $field->getOptions() ?? [];
+        $isMultiple = !empty($fieldOptions['multiple']);
+
+        // Check legacy _from_media suffix first (backwards compatibility)
         $mediaPath = $this->input($field->getSlug() . '_from_media');
         if (!empty($mediaPath)) {
             return $mediaPath;
         }
 
+        // The media-field component sends the value directly in the field slug input
+        $directValue = $this->input($field->getSlug());
+
+        // If the hidden input was submitted (it always is with the new component),
+        // use its value. Empty string means the user cleared the field.
+        if ($directValue !== null) {
+            if ($directValue === '') {
+                // Check for native file upload fallback before returning null
+                $file = $_FILES[$field->getSlug()] ?? null;
+                if ($file && $file['error'] === UPLOAD_ERR_OK && !empty($file['tmp_name'])) {
+                    return $this->handleFileUpload($field, $existing);
+                }
+                // User explicitly cleared the field — return null
+                return null;
+            }
+
+            if ($isMultiple) {
+                // Validate it's a proper JSON array of paths
+                $decoded = json_decode($directValue, true);
+                if (is_array($decoded)) {
+                    // Sanitize each path
+                    $sanitized = array_values(array_filter($decoded, function ($path) {
+                        return is_string($path) && !empty($path) && strpos($path, '..') === false;
+                    }));
+                    $maxFiles = $fieldOptions['max_files'] ?? 10;
+                    $sanitized = array_slice($sanitized, 0, $maxFiles);
+                    return !empty($sanitized) ? json_encode($sanitized) : null;
+                }
+            }
+
+            // Single path — sanitize
+            if (strpos($directValue, '..') !== false) {
+                return $existing[$field->getSlug()] ?? null;
+            }
+            return $directValue;
+        }
+
+        // Fall back to native file upload (legacy support)
         return $this->handleFileUpload($field, $existing);
     }
 

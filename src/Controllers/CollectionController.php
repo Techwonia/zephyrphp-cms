@@ -527,6 +527,13 @@ class CollectionController extends Controller
             if (!empty($maxFileSize) && is_numeric($maxFileSize)) {
                 $options['max_file_size'] = (int) ((float) $maxFileSize * 1024 * 1024); // MB to bytes
             }
+
+            // Multiple files support
+            if ($this->boolean('field_multiple')) {
+                $options['multiple'] = true;
+                $maxFilesInput = $this->input('field_max_files', '10');
+                $options['max_files'] = max(1, min(50, (int) $maxFilesInput));
+            }
         }
 
         // Parse validation rules into options
@@ -696,6 +703,13 @@ class CollectionController extends Controller
             $maxFileSize = $this->input('field_max_file_size', '');
             if (!empty($maxFileSize) && is_numeric($maxFileSize)) {
                 $options['max_file_size'] = (int) ((float) $maxFileSize * 1024 * 1024);
+            }
+
+            // Multiple files support
+            if ($this->boolean('field_multiple')) {
+                $options['multiple'] = true;
+                $maxFilesInput = $this->input('field_max_files', '10');
+                $options['max_files'] = max(1, min(50, (int) $maxFilesInput));
             }
         }
 

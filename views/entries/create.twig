@@ -167,9 +167,14 @@
                         {% endif %}
 
                     {% elseif field.getType() == 'image' or field.getType() == 'file' %}
-                        <input type="hidden" id="field_{{ field.getSlug() }}_path" name="{{ field.getSlug() }}_from_media" value="">
-                        <div class="ec-upload-zone" id="upload-zone-{{ field.getSlug() }}">
-                            <div class="ec-upload-zone-inner">
+                        {% set fieldOpts = field.getOptions() ?? {} %}
+                        {% set isMultiple = fieldOpts.multiple ?? false %}
+                        {% set maxFiles = fieldOpts.max_files ?? 10 %}
+                        <div class="media-field{% if isMultiple %} media-field-multiple{% endif %}" data-field="{{ field.getSlug() }}" data-filter="{{ field.getType() == 'image' ? 'images' : 'all' }}" data-multiple="{{ isMultiple ? '1' : '0' }}" data-max-files="{{ maxFiles }}">
+                            <input type="hidden" name="{{ field.getSlug() }}" id="field_{{ field.getSlug() }}" value="">
+
+                            {# Empty state #}
+                            <div class="media-field-empty" id="media-empty-{{ field.getSlug() }}">
                                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                                     {% if field.getType() == 'image' %}
                                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
@@ -177,28 +182,27 @@
                                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
                                     {% endif %}
                                 </svg>
-                                <p class="ec-upload-text">Drag & drop or <label for="field_{{ field.getSlug() }}" class="ec-upload-link">browse files</label></p>
-                                <p class="ec-upload-hint">{% if field.getType() == 'image' %}PNG, JPG, GIF, WEBP{% else %}Any file type{% endif %}</p>
-                                <input type="file" id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
-                                       class="ec-upload-input{% if hasError %} is-invalid{% endif %}"
-                                       {% if field.getType() == 'image' %}accept="image/*"{% endif %}>
+                                <p class="media-field-text">Click to select from media library</p>
+                                <span class="media-field-hint">{% if field.getType() == 'image' %}PNG, JPG, GIF, WEBP{% else %}Any file type{% endif %}{% if isMultiple %} &middot; Up to {{ maxFiles }} files{% endif %}</span>
                             </div>
-                            <button type="button" class="btn btn-outline btn-sm media-browse-btn ec-media-btn"
-                                    data-field="{{ field.getSlug() }}"
-                                    data-filter="{{ field.getType() == 'image' ? 'images' : 'all' }}">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></svg>
-                                Media Library
-                            </button>
-                        </div>
-                        <div id="media-preview-{{ field.getSlug() }}" class="ec-media-preview" style="display: none;">
-                            <img src="" alt="Selected">
-                            <div class="ec-media-preview-info">
-                                <span class="media-selected-name"></span>
-                                <button type="button" class="btn btn-sm btn-outline media-clear-btn" data-field="{{ field.getSlug() }}">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                                    Remove
-                                </button>
+
+                            {# Single preview state #}
+                            <div class="media-field-preview" id="media-preview-{{ field.getSlug() }}" style="display:none">
+                                <img src="" alt="Selected" class="media-field-thumb">
+                                <div class="media-field-info">
+                                    <span class="media-field-name"></span>
+                                    <button type="button" class="media-field-remove" data-field="{{ field.getSlug() }}">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                        Remove
+                                    </button>
+                                </div>
                             </div>
+
+                            {# Multiple preview grid #}
+                            {% if isMultiple %}
+                            <div class="media-field-grid" id="media-grid-{{ field.getSlug() }}" style="display:none"></div>
+                            <button type="button" class="btn btn-outline btn-sm media-field-add-more" id="media-add-{{ field.getSlug() }}" style="display:none" data-field="{{ field.getSlug() }}">+ Add more</button>
+                            {% endif %}
                         </div>
 
                     {% elseif field.getType() == 'json' %}
@@ -598,113 +602,150 @@
 }
 
 /* ============================================
-   Upload Zone
+   Media Field (Image/File picker)
    ============================================ */
-.ec-upload-zone {
+.media-field {
+    cursor: pointer;
     border: 2px dashed var(--border);
     border-radius: var(--radius-200);
-    padding: var(--space-500);
-    text-align: center;
-    transition: border-color 0.2s ease, background 0.2s ease;
-    position: relative;
+    transition: all 0.2s;
+    overflow: hidden;
 }
-
-.ec-upload-zone:hover {
+.media-field:hover {
     border-color: var(--color-primary);
     background: rgba(26, 123, 168, 0.03);
 }
-
-.ec-upload-zone-inner {
+.media-field-empty {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--space-100);
+    justify-content: center;
+    padding: var(--space-600) var(--space-400);
 }
-
-.ec-upload-text {
+.media-field-text {
     font-size: var(--font-sm);
     color: var(--text-secondary);
     margin: var(--space-200) 0 0;
 }
-
-.ec-upload-link {
-    color: var(--color-primary);
-    font-weight: 600;
-    cursor: pointer;
-    text-decoration: underline;
-}
-
-.ec-upload-link:hover {
-    color: var(--color-primary-hover);
-}
-
-.ec-upload-hint {
+.media-field-hint {
     font-size: var(--font-xs);
     color: var(--text-disabled);
-    margin: 0;
+    margin: 4px 0 0;
 }
-
-.ec-upload-input {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    cursor: pointer;
-    z-index: 1;
-}
-
-.ec-media-btn {
-    position: relative;
-    z-index: 2;
-    margin-top: var(--space-200);
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-100);
-}
-
-.ec-media-preview {
+.media-field-preview {
     display: flex;
     align-items: center;
     gap: var(--space-300);
-    margin-top: var(--space-300);
     padding: var(--space-300);
+}
+.media-field-thumb {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: var(--radius-100);
     background: var(--bg-subdued);
     border: 1px solid var(--border);
-    border-radius: var(--radius-200);
 }
-
-.ec-media-preview img {
-    max-height: 64px;
-    max-width: 80px;
+.media-field-file-icon {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-subdued);
     border-radius: var(--radius-100);
-    object-fit: cover;
     border: 1px solid var(--border);
+    font-size: 2rem;
+    color: var(--text-secondary);
+    flex-shrink: 0;
 }
-
-.ec-media-preview-info {
+.media-field-info {
     display: flex;
     flex-direction: column;
     gap: var(--space-100);
-    font-size: var(--font-sm);
     min-width: 0;
 }
-
-.ec-media-preview-info .media-selected-name {
+.media-field-name {
+    font-size: var(--font-sm);
     font-weight: 500;
     color: var(--text);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
-
-.ec-media-preview-info .media-clear-btn {
+.media-field-remove {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-100);
-    font-size: var(--font-xs);
+    gap: 4px;
     color: var(--color-critical);
-    border-color: var(--color-critical);
-    padding: 2px 8px;
+    font-size: var(--font-sm);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
     width: fit-content;
+}
+.media-field-remove:hover { text-decoration: underline; }
+
+/* Multiple files grid */
+.media-field-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: var(--space-200);
+    padding: var(--space-300);
+}
+.media-field-grid-item {
+    position: relative;
+    border-radius: var(--radius-100);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--bg-subdued);
+}
+.media-field-grid-item img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    display: block;
+}
+.media-field-grid-item .media-grid-file-icon {
+    width: 100%;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: var(--text-secondary);
+}
+.media-field-grid-remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    line-height: 1;
+    padding: 0;
+}
+.media-field-grid-remove:hover { background: rgba(220,38,38,0.9); }
+.media-field-grid-item-name {
+    font-size: 0.65rem;
+    padding: 2px 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+    color: var(--text-secondary);
+}
+.media-field-add-more {
+    margin: 0 var(--space-300) var(--space-300);
 }
 
 /* ============================================
@@ -1120,26 +1161,140 @@
         });
     });
 
-    // Media Browser
-    document.querySelectorAll('.media-browse-btn').forEach(function(btn) {
+    // Media Field — click to browse
+    var mediaUrl = '{{ admin_url("media/browse") }}';
+
+    document.querySelectorAll('.media-field').forEach(function(zone) {
+        zone.addEventListener('click', function(e) {
+            if (e.target.closest('.media-field-remove') || e.target.closest('.media-field-grid-remove') || e.target.closest('.media-field-add-more')) return;
+            var fieldSlug = zone.dataset.field;
+            var filter = zone.dataset.filter || 'all';
+            var isMultiple = zone.dataset.multiple === '1';
+            var maxFiles = parseInt(zone.dataset.maxFiles) || 10;
+            openMediaBrowser(fieldSlug, filter, isMultiple, maxFiles);
+        });
+    });
+
+    // Add more button
+    document.querySelectorAll('.media-field-add-more').forEach(function(btn) {
         btn.addEventListener('click', function(e) {
-            e.preventDefault();
             e.stopPropagation();
             var fieldSlug = btn.dataset.field;
-            var filter = btn.dataset.filter || 'all';
-            openMediaBrowser(fieldSlug, filter);
+            var zone = document.querySelector('.media-field[data-field="' + fieldSlug + '"]');
+            var filter = zone.dataset.filter || 'all';
+            var maxFiles = parseInt(zone.dataset.maxFiles) || 10;
+            openMediaBrowser(fieldSlug, filter, true, maxFiles);
         });
     });
 
-    document.querySelectorAll('.media-clear-btn').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            var fieldSlug = btn.dataset.field;
-            document.getElementById('field_' + fieldSlug + '_path').value = '';
+    // Remove button (single mode)
+    document.addEventListener('click', function(e) {
+        var removeBtn = e.target.closest('.media-field-remove');
+        if (removeBtn) {
+            e.stopPropagation();
+            var fieldSlug = removeBtn.dataset.field;
+            document.getElementById('field_' + fieldSlug).value = '';
             document.getElementById('media-preview-' + fieldSlug).style.display = 'none';
-        });
+            document.getElementById('media-empty-' + fieldSlug).style.display = '';
+            var zone = document.querySelector('.media-field[data-field="' + fieldSlug + '"]');
+            if (zone) zone.style.borderStyle = 'dashed';
+        }
     });
 
-    function openMediaBrowser(fieldSlug, filter) {
+    // Remove button (multi mode — remove single item from grid)
+    document.addEventListener('click', function(e) {
+        var gridRemove = e.target.closest('.media-field-grid-remove');
+        if (gridRemove) {
+            e.stopPropagation();
+            var fieldSlug = gridRemove.dataset.field;
+            var url = gridRemove.dataset.url;
+            var hiddenInput = document.getElementById('field_' + fieldSlug);
+            var current = [];
+            try { current = JSON.parse(hiddenInput.value); } catch(ex) { current = []; }
+            current = current.filter(function(p) { return p !== url; });
+            hiddenInput.value = current.length ? JSON.stringify(current) : '';
+            gridRemove.closest('.media-field-grid-item').remove();
+            if (current.length === 0) {
+                var grid = document.getElementById('media-grid-' + fieldSlug);
+                var addBtn = document.getElementById('media-add-' + fieldSlug);
+                if (grid) grid.style.display = 'none';
+                if (addBtn) addBtn.style.display = 'none';
+                document.getElementById('media-empty-' + fieldSlug).style.display = '';
+                var zone = document.querySelector('.media-field[data-field="' + fieldSlug + '"]');
+                if (zone) zone.style.borderStyle = 'dashed';
+            }
+        }
+    });
+
+    function selectMediaItem(fieldSlug, url, name, isImage, isMultiple) {
+        var hiddenInput = document.getElementById('field_' + fieldSlug);
+        var emptyState = document.getElementById('media-empty-' + fieldSlug);
+        var zone = document.querySelector('.media-field[data-field="' + fieldSlug + '"]');
+
+        if (isMultiple) {
+            var current = [];
+            try { current = JSON.parse(hiddenInput.value); } catch(ex) { current = []; }
+            if (!Array.isArray(current)) current = [];
+            var path = url.replace(/^\//, '');
+            if (current.indexOf(path) === -1) current.push(path);
+            hiddenInput.value = JSON.stringify(current);
+
+            var grid = document.getElementById('media-grid-' + fieldSlug);
+            var addBtn = document.getElementById('media-add-' + fieldSlug);
+            emptyState.style.display = 'none';
+            grid.style.display = '';
+            addBtn.style.display = '';
+            if (zone) zone.style.borderStyle = 'solid';
+
+            var item = document.createElement('div');
+            item.className = 'media-field-grid-item';
+            if (isImage) {
+                item.innerHTML = '<img src="' + url + '" alt="' + name + '"><button type="button" class="media-field-grid-remove" data-field="' + fieldSlug + '" data-url="' + path + '">&times;</button><div class="media-field-grid-item-name">' + name + '</div>';
+            } else {
+                item.innerHTML = '<div class="media-grid-file-icon">&#128196;</div><button type="button" class="media-field-grid-remove" data-field="' + fieldSlug + '" data-url="' + path + '">&times;</button><div class="media-field-grid-item-name">' + name + '</div>';
+            }
+            grid.appendChild(item);
+        } else {
+            var path = url.replace(/^\//, '');
+            hiddenInput.value = path;
+            emptyState.style.display = 'none';
+            if (zone) zone.style.borderStyle = 'solid';
+
+            var preview = document.getElementById('media-preview-' + fieldSlug);
+            var thumb = preview.querySelector('.media-field-thumb');
+            if (isImage) {
+                thumb.src = url;
+                thumb.style.display = '';
+                // Remove file icon if present
+                var fileIcon = preview.querySelector('.media-field-file-icon');
+                if (fileIcon) fileIcon.remove();
+            } else {
+                thumb.style.display = 'none';
+                // Add file icon if not present
+                if (!preview.querySelector('.media-field-file-icon')) {
+                    var icon = document.createElement('div');
+                    icon.className = 'media-field-file-icon';
+                    icon.innerHTML = '&#128196;';
+                    preview.insertBefore(icon, preview.firstChild);
+                }
+            }
+            preview.querySelector('.media-field-name').textContent = name;
+            preview.style.display = 'flex';
+        }
+    }
+
+    function openMediaBrowser(fieldSlug, filter, isMultiple, maxFiles) {
+        // Check max files for multi mode
+        if (isMultiple) {
+            var hiddenInput = document.getElementById('field_' + fieldSlug);
+            var current = [];
+            try { current = JSON.parse(hiddenInput.value); } catch(ex) { current = []; }
+            if (Array.isArray(current) && current.length >= maxFiles) {
+                alert('Maximum of ' + maxFiles + ' files reached.');
+                return;
+            }
+        }
+
         var modal = document.createElement('div');
         modal.className = 'media-modal-overlay';
         modal.innerHTML = '<div class="media-modal">'
@@ -1151,14 +1306,10 @@
             + '</div>';
         document.body.appendChild(modal);
 
-        modal.querySelector('.media-modal-close').addEventListener('click', function() {
-            modal.remove();
-        });
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) modal.remove();
-        });
+        modal.querySelector('.media-modal-close').addEventListener('click', function() { modal.remove(); });
+        modal.addEventListener('click', function(e) { if (e.target === modal) modal.remove(); });
 
-        fetch('/admin/media/browse?filter=' + filter + '&per_page=24')
+        fetch(mediaUrl + '?filter=' + filter + '&per_page=24')
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 var body = modal.querySelector('.media-modal-body');
@@ -1179,21 +1330,7 @@
 
                 body.querySelectorAll('.media-modal-item').forEach(function(item) {
                     item.addEventListener('click', function() {
-                        var url = item.dataset.url;
-                        var name = item.dataset.name;
-                        var pathInput = document.getElementById('field_' + fieldSlug + '_path');
-                        pathInput.value = url.replace(/^\//, '');
-                        var preview = document.getElementById('media-preview-' + fieldSlug);
-                        if (item.dataset.isImage === '1') {
-                            preview.querySelector('img').src = url;
-                            preview.querySelector('img').style.display = '';
-                        } else {
-                            preview.querySelector('img').style.display = 'none';
-                        }
-                        preview.querySelector('.media-selected-name').textContent = name;
-                        preview.style.display = 'flex';
-                        // Clear the file input since we're using media library
-                        document.getElementById('field_' + fieldSlug).value = '';
+                        selectMediaItem(fieldSlug, item.dataset.url, item.dataset.name, item.dataset.isImage === '1', isMultiple);
                         modal.remove();
                     });
                 });

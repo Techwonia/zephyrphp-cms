@@ -1523,6 +1523,39 @@
                     </div>
                 </div>
 
+                {# File/Image options #}
+                <div id="modal-file-options-group" style="display:none;">
+                    <div class="modal-section-title">File Settings</div>
+                    <div class="properties-grid">
+                        <div class="property-toggle">
+                            <span class="prop-label">Allow multiple</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="field_multiple" value="1" id="modal_field_multiple">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-row" id="modal-max-files-group" style="display:none;">
+                        <div class="form-group">
+                            <label for="modal_field_max_files">Max files</label>
+                            <input type="number" id="modal_field_max_files" name="field_max_files" class="form-control" value="10" min="1" max="50">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="modal_field_accept_preset">Accepted file types</label>
+                        <select name="field_accept_preset" id="modal_field_accept_preset" class="form-control">
+                            <option value="images">Images only (PNG, JPG, GIF, WEBP)</option>
+                            <option value="documents">Documents (PDF, DOC, XLS)</option>
+                            <option value="media">Media (Images + Video + Audio)</option>
+                            <option value="all">All file types</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="modal_field_max_file_size">Max file size (MB)</label>
+                        <input type="number" id="modal_field_max_file_size" name="field_max_file_size" class="form-control" value="" min="0" step="0.5" placeholder="No limit">
+                    </div>
+                </div>
+
                 {# Validation Rules #}
                 <div id="modal-validation-group" style="display:none;">
                     <div class="modal-section-title">Validation</div>
@@ -1717,6 +1750,11 @@
         document.getElementById('modal_field_options_select') && (document.getElementById('modal_field_options_select').value = '');
         document.getElementById('modal_field_relation_type') && (document.getElementById('modal_field_relation_type').value = 'one_to_one');
         document.getElementById('modal_field_options_relation') && (document.getElementById('modal_field_options_relation').value = '');
+        document.getElementById('modal_field_multiple') && (document.getElementById('modal_field_multiple').checked = false);
+        document.getElementById('modal_field_max_files') && (document.getElementById('modal_field_max_files').value = '10');
+        document.getElementById('modal_field_accept_preset') && (document.getElementById('modal_field_accept_preset').value = 'images');
+        document.getElementById('modal_field_max_file_size') && (document.getElementById('modal_field_max_file_size').value = '');
+        document.getElementById('modal-max-files-group') && (document.getElementById('modal-max-files-group').style.display = 'none');
         document.getElementById('modal_field_display_field') && (document.getElementById('modal_field_display_field').innerHTML = '<option value="">-- Select collection first --</option>');
 
         // Reset role selects
@@ -1765,11 +1803,13 @@
     function updateTypeSpecificFields(type) {
         var selectGroup = document.getElementById('modal-select-options-group');
         var relationGroup = document.getElementById('modal-relation-options-group');
+        var fileGroup = document.getElementById('modal-file-options-group');
         var selectInput = document.getElementById('modal_field_options_select');
         var relationInput = document.getElementById('modal_field_options_relation');
 
         selectGroup.style.display = 'none';
         relationGroup.style.display = 'none';
+        fileGroup.style.display = 'none';
         selectInput.name = '';
         relationInput.name = '';
 
@@ -1779,6 +1819,8 @@
         } else if (type === 'relation') {
             relationGroup.style.display = '';
             relationInput.name = 'field_options';
+        } else if (type === 'image' || type === 'file') {
+            fileGroup.style.display = '';
         }
 
         var textTypes = ['text', 'textarea', 'richtext', 'email', 'url', 'slug'];
@@ -1797,6 +1839,17 @@
         if (vl) vl.style.display = hasLength ? '' : 'none';
         if (vv) vv.style.display = hasValue ? '' : 'none';
         if (vp) vp.style.display = hasPattern ? '' : 'none';
+    }
+
+    // ========================================================================
+    // File options — multiple toggle
+    // ========================================================================
+    var multipleCheckbox = document.getElementById('modal_field_multiple');
+    var maxFilesGroup = document.getElementById('modal-max-files-group');
+    if (multipleCheckbox) {
+        multipleCheckbox.addEventListener('change', function() {
+            maxFilesGroup.style.display = this.checked ? '' : 'none';
+        });
     }
 
     // ========================================================================
@@ -1938,6 +1991,17 @@
                     if (opts.pattern) document.getElementById('modal_field_pattern').value = opts.pattern;
                     if (opts.pattern_message) document.getElementById('modal_field_pattern_message').value = opts.pattern_message;
                     if (opts.custom_message) document.getElementById('modal_field_custom_message').value = opts.custom_message;
+
+                    // File options
+                    if (data.type === 'image' || data.type === 'file') {
+                        if (opts.multiple) {
+                            document.getElementById('modal_field_multiple').checked = true;
+                            document.getElementById('modal-max-files-group').style.display = '';
+                        }
+                        if (opts.max_files) document.getElementById('modal_field_max_files').value = opts.max_files;
+                        if (opts.accept_preset) document.getElementById('modal_field_accept_preset').value = opts.accept_preset;
+                        if (opts.max_file_size) document.getElementById('modal_field_max_file_size').value = (opts.max_file_size / 1024 / 1024).toFixed(1).replace(/\.0$/, '');
+                    }
 
                     // Field permissions
                     if (opts.field_permissions) {
