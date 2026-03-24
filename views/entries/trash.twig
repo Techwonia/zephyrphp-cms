@@ -322,6 +322,7 @@
     </a>
 </div>
 {% endif %}
+{% endblock %}
 
 {% block scripts %}
 <script nonce="{{ csp_nonce() }}">
@@ -374,5 +375,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-{% endblock %}
 {% endblock %}

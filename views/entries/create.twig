@@ -221,10 +221,17 @@
                                {% if field.isRequired() %}required{% endif %}>
                     {% endif %}
 
+                    {% set _fOpts = field.getOptions() ?? {} %}
+                    {% if _fOpts.max_length is defined %}
+                    <div class="ec-char-counter" id="counter-{{ _fSlug }}" style="text-align:right;font-size:var(--font-xs,0.75rem);color:var(--text-secondary,#616161);margin-top:4px;">
+                        <span id="counter-val-{{ _fSlug }}">0</span> / {{ _fOpts.max_length }}
+                    </div>
+                    {% endif %}
+
                     {% if hasError %}
                         <div class="ec-field-error">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                            {{ flash('errors')[field.getSlug()] }}
+                            {{ _errs[_fSlug] }}
                         </div>
                     {% endif %}
                 </div>
@@ -1463,6 +1470,19 @@ function updateSeoCounter(el, counterId, recommended) {
 }
 </script>
 {% endif %}
+
+{# Character counter for max_length fields #}
+<script nonce="{{ csp_nonce() }}">
+document.querySelectorAll('.ec-char-counter').forEach(function(counter) {
+    var fieldSlug = counter.id.replace('counter-', '');
+    var input = document.getElementById('field_' + fieldSlug);
+    var valSpan = document.getElementById('counter-val-' + fieldSlug);
+    if (!input || !valSpan) return;
+    function update() { valSpan.textContent = (input.value || '').length; }
+    input.addEventListener('input', update);
+    update();
+});
+</script>
 
 {# Autosave Script #}
 <script nonce="{{ csp_nonce() }}">

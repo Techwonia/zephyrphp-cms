@@ -337,7 +337,9 @@
                     <span>URL Slug</span>
                 </div>
                 <div class="ee-sidebar-card-body">
-                    <div style="font-size:var(--font-xs,0.75rem);color:var(--text-secondary,#616161);margin-bottom:6px;">{{ collection.getUrlPrefix() ? '/' ~ collection.getUrlPrefix() ~ '/' : '/' }}</div>
+                    {% if collection.getUrlPrefix() %}
+                    <div style="font-size:var(--font-xs,0.75rem);color:var(--text-secondary,#616161);margin-bottom:6px;">/{{ collection.getUrlPrefix() }}/</div>
+                    {% endif %}
                     <div style="display:flex;align-items:center;gap:6px;">
                         <input type="text" id="entry-slug" name="slug" class="form-control"
                                value="{{ entry.slug ?? '' }}" readonly

@@ -339,6 +339,7 @@
     <p>Changes to this entry will be tracked here.</p>
 </div>
 {% endif %}
+{% endblock %}
 
 {% block scripts %}
 <script nonce="{{ csp_nonce() }}">
@@ -405,5 +406,4 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-{% endblock %}
 {% endblock %}
