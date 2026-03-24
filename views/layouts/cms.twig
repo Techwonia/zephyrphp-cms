@@ -1121,6 +1121,7 @@
 
     {# Quill Rich Text Editor #}
     <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/quill-table-better@1.4.3/dist/quill-table-better.css" rel="stylesheet">
     <style nonce="{{ csp_nonce() }}">
     .ql-wrap { border: 1px solid var(--border, #E3E3E3); border-radius: var(--radius-200, 8px); overflow: hidden; background: var(--bg-surface, #fff); }
     .ql-wrap:focus-within { border-color: var(--color-primary, #1A7BA8); box-shadow: 0 0 0 3px rgba(26,123,168,0.1); }
@@ -1149,6 +1150,9 @@
     .ql-source-area { display: none; width: 100%; min-height: 200px; border: none; padding: 16px; font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 0.8125rem; line-height: 1.6; resize: vertical; background: #1e1e1e; color: #d4d4d4; outline: none; }
     .ql-source-area.active { display: block; }
     .ql-container-hidden { display: none !important; }
+    .ql-wrap .ql-editor table { border-collapse: collapse; width: 100%; margin: 0.75em 0; }
+    .ql-wrap .ql-editor table td, .ql-wrap .ql-editor table th { border: 1px solid var(--border, #E3E3E3); padding: 8px 12px; }
+    .ql-wrap .ql-editor table th { background: var(--bg-subdued, #FAFAFA); font-weight: 600; }
     </style>
 </head>
 <body>
@@ -2176,6 +2180,7 @@
 
     {# Quill Rich Text Editor — standalone UMD build #}
     <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quill-table-better@1.4.3/dist/quill-table-better.umd.cjs"></script>
     <script nonce="{{ csp_nonce() }}">
     (function() {
         if (typeof Quill === 'undefined') return;
@@ -2183,15 +2188,22 @@
         var textareas = document.querySelectorAll('textarea.richtext-editor');
         if (!textareas.length) return;
 
+        // Register table module if available
+        var hasTable = typeof QuillTableBetter !== 'undefined';
+        if (hasTable) {
+            Quill.register({ 'modules/table-better': QuillTableBetter }, true);
+        }
+
         var toolbarOptions = [
             [{ 'header': [1, 2, 3, false] }],
             ['bold', 'italic', 'underline', 'strike'],
             [{ 'list': 'ordered'}, { 'list': 'bullet' }],
             ['blockquote', 'code-block'],
             ['link', 'image', 'video'],
+            hasTable ? ['table-better'] : [],
             [{ 'align': [] }],
             ['clean']
-        ];
+        ].filter(function(g) { return g.length > 0; });
 
         var mediaUrl = '{{ admin_url("media/browse") }}';
         var uploadUrl = '{{ admin_url("media/upload") }}';
@@ -2350,7 +2362,9 @@
                                 });
                             }
                         }
-                    }
+                    },
+                    'table-better': hasTable ? {} : undefined,
+                    keyboard: hasTable ? { bindings: QuillTableBetter.keyboardBindings } : {}
                 },
                 placeholder: textarea.placeholder || 'Write your content...',
             });
