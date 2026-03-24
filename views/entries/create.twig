@@ -221,10 +221,10 @@
                                {% if field.isRequired() %}required{% endif %}>
                     {% endif %}
 
-                    {% set _fOpts = field.getOptions() ?? {} %}
-                    {% if _fOpts.max_length is defined %}
-                    <div class="ec-char-counter" id="counter-{{ _fSlug }}" style="text-align:right;font-size:var(--font-xs,0.75rem);color:var(--text-secondary,#616161);margin-top:4px;">
-                        <span id="counter-val-{{ _fSlug }}">0</span> / {{ _fOpts.max_length }}
+                    {% set _fOpts = field.getOptions() %}
+                    {% if _fOpts and _fOpts.max_length is defined and _fOpts.max_length %}
+                    <div style="text-align:right;font-size:var(--font-xs,0.75rem);color:var(--text-secondary,#616161);margin-top:4px;">
+                        <span class="js-char-count" data-field="{{ _fSlug }}" data-max="{{ _fOpts.max_length }}">0</span> / {{ _fOpts.max_length }}
                     </div>
                     {% endif %}
 
@@ -1473,12 +1473,16 @@ function updateSeoCounter(el, counterId, recommended) {
 
 {# Character counter for max_length fields #}
 <script nonce="{{ csp_nonce() }}">
-document.querySelectorAll('.ec-char-counter').forEach(function(counter) {
-    var fieldSlug = counter.id.replace('counter-', '');
-    var input = document.getElementById('field_' + fieldSlug);
-    var valSpan = document.getElementById('counter-val-' + fieldSlug);
-    if (!input || !valSpan) return;
-    function update() { valSpan.textContent = (input.value || '').length; }
+document.querySelectorAll('.js-char-count').forEach(function(span) {
+    var slug = span.dataset.field;
+    var max = parseInt(span.dataset.max, 10);
+    var input = document.getElementById('field_' + slug);
+    if (!input) return;
+    function update() {
+        var len = (input.value || '').length;
+        span.textContent = len;
+        span.parentElement.style.color = len > max ? 'var(--color-critical, #D72C0D)' : 'var(--text-secondary, #616161)';
+    }
     input.addEventListener('input', update);
     update();
 });

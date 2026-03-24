@@ -270,8 +270,15 @@
                                {% if field.isRequired() %}required{% endif %}>
                     {% endif %}
 
+                    {% set _fOpts = field.getOptions() %}
+                    {% if _fOpts and _fOpts.max_length is defined and _fOpts.max_length %}
+                    <div style="text-align:right;font-size:var(--font-xs,0.75rem);color:var(--text-secondary,#616161);margin-top:4px;">
+                        <span class="js-char-count" data-field="{{ _fSlug }}" data-max="{{ _fOpts.max_length }}">0</span> / {{ _fOpts.max_length }}
+                    </div>
+                    {% endif %}
+
                     {% if hasError %}
-                        <div class="invalid-feedback">{{ flash('errors')[field.getSlug()] }}</div>
+                        <div class="invalid-feedback">{{ _errs[_fSlug] }}</div>
                     {% endif %}
                 </div>
             </div>
@@ -1548,6 +1555,21 @@ function updateSeoCounter(el, counterId, recommended) {
         }
     }
     window.addEventListener('beforeunload', releaseLock);
+
+    // Character counter for max_length fields
+    document.querySelectorAll('.js-char-count').forEach(function(span) {
+        var slug = span.dataset.field;
+        var max = parseInt(span.dataset.max, 10);
+        var input = document.getElementById('field_' + slug);
+        if (!input) return;
+        function update() {
+            var len = (input.value || '').length;
+            span.textContent = len;
+            span.parentElement.style.color = len > max ? 'var(--color-critical, #D72C0D)' : 'var(--text-secondary, #616161)';
+        }
+        input.addEventListener('input', update);
+        update();
+    });
 
     // Slug edit toggle (Shopify pattern: readonly by default, click Edit to unlock)
     {% if collection.hasSlug() %}
