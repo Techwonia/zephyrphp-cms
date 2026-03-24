@@ -1784,10 +1784,13 @@ function updateSeoCounter(el, counterId, recommended) {
             status.textContent = 'Uploading ' + files.length + ' file(s)...';
             var uploaded = 0;
             Array.from(files).forEach(function(f) {
-                var fd = new FormData(); fd.append('file', f);
-                fetch(uploadUrl, { method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrfVal } }).then(function(r) { return r.json(); })
-                    .then(function() { uploaded++; if (uploaded >= files.length) { status.textContent = 'Uploaded!'; loadMedia(); setTimeout(function() { status.textContent = ''; }, 2000); } })
-                    .catch(function() { uploaded++; status.textContent = 'Upload error'; });
+                var fd = new FormData(); fd.append('file', f); fd.append('csrf_token', csrfVal);
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', uploadUrl, true);
+                xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+                xhr.onload = function() { uploaded++; if (uploaded >= files.length) { status.textContent = 'Uploaded!'; loadMedia(); setTimeout(function() { status.textContent = ''; }, 2000); } };
+                xhr.onerror = function() { uploaded++; status.textContent = 'Upload error'; };
+                xhr.send(fd);
             });
         });
 
