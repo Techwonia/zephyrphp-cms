@@ -2188,10 +2188,113 @@
             ['bold', 'italic', 'underline', 'strike'],
             [{ 'list': 'ordered'}, { 'list': 'bullet' }],
             ['blockquote', 'code-block'],
-            ['link', 'image'],
+            ['link', 'image', 'video'],
             [{ 'align': [] }],
             ['clean']
         ];
+
+        var mediaUrl = '{{ admin_url("media/browse") }}';
+        var uploadUrl = '{{ admin_url("media/upload") }}';
+        var csrfInput = document.querySelector('input[name="csrf_token"], input[name="_token"]');
+        var csrfVal = csrfInput ? csrfInput.value : '';
+
+        // Media browser for richtext image/video insertion
+        function openRichtextMediaBrowser(filter, onSelect) {
+            var modal = document.createElement('div');
+            modal.className = 'media-modal-overlay';
+            modal.innerHTML = '<div class="media-modal">'
+                + '<div class="media-modal-header"><h3>Select from Media Library</h3><button type="button" class="media-modal-close">&times;</button></div>'
+                + '<div class="media-modal-toolbar">'
+                + '<div class="media-modal-search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" class="media-search-input" placeholder="Search files..."></div>'
+                + '<div class="media-modal-filters">'
+                + '<button type="button" class="media-filter-btn' + (filter === 'all' ? ' active' : '') + '" data-filter="all">All</button>'
+                + '<button type="button" class="media-filter-btn' + (filter === 'images' ? ' active' : '') + '" data-filter="images">Images</button>'
+                + '<button type="button" class="media-filter-btn' + (filter === 'video' ? ' active' : '') + '" data-filter="video">Video</button>'
+                + '</div></div>'
+                + '<div class="media-modal-body"><p style="text-align:center;padding:40px;color:#616161">Loading...</p></div>'
+                + '<div class="media-modal-upload-bar">'
+                + '<label class="media-upload-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Upload<input type="file" class="media-upload-input" multiple style="display:none"'
+                + (filter === 'images' ? ' accept="image/*"' : filter === 'video' ? ' accept="video/*"' : '')
+                + '></label><span class="media-upload-status"></span></div></div>';
+            document.body.appendChild(modal);
+
+            var currentFilter = filter || 'all';
+            var currentSearch = '';
+
+            modal.querySelector('.media-modal-close').addEventListener('click', function() { modal.remove(); });
+            modal.addEventListener('click', function(e) { if (e.target === modal) modal.remove(); });
+            document.addEventListener('keydown', function onEsc(e) { if (e.key === 'Escape') { modal.remove(); document.removeEventListener('keydown', onEsc); } });
+
+            function loadItems() {
+                var body = modal.querySelector('.media-modal-body');
+                body.innerHTML = '<p style="text-align:center;padding:40px;color:#616161">Loading...</p>';
+                fetch(mediaUrl + '?filter=' + currentFilter + '&per_page=36' + (currentSearch ? '&search=' + encodeURIComponent(currentSearch) : ''))
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (!data.data || !data.data.length) {
+                            body.innerHTML = '<div style="text-align:center;padding:60px"><p style="font-weight:600">No files found</p><p style="color:#616161;font-size:13px">Upload using the button below</p></div>';
+                            return;
+                        }
+                        var html = '<div class="media-modal-grid">';
+                        data.data.forEach(function(item) {
+                            var thumb = item.is_image ? '<img src="' + (item.thumbnail || item.url) + '" loading="lazy">' : '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#666"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>';
+                            html += '<div class="media-modal-item" data-url="' + item.url + '"><div class="media-modal-thumb">' + thumb + '</div><div class="media-modal-name">' + item.name + '</div></div>';
+                        });
+                        body.innerHTML = html + '</div>';
+                        body.querySelectorAll('.media-modal-item').forEach(function(el) {
+                            el.addEventListener('click', function() {
+                                onSelect(el.dataset.url);
+                                modal.remove();
+                            });
+                        });
+                    });
+            }
+
+            var searchTimer;
+            modal.querySelector('.media-search-input').addEventListener('input', function() {
+                clearTimeout(searchTimer); var v = this.value;
+                searchTimer = setTimeout(function() { currentSearch = v; loadItems(); }, 300);
+            });
+            modal.querySelectorAll('.media-filter-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    modal.querySelectorAll('.media-filter-btn').forEach(function(b) { b.classList.remove('active'); });
+                    btn.classList.add('active');
+                    currentFilter = btn.dataset.filter;
+                    loadItems();
+                });
+            });
+            // Upload
+            modal.querySelector('.media-upload-input').addEventListener('change', function() {
+                var files = this.files; if (!files.length) return;
+                var status = modal.querySelector('.media-upload-status');
+                status.textContent = 'Uploading...';
+                var lastUrl = '';
+                var done = 0;
+                Array.from(files).forEach(function(f) {
+                    var fd = new FormData(); fd.append('file', f); fd.append('csrf_token', csrfVal);
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('POST', uploadUrl, true);
+                    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+                    xhr.onload = function() {
+                        done++;
+                        try { var r = JSON.parse(xhr.responseText); if (r.path) lastUrl = '/' + r.path; } catch(e) {}
+                        if (done >= files.length) {
+                            if (lastUrl && files.length === 1) {
+                                onSelect(lastUrl);
+                                modal.remove();
+                            } else {
+                                status.textContent = 'Uploaded!';
+                                loadItems();
+                            }
+                        }
+                    };
+                    xhr.onerror = function() { done++; status.textContent = 'Error'; };
+                    xhr.send(fd);
+                });
+            });
+
+            loadItems();
+        }
 
         textareas.forEach(function(textarea) {
             textarea.style.display = 'none';
@@ -2231,11 +2334,20 @@
                         container: toolbarOptions,
                         handlers: {
                             image: function() {
-                                var url = prompt('Enter image URL (or paste from media library):');
-                                if (url) {
-                                    var range = this.quill.getSelection(true);
-                                    this.quill.insertEmbed(range.index, 'image', url);
-                                }
+                                var q = this.quill;
+                                openRichtextMediaBrowser('images', function(url) {
+                                    var range = q.getSelection(true);
+                                    q.insertEmbed(range.index, 'image', url);
+                                    q.setSelection(range.index + 1);
+                                });
+                            },
+                            video: function() {
+                                var q = this.quill;
+                                openRichtextMediaBrowser('video', function(url) {
+                                    var range = q.getSelection(true);
+                                    q.insertEmbed(range.index, 'video', url);
+                                    q.setSelection(range.index + 1);
+                                });
                             }
                         }
                     }
