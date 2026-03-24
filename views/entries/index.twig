@@ -305,7 +305,8 @@
         {% if entries.last_page > 1 %}
         <div class="entries-pagination">
             <span class="entries-pagination__info">
-                Showing {{ ((entries.current_page - 1) * entries.per_page) + 1 }}–{{ [entries.current_page * entries.per_page, entries.total]|min }} of {{ entries.total }}
+                {% set showTo = entries.current_page * entries.per_page %}
+                Showing {{ ((entries.current_page - 1) * entries.per_page) + 1 }}–{{ showTo > entries.total ? entries.total : showTo }} of {{ entries.total }}
             </span>
             <div class="entries-pagination__controls">
                 {% if entries.current_page > 1 %}
