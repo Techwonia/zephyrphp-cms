@@ -245,6 +245,8 @@
                                 <span class="entries-bool entries-bool--{{ entry[field.getSlug()] ? 'yes' : 'no' }}">{{ entry[field.getSlug()] ? 'Yes' : 'No' }}</span>
                             {% elseif field.getType() == 'image' and entry[field.getSlug()] %}
                                 <img src="/{{ entry[field.getSlug()] }}" alt="" class="entries-thumb">
+                            {% elseif field.getType() == 'richtext' and entry[field.getSlug()] %}
+                                <span class="entries-truncate entries-richtext-preview" data-content="{{ entry[field.getSlug()]|e('html_attr') }}" title="Click to preview">{{ entry[field.getSlug()]|striptags|slice(0, 60) }}{% if entry[field.getSlug()]|striptags|length > 60 %}...{% endif %}</span>
                             {% elseif field.getType() == 'relation' and entry[field.getSlug()] %}
                                 {% if relationLabels[field.getSlug()] is defined and relationLabels[field.getSlug()][entry[field.getSlug()]] is defined %}
                                     <span class="entries-truncate">{{ relationLabels[field.getSlug()][entry[field.getSlug()]] }}</span>
@@ -252,7 +254,7 @@
                                     <span class="entries-truncate entries-text-muted">#{{ entry[field.getSlug()] }}</span>
                                 {% endif %}
                             {% else %}
-                                <span class="entries-truncate">{{ entry[field.getSlug()] ?? '' }}</span>
+                                <span class="entries-truncate">{{ entry[field.getSlug()]|striptags|slice(0, 80) ?? '' }}{% if entry[field.getSlug()]|default('')|length > 80 %}...{% endif %}</span>
                             {% endif %}
                         </td>
                         {% endfor %}
@@ -787,6 +789,52 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+.entries-richtext-preview {
+    cursor: pointer;
+    color: var(--text-secondary, #616161);
+    font-style: italic;
+    border-bottom: 1px dashed var(--border, #E3E3E3);
+}
+.entries-richtext-preview:hover {
+    color: var(--color-primary, #1A7BA8);
+    border-color: var(--color-primary, #1A7BA8);
+}
+.entries-content-modal {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6); z-index: 9999;
+    display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(4px);
+}
+.entries-content-modal-box {
+    background: var(--bg-surface, #fff); border-radius: 12px;
+    width: 90%; max-width: 700px; max-height: 80vh;
+    display: flex; flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    animation: ecm-in 0.2s ease;
+}
+@keyframes ecm-in { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+.entries-content-modal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 20px; border-bottom: 1px solid var(--border, #E3E3E3);
+}
+.entries-content-modal-header h3 { margin: 0; font-size: 1rem; font-weight: 600; }
+.entries-content-modal-close {
+    background: none; border: none; font-size: 1.5rem; cursor: pointer;
+    color: var(--text-secondary, #616161); line-height: 1; padding: 4px;
+}
+.entries-content-modal-close:hover { color: var(--text, #303030); }
+.entries-content-modal-body {
+    padding: 20px; overflow-y: auto; flex: 1;
+    font-size: var(--font-base, 0.875rem); line-height: 1.7; color: var(--text, #303030);
+}
+.entries-content-modal-body img { max-width: 100%; border-radius: 4px; }
+.entries-content-modal-body h1,.entries-content-modal-body h2,.entries-content-modal-body h3 { margin: 0.8em 0 0.4em; }
+.entries-content-modal-body p { margin: 0 0 0.6em; }
+.entries-content-modal-body ul,.entries-content-modal-body ol { padding-left: 1.5em; margin: 0 0 0.6em; }
+.entries-content-modal-body blockquote { border-left: 3px solid var(--color-primary, #1A7BA8); padding-left: 1em; color: var(--text-secondary); font-style: italic; margin: 0.6em 0; }
+.entries-content-modal-body table { border-collapse: collapse; width: 100%; margin: 0.6em 0; }
+.entries-content-modal-body td,.entries-content-modal-body th { border: 1px solid var(--border); padding: 6px 10px; }
     vertical-align: middle;
 }
 .entries-thumb {
@@ -1180,6 +1228,24 @@ document.addEventListener('DOMContentLoaded', function() {
             renderValueInput(type, options);
         });
     }
+
+    /* ── Richtext content preview modal ────────── */
+    document.querySelectorAll('.entries-richtext-preview').forEach(function(el) {
+        el.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var content = el.dataset.content;
+            if (!content) return;
+            var modal = document.createElement('div');
+            modal.className = 'entries-content-modal';
+            modal.innerHTML = '<div class="entries-content-modal-box">'
+                + '<div class="entries-content-modal-header"><h3>Content Preview</h3><button class="entries-content-modal-close">&times;</button></div>'
+                + '<div class="entries-content-modal-body">' + content + '</div></div>';
+            document.body.appendChild(modal);
+            modal.querySelector('.entries-content-modal-close').addEventListener('click', function() { modal.remove(); });
+            modal.addEventListener('click', function(ev) { if (ev.target === modal) modal.remove(); });
+            document.addEventListener('keydown', function onEsc(ev) { if (ev.key === 'Escape') { modal.remove(); document.removeEventListener('keydown', onEsc); } });
+        });
+    });
 
     /* ── Confirm delete forms ──────────────────── */
     document.querySelectorAll('.confirm-delete').forEach(function(form) {
