@@ -90,7 +90,7 @@ class SidebarManager
         $this->validateId($item['id'] ?? '');
         $this->validateUrl($item['url'] ?? '');
 
-        if (isset($item['icon'])) {
+        if (isset($item['icon']) && $item['icon'] !== '') {
             $this->validateIcon($item['icon']);
         }
 
