@@ -237,8 +237,8 @@ class MediaController extends Controller
             $uploadDir = $this->getUploadBase() . '/' . $folder;
             $relativePrefix = 'storage/cms/uploads/' . $folder;
         } else {
-            $uploadDir = $this->getUploadBase() . '/' . date('Y') . '/' . date('m');
-            $relativePrefix = 'storage/cms/uploads/' . date('Y') . '/' . date('m');
+            $uploadDir = $this->getUploadBase();
+            $relativePrefix = 'storage/cms/uploads';
         }
 
         if (!is_dir($uploadDir)) {
@@ -885,9 +885,9 @@ class MediaController extends Controller
             $targetDir = $this->getUploadBase() . '/' . $targetFolder;
             $newRelPrefix = 'storage/cms/uploads/' . $targetFolder;
         } else {
-            // Move to root (date-based folder)
-            $targetDir = $this->getUploadBase() . '/' . date('Y') . '/' . date('m');
-            $newRelPrefix = 'storage/cms/uploads/' . date('Y') . '/' . date('m');
+            // Move to root
+            $targetDir = $this->getUploadBase();
+            $newRelPrefix = 'storage/cms/uploads';
         }
 
         if (!is_dir($targetDir)) {

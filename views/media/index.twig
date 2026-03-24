@@ -8,42 +8,79 @@
 </div>
 
 <div class="page-header">
-    <h1>Media Library</h1>
+    <div>
+        <h1>Media Library</h1>
+        <span class="ml-header-count">{{ total }} file{{ total != 1 ? 's' : '' }}</span>
+    </div>
     <div class="page-actions" style="display:flex; gap:8px;">
-        <button class="btn btn-outline" id="newFolderBtn">+ Folder</button>
-        <button class="btn btn-primary" id="uploadBtn">+ Upload Files</button>
+        <button class="btn btn-outline" id="newFolderBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/><line x1="12" y1="10" x2="12" y2="16"/><line x1="9" y1="13" x2="15" y2="13"/></svg>
+            New Folder
+        </button>
+        <button class="btn btn-primary" id="uploadBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Upload Files
+        </button>
     </div>
 </div>
 
 <div class="ml-layout">
-    {# ── Sidebar: Folder Tree ── #}
+    {# ── Sidebar ── #}
     <aside class="ml-sidebar" id="mlSidebar">
-        <div class="ml-sidebar-header">
-            <span class="ml-sidebar-title">Folders</span>
-        </div>
-        <div class="ml-sidebar-body">
-            <div class="ml-folder-item {{ currentFolder == '' and currentFilter != 'recent' ? 'active' : '' }}" data-folder="" data-special="all">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-                All Files
+        <div class="ml-sidebar-section">
+            <div class="ml-sidebar-heading">Library</div>
+            <div class="ml-folder-item {{ currentFolder == '' and currentFilter != 'recent' and currentFilter != 'images' and currentFilter != 'video' and currentFilter != 'documents' and currentFilter != 'audio' ? 'active' : '' }}" data-folder="" data-special="all">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                <span>All Files</span>
+                <span class="ml-folder-count">{{ total }}</span>
             </div>
             <div class="ml-folder-item {{ currentFilter == 'recent' ? 'active' : '' }}" data-folder="" data-special="recent">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                Recent
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span>Recent</span>
             </div>
             <div class="ml-folder-item {{ currentFilter == 'images' and currentFolder == '' ? 'active' : '' }}" data-folder="" data-special="images">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                Images
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                <span>Images</span>
             </div>
-            <div class="ml-sidebar-sep"></div>
+            <div class="ml-folder-item {{ currentFilter == 'video' and currentFolder == '' ? 'active' : '' }}" data-folder="" data-special="video">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                <span>Video</span>
+            </div>
+            <div class="ml-folder-item {{ currentFilter == 'documents' and currentFolder == '' ? 'active' : '' }}" data-folder="" data-special="documents">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <span>Documents</span>
+            </div>
+        </div>
+
+        {% if folders|length > 0 %}
+        <div class="ml-sidebar-section">
+            <div class="ml-sidebar-heading">Folders</div>
             {% for folder in folders %}
                 {% set folderName = folder|split('/')|last %}
                 {% set depth = folder|split('/')|length - 1 %}
                 <div class="ml-folder-item {{ currentFolder == folder ? 'active' : '' }}" data-folder="{{ folder }}" style="padding-left:{{ 12 + depth * 16 }}px;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
-                    {{ folderName }}
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+                    <span>{{ folderName }}</span>
                 </div>
             {% endfor %}
         </div>
+        {% endif %}
+
+        {% if allTags|length > 0 %}
+        <div class="ml-sidebar-section">
+            <div class="ml-sidebar-heading">Tags</div>
+            <div class="ml-sidebar-tags">
+                {% for tag in allTags %}
+                    <a href="{{ admin_url('media?tag=' ~ tag ~ (currentFolder ? '&folder=' ~ currentFolder : '') ~ (currentFilter != 'all' ? '&filter=' ~ currentFilter : '')) }}"
+                       class="ml-sidebar-tag {{ activeTag == tag ? 'active' : '' }}">{{ tag }}</a>
+                {% endfor %}
+                {% if activeTag %}
+                    <a href="{{ admin_url('media' ~ (currentFolder ? '?folder=' ~ currentFolder : '') ~ (currentFilter != 'all' ? (currentFolder ? '&' : '?') ~ 'filter=' ~ currentFilter : '')) }}"
+                       class="ml-sidebar-tag ml-tag-clear">Clear filter</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
     </aside>
 
     {# ── Main Content ── #}
@@ -54,131 +91,212 @@
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 <input type="text" id="mlSearch" placeholder="Search files..." value="{{ search }}">
             </div>
-            <div class="ml-filters">
-                <button class="ml-filter-btn {{ currentFilter == 'all' ? 'active' : '' }}" data-filter="all">All</button>
-                <button class="ml-filter-btn {{ currentFilter == 'images' ? 'active' : '' }}" data-filter="images">Images</button>
-                <button class="ml-filter-btn {{ currentFilter == 'documents' ? 'active' : '' }}" data-filter="documents">Docs</button>
-                <button class="ml-filter-btn {{ currentFilter == 'video' ? 'active' : '' }}" data-filter="video">Video</button>
+            <div class="ml-toolbar-actions">
+                <select id="mlFilterSelect" class="ml-filter-select">
+                    <option value="all" {{ currentFilter == 'all' ? 'selected' : '' }}>All Types</option>
+                    <option value="images" {{ currentFilter == 'images' ? 'selected' : '' }}>Images</option>
+                    <option value="documents" {{ currentFilter == 'documents' ? 'selected' : '' }}>Documents</option>
+                    <option value="video" {{ currentFilter == 'video' ? 'selected' : '' }}>Video</option>
+                    <option value="audio" {{ currentFilter == 'audio' ? 'selected' : '' }}>Audio</option>
+                </select>
+                <div class="ml-view-toggle">
+                    <button class="ml-view-btn active" data-view="grid" title="Grid view">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                    </button>
+                    <button class="ml-view-btn" data-view="list" title="List view">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                    </button>
+                </div>
             </div>
-            <span class="ml-count">{{ total }} file{{ total != 1 ? 's' : '' }}</span>
         </div>
 
-        {% if allTags|length > 0 %}
-        <div class="ml-tags-bar">
-            <span class="ml-tags-label">Tags:</span>
-            {% for tag in allTags %}
-                <a href="{{ admin_url('media?tag=' ~ tag ~ (currentFolder ? '&folder=' ~ currentFolder : '') ~ (currentFilter != 'all' ? '&filter=' ~ currentFilter : '')) }}"
-                   class="ml-tag-chip {{ activeTag == tag ? 'active' : '' }}">{{ tag }}</a>
-            {% endfor %}
+        {# Active filters indicator #}
+        {% if activeTag or currentFolder or search %}
+        <div class="ml-active-filters">
+            {% if currentFolder %}
+                <span class="ml-active-filter">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+                    {{ currentFolder }}
+                </span>
+            {% endif %}
             {% if activeTag %}
-                <a href="{{ admin_url('media' ~ (currentFolder ? '?folder=' ~ currentFolder : '') ~ (currentFilter != 'all' ? (currentFolder ? '&' : '?') ~ 'filter=' ~ currentFilter : '')) }}"
-                   class="ml-tag-chip ml-tag-clear">Clear</a>
+                <span class="ml-active-filter">
+                    Tag: {{ activeTag }}
+                    <a href="{{ admin_url('media' ~ (currentFolder ? '?folder=' ~ currentFolder : '')) }}" class="ml-filter-remove">&times;</a>
+                </span>
+            {% endif %}
+            {% if search %}
+                <span class="ml-active-filter">
+                    Search: "{{ search }}"
+                </span>
             {% endif %}
         </div>
         {% endif %}
 
         <div class="ml-content-scroll">
-        {# Drop Zone #}
-        <div class="ml-dropzone" id="mlDropzone">
-            <div class="ml-dropzone-inner">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                <p>Drop files here to upload</p>
-                <span id="dropFolderHint">Uploading to: <strong>{{ currentFolder ? currentFolder : 'Root' }}</strong></span>
-            </div>
-        </div>
-
-        {# Bulk Action Bar (hidden until selection) #}
-        <div class="ml-bulk-bar" id="mlBulkBar" style="display:none;">
-            <label class="ml-bulk-check"><input type="checkbox" id="mlSelectAll"> Select all</label>
-            <span id="mlSelectedCount">0 selected</span>
-            <button class="btn btn-danger btn-sm" id="mlBulkDelete">Delete Selected</button>
-        </div>
-
-        {# File Grid #}
-        {% if media|length > 0 %}
-        <div class="ml-grid" id="mlGrid">
-            {% for item in media %}
-            <div class="ml-file-card" data-id="{{ item.getId() }}">
-                <div class="ml-file-select" onclick="event.stopPropagation();">
-                    <input type="checkbox" class="ml-file-checkbox" data-id="{{ item.getId() }}">
+            {# Drop Zone #}
+            <div class="ml-dropzone" id="mlDropzone">
+                <div class="ml-dropzone-inner">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <p>Drop files here to upload</p>
+                    <span id="dropFolderHint">Uploading to: <strong>{{ currentFolder ? currentFolder : 'Root' }}</strong></span>
                 </div>
-                <a href="javascript:void(0)" class="ml-file-link" data-detail-id="{{ item.getId() }}">
-                <div class="ml-file-thumb">
-                    {% if item.isImage() %}
-                        <img src="{{ item.getThumbnailUrl() ?: item.getUrl() }}" alt="{{ item.getOriginalName() }}" loading="lazy">
-                    {% else %}
-                        <div class="ml-file-icon">
-                            {% set ext = item.getOriginalName()|split('.')|last|lower %}
-                            {% if ext in ['pdf'] %}
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#dc3545" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                                <span style="color:#dc3545">PDF</span>
-                            {% elseif ext in ['doc','docx'] %}
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2b579a" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                                <span style="color:#2b579a">DOC</span>
-                            {% elseif ext in ['mp4','webm','mov'] %}
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6f42c1" stroke-width="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                                <span style="color:#6f42c1">{{ ext|upper }}</span>
+            </div>
+
+            {# Bulk Action Bar #}
+            <div class="ml-bulk-bar" id="mlBulkBar" style="display:none;">
+                <label class="ml-bulk-check"><input type="checkbox" id="mlSelectAll"> Select all</label>
+                <span id="mlSelectedCount">0 selected</span>
+                <div class="ml-bulk-actions">
+                    <select id="mlBulkMoveFolder" class="ml-bulk-move-select">
+                        <option value="">Move to...</option>
+                        <option value="__root__">Root (uploads/)</option>
+                        {% for folder in folders %}
+                        <option value="{{ folder }}">{{ folder }}</option>
+                        {% endfor %}
+                    </select>
+                    <button class="btn btn-sm btn-outline" id="mlBulkMove" disabled>Move</button>
+                    <button class="btn btn-sm btn-danger" id="mlBulkDelete">Delete</button>
+                </div>
+            </div>
+
+            {# File Grid #}
+            {% if media|length > 0 %}
+            <div class="ml-grid" id="mlGrid">
+                {% for item in media %}
+                <div class="ml-file-card" data-id="{{ item.getId() }}">
+                    <div class="ml-file-select" onclick="event.stopPropagation();">
+                        <input type="checkbox" class="ml-file-checkbox" data-id="{{ item.getId() }}">
+                    </div>
+                    <a href="javascript:void(0)" class="ml-file-link" data-detail-id="{{ item.getId() }}">
+                        <div class="ml-file-thumb">
+                            {% if item.isImage() %}
+                                <img src="{{ item.getThumbnailUrl() ?: item.getUrl() }}" alt="{{ item.getOriginalName() }}" loading="lazy">
                             {% else %}
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                                <span>{{ ext|upper }}</span>
+                                <div class="ml-file-icon">
+                                    {% set ext = item.getOriginalName()|split('.')|last|lower %}
+                                    {% if ext in ['pdf'] %}
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#dc3545" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                        <span class="ml-file-ext" style="color:#dc3545">PDF</span>
+                                    {% elseif ext in ['doc','docx'] %}
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2b579a" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                        <span class="ml-file-ext" style="color:#2b579a">DOC</span>
+                                    {% elseif ext in ['xls','xlsx'] %}
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#217346" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                        <span class="ml-file-ext" style="color:#217346">XLS</span>
+                                    {% elseif ext in ['mp4','webm','mov','avi'] %}
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#6f42c1" stroke-width="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                        <span class="ml-file-ext" style="color:#6f42c1">{{ ext|upper }}</span>
+                                    {% elseif ext in ['mp3','wav','ogg','flac'] %}
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#e83e8c" stroke-width="1.5"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                                        <span class="ml-file-ext" style="color:#e83e8c">{{ ext|upper }}</span>
+                                    {% elseif ext in ['zip','rar','7z','tar','gz'] %}
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fd7e14" stroke-width="1.5"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
+                                        <span class="ml-file-ext" style="color:#fd7e14">{{ ext|upper }}</span>
+                                    {% else %}
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#6c757d" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                        <span class="ml-file-ext">{{ ext|upper }}</span>
+                                    {% endif %}
+                                </div>
                             {% endif %}
                         </div>
-                    {% endif %}
-                </div>
-                <div class="ml-file-info">
-                    <span class="ml-file-name" title="{{ item.getOriginalName() }}">{{ item.getOriginalName() }}</span>
-                    <span class="ml-file-meta">{{ item.getHumanSize() }}</span>
-                    {% if item.getTags()|length > 0 %}
-                    <div class="ml-file-tags">
-                        {% for tag in item.getTags() %}
-                        <span class="ml-file-tag">{{ tag }}</span>
-                        {% endfor %}
+                        <div class="ml-file-info">
+                            <span class="ml-file-name" title="{{ item.getOriginalName() }}">{{ item.getOriginalName() }}</span>
+                            <span class="ml-file-meta">{{ item.getHumanSize() }}</span>
+                            {% if item.getTags()|length > 0 %}
+                            <div class="ml-file-tags">
+                                {% for tag in item.getTags()|slice(0, 2) %}
+                                <span class="ml-file-tag">{{ tag }}</span>
+                                {% endfor %}
+                                {% if item.getTags()|length > 2 %}
+                                <span class="ml-file-tag">+{{ item.getTags()|length - 2 }}</span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </a>
+                    <div class="ml-file-hover-actions">
+                        <button class="ml-hover-btn" data-detail-id="{{ item.getId() }}" title="View details">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </button>
                     </div>
-                    {% endif %}
                 </div>
-                </a>
+                {% endfor %}
             </div>
-            {% endfor %}
-        </div>
 
-        {# Pagination #}
-        {% if lastPage > 1 %}
-        {% set _pq = '' %}
-        {% if currentFolder %}{% set _pq = _pq ~ '&folder=' ~ currentFolder %}{% endif %}
-        {% if currentFilter != 'all' %}{% set _pq = _pq ~ '&filter=' ~ currentFilter %}{% endif %}
-        {% if search %}{% set _pq = _pq ~ '&search=' ~ search %}{% endif %}
-        {% if activeTag %}{% set _pq = _pq ~ '&tag=' ~ activeTag %}{% endif %}
-        <div class="ml-pagination">
-            {% if currentPage > 1 %}
-                <a href="{{ admin_url('media?page=' ~ (currentPage - 1) ~ _pq) }}" class="ml-page-btn">&laquo; Prev</a>
-            {% endif %}
-            <span class="ml-page-info">Page {{ currentPage }} of {{ lastPage }}</span>
-            {% if currentPage < lastPage %}
-                <a href="{{ admin_url('media?page=' ~ (currentPage + 1) ~ _pq) }}" class="ml-page-btn">Next &raquo;</a>
-            {% endif %}
-        </div>
-        {% endif %}
+            {# Pagination #}
+            {% if lastPage > 1 %}
+            {% set _pq = '' %}
+            {% if currentFolder %}{% set _pq = _pq ~ '&folder=' ~ currentFolder %}{% endif %}
+            {% if currentFilter != 'all' %}{% set _pq = _pq ~ '&filter=' ~ currentFilter %}{% endif %}
+            {% if search %}{% set _pq = _pq ~ '&search=' ~ search %}{% endif %}
+            {% if activeTag %}{% set _pq = _pq ~ '&tag=' ~ activeTag %}{% endif %}
+            <div class="ml-pagination">
+                {% if currentPage > 1 %}
+                    <a href="{{ admin_url('media?page=' ~ (currentPage - 1) ~ _pq) }}" class="ml-page-btn">&laquo; Prev</a>
+                {% endif %}
 
-        {% else %}
-        <div class="ml-empty" id="mlEmpty">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            <h3>No media files{% if currentFolder %} in this folder{% endif %}</h3>
-            <p>Drag & drop files here or click upload.</p>
-        </div>
-        {% endif %}
+                {% for p in range(max(1, currentPage - 2), min(lastPage, currentPage + 2)) %}
+                    {% if p == currentPage %}
+                        <span class="ml-page-btn ml-page-current">{{ p }}</span>
+                    {% else %}
+                        <a href="{{ admin_url('media?page=' ~ p ~ _pq) }}" class="ml-page-btn">{{ p }}</a>
+                    {% endif %}
+                {% endfor %}
+
+                {% if currentPage < lastPage %}
+                    <a href="{{ admin_url('media?page=' ~ (currentPage + 1) ~ _pq) }}" class="ml-page-btn">Next &raquo;</a>
+                {% endif %}
+                <span class="ml-page-info">{{ currentPage }} of {{ lastPage }}</span>
+            </div>
+            {% endif %}
+
+            {% else %}
+            <div class="ml-empty" id="mlEmpty">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--border-color,#ddd)" stroke-width="1"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <h3>No media files{% if currentFolder %} in "{{ currentFolder }}"{% endif %}</h3>
+                <p>Drag and drop files here or click the Upload button to get started.</p>
+            </div>
+            {% endif %}
         </div>{# /ml-content-scroll #}
+    </div>
+</div>
+
+{# ── Upload Modal ── #}
+<div class="ml-modal-overlay" id="uploadModal" style="display:none">
+    <div class="ml-modal ml-modal-md">
+        <div class="ml-modal-header">
+            <h3>Upload Files</h3>
+            <button class="ml-modal-close" data-close="uploadModal">&times;</button>
+        </div>
+        <div class="ml-modal-body">
+            <div class="ml-upload-folder-row">
+                <label>Upload to:</label>
+                <select id="uploadFolderSelect" class="ml-upload-folder-select">
+                    <option value="">Root (uploads/)</option>
+                    {% for folder in folders %}
+                    <option value="{{ folder }}" {{ currentFolder == folder ? 'selected' : '' }}>{{ folder }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="ml-upload-zone" id="uploadZone">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <p>Drop files here or click to browse</p>
+                <span>Images, documents, video, audio (max 10MB)</span>
+            </div>
+        </div>
     </div>
 </div>
 
 {# ── Media Detail Modal ── #}
 <div class="ml-modal-overlay" id="mediaDetailModal" style="display:none">
-    <div class="ml-modal" style="max-width:700px;">
+    <div class="ml-modal ml-modal-lg ml-detail-modal">
         <div class="ml-modal-header">
             <h3 id="mdModalTitle">File Details</h3>
             <button class="ml-modal-close" data-close="mediaDetailModal">&times;</button>
         </div>
         <div class="ml-modal-body" id="mdModalBody" style="padding:0;">
-            <div style="text-align:center;padding:40px;color:var(--text-secondary);">Loading...</div>
+            <div class="ml-detail-loading">Loading...</div>
         </div>
     </div>
 </div>
@@ -194,24 +312,24 @@
             <form method="POST" action="{{ admin_url('media/folders/create') }}" id="newFolderForm">
                 {{ csrf_field() | raw }}
                 <input type="hidden" name="parent_folder" value="{{ currentFolder }}">
-                <div style="margin-bottom:12px;">
-                    <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Folder Name</label>
+                <div class="form-group">
+                    <label class="ml-form-label">Folder Name</label>
                     <input type="text" name="folder_name" class="form-control" placeholder="e.g. products, banners" pattern="[a-zA-Z0-9_\-]+" required>
-                    <small style="color:var(--text-secondary)">Letters, numbers, hyphens, underscores only.</small>
+                    <small class="ml-form-hint">Letters, numbers, hyphens, underscores only.</small>
                 </div>
                 {% if currentFolder %}
-                <p style="font-size:12px;color:var(--text-secondary)">Will be created inside: <strong>{{ currentFolder }}</strong></p>
+                <p class="ml-form-hint" style="margin-top:8px;">Will be created inside: <strong>{{ currentFolder }}</strong></p>
                 {% endif %}
-                <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
+                <div class="ml-modal-actions">
                     <button type="button" class="btn btn-outline" data-close="folderModal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Create</button>
+                    <button type="submit" class="btn btn-primary">Create Folder</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-{# ── Upload Progress Float (bottom-right) ── #}
+{# ── Upload Progress Float ── #}
 <div class="ml-upload-float" id="uploadFloat" style="display:none">
     <div class="ml-upload-float-header">
         <span id="uploadFloatTitle">Uploading...</span>
@@ -223,121 +341,938 @@
 
 {% block styles %}
 <style nonce="{{ csp_nonce() }}">
+/* ================================================================
+   Media Library — Redesigned UI
+   ================================================================ */
+
+/* ── Header ── */
+.ml-header-count {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 400;
+}
+
 /* ── Layout ── */
-.ml-layout { display:flex; gap:0; height:calc(100vh - 180px); min-height:400px; }
-.ml-sidebar { width:220px; flex-shrink:0; background:var(--bg-surface,#fff); border:1px solid var(--border-color,#e5e5e5); border-radius:8px; overflow:hidden; display:flex; flex-direction:column; }
-.ml-sidebar-header { padding:10px 14px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-secondary); border-bottom:1px solid var(--border-color); flex-shrink:0; }
-.ml-sidebar-body { flex:1; overflow-y:auto; padding:4px 0; }
-.ml-sidebar-sep { height:1px; background:var(--border-color,#e5e5e5); margin:4px 0; }
-.ml-folder-item { display:flex; align-items:center; gap:8px; padding:7px 14px; font-size:13px; cursor:pointer; color:var(--text-primary); transition:background 0.1s; border-radius:0; }
-.ml-folder-item:hover { background:var(--bg-subdued,#f7f7f7); }
-.ml-folder-item.active { background:var(--color-primary,#047B5D); color:#fff; }
-.ml-folder-item.active svg { stroke:#fff; }
-.ml-main { flex:1; min-width:0; margin-left:16px; display:flex; flex-direction:column; background:var(--bg-surface,#fff); border:1px solid var(--border-color,#e5e5e5); border-radius:8px; overflow:hidden; }
+.ml-layout {
+    display: flex;
+    gap: 0;
+    height: calc(100vh - 180px);
+    min-height: 450px;
+}
+
+/* ── Sidebar ── */
+.ml-sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background: var(--bg-surface, #fff);
+    border: 1px solid var(--border-color, #e5e5e5);
+    border-radius: 8px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+.ml-sidebar-section {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color, #e5e5e5);
+}
+.ml-sidebar-section:last-child {
+    border-bottom: none;
+}
+.ml-sidebar-heading {
+    padding: 6px 14px 4px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+}
+.ml-folder-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--text-primary);
+    transition: background 0.12s, color 0.12s;
+    border-radius: 0;
+    user-select: none;
+}
+.ml-folder-item span:first-of-type {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.ml-folder-count {
+    font-size: 11px;
+    color: var(--text-secondary);
+    background: var(--bg-subdued, #f0f0f0);
+    padding: 1px 7px;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+.ml-folder-item:hover {
+    background: var(--bg-subdued, #f7f7f7);
+}
+.ml-folder-item.active {
+    background: var(--color-primary, #047B5D);
+    color: #fff;
+}
+.ml-folder-item.active svg {
+    stroke: #fff;
+}
+.ml-folder-item.active .ml-folder-count {
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+}
+
+/* Sidebar tags */
+.ml-sidebar-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 4px 14px 6px;
+}
+.ml-sidebar-tag {
+    display: inline-block;
+    padding: 2px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    font-size: 11px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: all 0.12s;
+    background: var(--bg-surface);
+}
+.ml-sidebar-tag:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+.ml-sidebar-tag.active {
+    background: var(--color-primary);
+    color: #fff;
+    border-color: var(--color-primary);
+}
+.ml-tag-clear {
+    border-style: dashed;
+    color: var(--text-secondary);
+}
+.ml-tag-clear:hover {
+    border-color: var(--danger, #dc3545);
+    color: var(--danger, #dc3545);
+}
+
+/* ── Main ── */
+.ml-main {
+    flex: 1;
+    min-width: 0;
+    margin-left: 16px;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-surface, #fff);
+    border: 1px solid var(--border-color, #e5e5e5);
+    border-radius: 8px;
+    overflow: hidden;
+}
 
 /* ── Toolbar ── */
-.ml-toolbar { display:flex; align-items:center; gap:12px; padding:12px 16px; border-bottom:1px solid var(--border-color); flex-wrap:wrap; flex-shrink:0; }
-.ml-search { display:flex; align-items:center; gap:6px; padding:5px 10px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-subdued,#fafafa); flex:1; min-width:160px; max-width:280px; }
-.ml-search input { border:none; outline:none; font-size:13px; width:100%; background:transparent; }
-.ml-filters { display:flex; gap:4px; }
-.ml-filter-btn { padding:4px 10px; border:1px solid var(--border-color); border-radius:5px; background:var(--bg-surface); font-size:12px; cursor:pointer; color:var(--text-primary); transition:all 0.1s; }
-.ml-filter-btn:hover { border-color:var(--color-primary); }
-.ml-filter-btn.active { background:var(--color-primary); color:#fff; border-color:var(--color-primary); }
-.ml-count { font-size:12px; color:var(--text-secondary); margin-left:auto; }
-.ml-tags-bar { display:flex; align-items:center; gap:6px; padding:8px 16px; border-bottom:1px solid var(--border-color); flex-wrap:wrap; flex-shrink:0; }
-.ml-tags-label { font-size:11px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.03em; }
-.ml-tag-chip { display:inline-block; padding:2px 10px; border:1px solid var(--border-color); border-radius:12px; font-size:11px; cursor:pointer; color:var(--text-primary); text-decoration:none; transition:all 0.1s; background:var(--bg-surface); }
-.ml-tag-chip:hover { border-color:var(--color-primary); color:var(--color-primary); }
-.ml-tag-chip.active { background:var(--color-primary); color:#fff; border-color:var(--color-primary); }
-.ml-tag-clear { border-style:dashed; color:var(--text-secondary); }
-.ml-tag-clear:hover { border-color:var(--danger,#dc3545); color:var(--danger,#dc3545); }
-.ml-content-scroll { flex:1; overflow-y:auto; padding:16px; }
+.ml-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+.ml-search {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-subdued, #fafafa);
+    flex: 1;
+    min-width: 140px;
+    max-width: 300px;
+}
+.ml-search input {
+    border: none;
+    outline: none;
+    font-size: 13px;
+    width: 100%;
+    background: transparent;
+    color: var(--text-primary);
+}
+.ml-toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+.ml-filter-select {
+    padding: 5px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 12px;
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    cursor: pointer;
+    outline: none;
+}
+.ml-filter-select:focus {
+    border-color: var(--color-primary);
+}
+.ml-view-toggle {
+    display: flex;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    overflow: hidden;
+}
+.ml-view-btn {
+    padding: 5px 8px;
+    border: none;
+    background: var(--bg-surface);
+    cursor: pointer;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    transition: all 0.12s;
+}
+.ml-view-btn:not(:last-child) {
+    border-right: 1px solid var(--border-color);
+}
+.ml-view-btn.active {
+    background: var(--color-primary);
+    color: #fff;
+}
+.ml-view-btn.active svg {
+    stroke: #fff;
+}
+
+/* ── Active Filters ── */
+.ml-active-filters {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+.ml-active-filter {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    background: var(--bg-subdued, #f0f0f0);
+    border-radius: 12px;
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+.ml-filter-remove {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 14px;
+    line-height: 1;
+    margin-left: 2px;
+}
+.ml-filter-remove:hover {
+    color: var(--danger, #dc3545);
+}
+
+/* ── Content area ── */
+.ml-content-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    position: relative;
+}
 
 /* ── Bulk Bar ── */
-.ml-bulk-bar { display:flex; align-items:center; gap:12px; padding:8px 14px; background:var(--bg-surface); border:1px solid var(--color-primary); border-radius:6px; margin-bottom:12px; }
-.ml-bulk-check { display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer; }
-#mlSelectedCount { font-size:12px; color:var(--text-secondary); }
+.ml-bulk-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--bg-subdued, #f8f9fa);
+    border: 1px solid var(--color-primary);
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+.ml-bulk-check {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    cursor: pointer;
+}
+#mlSelectedCount {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+.ml-bulk-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+}
+.ml-bulk-move-select {
+    padding: 4px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    font-size: 12px;
+    background: var(--bg-surface);
+    cursor: pointer;
+}
 
-/* ── File Selection ── */
-.ml-file-select { position:absolute; top:6px; left:6px; z-index:3; opacity:0; transition:opacity 0.15s; }
-.ml-file-card:hover .ml-file-select, .ml-file-card.selected .ml-file-select { opacity:1; }
-.ml-file-card.selected { border-color:var(--color-primary); box-shadow:0 0 0 2px rgba(4,123,93,0.2); }
-.ml-file-checkbox { width:16px; height:16px; cursor:pointer; }
-.ml-file-link { display:block; text-decoration:none; color:inherit; }
+/* ── Grid View ── */
+.ml-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 14px;
+}
+.ml-file-card {
+    position: relative;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: box-shadow 0.15s, border-color 0.15s, transform 0.15s;
+}
+.ml-file-card:hover {
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    border-color: var(--color-primary, #047B5D);
+    transform: translateY(-1px);
+}
+.ml-file-select {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 3;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+.ml-file-card:hover .ml-file-select,
+.ml-file-card.selected .ml-file-select {
+    opacity: 1;
+}
+.ml-file-card.selected {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(4, 123, 93, 0.15);
+}
+.ml-file-checkbox {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--color-primary, #047B5D);
+}
+.ml-file-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+}
+.ml-file-thumb {
+    aspect-ratio: 1;
+    background: var(--bg-subdued, #f4f4f5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+.ml-file-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.2s;
+}
+.ml-file-card:hover .ml-file-thumb img {
+    transform: scale(1.03);
+}
+.ml-file-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+.ml-file-ext {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+.ml-file-info {
+    padding: 10px 12px;
+}
+.ml-file-name {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+.ml-file-meta {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+.ml-file-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    margin-top: 5px;
+}
+.ml-file-tag {
+    display: inline-block;
+    padding: 1px 7px;
+    background: var(--bg-subdued, #f0f0f0);
+    border-radius: 8px;
+    font-size: 10px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
 
-/* ── Grid ── */
-.ml-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:12px; }
-.ml-file-card { position:relative; background:var(--bg-surface); border:1px solid var(--border-color); border-radius:8px; overflow:hidden; transition:box-shadow 0.15s, border-color 0.15s; }
-.ml-file-card:hover { box-shadow:0 4px 16px rgba(0,0,0,0.08); border-color:var(--color-primary,#047B5D); }
-.ml-file-thumb { aspect-ratio:1; background:#f4f4f5; display:flex; align-items:center; justify-content:center; overflow:hidden; }
-.ml-file-thumb img { width:100%; height:100%; object-fit:cover; }
-.ml-file-icon { display:flex; flex-direction:column; align-items:center; gap:4px; }
-.ml-file-icon span { font-size:10px; font-weight:700; text-transform:uppercase; }
-.ml-file-info { padding:8px 10px; }
-.ml-file-name { display:block; font-size:12px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--text-primary); }
-.ml-file-meta { font-size:11px; color:var(--text-secondary); }
-.ml-file-tags { display:flex; flex-wrap:wrap; gap:3px; margin-top:4px; }
-.ml-file-tag { display:inline-block; padding:1px 6px; background:var(--bg-subdued,#f0f0f0); border-radius:8px; font-size:10px; color:var(--text-secondary); white-space:nowrap; }
+/* Hover actions overlay */
+.ml-file-hover-actions {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 3;
+    opacity: 0;
+    transition: opacity 0.15s;
+    display: flex;
+    gap: 4px;
+}
+.ml-file-card:hover .ml-file-hover-actions {
+    opacity: 1;
+}
+.ml-hover-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: none;
+    background: rgba(255,255,255,0.9);
+    backdrop-filter: blur(4px);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-primary);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    transition: background 0.12s;
+}
+.ml-hover-btn:hover {
+    background: #fff;
+}
+
+/* ── List View ── */
+.ml-grid.list-view {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.ml-grid.list-view .ml-file-card {
+    display: flex;
+    flex-direction: row;
+    border-radius: 6px;
+}
+.ml-grid.list-view .ml-file-thumb {
+    width: 48px;
+    height: 48px;
+    aspect-ratio: auto;
+    flex-shrink: 0;
+    border-radius: 4px;
+    margin: 8px;
+}
+.ml-grid.list-view .ml-file-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: 1;
+    padding: 8px 12px;
+    min-width: 0;
+}
+.ml-grid.list-view .ml-file-name {
+    flex: 1;
+    min-width: 0;
+}
+.ml-grid.list-view .ml-file-meta {
+    flex-shrink: 0;
+}
+.ml-grid.list-view .ml-file-tags {
+    margin-top: 0;
+    flex-shrink: 0;
+}
+.ml-grid.list-view .ml-file-select {
+    position: relative;
+    top: auto;
+    left: auto;
+    opacity: 1;
+    display: flex;
+    align-items: center;
+    padding-left: 12px;
+}
+.ml-grid.list-view .ml-file-hover-actions {
+    position: relative;
+    top: auto;
+    right: auto;
+    opacity: 1;
+    align-items: center;
+    padding-right: 12px;
+}
 
 /* ── Pagination ── */
-.ml-pagination { display:flex; align-items:center; justify-content:center; gap:12px; margin-top:20px; }
-.ml-page-btn { padding:6px 14px; border:1px solid var(--border-color); border-radius:6px; text-decoration:none; font-size:13px; color:var(--text-primary); background:var(--bg-surface); }
-.ml-page-btn:hover { border-color:var(--color-primary); }
-.ml-page-info { font-size:13px; color:var(--text-secondary); }
+.ml-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    margin-top: 24px;
+}
+.ml-page-btn {
+    padding: 6px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 13px;
+    color: var(--text-primary);
+    background: var(--bg-surface);
+    transition: all 0.12s;
+}
+.ml-page-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+.ml-page-current {
+    background: var(--color-primary);
+    color: #fff;
+    border-color: var(--color-primary);
+}
+.ml-page-info {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-left: 12px;
+}
 
-/* ── Empty ── */
-.ml-empty { text-align:center; padding:60px 20px; color:var(--text-secondary); }
-.ml-empty h3 { margin:12px 0 4px; font-size:16px; color:var(--text-primary); }
-.ml-empty p { font-size:13px; }
+/* ── Empty State ── */
+.ml-empty {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--text-secondary);
+}
+.ml-empty h3 {
+    margin: 16px 0 6px;
+    font-size: 17px;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+.ml-empty p {
+    font-size: 13px;
+    max-width: 320px;
+    margin: 0 auto;
+}
 
 /* ── Drop Zone ── */
-.ml-content-scroll { position:relative; }
-.ml-dropzone { display:none; position:absolute; inset:0; z-index:50; background:rgba(4,123,93,0.06); border:3px dashed var(--color-primary,#047B5D); border-radius:0; }
-.ml-dropzone-inner { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; color:var(--color-primary); }
-.ml-dropzone-inner p { font-size:16px; font-weight:600; margin:0; }
-.ml-dropzone-inner span { font-size:12px; color:var(--text-secondary); }
-.ml-main.drag-over .ml-dropzone { display:block; }
+.ml-dropzone {
+    display: none;
+    position: absolute;
+    inset: 0;
+    z-index: 50;
+    background: rgba(4, 123, 93, 0.06);
+    border: 3px dashed var(--color-primary, #047B5D);
+    border-radius: 8px;
+}
+.ml-dropzone-inner {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--color-primary);
+}
+.ml-dropzone-inner p {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+}
+.ml-dropzone-inner span {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+.ml-main.drag-over .ml-dropzone {
+    display: block;
+}
 
-/* ── Modal ── */
-.ml-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; display:flex; align-items:center; justify-content:center; }
-.ml-modal { background:var(--bg-surface); border-radius:10px; width:100%; max-width:400px; box-shadow:0 8px 30px rgba(0,0,0,0.2); }
-.ml-modal-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--border-color); }
-.ml-modal-header h3 { margin:0; font-size:15px; }
-.ml-modal-close { background:none; border:none; font-size:20px; cursor:pointer; color:var(--text-secondary); }
-.ml-modal-body { padding:20px; }
+/* ── Modals ── */
+.ml-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.ml-modal {
+    background: var(--bg-surface);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+.ml-modal-md {
+    max-width: 520px;
+}
+.ml-modal-lg {
+    max-width: 780px;
+}
+.ml-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+.ml-modal-header h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+}
+.ml-modal-close {
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    line-height: 1;
+    padding: 0;
+    transition: color 0.12s;
+}
+.ml-modal-close:hover {
+    color: var(--text-primary);
+}
+.ml-modal-body {
+    padding: 20px;
+}
+.ml-modal-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+/* ── Upload Modal ── */
+.ml-upload-folder-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+.ml-upload-folder-row label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+.ml-upload-folder-select {
+    flex: 1;
+    padding: 7px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 13px;
+    background: var(--bg-surface);
+    color: var(--text-primary);
+}
+.ml-upload-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 40px 20px;
+    border: 2px dashed var(--border-color);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--text-secondary);
+    background: var(--bg-subdued, #fafafa);
+}
+.ml-upload-zone:hover,
+.ml-upload-zone.drag-over {
+    border-color: var(--color-primary);
+    background: rgba(4, 123, 93, 0.04);
+    color: var(--color-primary);
+}
+.ml-upload-zone p {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+}
+.ml-upload-zone span {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+/* ── Detail Modal ── */
+.ml-detail-loading {
+    text-align: center;
+    padding: 50px 20px;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+.md-layout {
+    display: flex;
+    gap: 0;
+    min-height: 350px;
+}
+.md-preview {
+    flex: 1;
+    background: var(--bg-subdued, #f4f4f5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    padding: 24px;
+}
+.md-preview img {
+    max-width: 100%;
+    max-height: 380px;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+.md-sidebar {
+    width: 280px;
+    flex-shrink: 0;
+    border-left: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+}
+.md-sidebar-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+}
+.md-info-row {
+    margin-bottom: 14px;
+}
+.md-info-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 3px;
+}
+.md-info-value {
+    font-size: 13px;
+    color: var(--text-primary);
+    word-break: break-all;
+}
+.md-info-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 12px 0;
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    margin: 12px 0;
+}
+.md-meta-item {
+    font-size: 12px;
+}
+.md-meta-item strong {
+    display: block;
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 2px;
+}
+.md-url-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+}
+.md-url-input {
+    flex: 1;
+    padding: 5px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    font-size: 11px;
+    font-family: monospace;
+    background: var(--bg-subdued, #f8f8f8);
+    color: var(--text-primary);
+    min-width: 0;
+}
+.md-copy-btn {
+    padding: 5px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background: var(--bg-surface);
+    font-size: 11px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.12s;
+    color: var(--text-primary);
+}
+.md-copy-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+.md-form-input {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 13px;
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.12s;
+}
+.md-form-input:focus {
+    border-color: var(--color-primary);
+}
+.md-tag-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+}
+.md-tag-chip {
+    display: inline-block;
+    padding: 2px 8px;
+    background: var(--bg-subdued, #f0f0f0);
+    border-radius: 10px;
+    font-size: 10px;
+    color: var(--text-secondary);
+}
+.md-actions {
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-subdued, #fafafa);
+}
+.md-actions .btn:last-child {
+    margin-left: auto;
+}
+
+/* ── Form helpers ── */
+.ml-form-label {
+    font-size: 12px;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 4px;
+    color: var(--text-primary);
+}
+.ml-form-hint {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
 
 /* ── Upload Float ── */
-.ml-upload-float { position:fixed; bottom:20px; right:20px; width:360px; max-height:50vh; background:var(--bg-surface); border:1px solid var(--border-color); border-radius:10px; box-shadow:0 8px 30px rgba(0,0,0,0.15); z-index:999; overflow:hidden; display:flex; flex-direction:column; }
-.ml-upload-float-header { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:#f8f8f8; border-bottom:1px solid var(--border-color); font-size:13px; font-weight:600; flex-shrink:0; }
-.ml-upload-float-close { background:none; border:none; font-size:18px; cursor:pointer; color:var(--text-secondary); }
-.ml-upload-float-body { flex:1; overflow-y:auto; }
-.ml-upload-item { display:flex; align-items:center; gap:10px; padding:8px 14px; border-bottom:1px solid #f0f0f0; font-size:12px; }
-.ml-upload-item-name { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.ml-upload-item-status { flex-shrink:0; font-weight:600; }
-.ml-upload-item-status.done { color:#047B5D; }
-.ml-upload-item-status.error { color:#dc3545; }
-.ml-upload-item-status.uploading { color:#f0883e; }
-.ml-upload-progress { width:100%; height:3px; background:#e5e5e5; border-radius:2px; margin-top:4px; overflow:hidden; }
-.ml-upload-progress-bar { height:100%; background:var(--color-primary,#047B5D); transition:width 0.2s; border-radius:2px; }
-
-/* ── Detail Modal Content ── */
-.md-layout { display:flex; gap:0; }
-.md-preview { flex:1; background:#f4f4f5; display:flex; align-items:center; justify-content:center; min-height:280px; padding:20px; }
-.md-preview img { max-width:100%; max-height:320px; border-radius:4px; }
-.md-info { width:260px; flex-shrink:0; border-left:1px solid var(--border-color); padding:16px; overflow-y:auto; max-height:400px; }
-.md-info-row { margin-bottom:10px; }
-.md-info-label { font-size:11px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.03em; margin-bottom:2px; }
-.md-info-value { font-size:13px; word-break:break-all; }
-.md-actions { display:flex; gap:8px; padding:12px 16px; border-top:1px solid var(--border-color); }
-.md-copy-btn { padding:6px 14px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-surface); font-size:12px; cursor:pointer; }
-.md-copy-btn:hover { border-color:var(--color-primary); }
+.ml-upload-float {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 360px;
+    max-height: 50vh;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    z-index: 999;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+.ml-upload-float-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--bg-subdued, #f8f8f8);
+    border-bottom: 1px solid var(--border-color);
+    font-size: 13px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+.ml-upload-float-close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: var(--text-secondary);
+}
+.ml-upload-float-body {
+    flex: 1;
+    overflow-y: auto;
+}
+.ml-upload-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--bg-subdued, #f0f0f0);
+    font-size: 12px;
+}
+.ml-upload-item-name {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.ml-upload-item-status {
+    flex-shrink: 0;
+    font-weight: 600;
+}
+.ml-upload-item-status.done { color: var(--color-primary, #047B5D); }
+.ml-upload-item-status.error { color: var(--danger, #dc3545); }
+.ml-upload-item-status.uploading { color: #f0883e; }
+.ml-upload-progress {
+    width: 100%;
+    height: 3px;
+    background: var(--bg-subdued, #e5e5e5);
+    border-radius: 2px;
+    margin-top: 4px;
+    overflow: hidden;
+}
+.ml-upload-progress-bar {
+    height: 100%;
+    background: var(--color-primary, #047B5D);
+    transition: width 0.2s;
+    border-radius: 2px;
+}
 
 /* ── Responsive ── */
-@media (max-width: 768px) {
-    .ml-layout { flex-direction:column; }
-    .ml-sidebar { width:100%; position:static; }
-    .ml-main { margin-left:0; margin-top:12px; }
-    .ml-grid { grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); }
+@media (max-width: 900px) {
+    .ml-layout { flex-direction: column; height: auto; }
+    .ml-sidebar { width: 100%; max-height: 200px; }
+    .ml-main { margin-left: 0; margin-top: 12px; }
+    .ml-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+    .md-layout { flex-direction: column; }
+    .md-sidebar { width: 100%; border-left: none; border-top: 1px solid var(--border-color); }
+    .md-preview { min-height: 200px; }
+    .ml-modal-lg { max-width: 95vw; }
+}
+@media (max-width: 600px) {
+    .ml-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+    .ml-toolbar { flex-wrap: wrap; }
+    .ml-search { max-width: none; }
 }
 </style>
 {% endblock %}
@@ -357,22 +1292,49 @@
             var url = '{{ admin_url("media") }}';
             if (special === 'recent') url += '?filter=recent';
             else if (special === 'images') url += '?filter=images';
+            else if (special === 'video') url += '?filter=video';
+            else if (special === 'documents') url += '?filter=documents';
             else if (folder) url += '?folder=' + encodeURIComponent(folder);
             window.location.href = url;
         });
     });
 
-    // ── Filter Buttons ──
-    document.querySelectorAll('.ml-filter-btn').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            var filter = this.dataset.filter;
-            var url = '{{ admin_url("media") }}?filter=' + filter;
-            if (currentFolder) url += '&folder=' + encodeURIComponent(currentFolder);
-            window.location.href = url;
-        });
+    // ── Filter Dropdown ──
+    document.getElementById('mlFilterSelect').addEventListener('change', function() {
+        var filter = this.value;
+        var url = '{{ admin_url("media") }}?filter=' + filter;
+        if (currentFolder) url += '&folder=' + encodeURIComponent(currentFolder);
+        window.location.href = url;
     });
 
-    // ── Search ──
+    // ── View Toggle ──
+    var gridEl = document.getElementById('mlGrid');
+    document.querySelectorAll('.ml-view-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.ml-view-btn').forEach(function(b) { b.classList.remove('active'); });
+            this.classList.add('active');
+            if (gridEl) {
+                if (this.dataset.view === 'list') {
+                    gridEl.classList.add('list-view');
+                } else {
+                    gridEl.classList.remove('list-view');
+                }
+            }
+            try { localStorage.setItem('ml-view', this.dataset.view); } catch(e) {}
+        });
+    });
+    // Restore saved view preference
+    try {
+        var savedView = localStorage.getItem('ml-view');
+        if (savedView === 'list' && gridEl) {
+            gridEl.classList.add('list-view');
+            document.querySelectorAll('.ml-view-btn').forEach(function(b) {
+                b.classList.toggle('active', b.dataset.view === 'list');
+            });
+        }
+    } catch(e) {}
+
+    // ── Search with Debounce ──
     var searchTimer;
     document.getElementById('mlSearch').addEventListener('input', function() {
         var val = this.value;
@@ -384,17 +1346,25 @@
         }, 500);
     });
 
-    // ── New Folder Modal ──
-    document.getElementById('newFolderBtn').addEventListener('click', function() {
-        document.getElementById('folderModal').style.display = 'flex';
-    });
+    // ── Modal Helpers ──
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
     document.querySelectorAll('[data-close]').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            document.getElementById(this.dataset.close).style.display = 'none';
+        btn.addEventListener('click', function() { closeModal(this.dataset.close); });
+    });
+    document.querySelectorAll('.ml-modal-overlay').forEach(function(overlay) {
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) overlay.style.display = 'none';
         });
     });
 
-    // ── Upload Button (click to select files) ──
+    // ── New Folder Modal ──
+    document.getElementById('newFolderBtn').addEventListener('click', function() {
+        openModal('folderModal');
+    });
+
+    // ── Upload Modal ──
     var fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.multiple = true;
@@ -402,14 +1372,27 @@
     document.body.appendChild(fileInput);
 
     document.getElementById('uploadBtn').addEventListener('click', function() {
-        fileInput.click();
+        openModal('uploadModal');
     });
+
+    var uploadZone = document.getElementById('uploadZone');
+    uploadZone.addEventListener('click', function() { fileInput.click(); });
+    uploadZone.addEventListener('dragover', function(e) { e.preventDefault(); this.classList.add('drag-over'); });
+    uploadZone.addEventListener('dragleave', function(e) { e.preventDefault(); this.classList.remove('drag-over'); });
+    uploadZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.classList.remove('drag-over');
+        if (e.dataTransfer.files.length > 0) {
+            uploadFiles(e.dataTransfer.files);
+        }
+    });
+
     fileInput.addEventListener('change', function() {
         if (this.files.length > 0) uploadFiles(this.files);
         this.value = '';
     });
 
-    // ── Drag & Drop ──
+    // ── Drag & Drop on main content area ──
     var mlMain = document.querySelector('.ml-main');
     var mlScroll = document.querySelector('.ml-content-scroll');
     var dragCounter = 0;
@@ -431,14 +1414,18 @@
         if (e.dataTransfer.files.length > 0) uploadFiles(e.dataTransfer.files);
     });
 
-    // ── Upload Files with Progress Float ──
+    // ── Upload Files with Progress ──
     function uploadFiles(files) {
+        var uploadFolder = document.getElementById('uploadFolderSelect')?.value || currentFolder;
         var floatEl = document.getElementById('uploadFloat');
         var body = document.getElementById('uploadFloatBody');
         var title = document.getElementById('uploadFloatTitle');
         floatEl.style.display = '';
         title.textContent = 'Uploading ' + files.length + ' file' + (files.length > 1 ? 's' : '') + '...';
         body.innerHTML = '';
+
+        // Close upload modal if open
+        closeModal('uploadModal');
 
         var completed = 0;
         var total = files.length;
@@ -461,7 +1448,7 @@
 
             var formData = new FormData();
             formData.append('file', file);
-            formData.append('folder', currentFolder);
+            formData.append('folder', uploadFolder);
 
             var xhr = new XMLHttpRequest();
             xhr.open('POST', '{{ admin_url("media/upload") }}');
@@ -506,100 +1493,137 @@
     }
 
     // ── Detail Modal ──
+    function openDetail(id) {
+        var modal = document.getElementById('mediaDetailModal');
+        var body = document.getElementById('mdModalBody');
+        body.innerHTML = '<div class="ml-detail-loading">Loading...</div>';
+        openModal('mediaDetailModal');
+
+        fetch('{{ admin_url("media") }}/' + id, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrf }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            document.getElementById('mdModalTitle').textContent = d.original_name;
+
+            var preview = '';
+            if (d.is_image) {
+                preview = '<img src="' + d.url + '" alt="' + (d.alt_text || d.original_name).replace(/"/g, '&quot;') + '">';
+            } else {
+                preview = '<div style="font-size:56px;color:#bbb;">&#128196;</div><p style="color:#888;margin-top:8px;font-size:13px;">' + d.mime_type + '</p>';
+            }
+
+            var dims = '';
+            if (d.dimensions) {
+                dims = '<div class="md-meta-item"><strong>Dimensions</strong>' + d.dimensions.width + ' &times; ' + d.dimensions.height + 'px</div>';
+            }
+
+            var fullUrl = window.location.origin + d.url;
+            var tagChips = '';
+            if (d.tags && d.tags.length > 0) {
+                tagChips = '<div class="md-tag-chips">' + d.tags.map(function(t) {
+                    return '<span class="md-tag-chip">' + t + '</span>';
+                }).join('') + '</div>';
+            }
+
+            body.innerHTML =
+                '<div class="md-layout">' +
+                    '<div class="md-preview">' + preview + '</div>' +
+                    '<div class="md-sidebar">' +
+                        '<div class="md-sidebar-body">' +
+                            '<div class="md-info-row">' +
+                                '<div class="md-info-label">Display Name</div>' +
+                                '<input type="text" id="mdDisplayName" class="md-form-input" value="' + (d.original_name || '').replace(/"/g, '&quot;') + '">' +
+                            '</div>' +
+                            '<div class="md-info-row">' +
+                                '<div class="md-info-label">Alt Text</div>' +
+                                '<input type="text" id="mdAltText" class="md-form-input" value="' + (d.alt_text || '').replace(/"/g, '&quot;') + '" placeholder="Describe this image for accessibility">' +
+                            '</div>' +
+                            '<div class="md-info-row">' +
+                                '<div class="md-info-label">Tags</div>' +
+                                '<input type="text" id="mdTags" class="md-form-input" value="' + (d.tags_string || '').replace(/"/g, '&quot;') + '" placeholder="e.g. hero, banner, product">' +
+                                tagChips +
+                            '</div>' +
+                            '<div class="md-info-meta">' +
+                                '<div class="md-meta-item"><strong>Size</strong>' + d.human_size + '</div>' +
+                                '<div class="md-meta-item"><strong>Type</strong>' + d.mime_type + '</div>' +
+                                dims +
+                                '<div class="md-meta-item"><strong>Filename</strong><span style="font-size:11px;word-break:break-all;">' + d.filename + '</span></div>' +
+                            '</div>' +
+                            '<div class="md-info-row">' +
+                                '<div class="md-info-label">URL</div>' +
+                                '<div class="md-url-row">' +
+                                    '<input type="text" class="md-url-input" value="' + fullUrl + '" readonly id="mdUrlInput">' +
+                                    '<button class="md-copy-btn" id="mdCopyUrl">Copy</button>' +
+                                '</div>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="md-actions">' +
+                            '<button class="btn btn-primary btn-sm" id="mdSaveBtn" data-id="' + d.id + '">Save Changes</button>' +
+                            '<button class="btn btn-danger btn-sm" id="mdDeleteBtn" data-id="' + d.id + '">Delete</button>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
+
+            // Copy URL
+            document.getElementById('mdCopyUrl').addEventListener('click', function() {
+                var input = document.getElementById('mdUrlInput');
+                input.select();
+                navigator.clipboard.writeText(input.value).then(function() {
+                    document.getElementById('mdCopyUrl').textContent = 'Copied!';
+                    setTimeout(function() { document.getElementById('mdCopyUrl').textContent = 'Copy'; }, 1500);
+                }).catch(function() {
+                    document.execCommand('copy');
+                    document.getElementById('mdCopyUrl').textContent = 'Copied!';
+                    setTimeout(function() { document.getElementById('mdCopyUrl').textContent = 'Copy'; }, 1500);
+                });
+            });
+
+            // Save
+            document.getElementById('mdSaveBtn').addEventListener('click', function() {
+                var btn = this;
+                btn.disabled = true;
+                btn.textContent = 'Saving...';
+                var formData = new FormData();
+                formData.append('original_name', document.getElementById('mdDisplayName').value);
+                formData.append('alt_text', document.getElementById('mdAltText').value);
+                formData.append('tags', document.getElementById('mdTags').value);
+                fetch('{{ admin_url("media") }}/' + this.dataset.id + '/update', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': csrf },
+                    body: formData
+                }).then(function() {
+                    closeModal('mediaDetailModal');
+                    window.location.reload();
+                }).catch(function() {
+                    btn.disabled = false;
+                    btn.textContent = 'Save Changes';
+                });
+            });
+
+            // Delete
+            document.getElementById('mdDeleteBtn').addEventListener('click', function() {
+                if (!confirm('Permanently delete this file?')) return;
+                var formData = new FormData();
+                fetch('{{ admin_url("media") }}/' + this.dataset.id + '/delete', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': csrf },
+                    body: formData
+                }).then(function() {
+                    closeModal('mediaDetailModal');
+                    window.location.reload();
+                });
+            });
+        })
+        .catch(function() {
+            body.innerHTML = '<div style="text-align:center;padding:50px;color:var(--danger,#dc3545);font-size:14px;">Failed to load file details.</div>';
+        });
+    }
+
     document.querySelectorAll('[data-detail-id]').forEach(function(link) {
         link.addEventListener('click', function(e) {
             e.preventDefault();
-            var id = this.dataset.detailId;
-            var modal = document.getElementById('mediaDetailModal');
-            var body = document.getElementById('mdModalBody');
-            body.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-secondary);">Loading...</div>';
-            modal.style.display = 'flex';
-
-            fetch('{{ admin_url("media") }}/' + id, {
-                headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrf }
-            })
-            .then(function(r) { return r.json(); })
-            .then(function(d) {
-                document.getElementById('mdModalTitle').textContent = d.original_name;
-                var preview = '';
-                if (d.is_image) {
-                    preview = '<img src="' + d.url + '" alt="' + (d.alt_text || d.original_name) + '">';
-                } else {
-                    preview = '<div style="font-size:48px;color:#999;">&#128196;</div><p style="color:#666;margin-top:8px;">' + d.mime_type + '</p>';
-                }
-                var dims = d.dimensions ? '<div class="md-info-row"><div class="md-info-label">Dimensions</div><div class="md-info-value">' + d.dimensions.width + ' x ' + d.dimensions.height + 'px</div></div>' : '';
-                var fullUrl = window.location.origin + d.url;
-                body.innerHTML =
-                    '<div class="md-layout">' +
-                        '<div class="md-preview">' + preview + '</div>' +
-                        '<div class="md-info">' +
-                            '<div class="md-info-row"><div class="md-info-label">Filename</div><div class="md-info-value">' + d.filename + '</div></div>' +
-                            '<div class="md-info-row"><div class="md-info-label">Type</div><div class="md-info-value">' + d.mime_type + '</div></div>' +
-                            '<div class="md-info-row"><div class="md-info-label">Size</div><div class="md-info-value">' + d.human_size + '</div></div>' +
-                            dims +
-                            '<div class="md-info-row"><div class="md-info-label">URL</div><div class="md-info-value" style="font-size:11px;font-family:monospace;">' + d.url + '</div></div>' +
-                            '<div class="md-info-row" style="margin-top:16px;">' +
-                                '<label style="font-size:11px;font-weight:600;display:block;margin-bottom:4px;">Alt Text</label>' +
-                                '<input type="text" id="mdAltText" value="' + (d.alt_text || '').replace(/"/g, '&quot;') + '" style="width:100%;padding:5px 8px;border:1px solid var(--border-color);border-radius:4px;font-size:12px;" placeholder="Describe this image">' +
-                            '</div>' +
-                            '<div class="md-info-row">' +
-                                '<label style="font-size:11px;font-weight:600;display:block;margin-bottom:4px;">Display Name</label>' +
-                                '<input type="text" id="mdDisplayName" value="' + (d.original_name || '').replace(/"/g, '&quot;') + '" style="width:100%;padding:5px 8px;border:1px solid var(--border-color);border-radius:4px;font-size:12px;">' +
-                            '</div>' +
-                            '<div class="md-info-row">' +
-                                '<label style="font-size:11px;font-weight:600;display:block;margin-bottom:4px;">Tags</label>' +
-                                '<input type="text" id="mdTags" value="' + (d.tags_string || '').replace(/"/g, '&quot;') + '" style="width:100%;padding:5px 8px;border:1px solid var(--border-color);border-radius:4px;font-size:12px;" placeholder="e.g. hero, banner">' +
-                                (d.tags && d.tags.length > 0 ? '<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:3px;">' + d.tags.map(function(t) { return '<span style="display:inline-block;padding:1px 6px;background:var(--bg-subdued,#f0f0f0);border-radius:8px;font-size:10px;color:var(--text-secondary);">' + t + '</span>'; }).join('') + '</div>' : '') +
-                            '</div>' +
-                        '</div>' +
-                    '</div>' +
-                    '<div class="md-actions">' +
-                        '<button class="md-copy-btn" id="mdCopyUrl" data-url="' + fullUrl + '">Copy URL</button>' +
-                        '<button class="btn btn-primary btn-sm" id="mdSaveBtn" data-id="' + d.id + '">Save</button>' +
-                        '<button class="btn btn-danger btn-sm" id="mdDeleteBtn" data-id="' + d.id + '" style="margin-left:auto;">Delete</button>' +
-                    '</div>';
-
-                // Bind copy
-                document.getElementById('mdCopyUrl').addEventListener('click', function() {
-                    navigator.clipboard.writeText(this.dataset.url).then(function() {
-                        document.getElementById('mdCopyUrl').textContent = 'Copied!';
-                        setTimeout(function() { document.getElementById('mdCopyUrl').textContent = 'Copy URL'; }, 1500);
-                    });
-                });
-
-                // Bind save
-                document.getElementById('mdSaveBtn').addEventListener('click', function() {
-                    var formData = new FormData();
-                    formData.append('original_name', document.getElementById('mdDisplayName').value);
-                    formData.append('alt_text', document.getElementById('mdAltText').value);
-                    formData.append('tags', document.getElementById('mdTags').value);
-                    fetch('{{ admin_url("media") }}/' + this.dataset.id + '/update', {
-                        method: 'POST',
-                        headers: { 'X-CSRF-TOKEN': csrf },
-                        body: formData
-                    }).then(function() {
-                        modal.style.display = 'none';
-                        window.location.reload();
-                    });
-                });
-
-                // Bind delete
-                document.getElementById('mdDeleteBtn').addEventListener('click', function() {
-                    if (!confirm('Permanently delete this file?')) return;
-                    var formData = new FormData();
-                    fetch('{{ admin_url("media") }}/' + this.dataset.id + '/delete', {
-                        method: 'POST',
-                        headers: { 'X-CSRF-TOKEN': csrf },
-                        body: formData
-                    }).then(function() {
-                        modal.style.display = 'none';
-                        window.location.reload();
-                    });
-                });
-            })
-            .catch(function() {
-                body.innerHTML = '<div style="text-align:center;padding:40px;color:#dc3545;">Failed to load file details.</div>';
-            });
+            openDetail(this.dataset.detailId);
         });
     });
 
@@ -616,6 +1640,8 @@
         checkboxes.forEach(function(cb) {
             cb.closest('.ml-file-card').classList.toggle('selected', cb.checked);
         });
+        var moveBtn = document.getElementById('mlBulkMove');
+        if (moveBtn) moveBtn.disabled = !document.getElementById('mlBulkMoveFolder').value;
     }
 
     checkboxes.forEach(function(cb) {
@@ -629,6 +1655,39 @@
         });
     }
 
+    // Bulk move folder select
+    var bulkMoveFolder = document.getElementById('mlBulkMoveFolder');
+    var bulkMoveBtn = document.getElementById('mlBulkMove');
+    if (bulkMoveFolder) {
+        bulkMoveFolder.addEventListener('change', function() {
+            bulkMoveBtn.disabled = !this.value;
+        });
+    }
+
+    // Bulk move
+    if (bulkMoveBtn) {
+        bulkMoveBtn.addEventListener('click', function() {
+            var ids = [];
+            document.querySelectorAll('.ml-file-checkbox:checked').forEach(function(cb) {
+                ids.push(cb.dataset.id);
+            });
+            if (ids.length === 0) return;
+            var targetFolder = bulkMoveFolder.value;
+            if (targetFolder === '__root__') targetFolder = '';
+            if (!confirm('Move ' + ids.length + ' file(s) to ' + (targetFolder || 'root') + '?')) return;
+
+            fetch('{{ admin_url("media/bulk") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+                body: JSON.stringify({ action: 'move', ids: ids, target_folder: targetFolder })
+            }).then(function(r) { return r.json(); }).then(function(data) {
+                if (data.success) window.location.reload();
+                else alert(data.error || 'Failed to move files.');
+            });
+        });
+    }
+
+    // Bulk delete
     document.getElementById('mlBulkDelete')?.addEventListener('click', function() {
         var ids = [];
         document.querySelectorAll('.ml-file-checkbox:checked').forEach(function(cb) {
@@ -643,7 +1702,7 @@
             body: JSON.stringify({ action: 'delete', ids: ids })
         }).then(function(r) { return r.json(); }).then(function(data) {
             if (data.success) window.location.reload();
-            else alert(data.error || 'Failed to delete');
+            else alert(data.error || 'Failed to delete.');
         });
     });
 
@@ -655,7 +1714,9 @@
     // ── Escape closes modals ──
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
-            document.getElementById('folderModal').style.display = 'none';
+            closeModal('folderModal');
+            closeModal('uploadModal');
+            closeModal('mediaDetailModal');
         }
     });
 })();
