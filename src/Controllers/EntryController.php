@@ -524,10 +524,29 @@ class EntryController extends Controller
 
         // Handle slug on update
         if ($collection->hasSlug()) {
+            $oldSlug = $entry['slug'] ?? '';
             $manualSlug = trim($this->input('slug', ''));
-            if (!empty($manualSlug) && $manualSlug !== ($entry['slug'] ?? '')) {
+            if (!empty($manualSlug) && $manualSlug !== $oldSlug) {
                 $data['slug'] = $this->generateUniqueSlug($collection->getTableName(), $manualSlug, $id);
-            } elseif (empty($entry['slug'] ?? '')) {
+
+                // Create redirect from old slug to new slug (Shopify-style)
+                if (!empty($oldSlug) && $this->boolean('create_slug_redirect')) {
+                    $urlPrefix = $collection->getUrlPrefix();
+                    if ($urlPrefix) {
+                        $fromPath = '/' . ltrim($urlPrefix, '/') . '/' . $oldSlug;
+                        $toUrl = '/' . ltrim($urlPrefix, '/') . '/' . $data['slug'];
+                        try {
+                            $redirect = new \ZephyrPHP\Cms\Models\Redirect();
+                            $redirect->setFromPath($fromPath);
+                            $redirect->setToUrl($toUrl);
+                            $redirect->setStatusCode(301);
+                            $redirect->save();
+                        } catch (\Throwable $e) {
+                            // Redirect creation is best-effort
+                        }
+                    }
+                }
+            } elseif (empty($oldSlug)) {
                 // Entry has no slug yet, generate one
                 $sourceField = $collection->getSlugSourceField();
                 $sourceValue = $data[$sourceField] ?? $data['name'] ?? $data['title'] ?? '';

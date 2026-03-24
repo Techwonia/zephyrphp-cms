@@ -1397,13 +1397,17 @@
             });
         });
 
-        // Upload
+        // Upload — auto-select uploaded file and close modal
         modal.querySelector('.media-upload-input').addEventListener('change', function() {
             var files = this.files;
             if (!files.length) return;
             var status = modal.querySelector('.media-upload-status');
-            status.textContent = 'Uploading ' + files.length + ' file(s)...';
+            var totalFiles = files.length;
+            status.textContent = 'Uploading ' + totalFiles + ' file(s)...';
             var uploaded = 0;
+            var lastUploadedUrl = '';
+            var lastUploadedName = '';
+            var lastIsImage = false;
             Array.from(files).forEach(function(f) {
                 var fd = new FormData();
                 fd.append('file', f);
@@ -1411,7 +1415,26 @@
                 var xhr = new XMLHttpRequest();
                 xhr.open('POST', uploadUrl, true);
                 xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-                xhr.onload = function() { uploaded++; if (uploaded >= files.length) { status.textContent = 'Uploaded!'; loadMedia(); setTimeout(function() { status.textContent = ''; }, 2000); } };
+                xhr.onload = function() {
+                    uploaded++;
+                    try {
+                        var resp = JSON.parse(xhr.responseText);
+                        if (resp.path) {
+                            lastUploadedUrl = '/' + resp.path;
+                            lastUploadedName = f.name;
+                            lastIsImage = f.type.startsWith('image/');
+                        }
+                    } catch(e) {}
+                    if (uploaded >= totalFiles) {
+                        if (lastUploadedUrl) {
+                            selectMediaItem(fieldSlug, lastUploadedUrl, lastUploadedName, lastIsImage, isMultiple);
+                            modal.remove();
+                        } else {
+                            status.textContent = 'Uploaded!';
+                            loadMedia();
+                        }
+                    }
+                };
                 xhr.onerror = function() { uploaded++; status.textContent = 'Upload error'; };
                 xhr.send(fd);
             });

@@ -70,10 +70,18 @@
                     <span class="ee-field-badge ee-badge-slug">slug</span>
                 </div>
                 <div class="ee-card-body">
-                    <input type="text" id="entry-slug" name="slug" class="form-control"
-                           value="{{ entry.slug ?? '' }}"
-                           placeholder="Auto-generated from {{ collection.getSlugSourceField() ?? 'title' }}">
-                    <p class="ee-field-hint">Leave blank to keep current slug.</p>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <code style="padding:6px 10px;background:var(--bg-subdued,#FAFAFA);border:1px solid var(--border,#E3E3E3);border-radius:6px;font-size:var(--font-sm,0.8125rem);color:var(--text-secondary,#616161);white-space:nowrap;">{{ collection.getUrlPrefix() ? '/' ~ collection.getUrlPrefix() ~ '/' : '/' }}</code>
+                        <input type="text" id="entry-slug" name="slug" class="form-control"
+                               value="{{ entry.slug ?? '' }}"
+                               placeholder="{{ entry.slug ?? 'auto-generated' }}" style="flex:1;">
+                    </div>
+                    {% if entry.slug %}
+                    <label style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:var(--font-xs,0.75rem);color:var(--text-secondary,#616161);cursor:pointer;">
+                        <input type="checkbox" name="create_slug_redirect" value="1" checked style="margin:0;">
+                        Create URL redirect from old slug (recommended)
+                    </label>
+                    {% endif %}
                 </div>
             </div>
             {% endif %}
@@ -1781,14 +1789,38 @@ function updateSeoCounter(el, counterId, recommended) {
         modal.querySelector('.media-upload-input').addEventListener('change', function() {
             var files = this.files; if (!files.length) return;
             var status = modal.querySelector('.media-upload-status');
-            status.textContent = 'Uploading ' + files.length + ' file(s)...';
+            var totalFiles = files.length;
+            status.textContent = 'Uploading ' + totalFiles + ' file(s)...';
             var uploaded = 0;
+            var lastUploadedUrl = '';
+            var lastUploadedName = '';
+            var lastIsImage = false;
             Array.from(files).forEach(function(f) {
                 var fd = new FormData(); fd.append('file', f); fd.append('csrf_token', csrfVal);
                 var xhr = new XMLHttpRequest();
                 xhr.open('POST', uploadUrl, true);
                 xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-                xhr.onload = function() { uploaded++; if (uploaded >= files.length) { status.textContent = 'Uploaded!'; loadMedia(); setTimeout(function() { status.textContent = ''; }, 2000); } };
+                xhr.onload = function() {
+                    uploaded++;
+                    try {
+                        var resp = JSON.parse(xhr.responseText);
+                        if (resp.path) {
+                            lastUploadedUrl = '/' + resp.path;
+                            lastUploadedName = f.name;
+                            lastIsImage = f.type.startsWith('image/');
+                        }
+                    } catch(e) {}
+                    if (uploaded >= totalFiles) {
+                        // Auto-select the last uploaded file and close modal
+                        if (lastUploadedUrl) {
+                            selectMediaItem(fieldSlug, lastUploadedUrl, lastUploadedName, lastIsImage, isMultiple);
+                            modal.remove();
+                        } else {
+                            status.textContent = 'Uploaded!';
+                            loadMedia();
+                        }
+                    }
+                };
                 xhr.onerror = function() { uploaded++; status.textContent = 'Upload error'; };
                 xhr.send(fd);
             });
