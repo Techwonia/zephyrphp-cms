@@ -162,15 +162,6 @@ class CmsServiceProvider
                 'match' => 'exact:' . admin_url('collections'),
             ]);
             $sidebar->addItem('collections', [
-                'id' => 'global-blocks-sidebar',
-                'label' => 'Global Blocks',
-                'url' => admin_url('global-blocks'),
-                'icon' => 'layers',
-                'position' => 902,
-                'permission' => 'settings.view',
-                'match' => 'prefix:' . admin_url('global-blocks'),
-            ]);
-            $sidebar->addItem('collections', [
                 'id' => 'relationships-sidebar',
                 'label' => 'Relationships',
                 'url' => admin_url('relationships'),
@@ -677,27 +668,6 @@ class CmsServiceProvider
         $view->addFunction('search_url', function () {
             return '/api/search';
         });
-
-        // global_block(slug) - Render a reusable global content block
-        $view->addFunction('global_block', function (string $slug) use ($view) {
-            $block = \ZephyrPHP\Cms\Models\GlobalBlock::findOneBy(['slug' => $slug, 'isActive' => true]);
-            if (!$block) {
-                return '';
-            }
-
-            if ($block->getType() === 'twig') {
-                try {
-                    $twig = $view->getEngine();
-                    $template = $twig->createTemplate($block->getContent());
-                    return $template->render([]);
-                } catch (\Throwable $e) {
-                    error_log('Global block Twig render error (' . $slug . '): ' . $e->getMessage());
-                    return '';
-                }
-            }
-
-            return $block->getContent();
-        }, ['is_safe' => ['html']]);
 
         // media_url(idOrPath) — Resolve a media ID or legacy path to a full URL
         $view->addFunction('media_url', function ($idOrPath) {
@@ -1714,20 +1684,6 @@ class CmsServiceProvider
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
             }
 
-            // Global Blocks (reusable content blocks)
-            if (!$sm->tablesExist(['cms_global_blocks'])) {
-                $conn->executeStatement("CREATE TABLE `cms_global_blocks` (
-                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                    `name` VARCHAR(255) NOT NULL,
-                    `slug` VARCHAR(255) NOT NULL,
-                    `content` TEXT NOT NULL,
-                    `type` VARCHAR(50) NOT NULL DEFAULT 'html',
-                    `is_active` TINYINT(1) NOT NULL DEFAULT 1,
-                    `createdAt` DATETIME NULL DEFAULT NULL,
-                    `updatedAt` DATETIME NULL DEFAULT NULL,
-                    UNIQUE KEY `uniq_global_block_slug` (`slug`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-            }
         } catch (\Exception $e) {
             // Silently fail - tables will be created on next request or via CLI
         }

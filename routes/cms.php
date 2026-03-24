@@ -53,7 +53,6 @@ use ZephyrPHP\Cms\Controllers\ThemeCodeEditorController;
 use ZephyrPHP\Cms\Controllers\PluginController;
 use ZephyrPHP\Cms\Controllers\SearchController;
 use ZephyrPHP\Cms\Controllers\RedirectController;
-use ZephyrPHP\Cms\Controllers\GlobalBlockController;
 use ZephyrPHP\Cms\Controllers\RelationshipGraphController;
 use ZephyrPHP\Cms\Controllers\AutomationController;
 
@@ -454,14 +453,6 @@ Route::group(['prefix' => '/' . admin_path(), 'middleware' => [\ZephyrPHP\Middle
 
     // Relationship Graph
     Route::get('/relationships', [RelationshipGraphController::class, 'index']);
-
-    // Global Blocks
-    Route::get('/global-blocks', [GlobalBlockController::class, 'index']);
-    Route::get('/global-blocks/create', [GlobalBlockController::class, 'create']);
-    Route::post('/global-blocks', [GlobalBlockController::class, 'store']);
-    Route::get('/global-blocks/{id}', [GlobalBlockController::class, 'edit']);
-    Route::post('/global-blocks/{id}', [GlobalBlockController::class, 'update']);
-    Route::post('/global-blocks/{id}/delete', [GlobalBlockController::class, 'destroy']);
 
     // Automation Rules
     Route::get('/automations', [AutomationController::class, 'index']);
