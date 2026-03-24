@@ -263,6 +263,37 @@ class EntryController extends Controller
             }
         }
 
+        // Hierarchy drill-down: filter by parent_id
+        $currentParentId = null;
+        $parentBreadcrumbs = [];
+        if ($collection->hasHierarchy() && empty($options['search'])) {
+            $parentParam = $this->input('parent');
+            if ($parentParam !== null && $parentParam !== '') {
+                $currentParentId = $parentParam;
+                $query->where('parent_id', $currentParentId);
+                // Build breadcrumb path to current parent
+                $allEntries = EntryQuery::collection($slug)->noCache()->limit(1000)->get();
+                $pid = $currentParentId;
+                $safety = 20;
+                $dfKey = $collection->getDisplayField();
+                while ($pid && $safety-- > 0) {
+                    foreach ($allEntries as $ae) {
+                        if ($ae['id'] == $pid) {
+                            $lbl = ($dfKey && isset($ae[$dfKey])) ? $ae[$dfKey] : ($ae['title'] ?? $ae['name'] ?? '#' . $ae['id']);
+                            array_unshift($parentBreadcrumbs, ['id' => $ae['id'], 'label' => $lbl]);
+                            $pid = $ae['parent_id'] ?? null;
+                            if ($pid === '' || $pid === '0') $pid = null;
+                            break;
+                        }
+                    }
+                }
+            } else {
+                // Root level — show only top-level entries
+                $query->whereNull('parent_id');
+                $currentParentId = '';
+            }
+        }
+
         $entries = $query->paginate($options['page'], $options['per_page']);
 
         // Resolve relation labels for list view
@@ -313,6 +344,8 @@ class EntryController extends Controller
             'treeEntries' => $treeEntries,
             'depthMap' => $depthMap,
             'childCountMap' => $childCountMap,
+            'currentParentId' => $currentParentId,
+            'parentBreadcrumbs' => $parentBreadcrumbs,
         ]);
     }
 

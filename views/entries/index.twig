@@ -165,13 +165,21 @@
             </form>
             {% endif %}
 
+            {% if collection.hasHierarchy() and (parentBreadcrumbs is defined and parentBreadcrumbs|length > 0) %}
+            <div class="entries-hierarchy-path" style="display:flex;align-items:center;gap:6px;padding:8px 0;font-size:0.8125rem;">
+                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?parent=') }}" style="color:var(--color-primary,#1A7BA8);text-decoration:none;font-weight:600;">{{ collection.getName() }}</a>
+                {% for bc in parentBreadcrumbs %}
+                    <span style="color:var(--text-disabled,#ccc);">›</span>
+                    {% if not loop.last %}
+                        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?parent=' ~ bc.id) }}" style="color:var(--color-primary,#1A7BA8);text-decoration:none;">{{ bc.label }}</a>
+                    {% else %}
+                        <span style="font-weight:600;color:var(--text,#303030);">{{ bc.label }}</span>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            {% endif %}
+
             <div class="entries-toolbar__right">
-                {% if collection.hasHierarchy() %}
-                <button type="button" class="entries-btn entries-btn--outline entries-btn--sm" id="tree-toggle" data-mode="flat" title="Toggle tree view">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 2h3v3H2zM7 2h3v3H7zM7 7h3v3H7zM7 12h3v1H7z" fill="currentColor" opacity="0.6"/><path d="M5 3.5h2M5 8.5h2M10 5.5v2" stroke="currentColor" stroke-width="1"/></svg>
-                    Tree View
-                </button>
-                {% endif %}
                 {# Saved Views Dropdown #}
                 <div class="entries-dropdown" data-dropdown>
                     <button class="entries-btn entries-btn--outline entries-btn--sm" data-dropdown-trigger>
