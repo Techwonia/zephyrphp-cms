@@ -8,10 +8,12 @@ use ZephyrPHP\Cms\Models\Theme;
 
 class ThemeManager
 {
+    private static ?ThemeManager $instance = null;
     private string $themesBasePath;
     private string $publicThemesPath;
     private ?array $themeConfig = null;
     private ?string $effectiveThemeSlug = null;
+    private ?string $activeThemeSlug = null;
 
     public function __construct()
     {
@@ -19,6 +21,15 @@ class ThemeManager
         $viewsPath = $_ENV['VIEWS_PATH'] ?? 'pages';
         $this->themesBasePath = $basePath . '/' . $viewsPath . '/themes';
         $this->publicThemesPath = $basePath . '/public/themes';
+        self::$instance = $this;
+    }
+
+    public static function getInstance(): self
+    {
+        if (self::$instance === null) {
+            self::$instance = new self();
+        }
+        return self::$instance;
     }
 
     /**
@@ -26,16 +37,22 @@ class ThemeManager
      */
     public function getActiveTheme(): string
     {
+        if ($this->activeThemeSlug !== null) {
+            return $this->activeThemeSlug;
+        }
+
         try {
             $liveTheme = Theme::findOneBy(['status' => 'live']);
             if ($liveTheme) {
-                return $liveTheme->getSlug();
+                $this->activeThemeSlug = $liveTheme->getSlug();
+                return $this->activeThemeSlug;
             }
         } catch (\Exception $e) {
             // DB not ready yet
         }
 
-        return $_ENV['CMS_THEME'] ?? 'starter';
+        $this->activeThemeSlug = $_ENV['CMS_THEME'] ?? 'starter';
+        return $this->activeThemeSlug;
     }
 
     /**

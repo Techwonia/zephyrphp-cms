@@ -28,7 +28,7 @@ class CmsServiceProvider
         $container->alias('cms.schema', SchemaManager::class);
 
         $container->singleton(ThemeManager::class, function () {
-            return new ThemeManager();
+            return ThemeManager::getInstance();
         });
 
         $container->alias('cms.theme', ThemeManager::class);
@@ -49,7 +49,7 @@ class CmsServiceProvider
         $container->singleton(SettingsManager::class, fn() => SettingsManager::getInstance());
         $container->alias('cms.settings', SettingsManager::class);
 
-        $container->singleton(ThemeInstaller::class, fn() => new ThemeInstaller(new ThemeManager()));
+        $container->singleton(ThemeInstaller::class, fn() => new ThemeInstaller(ThemeManager::getInstance()));
         $container->alias('cms.theme_installer', ThemeInstaller::class);
 
         // Register CMS models path with Doctrine
@@ -65,7 +65,7 @@ class CmsServiceProvider
         $view->addNamespace('cms', __DIR__ . '/../views');
 
         // Register theme namespace (uses effective theme: preview if admin, else live)
-        $themeManager = new ThemeManager();
+        $themeManager = ThemeManager::getInstance();
         $themePath = $themeManager->getActiveThemePath();
         if (is_dir($themePath)) {
             $view->addNamespace('theme', $themePath);
@@ -121,10 +121,9 @@ class CmsServiceProvider
         // Register redirect middleware for public routes
         if (!$isAdminRequest) {
             try {
-                $redirectMiddleware = new Middleware\RedirectMiddleware();
-                $redirectMiddleware->handle(null, function ($request) { return $request; });
+                (new Middleware\RedirectMiddleware())->handle(null, fn($r) => $r);
             } catch (\Throwable $e) {
-                // Redirect middleware may fail if DB not configured yet
+                // DB not configured yet
             }
         }
 
@@ -1173,6 +1172,12 @@ class CmsServiceProvider
 
     private function ensureTablesExist(): void
     {
+        // Skip if tables were already confirmed to exist (file flag)
+        $flagPath = (defined('BASE_PATH') ? BASE_PATH : dirname(__DIR__, 3)) . '/storage/cms/.tables-installed';
+        if (file_exists($flagPath)) {
+            return;
+        }
+
         try {
             $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
             if (!$conn) return;
@@ -1703,6 +1708,13 @@ class CmsServiceProvider
                     INDEX `idx_inv_email` (`email`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
             }
+
+            // All tables verified — write installed flag so we skip this on future requests
+            $flagDir = dirname($flagPath);
+            if (!is_dir($flagDir)) {
+                @mkdir($flagDir, 0755, true);
+            }
+            @file_put_contents($flagPath, (string) time(), LOCK_EX);
 
         } catch (\Exception $e) {
             // Silently fail - tables will be created on next request or via CLI
