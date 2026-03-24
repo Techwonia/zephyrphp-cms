@@ -115,21 +115,58 @@ class CmsServiceProvider
         $sidebar = SidebarManager::getInstance();
         $sidebar->registerDefaults();
 
-        // Add dynamic collection items under "Collection Types" section
-        $sidebar->addSection('collections', 'Collection Types', 5);
+        // "Collection Manager" section — dynamic collection links + management
+        $sidebar->addSection('collections', 'Collection Manager', 5);
         try {
             $collections = \ZephyrPHP\Cms\Models\Collection::findAll();
-            foreach ($collections as $i => $col) {
+            $pos = 1;
+            foreach ($collections as $col) {
                 $sidebar->addItem('collections', [
                     'id' => 'collection-' . $col->getSlug(),
                     'label' => $col->getName(),
                     'url' => admin_url('collections/' . $col->getSlug() . '/entries'),
                     'icon' => $col->getIcon() ?? 'file-text',
-                    'position' => $i + 1,
+                    'position' => $pos++,
                     'permission' => 'entries.view',
                     'match' => 'prefix:' . admin_url('collections/' . $col->getSlug()),
                 ]);
             }
+            // Separator — management links below collections
+            $sidebar->addItem('collections', [
+                'id' => 'collections-manage-header',
+                'label' => '── Manage ──',
+                'url' => '#',
+                'icon' => '',
+                'position' => 900,
+                'is_header' => true,
+            ]);
+            $sidebar->addItem('collections', [
+                'id' => 'collections-all',
+                'label' => 'All Collections',
+                'url' => admin_url('collections'),
+                'icon' => 'folder',
+                'position' => 901,
+                'permission' => 'collections.view',
+                'match' => 'exact:' . admin_url('collections'),
+            ]);
+            $sidebar->addItem('collections', [
+                'id' => 'global-blocks-sidebar',
+                'label' => 'Global Blocks',
+                'url' => admin_url('global-blocks'),
+                'icon' => 'layers',
+                'position' => 902,
+                'permission' => 'settings.view',
+                'match' => 'prefix:' . admin_url('global-blocks'),
+            ]);
+            $sidebar->addItem('collections', [
+                'id' => 'relationships-sidebar',
+                'label' => 'Relationships',
+                'url' => admin_url('relationships'),
+                'icon' => 'share-2',
+                'position' => 903,
+                'permission' => 'collections.view',
+                'match' => 'prefix:' . admin_url('relationships'),
+            ]);
         } catch (\Throwable $e) {
             // Collections table may not exist yet
         }

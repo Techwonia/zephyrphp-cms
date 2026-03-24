@@ -1276,6 +1276,11 @@
                     {% if section.items|length > 1 and section.id != 'footer' %}
                     <ul id="panel-{{ section.id }}" style="display:none;">
                         {% for item in section.items %}
+                        {% if item.is_header is defined and item.is_header %}
+                        <li class="sp-nav-header">
+                            <span style="display:block;padding:12px 16px 4px;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:#888;">{{ item.label }}</span>
+                        </li>
+                        {% else %}
                         <li class="sp-nav-item">
                             <a href="{{ item.url }}" class="{% if cms_sidebar_active(current_path, item) %}active{% endif %}">
                                 {% if item.icon %}
@@ -1287,6 +1292,7 @@
                                 {% endif %}
                             </a>
                         </li>
+                        {% endif %}
                         {% if item.children is defined and item.children|length > 0 %}
                             {% for child in item.children %}
                             <li class="sp-nav-item sp-sub-item">

@@ -233,24 +233,19 @@ class SidebarManager
             'match' => 'exact:/cms',
         ]);
 
-        // --- Content ---
-        $this->addSection('content', 'Content', 10);
-        $this->addItem('content', [
-            'id' => 'collections',
-            'label' => 'Collections',
-            'url' => admin_url('collections'),
-            'icon' => 'folder',
-            'position' => 1,
-            'match' => 'prefix:' . admin_url('collections'),
-        ]);
-        $this->addItem('content', [
+        // --- Media (direct link in activity bar — single item = no panel) ---
+        $this->addSection('media', '', 8);
+        $this->addItem('media', [
             'id' => 'media',
             'label' => 'Media',
             'url' => admin_url('media'),
             'icon' => 'image',
-            'position' => 10,
+            'position' => 1,
             'match' => 'prefix:' . admin_url('media'),
         ]);
+
+        // --- Content (for items that don't fit elsewhere) ---
+        $this->addSection('content', 'Content', 10);
 
         // --- Design ---
         $this->addSection('design', 'Design', 20);
