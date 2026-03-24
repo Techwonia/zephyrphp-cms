@@ -331,6 +331,11 @@
                                 <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id) }}" class="entries-icon-btn" title="Edit">
                                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M11.333 2a1.886 1.886 0 012.667 2.667L5.333 13.333 2 14l.667-3.333L11.333 2z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                 </a>
+                                {% if collection.hasHierarchy() and _eChildren > 0 %}
+                                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?parent=' ~ entry.id) }}" class="entries-icon-btn" title="View {{ _eChildren }} children" style="color:var(--color-primary,#1A7BA8);font-weight:700;font-size:16px;">
+                                    ›
+                                </a>
+                                {% endif %}
                                 <div class="entries-dropdown entries-dropdown--right" data-dropdown>
                                     <button class="entries-icon-btn" data-dropdown-trigger title="More actions">
                                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="3" r="1" fill="currentColor"/><circle cx="8" cy="8" r="1" fill="currentColor"/><circle cx="8" cy="13" r="1" fill="currentColor"/></svg>
