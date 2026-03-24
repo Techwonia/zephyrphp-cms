@@ -13,7 +13,8 @@
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 <span>{{ collection.getName() }}</span>
             </a>
-            <span class="entries-count">{{ entries.total is defined ? entries.total : entries.data|length }} {{ entries.total is defined and entries.total == 1 ? 'entry' : 'entries' }}</span>
+            {% set _totalCount = entries.total|default(entries.data|length) %}
+            <span class="entries-count">{{ _totalCount }} {{ _totalCount == 1 ? 'entry' : 'entries' }}</span>
         </div>
         <div class="entries-header__actions">
             <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/trash') }}" class="entries-btn entries-btn--outline">
@@ -66,53 +67,6 @@
             </div>
             <p class="entries-panel__hint">Upload your file to preview data and map columns before importing.</p>
         </form>
-    </div>
-
-    {# ── Toolbar ───────────────────────────────────── #}
-    <div class="entries-toolbar">
-        {% if listableFields|length > 0 %}
-        <form method="GET" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="entries-search">
-            <svg class="entries-search__icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.3"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-            <input type="text" name="search" class="entries-search__input" placeholder="Search entries..." value="{{ search }}" autocomplete="off">
-            {% if search %}
-                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="entries-search__clear" title="Clear search">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M10.5 3.5L3.5 10.5M3.5 3.5l7 7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-                </a>
-            {% endif %}
-        </form>
-        {% endif %}
-
-        <div class="entries-toolbar__right">
-            {# Saved Views Dropdown #}
-            <div class="entries-dropdown" data-dropdown>
-                <button class="entries-btn entries-btn--outline entries-btn--sm" data-dropdown-trigger>
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1.167 5.25h11.666M1.167 8.75h11.666M5.25 1.167v11.666M8.75 1.167v11.666" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>
-                    Views
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 4l2.5 2.5L7.5 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </button>
-                <div class="entries-dropdown__menu entries-dropdown__menu--right" data-dropdown-menu>
-                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}"
-                       class="entries-dropdown__item {% if activeViewSlug is empty %}entries-dropdown__item--active{% endif %}">
-                        All Entries
-                    </a>
-                    {% if savedViews is defined and savedViews|length > 0 %}
-                        <div class="entries-dropdown__divider"></div>
-                        {% for sv in savedViews %}
-                            <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?view=' ~ sv.getSlug()) }}"
-                               class="entries-dropdown__item {% if activeViewSlug == sv.getSlug() %}entries-dropdown__item--active{% endif %}">
-                                {{ sv.getName() }}{% if sv.isDefault() %} <span class="entries-text-muted">(default)</span>{% endif %}
-                                <span class="entries-text-muted" style="margin-left:auto; font-size: 0.75rem;">{{ sv.getFilters()|length }} filter{{ sv.getFilters()|length != 1 ? 's' : '' }}</span>
-                            </a>
-                        {% endfor %}
-                    {% endif %}
-                    <div class="entries-dropdown__divider"></div>
-                    <button class="entries-dropdown__item" id="toggle-save-view-btn" type="button">
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2.333v9.334M2.333 7h9.334" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-                        Save Current View
-                    </button>
-                </div>
-            </div>
-        </div>
     </div>
 
     {# ── Active View Chip ──────────────────────────── #}
@@ -193,15 +147,66 @@
     {# ── Data Table ────────────────────────────────── #}
     {% if entries.data|length > 0 %}
     <div class="entries-card">
+        {# ── Toolbar (inside card, seamless) ───────── #}
+        <div class="entries-toolbar">
+            {% if listableFields|length > 0 %}
+            <form method="GET" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="entries-search">
+                <svg class="entries-search__icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.3"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                <input type="text" name="search" class="entries-search__input" placeholder="Search entries..." value="{{ search }}" autocomplete="off">
+                {% if search %}
+                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="entries-search__clear" title="Clear search">
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M10.5 3.5L3.5 10.5M3.5 3.5l7 7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                    </a>
+                {% endif %}
+            </form>
+            {% endif %}
+
+            <div class="entries-toolbar__right">
+                {# Saved Views Dropdown #}
+                <div class="entries-dropdown" data-dropdown>
+                    <button class="entries-btn entries-btn--outline entries-btn--sm" data-dropdown-trigger>
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1.167 5.25h11.666M1.167 8.75h11.666M5.25 1.167v11.666M8.75 1.167v11.666" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>
+                        Views
+                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 4l2.5 2.5L7.5 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                    <div class="entries-dropdown__menu entries-dropdown__menu--right" data-dropdown-menu>
+                        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}"
+                           class="entries-dropdown__item {% if activeViewSlug is empty %}entries-dropdown__item--active{% endif %}">
+                            All Entries
+                        </a>
+                        {% if savedViews is defined and savedViews|length > 0 %}
+                            <div class="entries-dropdown__divider"></div>
+                            {% for sv in savedViews %}
+                                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?view=' ~ sv.getSlug()) }}"
+                                   class="entries-dropdown__item {% if activeViewSlug == sv.getSlug() %}entries-dropdown__item--active{% endif %}">
+                                    {{ sv.getName() }}{% if sv.isDefault() %} <span class="entries-text-muted">(default)</span>{% endif %}
+                                    <span class="entries-text-muted" style="margin-left:auto; font-size: 0.75rem;">{{ sv.getFilters()|length }} filter{{ sv.getFilters()|length != 1 ? 's' : '' }}</span>
+                                </a>
+                            {% endfor %}
+                        {% endif %}
+                        <div class="entries-dropdown__divider"></div>
+                        <button class="entries-dropdown__item" id="toggle-save-view-btn" type="button">
+                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2.333v9.334M2.333 7h9.334" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                            Save Current View
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# ── Table ─────────────────────────────────── #}
         <div class="entries-table-wrap">
-            <table class="entries-table">
+            <table class="entries-table" id="entries-table">
                 <thead>
                     <tr>
-                        <th class="entries-table__check-col"><input type="checkbox" id="select-all" class="entries-checkbox"></th>
+                        <th class="entries-col-checkbox"><input type="checkbox" id="select-all" class="entries-checkbox"></th>
                         {% for field in listableFields %}
-                        <th>
-                            {% set nextDir = (sortBy == field.getSlug() and sortDir == 'ASC') ? 'DESC' : 'ASC' %}
-                            <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?sort_by=' ~ field.getSlug() ~ '&sort_dir=' ~ nextDir ~ '&search=' ~ search ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}"
+                        <th class="entries-col-field" data-col="field-{{ field.getSlug() }}" data-col-name="{{ field.getName() }}" data-col-type="{{ field.getType() }}">
+                            {% set _nextDir = 'ASC' %}
+                            {% if sortBy == field.getSlug() and sortDir == 'ASC' %}
+                                {% set _nextDir = 'DESC' %}
+                            {% endif %}
+                            <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?sort_by=' ~ field.getSlug() ~ '&sort_dir=' ~ _nextDir ~ '&search=' ~ search ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}"
                                class="entries-table__sort {% if sortBy == field.getSlug() %}entries-table__sort--active{% endif %}">
                                 {{ field.getName() }}
                                 {% if sortBy == field.getSlug() %}
@@ -211,9 +216,12 @@
                         </th>
                         {% endfor %}
                         {% if collection.isPublishable() %}
-                        <th>
-                            {% set nextDir = (sortBy == 'status' and sortDir == 'ASC') ? 'DESC' : 'ASC' %}
-                            <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?sort_by=status&sort_dir=' ~ nextDir ~ '&search=' ~ search ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}"
+                        <th class="entries-col-status" data-col="col-status" data-col-name="Status">
+                            {% set _nextDir = 'ASC' %}
+                            {% if sortBy == 'status' and sortDir == 'ASC' %}
+                                {% set _nextDir = 'DESC' %}
+                            {% endif %}
+                            <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?sort_by=status&sort_dir=' ~ _nextDir ~ '&search=' ~ search ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}"
                                class="entries-table__sort {% if sortBy == 'status' %}entries-table__sort--active{% endif %}">
                                 Status
                                 {% if sortBy == 'status' %}
@@ -222,9 +230,12 @@
                             </a>
                         </th>
                         {% endif %}
-                        <th>
-                            {% set nextDir = (sortBy == 'created_at' and sortDir == 'ASC') ? 'DESC' : 'ASC' %}
-                            <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?sort_by=created_at&sort_dir=' ~ nextDir ~ '&search=' ~ search ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}"
+                        <th class="entries-col-updated" data-col="col-updated" data-col-name="Updated">
+                            {% set _nextDir = 'ASC' %}
+                            {% if sortBy == 'created_at' and sortDir == 'ASC' %}
+                                {% set _nextDir = 'DESC' %}
+                            {% endif %}
+                            <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?sort_by=created_at&sort_dir=' ~ _nextDir ~ '&search=' ~ search ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}"
                                class="entries-table__sort {% if sortBy == 'created_at' %}entries-table__sort--active{% endif %}">
                                 Updated
                                 {% if sortBy == 'created_at' %}
@@ -232,35 +243,45 @@
                                 {% endif %}
                             </a>
                         </th>
-                        <th class="entries-table__actions-col">Actions</th>
+                        <th class="entries-col-actions">
+                            <button type="button" class="entries-col-toggle-btn" id="col-toggle-btn" title="Toggle columns">
+                                <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 9.625a2.125 2.125 0 100-4.25 2.125 2.125 0 000 4.25z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12.135 9.625a1.05 1.05 0 00.21 1.158l.038.038a1.274 1.274 0 11-1.802 1.8l-.038-.037a1.05 1.05 0 00-1.158-.21 1.05 1.05 0 00-.637.961v.108a1.274 1.274 0 01-2.548 0v-.057a1.05 1.05 0 00-.688-.962 1.05 1.05 0 00-1.158.21l-.038.039a1.274 1.274 0 11-1.8-1.802l.037-.038a1.05 1.05 0 00.21-1.158 1.05 1.05 0 00-.961-.637h-.108a1.274 1.274 0 010-2.548h.057a1.05 1.05 0 00.962-.688 1.05 1.05 0 00-.21-1.158l-.039-.038a1.274 1.274 0 111.802-1.8l.038.037a1.05 1.05 0 001.158.21h.05a1.05 1.05 0 00.638-.961V1.83a1.274 1.274 0 012.548 0v.057a1.05 1.05 0 00.637.962 1.05 1.05 0 001.158-.21l.038-.039a1.274 1.274 0 111.8 1.802l-.037.038a1.05 1.05 0 00-.21 1.158v.05a1.05 1.05 0 00.961.638h.108a1.274 1.274 0 010 2.548h-.057a1.05 1.05 0 00-.962.637z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </button>
+                            <div class="entries-col-toggle-dropdown" id="col-toggle-dropdown">
+                                <div class="entries-col-toggle-title">Toggle Columns</div>
+                                <div id="col-toggle-list"></div>
+                            </div>
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for entry in entries.data %}
                     <tr class="entries-table__row">
-                        <td class="entries-table__check-col"><input type="checkbox" class="entry-checkbox entries-checkbox" value="{{ entry.id }}"></td>
+                        <td class="entries-col-checkbox"><input type="checkbox" class="entry-checkbox entries-checkbox" value="{{ entry.id }}"></td>
                         {% for field in listableFields %}
-                        <td class="entries-table__cell">
+                        <td class="entries-col-field" data-col="field-{{ field.getSlug() }}">
                             {% if field.getType() == 'boolean' %}
                                 <span class="entries-bool entries-bool--{{ entry[field.getSlug()] ? 'yes' : 'no' }}">{{ entry[field.getSlug()] ? 'Yes' : 'No' }}</span>
                             {% elseif (field.getType() == 'image' or field.getType() == 'file') and entry[field.getSlug()] %}
                                 {% set _imgVal = entry[field.getSlug()] %}
                                 {% if _imgVal starts with '[' %}
                                     {% set _imgPaths = _imgVal|split('","') %}
+                                    <span class="entries-thumb-group">
                                     {% for _ip in _imgPaths|slice(0, 3) %}
                                         {% set _cleanPath = _ip|replace({'"': '', '[': '', ']': ''}) %}
-                                        {% if _cleanPath %}<img src="/{{ _cleanPath }}" alt="" class="entries-thumb" style="width:40px;height:40px;object-fit:cover;border-radius:6px;">{% endif %}
+                                        {% if _cleanPath %}<img src="/{{ _cleanPath }}" alt="" style="width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid #e3e3e3;display:inline-block;vertical-align:middle;">{% endif %}
                                     {% endfor %}
-                                    {% if _imgPaths|length > 3 %}<span class="entries-text-muted" style="font-size:11px">+{{ _imgPaths|length - 3 }}</span>{% endif %}
+                                    {% if _imgPaths|length > 3 %}<span class="entries-text-muted" style="font-size:11px;margin-left:4px;">+{{ _imgPaths|length - 3 }}</span>{% endif %}
+                                    </span>
                                 {% else %}
-                                    <img src="/{{ _imgVal }}" alt="" class="entries-thumb" style="width:40px;height:40px;object-fit:cover;border-radius:6px;">
+                                    <img src="/{{ _imgVal }}" alt="" style="width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid #e3e3e3;display:inline-block;vertical-align:middle;">
                                 {% endif %}
                             {% elseif field.getType() == 'richtext' and entry[field.getSlug()] %}
                                 {% set _rtVal = entry[field.getSlug()]|striptags %}
-                                <span class="entries-truncate entries-richtext-preview" data-content="{{ entry[field.getSlug()]|e('html_attr') }}" title="Click to preview">{{ _rtVal|slice(0, 60) }}{% if _rtVal|length > 60 %}...{% endif %}</span>
+                                <span class="entries-richtext-preview" data-content="{{ entry[field.getSlug()]|e('html_attr') }}" title="Click to preview">{{ _rtVal|slice(0, 60) }}{% if _rtVal|length > 60 %}...{% endif %}</span>
                             {% elseif field.getType() == 'relation' and entry[field.getSlug()] %}
                                 {% set _fKey = field.getSlug() %}
-                                {% set _relLabels = relationLabels[_fKey] ?? {} %}
+                                {% set _relLabels = relationLabels[_fKey]|default({}) %}
                                 {% set _entryVal = entry[_fKey] %}
                                 {% if _entryVal in (_relLabels|keys) %}
                                     <span class="entries-truncate">{{ _relLabels[_entryVal] }}</span>
@@ -274,41 +295,43 @@
                         </td>
                         {% endfor %}
                         {% if collection.isPublishable() %}
-                        <td>
-                            {% set st = entry.status ?? 'draft' %}
-                            <span class="entries-status entries-status--{{ st }}">
+                        <td class="entries-col-status" data-col="col-status">
+                            {% set _st = entry.status|default('draft') %}
+                            <span class="entries-status entries-status--{{ _st }}">
                                 <span class="entries-status__dot"></span>
-                                {{ st|capitalize }}
+                                {{ _st|capitalize }}
                             </span>
                         </td>
                         {% endif %}
-                        <td>
-                            <span class="entries-relative-time" data-time="{{ entry.updated_at ?? entry.created_at ?? '' }}">{{ entry.updated_at ?? entry.created_at ?? '' }}</span>
+                        <td class="entries-col-updated" data-col="col-updated">
+                            <span class="entries-relative-time" data-time="{{ entry.updated_at|default(entry.created_at|default('')) }}">{{ entry.updated_at|default(entry.created_at|default('')) }}</span>
                         </td>
-                        <td class="entries-table__actions-col">
-                            <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id) }}" class="entries-icon-btn" title="Edit">
-                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M11.333 2a1.886 1.886 0 012.667 2.667L5.333 13.333 2 14l.667-3.333L11.333 2z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            </a>
-                            <div class="entries-dropdown entries-dropdown--right" data-dropdown>
-                                <button class="entries-icon-btn" data-dropdown-trigger title="More actions">
-                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="3" r="1" fill="currentColor"/><circle cx="8" cy="8" r="1" fill="currentColor"/><circle cx="8" cy="13" r="1" fill="currentColor"/></svg>
-                                </button>
-                                <div class="entries-dropdown__menu entries-dropdown__menu--right entries-dropdown__menu--compact" data-dropdown-menu>
-                                    <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/duplicate') }}">
-                                        {{ csrf_field() | raw }}
-                                        <button type="submit" class="entries-dropdown__item" onclick="return confirm('Duplicate this entry?')">
-                                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="4.667" y="4.667" width="8.167" height="8.167" rx="1" stroke="currentColor" stroke-width="1"/><path d="M9.333 4.667V2.333A1.167 1.167 0 008.167 1.167H2.333A1.167 1.167 0 001.167 2.333v5.834A1.167 1.167 0 002.333 9.333h2.334" stroke="currentColor" stroke-width="1"/></svg>
-                                            Duplicate
-                                        </button>
-                                    </form>
-                                    <div class="entries-dropdown__divider"></div>
-                                    <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/delete') }}" class="confirm-delete" data-message="Delete this entry?">
-                                        {{ csrf_field() | raw }}
-                                        <button type="submit" class="entries-dropdown__item entries-dropdown__item--danger">
-                                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1.75 3.5h10.5M4.667 3.5V2.333a1.167 1.167 0 011.166-1.166h2.334a1.167 1.167 0 011.166 1.166V3.5m1.75 0v8.167a1.167 1.167 0 01-1.166 1.166H4.083a1.167 1.167 0 01-1.166-1.166V3.5h8.166z" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                            Delete
-                                        </button>
-                                    </form>
+                        <td class="entries-col-actions">
+                            <div class="entries-actions-inner">
+                                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id) }}" class="entries-icon-btn" title="Edit">
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M11.333 2a1.886 1.886 0 012.667 2.667L5.333 13.333 2 14l.667-3.333L11.333 2z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                </a>
+                                <div class="entries-dropdown entries-dropdown--right" data-dropdown>
+                                    <button class="entries-icon-btn" data-dropdown-trigger title="More actions">
+                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="3" r="1" fill="currentColor"/><circle cx="8" cy="8" r="1" fill="currentColor"/><circle cx="8" cy="13" r="1" fill="currentColor"/></svg>
+                                    </button>
+                                    <div class="entries-dropdown__menu entries-dropdown__menu--right entries-dropdown__menu--compact" data-dropdown-menu>
+                                        <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/duplicate') }}">
+                                            {{ csrf_field() | raw }}
+                                            <button type="submit" class="entries-dropdown__item" onclick="return confirm('Duplicate this entry?')">
+                                                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="4.667" y="4.667" width="8.167" height="8.167" rx="1" stroke="currentColor" stroke-width="1"/><path d="M9.333 4.667V2.333A1.167 1.167 0 008.167 1.167H2.333A1.167 1.167 0 001.167 2.333v5.834A1.167 1.167 0 002.333 9.333h2.334" stroke="currentColor" stroke-width="1"/></svg>
+                                                Duplicate
+                                            </button>
+                                        </form>
+                                        <div class="entries-dropdown__divider"></div>
+                                        <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/delete') }}" class="confirm-delete" data-message="Delete this entry?">
+                                            {{ csrf_field() | raw }}
+                                            <button type="submit" class="entries-dropdown__item entries-dropdown__item--danger">
+                                                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1.75 3.5h10.5M4.667 3.5V2.333a1.167 1.167 0 011.166-1.166h2.334a1.167 1.167 0 011.166 1.166V3.5m1.75 0v8.167a1.167 1.167 0 01-1.166 1.166H4.083a1.167 1.167 0 01-1.166-1.166V3.5h8.166z" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </div>
                                 </div>
                             </div>
                         </td>
@@ -322,8 +345,12 @@
         {% if entries.last_page > 1 %}
         <div class="entries-pagination">
             <span class="entries-pagination__info">
-                {% set showTo = entries.current_page * entries.per_page %}
-                Showing {{ ((entries.current_page - 1) * entries.per_page) + 1 }}–{{ showTo > entries.total ? entries.total : showTo }} of {{ entries.total }}
+                {% set _showTo = entries.current_page * entries.per_page %}
+                {% set _showToFinal = _showTo %}
+                {% if _showTo > entries.total %}
+                    {% set _showToFinal = entries.total %}
+                {% endif %}
+                Showing {{ ((entries.current_page - 1) * entries.per_page) + 1 }}&ndash;{{ _showToFinal }} of {{ entries.total }}
             </span>
             <div class="entries-pagination__controls">
                 {% if entries.current_page > 1 %}
@@ -409,6 +436,21 @@
     </div>
 
     {% else %}
+    {# ── Toolbar (shown even when empty, for search) ── #}
+    {% if listableFields|length > 0 %}
+    <div class="entries-toolbar entries-toolbar--standalone">
+        <form method="GET" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="entries-search">
+            <svg class="entries-search__icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.3"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+            <input type="text" name="search" class="entries-search__input" placeholder="Search entries..." value="{{ search }}" autocomplete="off">
+            {% if search %}
+                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="entries-search__clear" title="Clear search">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M10.5 3.5L3.5 10.5M3.5 3.5l7 7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                </a>
+            {% endif %}
+        </form>
+    </div>
+    {% endif %}
+
     {# ── Empty State ───────────────────────────────── #}
     <div class="entries-empty">
         <div class="entries-empty__icon">
@@ -425,13 +467,17 @@
 
 </div>
 
+{# ── Richtext Preview Modal (reusable container) ── #}
+
 {# ══════════════════════════════════════════════════════ #}
 {#  Styles                                                #}
 {# ══════════════════════════════════════════════════════ #}
 <style nonce="{{ csp_nonce() }}">
+/* ── Override cms-content max-width for this page ── */
+.cms-content { max-width: none !important; }
+
 /* ── Page Layout ─────────────────────────────── */
 .entries-page {
-    max-width: 1280px;
     margin: 0 auto;
     padding: var(--space-400, 24px) var(--space-400, 24px) 80px;
 }
@@ -442,7 +488,7 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: var(--space-400, 24px);
-    margin-bottom: var(--space-500, 32px);
+    margin-bottom: var(--space-400, 24px);
     flex-wrap: wrap;
 }
 .entries-header__left {
@@ -594,6 +640,13 @@
     display: flex;
     align-items: center;
     gap: var(--space-200, 8px);
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border, #e5e7eb);
+}
+.entries-toolbar--standalone {
+    background: var(--bg-surface, #fff);
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: var(--radius-200, 8px);
     margin-bottom: var(--space-300, 16px);
 }
 .entries-search {
@@ -610,7 +663,7 @@
 }
 .entries-search__input {
     width: 100%;
-    padding: 9px 36px 9px 36px;
+    padding: 7px 36px 7px 36px;
     border: 1px solid var(--border, #e5e7eb);
     border-radius: var(--radius-200, 8px);
     font-size: var(--font-sm, 0.875rem);
@@ -743,42 +796,122 @@
     border-radius: var(--radius-200, 8px);
     overflow: hidden;
 }
-.entries-table-wrap { overflow-x: auto; }
+.entries-table-wrap {
+    overflow-x: auto;
+    position: relative;
+}
 .entries-table {
     width: 100%;
     border-collapse: collapse;
     font-size: var(--font-sm, 0.875rem);
+    table-layout: fixed;
 }
+
+/* ── Column widths ───────────────────────────── */
+.entries-col-checkbox {
+    width: 40px;
+    min-width: 40px;
+    max-width: 40px;
+    text-align: center;
+    position: sticky;
+    left: 0;
+    z-index: 3;
+}
+.entries-col-actions {
+    width: 80px;
+    min-width: 80px;
+    max-width: 80px;
+    text-align: right;
+    white-space: nowrap;
+    position: sticky;
+    right: 0;
+    z-index: 3;
+}
+.entries-col-status {
+    width: 100px;
+    min-width: 100px;
+    max-width: 100px;
+}
+.entries-col-updated {
+    width: 120px;
+    min-width: 120px;
+    max-width: 120px;
+}
+.entries-col-field {
+    min-width: 120px;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+/* Image & file columns are narrower */
+th.entries-col-field[data-col-type="image"],
+th.entries-col-field[data-col-type="file"],
+td.entries-col-field[data-col-type="image"],
+td.entries-col-field[data-col-type="file"] {
+    width: 60px;
+    min-width: 60px;
+    max-width: 80px;
+}
+
+/* ── Table header ────────────────────────────── */
 .entries-table thead th {
-    padding: 12px 16px;
+    padding: 8px 12px;
     text-align: left;
-    font-weight: 500;
-    font-size: 0.75rem;
+    font-weight: 600;
+    font-size: 0.6875rem;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
     color: var(--text-secondary, #6b7280);
     background: var(--bg-app, #f9fafb);
     border-bottom: 1px solid var(--border, #e5e7eb);
     white-space: nowrap;
     user-select: none;
+    position: sticky;
+    top: 0;
+    z-index: 2;
 }
+/* Sticky columns in header need higher z-index */
+.entries-table thead th.entries-col-checkbox,
+.entries-table thead th.entries-col-actions {
+    z-index: 4;
+}
+/* Ensure sticky columns have solid background */
+.entries-table thead th.entries-col-checkbox,
+.entries-table thead th.entries-col-actions {
+    background: var(--bg-app, #f9fafb);
+}
+.entries-table tbody td.entries-col-checkbox,
+.entries-table tbody td.entries-col-actions {
+    background: var(--bg-surface, #fff);
+}
+.entries-table__row:hover td.entries-col-checkbox,
+.entries-table__row:hover td.entries-col-actions {
+    background: var(--bg-surface-hover, #f5f5f5);
+}
+
+/* ── Table body ──────────────────────────────── */
 .entries-table tbody td {
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--border, #e5e7eb);
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-light, #f0f0f0);
     color: var(--text, #111);
     vertical-align: middle;
 }
 .entries-table__row:last-child td { border-bottom: none; }
-.entries-table__row:hover { background: var(--bg-app, #f9fafb); }
-.entries-table__check-col { width: 40px; text-align: center; }
-.entries-table__check-col input { cursor: pointer; }
-.entries-table__actions-col {
-    width: 90px;
-    text-align: right;
-    white-space: nowrap;
+.entries-table__row:hover { background: var(--bg-surface-hover, #f5f5f5); }
+.entries-table__row {
+    transition: background 0.1s ease;
 }
-.entries-table__actions-col > *,
-.entries-table__actions-col .entries-dropdown { display: inline-flex; vertical-align: middle; }
+
+/* Checkbox in cells */
+.entries-col-checkbox input { cursor: pointer; }
+
+/* Actions inner layout */
+.entries-actions-inner {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 2px;
+}
 
 /* Sort links */
 .entries-table__sort {
@@ -787,20 +920,83 @@
     gap: 4px;
     color: var(--text-secondary, #6b7280);
     text-decoration: none;
-    font-weight: 500;
-    font-size: 0.75rem;
+    font-weight: 600;
+    font-size: 0.6875rem;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
 }
 .entries-table__sort:hover { color: var(--text, #111); }
 .entries-table__sort--active { color: var(--text, #111); }
 .entries-table__sort-icon { transition: transform 0.15s; }
 .entries-table__sort-icon--desc { transform: rotate(180deg); }
 
-/* Cell types */
+/* ── Column Toggle ───────────────────────────── */
+.entries-col-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-200, 6px);
+    color: var(--text-secondary, #6b7280);
+    cursor: pointer;
+    border: none;
+    background: none;
+    transition: all 0.15s;
+    padding: 0;
+}
+.entries-col-toggle-btn:hover {
+    background: var(--bg-surface, #fff);
+    color: var(--text, #111);
+}
+.entries-col-toggle-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    z-index: 110;
+    min-width: 200px;
+    max-height: 320px;
+    overflow-y: auto;
+    background: var(--bg-surface, #fff);
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: var(--radius-200, 8px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    padding: 8px;
+}
+.entries-col-toggle-dropdown.is-open { display: block; }
+.entries-col-toggle-title {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary, #6b7280);
+    padding: 4px 8px 8px;
+    border-bottom: 1px solid var(--border, #e5e7eb);
+    margin-bottom: 4px;
+}
+.entries-col-toggle-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    font-size: 0.8125rem;
+    color: var(--text, #111);
+    border-radius: var(--radius-200, 6px);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.1s;
+}
+.entries-col-toggle-item:hover { background: var(--bg-app, #f3f4f6); }
+.entries-col-toggle-item input {
+    accent-color: var(--color-primary, #4f46e5);
+    cursor: pointer;
+}
+
+/* ── Cell types ──────────────────────────────── */
 .entries-truncate {
     display: inline-block;
-    max-width: 280px;
+    max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -810,11 +1006,24 @@
     color: var(--text-secondary, #616161);
     font-style: italic;
     border-bottom: 1px dashed var(--border, #E3E3E3);
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 .entries-richtext-preview:hover {
-    color: var(--color-primary, #1A7BA8);
-    border-color: var(--color-primary, #1A7BA8);
+    color: var(--color-primary, #4f46e5);
+    border-color: var(--color-primary, #4f46e5);
 }
+.entries-thumb-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.entries-thumb-group img + img { margin-left: -8px; }
+
+/* ── Richtext Modal ──────────────────────────── */
 .entries-content-modal {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
     background: rgba(0,0,0,0.6); z-index: 9999;
@@ -847,26 +1056,11 @@
 .entries-content-modal-body h1,.entries-content-modal-body h2,.entries-content-modal-body h3 { margin: 0.8em 0 0.4em; }
 .entries-content-modal-body p { margin: 0 0 0.6em; }
 .entries-content-modal-body ul,.entries-content-modal-body ol { padding-left: 1.5em; margin: 0 0 0.6em; }
-.entries-content-modal-body blockquote { border-left: 3px solid var(--color-primary, #1A7BA8); padding-left: 1em; color: var(--text-secondary); font-style: italic; margin: 0.6em 0; }
+.entries-content-modal-body blockquote { border-left: 3px solid var(--color-primary, #4f46e5); padding-left: 1em; color: var(--text-secondary); font-style: italic; margin: 0.6em 0; }
 .entries-content-modal-body table { border-collapse: collapse; width: 100%; margin: 0.6em 0; }
 .entries-content-modal-body td,.entries-content-modal-body th { border: 1px solid var(--border); padding: 6px 10px; }
-    vertical-align: middle;
-}
-img.entries-thumb,
-.entries-table__cell img.entries-thumb,
-td img.entries-thumb {
-    width: 40px !important;
-    height: 40px !important;
-    max-width: 40px !important;
-    max-height: 40px !important;
-    object-fit: cover;
-    border-radius: 6px;
-    vertical-align: middle;
-    border: 1px solid var(--border, #E3E3E3);
-    flex-shrink: 0;
-    display: inline-block;
-}
-img.entries-thumb + img.entries-thumb { margin-left: 4px; }
+
+/* ── Boolean ─────────────────────────────────── */
 .entries-bool {
     font-size: 0.75rem;
     font-weight: 500;
@@ -877,7 +1071,7 @@ img.entries-thumb + img.entries-thumb { margin-left: 4px; }
 .entries-bool--no { background: var(--bg-app, #f3f4f6); color: var(--text-secondary, #6b7280); }
 .entries-text-muted { color: var(--text-secondary, #6b7280); }
 
-/* Status */
+/* ── Status ──────────────────────────────────── */
 .entries-status {
     display: inline-flex;
     align-items: center;
@@ -887,32 +1081,32 @@ img.entries-thumb + img.entries-thumb { margin-left: 4px; }
     white-space: nowrap;
 }
 .entries-status__dot {
-    width: 8px;
-    height: 8px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
     flex-shrink: 0;
 }
-.entries-status--draft .entries-status__dot { background: #6B7280; }
+.entries-status--draft .entries-status__dot { background: #9CA3AF; }
 .entries-status--draft { color: #6B7280; }
-.entries-status--published .entries-status__dot { background: #059669; }
+.entries-status--published .entries-status__dot { background: #10B981; }
 .entries-status--published { color: #059669; }
-.entries-status--scheduled .entries-status__dot { background: #2563EB; }
+.entries-status--scheduled .entries-status__dot { background: #3B82F6; }
 .entries-status--scheduled { color: #2563EB; }
 
-/* Relative time */
+/* ── Relative time ───────────────────────────── */
 .entries-relative-time {
     font-size: 0.8125rem;
     color: var(--text-secondary, #6b7280);
     white-space: nowrap;
 }
 
-/* Icon button */
+/* ── Icon button ─────────────────────────────── */
 .entries-icon-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
     border-radius: var(--radius-200, 6px);
     color: var(--text-secondary, #6b7280);
     cursor: pointer;
@@ -921,6 +1115,7 @@ img.entries-thumb + img.entries-thumb { margin-left: 4px; }
     text-decoration: none;
     transition: all 0.15s;
     font-family: inherit;
+    padding: 0;
 }
 .entries-icon-btn:hover {
     background: var(--bg-app, #f3f4f6);
@@ -932,7 +1127,7 @@ img.entries-thumb + img.entries-thumb { margin-left: 4px; }
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 16px;
+    padding: 10px 16px;
     border-top: 1px solid var(--border, #e5e7eb);
     flex-wrap: wrap;
     gap: 8px;
@@ -1068,6 +1263,11 @@ img.entries-thumb + img.entries-thumb { margin-left: 4px; }
     accent-color: var(--color-primary, #4f46e5);
 }
 
+/* ── Hidden column utility ───────────────────── */
+.entries-col-hidden {
+    display: none !important;
+}
+
 /* ── Responsive ──────────────────────────────── */
 @media (max-width: 768px) {
     .entries-header {
@@ -1104,6 +1304,8 @@ img.entries-thumb + img.entries-thumb { margin-left: 4px; }
     .entries-panel__grid {
         flex-direction: column;
     }
+    /* Hide less important columns on mobile */
+    .entries-col-updated { display: none; }
 }
 </style>
 
@@ -1121,22 +1323,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
         trigger.addEventListener('click', function(e) {
             e.stopPropagation();
-            // Close all other dropdowns first
             document.querySelectorAll('[data-dropdown-menu].is-open').forEach(function(m) {
                 if (m !== menu) m.classList.remove('is-open');
             });
             menu.classList.toggle('is-open');
         });
     });
-    document.addEventListener('click', function() {
+    document.addEventListener('click', function(e) {
+        /* Close dropdowns and column toggle */
+        if (!e.target.closest('#col-toggle-btn') && !e.target.closest('#col-toggle-dropdown')) {
+            var colDd = document.getElementById('col-toggle-dropdown');
+            if (colDd) colDd.classList.remove('is-open');
+        }
         document.querySelectorAll('[data-dropdown-menu].is-open').forEach(function(m) {
             m.classList.remove('is-open');
         });
     });
-    // Prevent dropdown menus from closing when clicking inside them (for forms)
     document.querySelectorAll('[data-dropdown-menu]').forEach(function(m) {
         m.addEventListener('click', function(e) {
-            // Only stop propagation for non-link, non-submit elements
             if (!e.target.closest('a') && e.target.type !== 'submit') {
                 e.stopPropagation();
             }
@@ -1158,7 +1362,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (saveViewBtn && saveViewForm) {
         saveViewBtn.addEventListener('click', function() {
             saveViewForm.style.display = saveViewForm.style.display === 'none' ? 'block' : 'none';
-            // Close the Views dropdown
             document.querySelectorAll('[data-dropdown-menu].is-open').forEach(function(m) {
                 m.classList.remove('is-open');
             });
@@ -1291,19 +1494,19 @@ document.addEventListener('DOMContentLoaded', function() {
         if (seconds < 0) seconds = 0;
 
         var intervals = [
-            { label: 'year', seconds: 31536000 },
-            { label: 'month', seconds: 2592000 },
-            { label: 'week', seconds: 604800 },
-            { label: 'day', seconds: 86400 },
-            { label: 'hour', seconds: 3600 },
-            { label: 'minute', seconds: 60 }
+            { label: 'y', full: 'year', seconds: 31536000 },
+            { label: 'mo', full: 'month', seconds: 2592000 },
+            { label: 'w', full: 'week', seconds: 604800 },
+            { label: 'd', full: 'day', seconds: 86400 },
+            { label: 'h', full: 'hour', seconds: 3600 },
+            { label: 'm', full: 'minute', seconds: 60 }
         ];
 
         for (var i = 0; i < intervals.length; i++) {
             var count = Math.floor(seconds / intervals[i].seconds);
             if (count >= 1) {
-                if (intervals[i].label === 'day' && count === 1) return 'Yesterday';
-                return count + ' ' + intervals[i].label + (count > 1 ? 's' : '') + ' ago';
+                if (intervals[i].full === 'day' && count === 1) return 'Yesterday';
+                return count + intervals[i].label + ' ago';
             }
         }
         return 'Just now';
@@ -1329,6 +1532,108 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    /* ── Column Toggle System ──────────────────── */
+    var colToggleBtn = document.getElementById('col-toggle-btn');
+    var colToggleDropdown = document.getElementById('col-toggle-dropdown');
+    var colToggleList = document.getElementById('col-toggle-list');
+    var collectionSlug = '{{ collection.getSlug()|e("js") }}';
+    var storageKey = 'entries-cols-' + collectionSlug;
+
+    /* Gather all toggleable columns */
+    var toggleableCols = [];
+    var table = document.getElementById('entries-table');
+    if (table) {
+        var headerCells = table.querySelectorAll('thead th[data-col]');
+        headerCells.forEach(function(th) {
+            var colId = th.getAttribute('data-col');
+            var colName = th.getAttribute('data-col-name');
+            if (colId && colName) {
+                toggleableCols.push({ id: colId, name: colName });
+            }
+        });
+    }
+
+    /* Load saved state from localStorage */
+    function loadColState() {
+        var saved = null;
+        try { saved = JSON.parse(localStorage.getItem(storageKey)); } catch(e) {}
+        return saved;
+    }
+
+    function saveColState(state) {
+        try { localStorage.setItem(storageKey, JSON.stringify(state)); } catch(e) {}
+    }
+
+    /* Apply column visibility */
+    function applyColVisibility(state) {
+        if (!table || !state) return;
+        toggleableCols.forEach(function(col) {
+            var isVisible = true;
+            if (col.id in state) {
+                isVisible = state[col.id];
+            }
+            var cells = table.querySelectorAll('[data-col="' + col.id + '"]');
+            cells.forEach(function(cell) {
+                if (isVisible) {
+                    cell.classList.remove('entries-col-hidden');
+                } else {
+                    cell.classList.add('entries-col-hidden');
+                }
+            });
+        });
+    }
+
+    /* Build the toggle dropdown */
+    function buildColToggleList(state) {
+        if (!colToggleList) return;
+        colToggleList.innerHTML = '';
+        toggleableCols.forEach(function(col) {
+            var isVisible = true;
+            if (state && (col.id in state)) {
+                isVisible = state[col.id];
+            }
+            var label = document.createElement('label');
+            label.className = 'entries-col-toggle-item';
+            var cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.checked = isVisible;
+            cb.setAttribute('data-col-id', col.id);
+            cb.addEventListener('change', function() {
+                var currentState = loadColState() || {};
+                currentState[col.id] = cb.checked;
+                saveColState(currentState);
+                applyColVisibility(currentState);
+            });
+            var text = document.createTextNode(col.name);
+            label.appendChild(cb);
+            label.appendChild(text);
+            colToggleList.appendChild(label);
+        });
+    }
+
+    /* Init column toggle */
+    if (colToggleBtn && colToggleDropdown && toggleableCols.length > 0) {
+        var savedState = loadColState();
+        if (savedState) {
+            applyColVisibility(savedState);
+        }
+        buildColToggleList(savedState);
+
+        colToggleBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            /* Close other dropdowns */
+            document.querySelectorAll('[data-dropdown-menu].is-open').forEach(function(m) {
+                m.classList.remove('is-open');
+            });
+            colToggleDropdown.classList.toggle('is-open');
+        });
+
+        colToggleDropdown.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    }
+
 });
 </script>
 {% endblock %}
