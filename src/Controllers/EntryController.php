@@ -378,6 +378,9 @@ class EntryController extends Controller
             }
         }
 
+        // Resolve media IDs to URLs for image/file field previews
+        $mediaResolved = $this->resolveMediaUrls($fields, $entry);
+
         // Content locking — acquire or detect existing lock
         $lockInfo = $this->acquireLock($slug, $id);
 
@@ -387,6 +390,7 @@ class EntryController extends Controller
             'editableFields' => array_values($editableFields),
             'entry' => $entry,
             'relationData' => $relationData,
+            'mediaResolved' => $mediaResolved,
             'user' => Auth::user(),
             'lockInfo' => $lockInfo,
         ]);
@@ -1705,60 +1709,47 @@ class EntryController extends Controller
 
     /**
      * Handle file upload or media library selection.
-     * The new media-field component sends the value directly in the field slug input.
-     * For backwards compatibility, also checks the _from_media suffix.
-     * Supports multiple files (JSON array) when the field has multiple option enabled.
+     * The media-field component sends media IDs (numeric) or JSON arrays of IDs.
+     * For backwards compatibility, also handles legacy path-based values.
+     * Supports multiple files (JSON array of IDs) when the field has multiple option enabled.
      */
     private function handleFileOrMediaUpload(Field $field, ?array $existing = null): ?string
     {
         $fieldOptions = $field->getOptions() ?? [];
         $isMultiple = !empty($fieldOptions['multiple']);
 
-        // Check legacy _from_media suffix first (backwards compatibility)
-        $mediaPath = $this->input($field->getSlug() . '_from_media');
-        if (!empty($mediaPath)) {
-            return $mediaPath;
-        }
-
-        // The media-field component sends the value directly in the field slug input
         $directValue = $this->input($field->getSlug());
 
-        // If the hidden input was submitted (it always is with the new component),
-        // use its value. Empty string means the user cleared the field.
-        if ($directValue !== null) {
-            if ($directValue === '') {
-                // Check for native file upload fallback before returning null
-                $file = $_FILES[$field->getSlug()] ?? null;
-                if ($file && $file['error'] === UPLOAD_ERR_OK && !empty($file['tmp_name'])) {
-                    return $this->handleFileUpload($field, $existing);
-                }
-                // User explicitly cleared the field — return null
-                return null;
-            }
+        if ($directValue === null) {
+            return $existing[$field->getSlug()] ?? null;
+        }
 
-            if ($isMultiple) {
-                // Validate it's a proper JSON array of paths
-                $decoded = json_decode($directValue, true);
-                if (is_array($decoded)) {
-                    // Sanitize each path
-                    $sanitized = array_values(array_filter($decoded, function ($path) {
-                        return is_string($path) && !empty($path) && strpos($path, '..') === false;
-                    }));
-                    $maxFiles = $fieldOptions['max_files'] ?? 10;
-                    $sanitized = array_slice($sanitized, 0, $maxFiles);
-                    return !empty($sanitized) ? json_encode($sanitized) : null;
-                }
-            }
+        if ($directValue === '') {
+            return null; // User cleared the field
+        }
 
-            // Single path — sanitize
-            if (strpos($directValue, '..') !== false) {
-                return $existing[$field->getSlug()] ?? null;
+        if ($isMultiple) {
+            $decoded = json_decode($directValue, true);
+            if (is_array($decoded)) {
+                // Validate all values are numeric (media IDs)
+                $ids = array_values(array_filter($decoded, 'is_numeric'));
+                $maxFiles = $fieldOptions['max_files'] ?? 10;
+                $ids = array_slice($ids, 0, $maxFiles);
+                return !empty($ids) ? json_encode(array_map('intval', $ids)) : null;
             }
+        }
+
+        // Single value — should be a media ID (numeric)
+        if (is_numeric($directValue)) {
             return $directValue;
         }
 
-        // Fall back to native file upload (legacy support)
-        return $this->handleFileUpload($field, $existing);
+        // Legacy path support
+        if (is_string($directValue) && strpos($directValue, '..') === false) {
+            return $directValue;
+        }
+
+        return $existing[$field->getSlug()] ?? null;
     }
 
     private function handleFileUpload(Field $field, ?array $existing = null): ?string
@@ -1807,6 +1798,76 @@ class EntryController extends Controller
         }
 
         return $existing[$field->getSlug()] ?? null;
+    }
+
+    /**
+     * Resolve media IDs to URLs for image/file fields.
+     * Handles both new ID-based values and legacy path-based values.
+     */
+    private function resolveMediaUrls(array $fields, array $entry): array
+    {
+        $resolved = [];
+        foreach ($fields as $field) {
+            if (!in_array($field->getType(), ['image', 'file'])) continue;
+            $val = $entry[$field->getSlug()] ?? null;
+            if (empty($val)) continue;
+
+            $options = $field->getOptions() ?? [];
+            $isMultiple = !empty($options['multiple']);
+
+            if ($isMultiple) {
+                $ids = json_decode((string) $val, true);
+                if (!is_array($ids)) continue;
+                $items = [];
+                foreach ($ids as $id) {
+                    if (is_numeric($id)) {
+                        $media = Media::find((int) $id);
+                        if ($media) {
+                            $items[] = [
+                                'id' => $media->getId(),
+                                'url' => $media->getUrl(),
+                                'thumb' => $media->getThumbnailUrl() ?? $media->getUrl(),
+                                'name' => $media->getOriginalName(),
+                                'is_image' => $media->isImage(),
+                            ];
+                        }
+                    } else {
+                        // Legacy path
+                        $items[] = [
+                            'id' => 0,
+                            'url' => '/' . ltrim((string) $id, '/'),
+                            'thumb' => '/' . ltrim((string) $id, '/'),
+                            'name' => basename((string) $id),
+                            'is_image' => (bool) preg_match('/\.(jpe?g|png|gif|webp|svg)$/i', (string) $id),
+                        ];
+                    }
+                }
+                $resolved[$field->getSlug()] = $items;
+            } else {
+                if (is_numeric($val)) {
+                    $media = Media::find((int) $val);
+                    if ($media) {
+                        $resolved[$field->getSlug()] = [
+                            'id' => $media->getId(),
+                            'url' => $media->getUrl(),
+                            'thumb' => $media->getThumbnailUrl() ?? $media->getUrl(),
+                            'name' => $media->getOriginalName(),
+                            'is_image' => $media->isImage(),
+                        ];
+                    }
+                } else {
+                    // Legacy path
+                    $resolved[$field->getSlug()] = [
+                        'id' => 0,
+                        'url' => '/' . ltrim((string) $val, '/'),
+                        'thumb' => '/' . ltrim((string) $val, '/'),
+                        'name' => basename((string) $val),
+                        'is_image' => (bool) preg_match('/\.(jpe?g|png|gif|webp|svg)$/i', (string) $val),
+                    ];
+                }
+            }
+        }
+        return $resolved;
     }
 
     private function loadRelationData(array $fields): array

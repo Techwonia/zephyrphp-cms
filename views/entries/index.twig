@@ -264,17 +264,15 @@
                                 <span class="entries-bool entries-bool--{{ entry[field.getSlug()] ? 'yes' : 'no' }}">{{ entry[field.getSlug()] ? 'Yes' : 'No' }}</span>
                             {% elseif (field.getType() == 'image' or field.getType() == 'file') and entry[field.getSlug()] %}
                                 {% set _imgVal = entry[field.getSlug()] %}
-                                {% if _imgVal starts with '[' %}
-                                    {% set _imgPaths = _imgVal|split('","') %}
+                                {% set _thumbs = media_thumbs(_imgVal, 3) %}
+                                {% set _totalCount = media_thumbs_count(_imgVal) %}
+                                {% if _thumbs|length > 0 %}
                                     <span class="entries-thumb-group">
-                                    {% for _ip in _imgPaths|slice(0, 3) %}
-                                        {% set _cleanPath = _ip|replace({'"': '', '[': '', ']': ''}) %}
-                                        {% if _cleanPath %}<img src="/{{ _cleanPath }}" alt="" style="width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid #e3e3e3;display:inline-block;vertical-align:middle;">{% endif %}
+                                    {% for _t in _thumbs %}
+                                        <img src="{{ _t }}" alt="" style="width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid #e3e3e3;display:inline-block;vertical-align:middle;">
                                     {% endfor %}
-                                    {% if _imgPaths|length > 3 %}<span class="entries-text-muted" style="font-size:11px;margin-left:4px;">+{{ _imgPaths|length - 3 }}</span>{% endif %}
+                                    {% if _totalCount > 3 %}<span class="entries-text-muted" style="font-size:11px;margin-left:4px;">+{{ _totalCount - 3 }}</span>{% endif %}
                                     </span>
-                                {% else %}
-                                    <img src="/{{ _imgVal }}" alt="" style="width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid #e3e3e3;display:inline-block;vertical-align:middle;">
                                 {% endif %}
                             {% elseif field.getType() == 'richtext' and entry[field.getSlug()] %}
                                 {% set _rtVal = entry[field.getSlug()]|striptags %}

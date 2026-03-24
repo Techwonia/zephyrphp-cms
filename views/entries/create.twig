@@ -1144,6 +1144,25 @@
     color: var(--text);
     border-top: 1px solid var(--border);
 }
+.media-modal-check {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    z-index: 2;
+}
+.media-modal-check input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--color-primary, #4945ff);
+}
+.media-modal-item {
+    position: relative;
+}
+.media-modal-item-selected {
+    border-color: var(--color-primary, #4945ff) !important;
+    box-shadow: 0 0 0 1px var(--color-primary, #4945ff);
+}
 
 /* ============================================
    Responsive
@@ -1233,11 +1252,11 @@
         if (gridRemove) {
             e.stopPropagation();
             var fieldSlug = gridRemove.dataset.field;
-            var url = gridRemove.dataset.url;
+            var removeId = parseInt(gridRemove.dataset.id, 10);
             var hiddenInput = document.getElementById('field_' + fieldSlug);
             var current = [];
             try { current = JSON.parse(hiddenInput.value); } catch(ex) { current = []; }
-            current = current.filter(function(p) { return p !== url; });
+            current = current.filter(function(id) { return id !== removeId; });
             hiddenInput.value = current.length ? JSON.stringify(current) : '';
             gridRemove.closest('.media-field-grid-item').remove();
             if (current.length === 0) {
@@ -1252,7 +1271,7 @@
         }
     });
 
-    function selectMediaItem(fieldSlug, url, name, isImage, isMultiple) {
+    function selectMediaItem(fieldSlug, mediaId, url, name, isImage, isMultiple) {
         var hiddenInput = document.getElementById('field_' + fieldSlug);
         var emptyState = document.getElementById('media-empty-' + fieldSlug);
         var zone = document.querySelector('.media-field[data-field="' + fieldSlug + '"]');
@@ -1261,8 +1280,8 @@
             var current = [];
             try { current = JSON.parse(hiddenInput.value); } catch(ex) { current = []; }
             if (!Array.isArray(current)) current = [];
-            var path = url.replace(/^\//, '');
-            if (current.indexOf(path) === -1) current.push(path);
+            var id = parseInt(mediaId, 10);
+            if (current.indexOf(id) === -1) current.push(id);
             hiddenInput.value = JSON.stringify(current);
 
             var grid = document.getElementById('media-grid-' + fieldSlug);
@@ -1274,15 +1293,15 @@
 
             var item = document.createElement('div');
             item.className = 'media-field-grid-item';
+            item.dataset.id = id;
             if (isImage) {
-                item.innerHTML = '<img src="' + url + '" alt="' + name + '"><button type="button" class="media-field-grid-remove" data-field="' + fieldSlug + '" data-url="' + path + '">&times;</button><div class="media-field-grid-item-name">' + name + '</div>';
+                item.innerHTML = '<img src="' + url + '" alt="' + name + '"><button type="button" class="media-field-grid-remove" data-field="' + fieldSlug + '" data-id="' + id + '">&times;</button><div class="media-field-grid-item-name">' + name + '</div>';
             } else {
-                item.innerHTML = '<div class="media-grid-file-icon">&#128196;</div><button type="button" class="media-field-grid-remove" data-field="' + fieldSlug + '" data-url="' + path + '">&times;</button><div class="media-field-grid-item-name">' + name + '</div>';
+                item.innerHTML = '<div class="media-grid-file-icon">&#128196;</div><button type="button" class="media-field-grid-remove" data-field="' + fieldSlug + '" data-id="' + id + '">&times;</button><div class="media-field-grid-item-name">' + name + '</div>';
             }
             grid.appendChild(item);
         } else {
-            var path = url.replace(/^\//, '');
-            hiddenInput.value = path;
+            hiddenInput.value = mediaId;
             emptyState.style.display = 'none';
             if (zone) zone.style.borderStyle = 'solid';
 
@@ -1291,12 +1310,10 @@
             if (isImage) {
                 thumb.src = url;
                 thumb.style.display = '';
-                // Remove file icon if present
                 var fileIcon = preview.querySelector('.media-field-file-icon');
                 if (fileIcon) fileIcon.remove();
             } else {
                 thumb.style.display = 'none';
-                // Add file icon if not present
                 if (!preview.querySelector('.media-field-file-icon')) {
                     var icon = document.createElement('div');
                     icon.className = 'media-field-file-icon';
@@ -1324,6 +1341,8 @@
         var csrfToken = document.querySelector('input[name="_token"], input[name="csrf_token"]');
         var csrfVal = csrfToken ? csrfToken.value : '';
 
+        var selectedIds = [];
+
         var modal = document.createElement('div');
         modal.className = 'media-modal-overlay';
         modal.innerHTML = '<div class="media-modal">'
@@ -1341,6 +1360,7 @@
             + '</div>'
             + '</div>'
             + '<div class="media-modal-body"><p style="text-align:center;padding:var(--space-600);color:var(--text-secondary)">Loading...</p></div>'
+            + (isMultiple ? '<div class="media-modal-footer" style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px;border-top:1px solid var(--border,#e3e3e3);background:var(--bg-subdued,#fafafa);"><span class="media-selected-count">0 selected</span><button type="button" class="media-done-btn btn btn-primary" disabled>Done</button></div>' : '')
             + '<div class="media-modal-upload-bar">'
             + '<label class="media-upload-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Upload Files<input type="file" class="media-upload-input" multiple accept="image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx" style="display:none"></label>'
             + '<span class="media-upload-status"></span>'
@@ -1354,6 +1374,47 @@
         modal.querySelector('.media-modal-close').addEventListener('click', function() { modal.remove(); });
         modal.addEventListener('click', function(e) { if (e.target === modal) modal.remove(); });
         document.addEventListener('keydown', function onEsc(e) { if (e.key === 'Escape') { modal.remove(); document.removeEventListener('keydown', onEsc); } });
+
+        function updateSelectedCount() {
+            var countEl = modal.querySelector('.media-selected-count');
+            var doneBtn = modal.querySelector('.media-done-btn');
+            if (countEl) countEl.textContent = selectedIds.length + ' selected';
+            if (doneBtn) doneBtn.disabled = selectedIds.length === 0;
+        }
+
+        function toggleSelection(id, el) {
+            var idx = -1;
+            for (var i = 0; i < selectedIds.length; i++) {
+                if (selectedIds[i].id === id) { idx = i; break; }
+            }
+            if (idx >= 0) {
+                selectedIds.splice(idx, 1);
+                el.classList.remove('media-modal-item-selected');
+                var cb = el.querySelector('input[type="checkbox"]');
+                if (cb) cb.checked = false;
+            } else {
+                selectedIds.push({
+                    id: parseInt(el.dataset.id, 10),
+                    url: el.dataset.url,
+                    name: el.dataset.name,
+                    isImage: el.dataset.isImage === '1'
+                });
+                el.classList.add('media-modal-item-selected');
+                var cb = el.querySelector('input[type="checkbox"]');
+                if (cb) cb.checked = true;
+            }
+            updateSelectedCount();
+        }
+
+        // Multi-select done button
+        if (isMultiple) {
+            modal.querySelector('.media-done-btn').addEventListener('click', function() {
+                selectedIds.forEach(function(item) {
+                    selectMediaItem(fieldSlug, item.id, item.url, item.name, item.isImage, true);
+                });
+                modal.remove();
+            });
+        }
 
         function loadMedia() {
             var body = modal.querySelector('.media-modal-body');
@@ -1371,16 +1432,23 @@
                 var html = '<div class="media-modal-grid">';
                 data.data.forEach(function(item) {
                     var thumb = item.is_image ? '<img src="' + (item.thumbnail || item.url) + '" alt="' + item.name + '" loading="lazy">' : '<div class="media-file-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>';
-                    html += '<div class="media-modal-item" data-url="' + item.url + '" data-name="' + item.name + '" data-is-image="' + (item.is_image ? '1' : '0') + '">'
+                    var isSelected = false;
+                    for (var s = 0; s < selectedIds.length; s++) { if (selectedIds[s].id === item.id) { isSelected = true; break; } }
+                    html += '<div class="media-modal-item' + (isSelected ? ' media-modal-item-selected' : '') + '" data-id="' + item.id + '" data-url="' + item.url + '" data-name="' + item.name + '" data-is-image="' + (item.is_image ? '1' : '0') + '">'
+                        + (isMultiple ? '<div class="media-modal-check"><input type="checkbox"' + (isSelected ? ' checked' : '') + '></div>' : '')
                         + '<div class="media-modal-thumb">' + thumb + '</div>'
                         + '<div class="media-modal-name">' + item.name + '</div>'
                         + '</div>';
                 });
                 body.innerHTML = html + '</div>';
-                body.querySelectorAll('.media-modal-item').forEach(function(item) {
-                    item.addEventListener('click', function() {
-                        selectMediaItem(fieldSlug, item.dataset.url, item.dataset.name, item.dataset.isImage === '1', isMultiple);
-                        modal.remove();
+                body.querySelectorAll('.media-modal-item').forEach(function(el) {
+                    el.addEventListener('click', function() {
+                        if (isMultiple) {
+                            toggleSelection(parseInt(el.dataset.id, 10), el);
+                        } else {
+                            selectMediaItem(fieldSlug, el.dataset.id, el.dataset.url, el.dataset.name, el.dataset.isImage === '1', false);
+                            modal.remove();
+                        }
                     });
                 });
             });
@@ -1404,7 +1472,7 @@
             });
         });
 
-        // Upload — auto-select uploaded file and close modal
+        // Upload — auto-select uploaded file
         modal.querySelector('.media-upload-input').addEventListener('change', function() {
             var files = this.files;
             if (!files.length) return;
@@ -1412,6 +1480,7 @@
             var totalFiles = files.length;
             status.textContent = 'Uploading ' + totalFiles + ' file(s)...';
             var uploaded = 0;
+            var lastUploadedId = null;
             var lastUploadedUrl = '';
             var lastUploadedName = '';
             var lastIsImage = false;
@@ -1426,15 +1495,24 @@
                     uploaded++;
                     try {
                         var resp = JSON.parse(xhr.responseText);
-                        if (resp.path) {
+                        if (resp.id) {
+                            lastUploadedId = resp.id;
                             lastUploadedUrl = '/' + resp.path;
                             lastUploadedName = f.name;
                             lastIsImage = f.type.startsWith('image/');
+                            if (isMultiple) {
+                                // Auto-check uploaded items in multi mode
+                                selectedIds.push({ id: resp.id, url: '/' + resp.path, name: f.name, isImage: lastIsImage });
+                                updateSelectedCount();
+                            }
                         }
                     } catch(e) {}
                     if (uploaded >= totalFiles) {
-                        if (lastUploadedUrl) {
-                            selectMediaItem(fieldSlug, lastUploadedUrl, lastUploadedName, lastIsImage, isMultiple);
+                        if (isMultiple) {
+                            status.textContent = 'Uploaded! ' + selectedIds.length + ' selected.';
+                            loadMedia();
+                        } else if (lastUploadedId) {
+                            selectMediaItem(fieldSlug, lastUploadedId, lastUploadedUrl, lastUploadedName, lastIsImage, false);
                             modal.remove();
                         } else {
                             status.textContent = 'Uploaded!';

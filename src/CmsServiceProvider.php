@@ -648,6 +648,58 @@ class CmsServiceProvider
 
             return $block->getContent();
         }, ['is_safe' => ['html']]);
+
+        // media_url(idOrPath) — Resolve a media ID or legacy path to a full URL
+        $view->addFunction('media_url', function ($idOrPath) {
+            if (empty($idOrPath)) return '';
+            if (is_numeric($idOrPath)) {
+                $media = \ZephyrPHP\Cms\Models\Media::find((int) $idOrPath);
+                return $media ? $media->getUrl() : '';
+            }
+            // Legacy path
+            return '/' . ltrim((string) $idOrPath, '/');
+        }, ['is_safe' => ['html']]);
+
+        // media_thumb(idOrPath) — Resolve a media ID or legacy path to a thumbnail URL
+        $view->addFunction('media_thumb', function ($idOrPath) {
+            if (empty($idOrPath)) return '';
+            if (is_numeric($idOrPath)) {
+                $media = \ZephyrPHP\Cms\Models\Media::find((int) $idOrPath);
+                return $media ? ($media->getThumbnailUrl() ?? $media->getUrl()) : '';
+            }
+            return '/' . ltrim((string) $idOrPath, '/');
+        }, ['is_safe' => ['html']]);
+
+        // media_thumbs(value, max) — Resolve a JSON array of media IDs or single value to thumbnail URLs
+        $view->addFunction('media_thumbs', function ($value, $max = 3) {
+            if (empty($value)) return [];
+            // Try as JSON array first
+            $ids = json_decode((string) $value, true);
+            if (!is_array($ids)) {
+                // Single value
+                $ids = [$value];
+            }
+            $result = [];
+            foreach (array_slice($ids, 0, $max) as $idOrPath) {
+                if (is_numeric($idOrPath)) {
+                    $media = \ZephyrPHP\Cms\Models\Media::find((int) $idOrPath);
+                    if ($media) {
+                        $result[] = $media->getThumbnailUrl() ?? $media->getUrl();
+                    }
+                } else {
+                    $result[] = '/' . ltrim((string) $idOrPath, '/');
+                }
+            }
+            return $result;
+        });
+
+        // media_thumbs_count(value) — Count total media items in a value (JSON array or single)
+        $view->addFunction('media_thumbs_count', function ($value) {
+            if (empty($value)) return 0;
+            $ids = json_decode((string) $value, true);
+            if (is_array($ids)) return count($ids);
+            return 1;
+        });
     }
 
     private function registerThemePageRoutes(ThemeManager $themeManager): void
