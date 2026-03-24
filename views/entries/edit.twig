@@ -187,10 +187,11 @@
                                 {% set _rl = (_relDisplayField and te[_relDisplayField] is defined) ? te[_relDisplayField] : (te.title ?? te.name ?? te.slug ?? '#' ~ te.id) %}
                                 {% set _relTreeJson = _relTreeJson|merge([{'id': te.id, 'label': _rl, 'parent_id': te.parent_id|default(''), 'depth': te._depth}]) %}
                             {% endfor %}
+                            {% set _relVal = val is iterable ? '' : (val ?? '') %}
                             {% set _curRelLabel = 'Select...' %}
-                            {% if val %}{% for te in _relData.treeEntries|default([]) %}{% if te.id == val or te.id ~ '' == val ~ '' %}{% set _curRelLabel = (_relDisplayField and te[_relDisplayField] is defined) ? te[_relDisplayField] : (te.title ?? te.name ?? '#' ~ te.id) %}{% endif %}{% endfor %}{% endif %}
-                            <input type="hidden" name="{{ field.getSlug() }}" id="field_{{ field.getSlug() }}" value="{{ val }}">
-                            <div class="tree-picker rel-drill-picker" data-tree="{{ _relTreeJson|json_encode|e('html_attr') }}" data-current="{{ val }}" data-field="{{ _fSlug }}">
+                            {% if _relVal %}{% for te in _relData.treeEntries|default([]) %}{% if te.id ~ '' == _relVal ~ '' %}{% set _curRelLabel = (_relDisplayField and te[_relDisplayField] is defined) ? te[_relDisplayField] : (te.title ?? te.name ?? '#' ~ te.id) %}{% endif %}{% endfor %}{% endif %}
+                            <input type="hidden" name="{{ field.getSlug() }}" id="field_{{ field.getSlug() }}" value="{{ _relVal }}">
+                            <div class="tree-picker rel-drill-picker" data-tree="{{ _relTreeJson|json_encode|e('html_attr') }}" data-current="{{ _relVal }}" data-field="{{ _fSlug }}">
                                 <button type="button" class="tree-picker-btn">
                                     <span class="tp-label">{{ _curRelLabel }}</span>
                                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4.5l3 3 3-3"/></svg>
