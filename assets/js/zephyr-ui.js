@@ -156,13 +156,11 @@
     var activityBar = document.getElementById('activityBar');
     if (!panel || !activityBar) return;
 
-    // Restore state (data-panel already set by inline script in <head>)
+    // Restore state — data-panel already set by inline <head> script, sidebar already visible via CSS
     var savedState = getSidebarState();
     var savedSection = document.documentElement.getAttribute('data-panel-section') || getSidebarSection();
 
     if (savedState === 'open' && savedSection) {
-      panel.classList.add('open');
-
       // Show the saved section's nav list
       var navList = panel.querySelector('[data-nav="' + savedSection + '"]');
       if (navList) navList.classList.add('active');
@@ -187,18 +185,16 @@
       var section = item.getAttribute('data-section');
 
       // If clicking the same section while open, close panel
-      if (panel.classList.contains('open') && savedSection === section) {
-        panel.classList.remove('open');
+      var isOpen = document.documentElement.getAttribute('data-panel') === 'open';
+      if (isOpen && savedSection === section) {
         setSidebarState('closed', '');
         activityBar.querySelectorAll('.ab-item').forEach(function (i) { i.classList.remove('active'); });
-        // Hide all nav lists
         panel.querySelectorAll('.sidebar-nav-list').forEach(function (l) { l.classList.remove('active'); });
         savedSection = '';
         return;
       }
 
       // Open panel with this section
-      panel.classList.add('open');
       setSidebarState('open', section);
       savedSection = section;
 
@@ -220,14 +216,13 @@
     var closeBtn = panel.querySelector('.sidebar-panel-close');
     if (closeBtn) {
       closeBtn.addEventListener('click', function () {
-        panel.classList.remove('open');
         setSidebarState('closed', '');
         activityBar.querySelectorAll('.ab-item').forEach(function (i) { i.classList.remove('active'); });
         panel.querySelectorAll('.sidebar-nav-list').forEach(function (l) { l.classList.remove('active'); });
       });
     }
 
-    // Auto-detect current section from URL
+    // Auto-detect current section from URL (only if sidebar not already open)
     if (savedState !== 'open') {
       var currentPath = window.location.pathname;
       var navItems = panel.querySelectorAll('.sidebar-nav-item');
@@ -240,7 +235,6 @@
             var sectionName = navList.getAttribute('data-nav');
             if (sectionName) {
               navList.classList.add('active');
-              panel.classList.add('open');
               setSidebarState('open', sectionName);
 
               var abItem = activityBar.querySelector('[data-section="' + sectionName + '"]');
@@ -493,12 +487,8 @@
     revealContent();
     convertFlashToToast();
 
-    // Enable transitions after first paint (prevents sidebar slide-in flicker)
-    requestAnimationFrame(function() {
-      requestAnimationFrame(function() {
-        document.documentElement.classList.add('zui-ready');
-      });
-    });
+    // Mark ready (no longer used for transition gating, kept for plugins)
+    document.documentElement.classList.add('zui-ready');
   }
 
   // Run when DOM is ready

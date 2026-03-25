@@ -514,12 +514,7 @@ img, svg { display: block; max-width: 100%; }
 }
 
 /* — Sidebar Panel — */
-/* Suppress ALL layout transitions until JS marks ready — prevents sidebar slide-in on every page load */
-html:not(.zui-ready) .cms-sidebar-panel,
-html:not(.zui-ready) .cms-activity-bar,
-html:not(.zui-ready) .cms-main,
-html:not(.zui-ready) .cms-overlay { transition: none !important; animation: none !important; }
-
+/* — Sidebar Panel — NO transitions, NO transforms. Pure instant show/hide via data-panel. */
 .cms-sidebar-panel {
   position: fixed;
   left: var(--activity-w);
@@ -529,17 +524,14 @@ html:not(.zui-ready) .cms-overlay { transition: none !important; animation: none
   background: var(--chrome-surface);
   border-right: 1px solid var(--chrome-border);
   z-index: 90;
-  display: flex;
+  display: none;
   flex-direction: column;
-  transform: translateX(-110%);
-  transition: transform var(--duration-slow) var(--ease);
   overflow: hidden;
 }
 
-.cms-sidebar-panel.open { transform: translateX(0); }
-
-/* When panel is open via data attribute (restored from localStorage before JS) */
-[data-panel="open"] .cms-sidebar-panel { transform: translateX(0); }
+/* Show sidebar when panel is open (set by localStorage script in <head>) */
+[data-panel="open"] .cms-sidebar-panel,
+.cms-sidebar-panel.open { display: flex; }
 
 .sidebar-panel-header {
   display: flex;
@@ -648,11 +640,11 @@ html:not(.zui-ready) .cms-overlay { transition: none !important; animation: none
 }
 
 /* — Main Content Area — */
+/* — Main Content — instant layout shift, no transition */
 .cms-main {
   flex: 1;
   margin-left: var(--activity-w);
   min-height: calc(100vh - var(--topbar-h));
-  transition: margin-left var(--duration-slow) var(--ease);
 }
 
 [data-panel="open"] .cms-main { margin-left: calc(var(--activity-w) + var(--sidebar-w)); }
