@@ -6,19 +6,15 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{% block title %}CMS{% endblock %} | {{ config('app.name') }}</title>
 
+    {# CRITICAL: kill all layout transitions until JS says ready — MUST be before external CSS #}
+    <style nonce="{{ csp_nonce() }}">*{box-sizing:border-box}.cms-sidebar-panel,.cms-activity-bar,.cms-main,.cms-overlay{transition:none!important}html.zui-ready .cms-sidebar-panel,html.zui-ready .cms-activity-bar,html.zui-ready .cms-main{transition:transform .25s cubic-bezier(.4,0,.2,1)!important}</style>
+    <script nonce="{{ csp_nonce() }}">(function(){var s=localStorage.getItem('zui-panel');if(s)document.documentElement.setAttribute('data-panel',s);var c=localStorage.getItem('zui-panel-section');if(c)document.documentElement.setAttribute('data-panel-section',c)})()</script>
+
     {# ZephyrUI Design System — local CSS, no CDN #}
     <link rel="stylesheet" href="/cms-assets/css/zephyr-ui.css">
     <link rel="stylesheet" href="/cms-assets/css/quill.snow.css">
     <link rel="stylesheet" href="/cms-assets/css/quill-table-better.css">
     {% block styles %}{% endblock %}
-
-    {# Sidebar state restoration — runs BEFORE paint to prevent flicker #}
-    <script nonce="{{ csp_nonce() }}">
-    (function(){
-      var s=localStorage.getItem('zui-panel');
-      if(s)document.documentElement.setAttribute('data-panel',s);
-    })();
-    </script>
 
     {# Quill / richtext editor styles #}
     <style nonce="{{ csp_nonce() }}">

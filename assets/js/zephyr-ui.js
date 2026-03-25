@@ -156,13 +156,12 @@
     var activityBar = document.getElementById('activityBar');
     if (!panel || !activityBar) return;
 
-    // Restore state
+    // Restore state (data-panel already set by inline script in <head>)
     var savedState = getSidebarState();
-    var savedSection = getSidebarSection();
+    var savedSection = document.documentElement.getAttribute('data-panel-section') || getSidebarSection();
 
     if (savedState === 'open' && savedSection) {
       panel.classList.add('open');
-      document.documentElement.setAttribute('data-panel', 'open');
 
       // Show the saved section's nav list
       var navList = panel.querySelector('[data-nav="' + savedSection + '"]');
