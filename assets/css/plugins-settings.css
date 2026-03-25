@@ -1,0 +1,16 @@
+.alert-success {
+    background: rgba(4,123,93,0.08);
+    border: 1px solid rgba(4,123,93,0.2);
+    border-radius: var(--radius-200, 6px);
+    padding: 12px 16px;
+    color: #047B5D;
+    font-size: 0.875rem;
+}
+.alert-danger {
+    background: rgba(220,53,69,0.08);
+    border: 1px solid rgba(220,53,69,0.2);
+    border-radius: var(--radius-200, 6px);
+    padding: 12px 16px;
+    color: #721c24;
+    font-size: 0.875rem;
+}

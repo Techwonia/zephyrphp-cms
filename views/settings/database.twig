@@ -1,6 +1,7 @@
 {% extends "@cms/layouts/cms.twig" %}
 
 {% block title %}Database Settings{% endblock %}
+{% block styles %}<link rel="stylesheet" href="/cms-assets/css/settings-database.css">{% endblock %}
 
 {% block content %}
 <div class="breadcrumb">
@@ -253,33 +254,4 @@
 })();
 </script>
 
-<style nonce="{{ csp_nonce() }}">
-    .db-option {
-        padding: 0.6rem 1rem;
-        cursor: pointer;
-        border-bottom: 1px solid var(--border);
-        transition: background 0.15s;
-    }
-    .db-option:hover {
-        background: var(--bg-surface-hover);
-    }
-    .db-option:last-child {
-        border-bottom: none;
-    }
-    .badge-success {
-        background: rgba(52, 199, 89, 0.15);
-        color: #34c759;
-        border-radius: 6px;
-    }
-    .badge-danger {
-        background: rgba(255, 69, 58, 0.15);
-        color: #ff453a;
-        border-radius: 6px;
-    }
-    @media (max-width: 768px) {
-        div[style*="grid-template-columns: 1fr 1fr"] {
-            grid-template-columns: 1fr !important;
-        }
-    }
-</style>
 {% endblock %}

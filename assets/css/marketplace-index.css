@@ -1,0 +1,64 @@
+.mp-filters {
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+}
+.mp-search { flex: 1; min-width: 200px; }
+.mp-select { width: auto; min-width: 120px; }
+.mp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--sp-4);
+}
+.mp-card {
+    background: var(--bg-surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-card, 0 1px 3px rgba(0,0,0,0.1));
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+}
+.mp-card:hover {
+    box-shadow: var(--shadow-card-hover, 0 3px 6px rgba(0,0,0,0.15));
+}
+.mp-preview {
+    height: 140px;
+    background: var(--bg-subdued, #f5f5f5);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+}
+.mp-preview img {
+    width: 100%; height: 100%; object-fit: cover;
+}
+.mp-preview-placeholder {
+    color: var(--text-disabled, #b5b5b5);
+}
+.mp-info {
+    padding: 12px 16px;
+}
+.mp-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 4px;
+}
+.mp-name {
+    margin: 0; font-size: 0.95rem; font-weight: 600;
+}
+.badge-theme { background: rgba(128,0,255,0.1); color: #7c3aed; border: 1px solid rgba(128,0,255,0.2); }
+.badge-app { background: rgba(0,123,255,0.1); color: #0056b3; border: 1px solid rgba(0,123,255,0.2); }
+.badge-section { background: rgba(255,140,0,0.1); color: #c77800; border: 1px solid rgba(255,140,0,0.2); }
+.mp-desc {
+    font-size: var(--font-size-sm, 0.8125rem);
+    color: var(--text-secondary, #616161);
+    margin: 4px 0 8px;
+}
+.mp-meta {
+    display: flex; gap: 12px; font-size: 0.75rem;
+    color: var(--text-disabled, #999); margin-bottom: 8px;
+}
+.mp-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-top: 8px; border-top: 1px solid var(--border-color, #e5e5e5);
+}
+.mp-price { font-weight: 600; font-size: 0.9rem; }
+.mp-free { color: var(--color-success, #047B5D); }
+.alert-danger {
+    background: rgba(220,53,69,0.1); border: 1px solid rgba(220,53,69,0.3);
+    border-radius: var(--radius); padding: 12px 16px; color: #721c24;
+}
