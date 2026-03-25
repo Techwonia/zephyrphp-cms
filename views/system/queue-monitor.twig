@@ -12,10 +12,10 @@
 </div>
 
 {# Stats Cards #}
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--space-400); margin-bottom: var(--space-500);">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--sp-4); margin-bottom: var(--sp-5);">
     <div class="card">
         <div class="card-body" style="text-align: center;">
-            <div style="font-size: 2rem; font-weight: 700; color: var(--warning);">{{ counts.pending }}</div>
+            <div style="font-size: 2rem; font-weight: 700; color: var(--zui-warning-600);">{{ counts.pending }}</div>
             <div style="font-size: 0.85rem; color: var(--text-secondary);">Pending</div>
         </div>
     </div>
@@ -27,13 +27,13 @@
     </div>
     <div class="card">
         <div class="card-body" style="text-align: center;">
-            <div style="font-size: 2rem; font-weight: 700; color: var(--success);">{{ completed24h }}</div>
+            <div style="font-size: 2rem; font-weight: 700; color: var(--zui-success-600);">{{ completed24h }}</div>
             <div style="font-size: 0.85rem; color: var(--text-secondary);">Completed (24h)</div>
         </div>
     </div>
     <div class="card">
         <div class="card-body" style="text-align: center;">
-            <div style="font-size: 2rem; font-weight: 700; color: var(--danger);">{{ counts.failed }}</div>
+            <div style="font-size: 2rem; font-weight: 700; color: var(--zui-error-600);">{{ counts.failed }}</div>
             <div style="font-size: 0.85rem; color: var(--text-secondary);">Failed</div>
         </div>
     </div>
@@ -46,7 +46,7 @@
 </div>
 
 {# Action Buttons #}
-<div style="display: flex; gap: var(--space-300); margin-bottom: var(--space-500);">
+<div style="display: flex; gap: var(--sp-3); margin-bottom: var(--sp-5);">
     {% if counts.failed > 0 %}
     <form method="POST" action="{{ admin_url('system/queue/retry-all') }}" onsubmit="return confirm('Retry all {{ counts.failed }} failed job(s)?')">
         {{ csrf_field() | raw }}
@@ -60,7 +60,7 @@
 </div>
 
 {# Failed Jobs #}
-<div class="card" style="margin-bottom: var(--space-500);">
+<div class="card" style="margin-bottom: var(--sp-5);">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">Failed Jobs ({{ counts.failed }})</h3></div>
     <div class="card-body" style="padding: 0;">
         {% if failedJobs|length > 0 %}
@@ -86,8 +86,8 @@
                         <td style="max-width: 300px;">
                             {% if job.error %}
                             <details>
-                                <summary style="cursor: pointer; font-size: 0.85rem; color: var(--danger);">{{ job.error|length > 80 ? job.error[:80] ~ '...' : job.error }}</summary>
-                                <pre style="margin-top: var(--space-200); font-size: 0.8rem; white-space: pre-wrap; max-height: 200px; overflow-y: auto;">{{ job.error }}</pre>
+                                <summary style="cursor: pointer; font-size: 0.85rem; color: var(--zui-error-600);">{{ job.error|length > 80 ? job.error[:80] ~ '...' : job.error }}</summary>
+                                <pre style="margin-top: var(--sp-2); font-size: 0.8rem; white-space: pre-wrap; max-height: 200px; overflow-y: auto;">{{ job.error }}</pre>
                             </details>
                             {% else %}
                             <span style="color: var(--text-secondary);">No error details</span>
@@ -96,7 +96,7 @@
                         <td>{{ job.attempts }} / {{ job.max_attempts }}</td>
                         <td style="font-size: 0.85rem; color: var(--text-secondary);">{{ job.created_at }}</td>
                         <td>
-                            <div style="display: flex; gap: var(--space-200);">
+                            <div style="display: flex; gap: var(--sp-2);">
                                 <form method="POST" action="{{ admin_url('system/queue/' ~ job.id ~ '/retry') }}" style="display: inline;">
                                     {{ csrf_field() | raw }}
                                     <button type="submit" class="btn btn-outline btn-sm">Retry</button>
@@ -113,7 +113,7 @@
             </table>
         </div>
         {% else %}
-        <div style="padding: var(--space-400); text-align: center; color: var(--text-secondary);">
+        <div style="padding: var(--sp-4); text-align: center; color: var(--text-secondary);">
             No failed jobs.
         </div>
         {% endif %}
@@ -121,7 +121,7 @@
 </div>
 
 {# Pending Jobs #}
-<div class="card" style="margin-bottom: var(--space-500);">
+<div class="card" style="margin-bottom: var(--sp-5);">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">Pending Jobs ({{ counts.pending }})</h3></div>
     <div class="card-body" style="padding: 0;">
         {% if pendingJobs|length > 0 %}
@@ -152,7 +152,7 @@
             </table>
         </div>
         {% else %}
-        <div style="padding: var(--space-400); text-align: center; color: var(--text-secondary);">
+        <div style="padding: var(--sp-4); text-align: center; color: var(--text-secondary);">
             No pending jobs.
         </div>
         {% endif %}
@@ -195,7 +195,7 @@
             </table>
         </div>
         {% else %}
-        <div style="padding: var(--space-400); text-align: center; color: var(--text-secondary);">
+        <div style="padding: var(--sp-4); text-align: center; color: var(--text-secondary);">
             No completed jobs.
         </div>
         {% endif %}

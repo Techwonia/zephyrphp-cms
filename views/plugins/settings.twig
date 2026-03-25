@@ -15,18 +15,18 @@
 </div>
 
 {% if flash('success') %}
-<div class="alert alert-success" style="margin-bottom: var(--space-400);">{{ flash('success') }}</div>
+<div class="alert alert-success" style="margin-bottom: var(--sp-4);">{{ flash('success') }}</div>
 {% endif %}
 {% if flash('errors') %}
 {% for error in flash('errors') %}
-<div class="alert alert-danger" style="margin-bottom: var(--space-400);">{{ error }}</div>
+<div class="alert alert-danger" style="margin-bottom: var(--sp-4);">{{ error }}</div>
 {% endfor %}
 {% endif %}
 
 <div class="card">
     <div class="card-body">
         {# Plugin info header #}
-        <div style="display: flex; gap: 16px; align-items: center; margin-bottom: var(--space-500); padding-bottom: var(--space-400); border-bottom: 1px solid var(--border-color, #e5e5e5);">
+        <div style="display: flex; gap: 16px; align-items: center; margin-bottom: var(--sp-5); padding-bottom: var(--sp-4); border-bottom: 1px solid var(--border-color, #e5e5e5);">
             <div class="plugin-icon" style="width: 48px; height: 48px; border-radius: var(--radius-200, 6px); background: var(--bg-subdued, #f5f5f5); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                     <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>
@@ -49,7 +49,7 @@
             {{ csrf_field() | raw }}
 
             {% for key, field in schema %}
-            <div class="form-group" style="margin-bottom: var(--space-400);">
+            <div class="form-group" style="margin-bottom: var(--sp-4);">
                 <label class="form-label" for="setting_{{ key }}">{{ field.label|default(key|title) }}</label>
 
                 {% if field.type|default('text') == 'textarea' %}
@@ -91,7 +91,7 @@
             </div>
             {% endfor %}
 
-            <div style="padding-top: var(--space-300); border-top: 1px solid var(--border-color, #e5e5e5);">
+            <div style="padding-top: var(--sp-3); border-top: 1px solid var(--border-color, #e5e5e5);">
                 <button type="submit" class="btn btn-primary">Save Settings</button>
             </div>
         </form>

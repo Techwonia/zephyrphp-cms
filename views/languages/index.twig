@@ -3,15 +3,15 @@
 {% block title %}Languages{% endblock %}
 
 {% block content %}
-<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-600);">
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--sp-6);">
     <h1 style="margin: 0;">Languages</h1>
 </div>
 
 {# Add Language Form #}
-<div class="card" style="margin-bottom: var(--space-600);">
-    <div style="padding: var(--space-400) var(--space-500); border-bottom: 1px solid var(--border); font-weight: 600;">Add Language</div>
-    <div style="padding: var(--space-500);">
-        <form method="POST" action="{{ admin_url('languages') }}" style="display: flex; gap: var(--space-300); flex-wrap: wrap; align-items: flex-end;">
+<div class="card" style="margin-bottom: var(--sp-6);">
+    <div style="padding: var(--sp-4) var(--sp-5); border-bottom: 1px solid var(--border); font-weight: 600;">Add Language</div>
+    <div style="padding: var(--sp-5);">
+        <form method="POST" action="{{ admin_url('languages') }}" style="display: flex; gap: var(--sp-3); flex-wrap: wrap; align-items: flex-end;">
             <input type="hidden" name="_token" value="{{ csrf_token() }}">
             <div class="form-group" style="flex: 0 0 100px;">
                 <label class="form-label">Code</label>
@@ -29,8 +29,8 @@
                 <input type="text" name="native_name" class="form-control" placeholder="English"
                        value="{{ flash('_old_input')['native_name'] ?? '' }}">
             </div>
-            <div class="form-group" style="display: flex; align-items: center; gap: var(--space-200); padding-bottom: 2px;">
-                <label style="display: flex; align-items: center; gap: var(--space-100); cursor: pointer;">
+            <div class="form-group" style="display: flex; align-items: center; gap: var(--sp-2); padding-bottom: 2px;">
+                <label style="display: flex; align-items: center; gap: var(--sp-1); cursor: pointer;">
                     <input type="checkbox" name="is_default" value="1"> Default
                 </label>
             </div>
@@ -58,7 +58,7 @@
         <tbody>
             {% for lang in languages %}
             <tr>
-                <td><code style="background: var(--bg-subdued); padding: 2px 6px; border-radius: var(--radius-100); font-size: var(--font-xs);">{{ lang.getCode() }}</code></td>
+                <td><code style="background: var(--bg-subdued); padding: 2px 6px; border-radius: var(--radius-sm); font-size: var(--text-xs);">{{ lang.getCode() }}</code></td>
                 <td style="font-weight: 500;">{{ lang.getName() }}</td>
                 <td>{{ lang.getNativeName() }}</td>
                 <td style="text-align: center;">
@@ -88,34 +88,34 @@
     </table>
 </div>
 {% else %}
-<div class="card" style="padding: var(--space-800); text-align: center;">
+<div class="card" style="padding: var(--sp-8); text-align: center;">
     <p style="color: var(--text-secondary); margin: 0;">No languages configured. Add your first language above.</p>
 </div>
 {% endif %}
 
 {# Edit Modal #}
 <div id="edit-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:1000; display:none; align-items:center; justify-content:center;">
-    <div style="background:var(--bg-surface); border-radius:var(--radius-300); padding:var(--space-600); width:100%; max-width:420px; box-shadow:var(--shadow-dropdown);">
-        <h3 style="margin:0 0 var(--space-400);">Edit Language</h3>
+    <div style="background:var(--bg-surface); border-radius:var(--radius-lg); padding:var(--sp-6); width:100%; max-width:420px; box-shadow:var(--shadow-md);">
+        <h3 style="margin:0 0 var(--sp-4);">Edit Language</h3>
         <form id="edit-form" method="POST">
             <input type="hidden" name="_token" value="{{ csrf_token() }}">
-            <div class="form-group" style="margin-bottom: var(--space-300);">
+            <div class="form-group" style="margin-bottom: var(--sp-3);">
                 <label class="form-label">Name</label>
                 <input type="text" name="name" id="edit-name" class="form-control" required>
             </div>
-            <div class="form-group" style="margin-bottom: var(--space-300);">
+            <div class="form-group" style="margin-bottom: var(--sp-3);">
                 <label class="form-label">Native Name</label>
                 <input type="text" name="native_name" id="edit-native" class="form-control">
             </div>
-            <div style="display:flex; gap:var(--space-400); margin-bottom:var(--space-400);">
-                <label style="display:flex; align-items:center; gap:var(--space-100); cursor:pointer;">
+            <div style="display:flex; gap:var(--sp-4); margin-bottom:var(--sp-4);">
+                <label style="display:flex; align-items:center; gap:var(--sp-1); cursor:pointer;">
                     <input type="checkbox" name="is_active" id="edit-active" value="1"> Active
                 </label>
-                <label style="display:flex; align-items:center; gap:var(--space-100); cursor:pointer;">
+                <label style="display:flex; align-items:center; gap:var(--sp-1); cursor:pointer;">
                     <input type="checkbox" name="is_default" id="edit-default" value="1"> Default
                 </label>
             </div>
-            <div style="display:flex; gap:var(--space-200); justify-content:flex-end;">
+            <div style="display:flex; gap:var(--sp-2); justify-content:flex-end;">
                 <button type="button" onclick="closeEditModal()" class="btn btn-outline">Cancel</button>
                 <button type="submit" class="btn btn-primary">Save</button>
             </div>

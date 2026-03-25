@@ -39,7 +39,7 @@
         }
 
         body {
-            font-family: var(--font);
+            font-family: var(--font-sans);
             font-size: 13px;
             color: var(--text);
             background: var(--bg-surface);
@@ -77,29 +77,29 @@
         }
         .topbar-right { display: flex; align-items: center; gap: 10px; }
         .unsaved-indicator {
-            font-size: 12px; color: var(--warning); font-weight: 500; display: none;
+            font-size: 12px; color: var(--zui-warning-600); font-weight: 500; display: none;
         }
         .unsaved-indicator.visible {
             display: inline-flex; align-items: center; gap: 5px;
         }
         .unsaved-indicator::before {
             content: ''; width: 6px; height: 6px;
-            background: var(--warning); border-radius: 50%;
+            background: var(--zui-warning-600); border-radius: 50%;
         }
         .btn-topbar {
             background: rgba(255,255,255,0.1); color: #ccc; border: none;
             padding: 7px 14px; border-radius: 6px; font-size: 12px; font-weight: 500;
-            cursor: pointer; transition: all 0.15s; font-family: var(--font);
+            cursor: pointer; transition: all 0.15s; font-family: var(--font-sans);
             display: flex; align-items: center; gap: 6px;
         }
         .btn-topbar:hover { background: rgba(255,255,255,0.18); color: #fff; }
         .btn-topbar svg { width: 14px; height: 14px; }
         .btn-save {
-            background: var(--primary); color: #fff; border: none;
+            background: var(--zui-primary-500); color: #fff; border: none;
             padding: 7px 18px; border-radius: 6px; font-size: 13px; font-weight: 600;
-            cursor: pointer; transition: background 0.15s; font-family: var(--font);
+            cursor: pointer; transition: background 0.15s; font-family: var(--font-sans);
         }
-        .btn-save:hover { background: var(--primary-hover); }
+        .btn-save:hover { background: var(--zui-primary-600); }
         .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
 
         /* ── Page Body (activity bar + main) ── */
@@ -160,7 +160,7 @@
             color: var(--text-secondary); cursor: pointer; border-radius: 4px;
             transition: all 0.1s;
         }
-        .sidebar-btn:hover { background: var(--bg-hover); color: var(--text); }
+        .sidebar-btn:hover { background: var(--bg-surface-hover); color: var(--text); }
         .sidebar-btn svg { width: 14px; height: 14px; }
         .file-tree {
             flex: 1; overflow-y: auto; overflow-x: hidden; padding: 4px 0;
@@ -173,7 +173,7 @@
             padding: 4px 8px 4px 10px; cursor: pointer; font-size: 12px;
             font-weight: 600; color: var(--text); transition: background 0.1s;
         }
-        .folder-header:hover { background: var(--bg-hover); }
+        .folder-header:hover { background: var(--bg-surface-hover); }
         .folder-toggle {
             font-size: 9px; width: 14px; text-align: center;
             color: var(--text-secondary); flex-shrink: 0; transition: transform 0.15s;
@@ -199,10 +199,10 @@
             color: var(--text-secondary); transition: all 0.08s;
             border-left: 2px solid transparent;
         }
-        .file-item:hover { background: var(--bg-hover); color: var(--text); }
+        .file-item:hover { background: var(--bg-surface-hover); color: var(--text); }
         .file-item.active {
-            background: var(--primary-bg); color: var(--primary);
-            border-left-color: var(--primary); font-weight: 500;
+            background: var(--zui-primary-50); color: var(--zui-primary-500);
+            border-left-color: var(--zui-primary-500); font-weight: 500;
         }
         .file-icon { width: 14px; height: 14px; flex-shrink: 0; }
         .file-name {
@@ -210,7 +210,7 @@
         }
 .file-badge {
             font-size: 9px; padding: 0 4px; border-radius: 3px;
-            background: rgba(0,91,211,0.08); color: var(--primary); font-weight: 600;
+            background: rgba(0,91,211,0.08); color: var(--zui-primary-500); font-weight: 600;
         }
 
         /* Folder section labels */
@@ -235,7 +235,7 @@
             overflow-x: auto; overflow-y: hidden; scrollbar-width: thin;
         }
         .tab-bar::-webkit-scrollbar { height: 2px; }
-        .tab-bar::-webkit-scrollbar-thumb { background: var(--border-dark); }
+        .tab-bar::-webkit-scrollbar-thumb { background: var(--chrome-border); }
         .tab {
             display: flex; align-items: center; gap: 5px;
             padding: 0 10px; font-size: 12px; color: var(--text-secondary);
@@ -243,14 +243,14 @@
             white-space: nowrap; transition: all 0.1s;
             min-width: 0; max-width: 180px; position: relative;
         }
-        .tab:hover { background: var(--bg-hover); color: var(--text); }
+        .tab:hover { background: var(--bg-surface-hover); color: var(--text); }
         .tab.active {
             background: var(--bg-surface); color: var(--text);
-            font-weight: 600; border-bottom: 2px solid var(--primary);
+            font-weight: 600; border-bottom: 2px solid var(--zui-primary-500);
         }
         .tab-name { overflow: hidden; text-overflow: ellipsis; }
         .tab-modified {
-            width: 6px; height: 6px; background: var(--primary);
+            width: 6px; height: 6px; background: var(--zui-primary-500);
             border-radius: 50%; flex-shrink: 0; display: none;
         }
         .tab.modified .tab-modified { display: block; }
@@ -276,12 +276,12 @@
             height: 24px; display: flex; align-items: center; gap: 4px;
             padding: 0 8px; border: none; background: transparent;
             color: var(--text-secondary); cursor: pointer; border-radius: 4px;
-            font-size: 11px; font-family: var(--font); font-weight: 500;
+            font-size: 11px; font-family: var(--font-sans); font-weight: 500;
             transition: all 0.1s; white-space: nowrap; flex-shrink: 0;
         }
-        .toolbar-btn:hover { background: var(--bg-hover); color: var(--text); }
-        .toolbar-btn.active { background: rgba(0,91,211,0.15); color: var(--primary); }
-        .toolbar-btn.active { background: var(--primary-bg); color: var(--primary); }
+        .toolbar-btn:hover { background: var(--bg-surface-hover); color: var(--text); }
+        .toolbar-btn.active { background: rgba(0,91,211,0.15); color: var(--zui-primary-500); }
+        .toolbar-btn.active { background: var(--zui-primary-50); color: var(--zui-primary-500); }
         .toolbar-btn svg { width: 13px; height: 13px; }
         .toolbar-separator {
             width: 1px; height: 16px; background: var(--border); margin: 0 4px; flex-shrink: 0;
@@ -409,7 +409,7 @@
             position: relative; overflow: hidden;
         }
         .editor-pane + .editor-pane {
-            border-left: 2px solid var(--primary);
+            border-left: 2px solid var(--zui-primary-500);
         }
         .editor-pane .pane-tab-info {
             height: 28px; min-height: 28px; display: none;
@@ -423,7 +423,7 @@
             margin-left: auto; cursor: pointer; color: var(--text-disabled);
             border: none; background: none; padding: 2px; border-radius: 3px;
         }
-        .pane-tab-info .pane-close-btn:hover { color: var(--text); background: var(--bg-hover); }
+        .pane-tab-info .pane-close-btn:hover { color: var(--text); background: var(--bg-surface-hover); }
 
         .editor-container {
             flex: 1; position: relative; overflow: hidden; min-height: 0;
@@ -475,12 +475,12 @@
         }
         .schema-view-tabs.visible { display: inline-flex; }
         .schema-view-tab {
-            padding: 4px 12px; font-size: 11px; font-weight: 600; font-family: var(--font);
+            padding: 4px 12px; font-size: 11px; font-weight: 600; font-family: var(--font-sans);
             color: var(--text-secondary); cursor: pointer; border: none; background: transparent;
             transition: all 0.15s; white-space: nowrap;
         }
-        .schema-view-tab:hover { color: var(--text); background: var(--bg-hover); }
-        .schema-view-tab.active { color: var(--primary); background: var(--primary-bg); }
+        .schema-view-tab:hover { color: var(--text); background: var(--bg-surface-hover); }
+        .schema-view-tab.active { color: var(--zui-primary-500); background: var(--zui-primary-50); }
         .schema-view-tab + .schema-view-tab { border-left: 1px solid var(--border); }
 
         /* Schema visual designer — full-width layout */
@@ -492,7 +492,7 @@
         .schema-field-type {
             font-size: 10px; font-weight: 600; text-transform: uppercase;
             padding: 2px 6px; border-radius: 4px;
-            background: var(--primary-bg); color: var(--primary);
+            background: var(--zui-primary-50); color: var(--zui-primary-500);
         }
         .schema-field-id {
             font-size: 12px; font-weight: 600; color: var(--text); font-family: var(--font-mono);
@@ -510,10 +510,10 @@
         }
         .schema-field-row input, .schema-field-row select {
             width: 100%; padding: 5px 8px; border: 1px solid var(--border); border-radius: 4px;
-            font-size: 12px; font-family: var(--font); color: var(--text); background: var(--bg-surface);
+            font-size: 12px; font-family: var(--font-sans); color: var(--text); background: var(--bg-surface);
         }
         .schema-field-row input:focus, .schema-field-row select:focus {
-            border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px rgba(0,91,211,0.1);
+            border-color: var(--zui-primary-500); outline: none; box-shadow: 0 0 0 2px rgba(0,91,211,0.1);
         }
         .schema-field-actions {
             display: flex; gap: 4px; margin-left: auto;
@@ -522,8 +522,8 @@
             width: 22px; height: 22px; border: none; background: transparent; border-radius: 4px;
             cursor: pointer; color: var(--text-disabled); display: flex; align-items: center; justify-content: center;
         }
-        .schema-field-action-btn:hover { background: var(--bg-hover); color: var(--text); }
-        .schema-field-action-btn.danger:hover { background: var(--danger-bg); color: var(--danger); }
+        .schema-field-action-btn:hover { background: var(--bg-surface-hover); color: var(--text); }
+        .schema-field-action-btn.danger:hover { background: var(--danger-bg); color: var(--zui-error-600); }
 
         .schema-section-info {
             background: var(--bg-subdued); border: 1px solid var(--border); border-radius: 8px; padding: 12px;
@@ -536,19 +536,19 @@
         }
         .schema-section-info input {
             width: 100%; padding: 6px 10px; border: 1px solid var(--border); border-radius: 5px;
-            font-size: 12px; font-family: var(--font); color: var(--text); background: var(--bg-surface);
+            font-size: 12px; font-family: var(--font-sans); color: var(--text); background: var(--bg-surface);
         }
         .schema-section-info input:focus {
-            border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px rgba(0,91,211,0.1);
+            border-color: var(--zui-primary-500); outline: none; box-shadow: 0 0 0 2px rgba(0,91,211,0.1);
         }
 
         .schema-add-setting {
             width: 100%; padding: 8px; border: 2px dashed var(--border); border-radius: 8px;
             background: transparent; cursor: pointer; color: var(--text-secondary);
-            font-size: 12px; font-weight: 500; font-family: var(--font); transition: all 0.15s;
+            font-size: 12px; font-weight: 500; font-family: var(--font-sans); transition: all 0.15s;
             display: flex; align-items: center; justify-content: center; gap: 6px;
         }
-        .schema-add-setting:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-bg); }
+        .schema-add-setting:hover { border-color: var(--zui-primary-500); color: var(--zui-primary-500); background: var(--zui-primary-50); }
 
         .schema-empty {
             padding: 30px 16px; text-align: center; color: var(--text-disabled); font-size: 12px;
@@ -556,11 +556,11 @@
         .schema-empty svg { width: 32px; height: 32px; opacity: 0.3; margin-bottom: 8px; }
 
         .schema-apply-btn {
-            margin: 12px 16px; padding: 8px 16px; background: var(--primary); color: #fff;
+            margin: 12px 16px; padding: 8px 16px; background: var(--zui-primary-500); color: #fff;
             border: none; border-radius: 6px; font-size: 12px; font-weight: 600;
-            cursor: pointer; font-family: var(--font); transition: background 0.15s;
+            cursor: pointer; font-family: var(--font-sans); transition: background 0.15s;
         }
-        .schema-apply-btn:hover { background: var(--primary-hover); }
+        .schema-apply-btn:hover { background: var(--zui-primary-600); }
 
         /* Section dividers */
         .schema-section-divider {
@@ -570,7 +570,7 @@
             border-top: 1px solid var(--border);
         }
         .schema-count {
-            font-size: 10px; font-weight: 600; background: var(--bg-hover); color: var(--text-secondary);
+            font-size: 10px; font-weight: 600; background: var(--bg-surface-hover); color: var(--text-secondary);
             padding: 1px 6px; border-radius: 10px; min-width: 18px; text-align: center;
         }
 
@@ -615,17 +615,17 @@
         }
         .schema-option-row input {
             flex: 1; padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px;
-            font-size: 11px; font-family: var(--font); color: var(--text); background: var(--bg-surface);
+            font-size: 11px; font-family: var(--font-sans); color: var(--text); background: var(--bg-surface);
         }
         .schema-option-row input:focus {
-            border-color: var(--primary); outline: none;
+            border-color: var(--zui-primary-500); outline: none;
         }
         .schema-add-option {
             width: 100%; padding: 4px; border: 1px dashed var(--border); border-radius: 4px;
             background: transparent; cursor: pointer; color: var(--text-disabled);
-            font-size: 10px; font-family: var(--font); margin-top: 4px;
+            font-size: 10px; font-family: var(--font-sans); margin-top: 4px;
         }
-        .schema-add-option:hover { border-color: var(--primary); color: var(--primary); }
+        .schema-add-option:hover { border-color: var(--zui-primary-500); color: var(--zui-primary-500); }
 
         /* Small add-setting variant (inside blocks) */
         .schema-add-setting.small {
@@ -648,7 +648,7 @@
             background: var(--bg-surface); resize: vertical; line-height: 1.4;
         }
         .schema-preset-json textarea:focus {
-            border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px rgba(0,91,211,0.1);
+            border-color: var(--zui-primary-500); outline: none; box-shadow: 0 0 0 2px rgba(0,91,211,0.1);
         }
 
         /* Collection reference banner */
@@ -665,7 +665,7 @@
         .schema-collection-ref-title svg { width: 14px; height: 14px; color: #008060; }
         .schema-collection-ref code {
             background: var(--bg-subdued); padding: 1px 5px; border-radius: 3px;
-            font-family: var(--font-mono); font-size: 11px; color: var(--primary);
+            font-family: var(--font-mono); font-size: 11px; color: var(--zui-primary-500);
         }
         .schema-collection-ref p { margin: 4px 0; color: var(--text-secondary); font-size: 11px; }
 
@@ -689,7 +689,7 @@
         }
         .toast {
             padding: 10px 18px; border-radius: 8px; font-size: 13px;
-            font-weight: 500; font-family: var(--font); color: #fff;
+            font-weight: 500; font-family: var(--font-sans); color: #fff;
             box-shadow: var(--shadow-md); animation: toastIn 0.25s ease;
             display: flex; align-items: center; gap: 8px;
         }
@@ -713,7 +713,7 @@
         .quick-search input {
             width: 100%; padding: 14px 18px; border: none;
             border-bottom: 1px solid var(--border); font-size: 15px;
-            font-family: var(--font); color: var(--text); outline: none;
+            font-family: var(--font-sans); color: var(--text); outline: none;
             background: transparent;
         }
         .quick-search-results { max-height: 360px; overflow-y: auto; }
@@ -722,7 +722,7 @@
             color: var(--text-secondary); display: flex; align-items: center; gap: 8px;
         }
         .quick-search-item:hover, .quick-search-item.selected {
-            background: var(--primary-bg); color: var(--primary);
+            background: var(--zui-primary-50); color: var(--zui-primary-500);
         }
         .quick-search-item-path {
             font-size: 11px; color: var(--text-disabled); margin-left: auto;
@@ -739,8 +739,8 @@
             padding: 7px 12px; font-size: 12px; cursor: pointer; border-radius: 4px;
             color: var(--text); display: flex; align-items: center; gap: 8px;
         }
-        .context-menu-item:hover { background: var(--bg-hover); }
-        .context-menu-item.danger { color: var(--danger); }
+        .context-menu-item:hover { background: var(--bg-surface-hover); }
+        .context-menu-item.danger { color: var(--zui-error-600); }
         .context-menu-item.danger:hover { background: var(--danger-bg); }
         .context-menu-item svg { width: 14px; height: 14px; opacity: 0.6; }
         .context-menu-separator {
@@ -772,11 +772,11 @@
         }
         .modal-body input, .modal-body select {
             width: 100%; padding: 9px 12px; border: 1px solid var(--border);
-            border-radius: 6px; font-size: 13px; font-family: var(--font);
+            border-radius: 6px; font-size: 13px; font-family: var(--font-sans);
             color: var(--text); outline: none; background: var(--bg-surface);
         }
         .modal-body input:focus, .modal-body select:focus {
-            border-color: var(--primary); box-shadow: 0 0 0 2px rgba(0,91,211,0.15);
+            border-color: var(--zui-primary-500); box-shadow: 0 0 0 2px rgba(0,91,211,0.15);
         }
         .modal-body .field-group { margin-bottom: 14px; }
         .modal-body .field-hint {
@@ -788,16 +788,16 @@
         }
         .modal-btn {
             padding: 8px 16px; border-radius: 6px; font-size: 13px;
-            font-weight: 600; cursor: pointer; font-family: var(--font); border: none;
+            font-weight: 600; cursor: pointer; font-family: var(--font-sans); border: none;
         }
         .modal-btn-cancel {
             background: var(--bg-app); color: var(--text-secondary);
         }
         .modal-btn-cancel:hover { background: var(--border); }
         .modal-btn-primary {
-            background: var(--primary); color: #fff;
+            background: var(--zui-primary-500); color: #fff;
         }
-        .modal-btn-primary:hover { background: var(--primary-hover); }
+        .modal-btn-primary:hover { background: var(--zui-primary-600); }
 
         /* ── Loading ── */
         .loading-spinner {
@@ -806,7 +806,7 @@
         }
         .loading-spinner::before {
             content: ''; width: 16px; height: 16px;
-            border: 2px solid var(--border); border-top-color: var(--primary);
+            border: 2px solid var(--border); border-top-color: var(--zui-primary-500);
             border-radius: 50%; animation: spin 0.6s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -814,7 +814,7 @@
         /* Scrollbar */
         .sidebar::-webkit-scrollbar, .file-tree::-webkit-scrollbar { width: 5px; }
         .sidebar::-webkit-scrollbar-thumb, .file-tree::-webkit-scrollbar-thumb {
-            background: var(--border-dark); border-radius: 4px;
+            background: var(--chrome-border); border-radius: 4px;
         }
     </style>
 </head>
@@ -982,7 +982,7 @@
                             </svg>
                             <p>Right-click a file &rarr; "Open in split"</p>
                             <span class="split-file-picker-hint">or select from open tabs below</span>
-                            <select id="splitFileSelect" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:var(--font);color:var(--text);background:var(--bg-surface);min-width:200px;"></select>
+                            <select id="splitFileSelect" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:var(--font-sans);color:var(--text);background:var(--bg-surface);min-width:200px;"></select>
                         </div>
                     </div>
                 </div>
@@ -1659,7 +1659,7 @@
             buildAllFilePaths();
             renderFileTree();
         } catch (e) {
-            $fileTree.innerHTML = `<div style="padding:16px;color:var(--danger);font-size:12px;">Failed to load file tree.<br><small>${esc(e.message)}</small></div>`;
+            $fileTree.innerHTML = `<div style="padding:16px;color:var(--zui-error-600);font-size:12px;">Failed to load file tree.<br><small>${esc(e.message)}</small></div>`;
         }
     }
 

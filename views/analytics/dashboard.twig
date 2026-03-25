@@ -7,67 +7,67 @@
     <a href="{{ admin_url() }}">Dashboard</a> / Analytics
 </div>
 
-<div class="page-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-300);">
+<div class="page-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--sp-3);">
     <h1>Site Analytics</h1>
-    <div style="display: flex; align-items: center; gap: var(--space-200);">
+    <div style="display: flex; align-items: center; gap: var(--sp-2);">
         {% if liveVisitors is defined %}
-        <div style="display: flex; align-items: center; gap: var(--space-200); padding: var(--space-200) var(--space-400); background: var(--color-success-bg); border-radius: var(--radius-full); font-size: var(--font-sm);">
-            <span style="width: 8px; height: 8px; background: var(--color-success); border-radius: 50%; display: inline-block; animation: livePulse 2s infinite;"></span>
-            <strong style="color: var(--color-success);">{{ liveVisitors }}</strong>
+        <div style="display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-4); background: var(--zui-success-50); border-radius: var(--radius-full); font-size: var(--text-sm);">
+            <span style="width: 8px; height: 8px; background: var(--zui-success-600); border-radius: 50%; display: inline-block; animation: livePulse 2s infinite;"></span>
+            <strong style="color: var(--zui-success-600);">{{ liveVisitors }}</strong>
             <span style="color: var(--text-secondary);">live now</span>
         </div>
         {% endif %}
-        <div class="analytics-range-picker" style="display: flex; border: 1px solid var(--border); border-radius: var(--radius-200); overflow: hidden;">
-            <a href="?range=today" class="range-btn{% if range == 'today' %} active{% endif %}" style="padding: var(--space-200) var(--space-400); font-size: var(--font-sm); text-decoration: none; color: var(--text); border-right: 1px solid var(--border); {% if range == 'today' %}background: var(--color-primary); color: var(--color-primary-text);{% else %}background: var(--bg-surface);{% endif %}">Today</a>
-            <a href="?range=7d" class="range-btn{% if range == '7d' %} active{% endif %}" style="padding: var(--space-200) var(--space-400); font-size: var(--font-sm); text-decoration: none; color: var(--text); border-right: 1px solid var(--border); {% if range == '7d' %}background: var(--color-primary); color: var(--color-primary-text);{% else %}background: var(--bg-surface);{% endif %}">7 Days</a>
-            <a href="?range=30d" class="range-btn{% if range == '30d' %} active{% endif %}" style="padding: var(--space-200) var(--space-400); font-size: var(--font-sm); text-decoration: none; color: var(--text); border-right: 1px solid var(--border); {% if range == '30d' %}background: var(--color-primary); color: var(--color-primary-text);{% else %}background: var(--bg-surface);{% endif %}">30 Days</a>
-            <a href="?range=90d" class="range-btn{% if range == '90d' %} active{% endif %}" style="padding: var(--space-200) var(--space-400); font-size: var(--font-sm); text-decoration: none; color: var(--text); {% if range == '90d' %}background: var(--color-primary); color: var(--color-primary-text);{% else %}background: var(--bg-surface);{% endif %}">90 Days</a>
+        <div class="analytics-range-picker" style="display: flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden;">
+            <a href="?range=today" class="range-btn{% if range == 'today' %} active{% endif %}" style="padding: var(--sp-2) var(--sp-4); font-size: var(--text-sm); text-decoration: none; color: var(--text); border-right: 1px solid var(--border); {% if range == 'today' %}background: var(--zui-primary-500); color: #FFF;{% else %}background: var(--bg-surface);{% endif %}">Today</a>
+            <a href="?range=7d" class="range-btn{% if range == '7d' %} active{% endif %}" style="padding: var(--sp-2) var(--sp-4); font-size: var(--text-sm); text-decoration: none; color: var(--text); border-right: 1px solid var(--border); {% if range == '7d' %}background: var(--zui-primary-500); color: #FFF;{% else %}background: var(--bg-surface);{% endif %}">7 Days</a>
+            <a href="?range=30d" class="range-btn{% if range == '30d' %} active{% endif %}" style="padding: var(--sp-2) var(--sp-4); font-size: var(--text-sm); text-decoration: none; color: var(--text); border-right: 1px solid var(--border); {% if range == '30d' %}background: var(--zui-primary-500); color: #FFF;{% else %}background: var(--bg-surface);{% endif %}">30 Days</a>
+            <a href="?range=90d" class="range-btn{% if range == '90d' %} active{% endif %}" style="padding: var(--sp-2) var(--sp-4); font-size: var(--text-sm); text-decoration: none; color: var(--text); {% if range == '90d' %}background: var(--zui-primary-500); color: #FFF;{% else %}background: var(--bg-surface);{% endif %}">90 Days</a>
         </div>
     </div>
 </div>
 
 {% if error is defined and error %}
-<div class="card" style="margin-bottom: var(--space-500);">
-    <div class="card-body" style="color: var(--color-critical);">
+<div class="card" style="margin-bottom: var(--sp-5);">
+    <div class="card-body" style="color: var(--zui-error-600);">
         <strong>Error:</strong> {{ error }}
     </div>
 </div>
 {% else %}
 
 {# ── Stats Cards ── #}
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-400); margin-bottom: var(--space-500);">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--sp-4); margin-bottom: var(--sp-5);">
     <div class="card">
-        <div class="card-body" style="text-align: center; padding: var(--space-400);">
-            <div style="font-size: 2rem; font-weight: 700; color: var(--color-primary);">{{ totalRange|number_format }}</div>
-            <div style="color: var(--text-secondary); font-size: var(--font-sm);">Page Views</div>
-            <div style="color: var(--text-secondary); font-size: var(--font-xs); margin-top: var(--space-100);">
+        <div class="card-body" style="text-align: center; padding: var(--sp-4);">
+            <div style="font-size: 2rem; font-weight: 700; color: var(--zui-primary-500);">{{ totalRange|number_format }}</div>
+            <div style="color: var(--text-secondary); font-size: var(--text-sm);">Page Views</div>
+            <div style="color: var(--text-secondary); font-size: var(--text-xs); margin-top: var(--sp-1);">
                 Today: {{ totalToday|number_format }} &middot; 7d: {{ total7d|number_format }} &middot; 30d: {{ total30d|number_format }}
             </div>
         </div>
     </div>
     <div class="card">
-        <div class="card-body" style="text-align: center; padding: var(--space-400);">
-            <div style="font-size: 2rem; font-weight: 700; color: var(--color-info);">{{ uniqueRange|number_format }}</div>
-            <div style="color: var(--text-secondary); font-size: var(--font-sm);">Unique Visitors</div>
-            <div style="color: var(--text-secondary); font-size: var(--font-xs); margin-top: var(--space-100);">
+        <div class="card-body" style="text-align: center; padding: var(--sp-4);">
+            <div style="font-size: 2rem; font-weight: 700; color: var(--zui-info-600);">{{ uniqueRange|number_format }}</div>
+            <div style="color: var(--text-secondary); font-size: var(--text-sm);">Unique Visitors</div>
+            <div style="color: var(--text-secondary); font-size: var(--text-xs); margin-top: var(--sp-1);">
                 Today: {{ uniqueToday|number_format }} &middot; 7d: {{ unique7d|number_format }} &middot; 30d: {{ unique30d|number_format }}
             </div>
         </div>
     </div>
     <div class="card">
-        <div class="card-body" style="text-align: center; padding: var(--space-400);">
-            <div style="font-size: 2rem; font-weight: 700; color: {% if bounceRate > 70 %}var(--color-warning){% elseif bounceRate > 50 %}var(--text){% else %}var(--color-success){% endif %};">{{ bounceRate }}%</div>
-            <div style="color: var(--text-secondary); font-size: var(--font-sm);">Bounce Rate</div>
-            <div style="color: var(--text-secondary); font-size: var(--font-xs); margin-top: var(--space-100);">
+        <div class="card-body" style="text-align: center; padding: var(--sp-4);">
+            <div style="font-size: 2rem; font-weight: 700; color: {% if bounceRate > 70 %}var(--zui-warning-600){% elseif bounceRate > 50 %}var(--text){% else %}var(--zui-success-600){% endif %};">{{ bounceRate }}%</div>
+            <div style="color: var(--text-secondary); font-size: var(--text-sm);">Bounce Rate</div>
+            <div style="color: var(--text-secondary); font-size: var(--text-xs); margin-top: var(--sp-1);">
                 Single-page visits
             </div>
         </div>
     </div>
     <div class="card">
-        <div class="card-body" style="text-align: center; padding: var(--space-400);">
-            <div style="font-size: 2rem; font-weight: 700; color: var(--color-primary);">{{ avgPagesPerSession }}</div>
-            <div style="color: var(--text-secondary); font-size: var(--font-sm);">Pages / Session</div>
-            <div style="color: var(--text-secondary); font-size: var(--font-xs); margin-top: var(--space-100);">
+        <div class="card-body" style="text-align: center; padding: var(--sp-4);">
+            <div style="font-size: 2rem; font-weight: 700; color: var(--zui-primary-500);">{{ avgPagesPerSession }}</div>
+            <div style="color: var(--text-secondary); font-size: var(--text-sm);">Pages / Session</div>
+            <div style="color: var(--text-secondary); font-size: var(--text-xs); margin-top: var(--sp-1);">
                 Average depth
             </div>
         </div>
@@ -75,15 +75,15 @@
 </div>
 
 {# ── Traffic Chart (SVG Polyline) ── #}
-<div class="card" style="margin-bottom: var(--space-500);">
+<div class="card" style="margin-bottom: var(--sp-5);">
     <div class="card-header" style="display: flex; align-items: center; justify-content: space-between;">
         <h3 style="margin:0; font-size:1rem;">Traffic Overview</h3>
-        <div style="display: flex; align-items: center; gap: var(--space-400); font-size: var(--font-xs); color: var(--text-secondary);">
-            <span style="display: flex; align-items: center; gap: var(--space-100);"><span style="width: 12px; height: 3px; background: var(--color-primary); border-radius: 2px; display: inline-block;"></span> Page Views</span>
-            <span style="display: flex; align-items: center; gap: var(--space-100);"><span style="width: 12px; height: 3px; background: var(--color-success); border-radius: 2px; display: inline-block;"></span> Visitors</span>
+        <div style="display: flex; align-items: center; gap: var(--sp-4); font-size: var(--text-xs); color: var(--text-secondary);">
+            <span style="display: flex; align-items: center; gap: var(--sp-1);"><span style="width: 12px; height: 3px; background: var(--zui-primary-500); border-radius: 2px; display: inline-block;"></span> Page Views</span>
+            <span style="display: flex; align-items: center; gap: var(--sp-1);"><span style="width: 12px; height: 3px; background: var(--zui-success-600); border-radius: 2px; display: inline-block;"></span> Visitors</span>
         </div>
     </div>
-    <div class="card-body" style="padding: var(--space-400);">
+    <div class="card-body" style="padding: var(--sp-4);">
         {% if trafficChart|length > 0 %}
             {% set max_views = 1 %}
             {% for day in trafficChart %}
@@ -123,8 +123,8 @@
                         {% set area_points = area_points ~ x ~ ',' ~ (pad_y + inner_h) %}
                     {% endif %}
                 {% endfor %}
-                <polygon points="{{ area_points }}" fill="var(--color-primary)" opacity="0.08"/>
-                <polyline points="{{ views_points }}" fill="none" stroke="var(--color-primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <polygon points="{{ area_points }}" fill="var(--zui-primary-500)" opacity="0.08"/>
+                <polyline points="{{ views_points }}" fill="none" stroke="var(--zui-primary-500)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
 
                 {# Visitors line #}
                 {% set visitor_points = '' %}
@@ -133,13 +133,13 @@
                     {% set y = pad_y + inner_h - (day.visitors / max_views * inner_h) %}
                     {% set visitor_points = visitor_points ~ x ~ ',' ~ y ~ ' ' %}
                 {% endfor %}
-                <polyline points="{{ visitor_points }}" fill="none" stroke="var(--color-success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6,3"/>
+                <polyline points="{{ visitor_points }}" fill="none" stroke="var(--zui-success-600)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6,3"/>
 
                 {# Data point dots for views #}
                 {% for day in trafficChart %}
                     {% set x = pad_x + (loop.index0 * step_x) %}
                     {% set y = pad_y + inner_h - (day.views / max_views * inner_h) %}
-                    <circle cx="{{ x }}" cy="{{ y }}" r="3" fill="var(--color-primary)" stroke="white" stroke-width="1.5">
+                    <circle cx="{{ x }}" cy="{{ y }}" r="3" fill="var(--zui-primary-500)" stroke="white" stroke-width="1.5">
                         <title>{{ day.date }}: {{ day.views }} views, {{ day.visitors }} visitors</title>
                     </circle>
                 {% endfor %}
@@ -154,7 +154,7 @@
             </svg>
             </div>
         {% else %}
-            <div style="text-align: center; padding: var(--space-800); color: var(--text-secondary);">
+            <div style="text-align: center; padding: var(--sp-8); color: var(--text-secondary);">
                 No traffic data available for this period. Analytics data is collected by the tracking middleware.
             </div>
         {% endif %}
@@ -162,7 +162,7 @@
 </div>
 
 {# ── Top Pages & Referrer Sources ── #}
-<div style="display: grid; grid-template-columns: 3fr 2fr; gap: var(--space-400); margin-bottom: var(--space-500);">
+<div style="display: grid; grid-template-columns: 3fr 2fr; gap: var(--sp-4); margin-bottom: var(--sp-5);">
     <div class="card">
         <div class="card-header"><h3 style="margin:0; font-size:1rem;">Top Pages</h3></div>
         <div class="card-body">
@@ -179,11 +179,11 @@
                         {% set max_page_views = topPages[0].views|default(1) %}
                         {% for page in topPages %}
                         <tr>
-                            <td><code style="font-size: var(--font-sm);">{{ page.path|length > 60 ? page.path[:60] ~ '...' : page.path }}</code></td>
+                            <td><code style="font-size: var(--text-sm);">{{ page.path|length > 60 ? page.path[:60] ~ '...' : page.path }}</code></td>
                             <td style="text-align: right; font-weight: 600; white-space: nowrap;">{{ page.views|number_format }}</td>
                             <td>
-                                <div style="background: var(--bg-subdued); border-radius: var(--radius-100); height: 6px; overflow: hidden;">
-                                    <div style="background: var(--color-primary); height: 100%; width: {{ (page.views / max_page_views * 100)|round }}%; border-radius: var(--radius-100);"></div>
+                                <div style="background: var(--bg-subdued); border-radius: var(--radius-sm); height: 6px; overflow: hidden;">
+                                    <div style="background: var(--zui-primary-500); height: 100%; width: {{ (page.views / max_page_views * 100)|round }}%; border-radius: var(--radius-sm);"></div>
                                 </div>
                             </td>
                         </tr>
@@ -219,9 +219,9 @@
                                 {% endif %}
                             </td>
                             <td style="text-align: right;">
-                                <div style="display: flex; align-items: center; justify-content: flex-end; gap: var(--space-200);">
-                                    <div style="width: 60px; background: var(--bg-subdued); border-radius: var(--radius-100); height: 6px; overflow: hidden;">
-                                        <div style="background: var(--color-info); height: 100%; width: {{ (ref.count / max_ref * 100)|round }}%; border-radius: var(--radius-100);"></div>
+                                <div style="display: flex; align-items: center; justify-content: flex-end; gap: var(--sp-2);">
+                                    <div style="width: 60px; background: var(--bg-subdued); border-radius: var(--radius-sm); height: 6px; overflow: hidden;">
+                                        <div style="background: var(--zui-info-600); height: 100%; width: {{ (ref.count / max_ref * 100)|round }}%; border-radius: var(--radius-sm);"></div>
                                     </div>
                                     <span style="font-weight: 600; min-width: 30px;">{{ ref.count|number_format }}</span>
                                 </div>
@@ -238,25 +238,25 @@
 </div>
 
 {# ── Browser & Device Breakdown + Content Sections ── #}
-<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-400); margin-bottom: var(--space-500);">
+<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--sp-4); margin-bottom: var(--sp-5);">
     {# Browser Breakdown #}
     <div class="card">
         <div class="card-header"><h3 style="margin:0; font-size:1rem;">Browsers</h3></div>
-        <div class="card-body" style="padding: var(--space-400);">
+        <div class="card-body" style="padding: var(--sp-4);">
             {% set max_browser = browserBreakdown[0].count|default(1) %}
             {% set browser_colors = ['#1A7BA8', '#047B5D', '#B98900', '#D72C0D', '#2C6ECB', '#6D28D9', '#DB2777', '#EA580C'] %}
             {% for browser in browserBreakdown %}
-            <div style="margin-bottom: var(--space-300);">
-                <div style="display: flex; justify-content: space-between; font-size: var(--font-sm); margin-bottom: var(--space-100);">
+            <div style="margin-bottom: var(--sp-3);">
+                <div style="display: flex; justify-content: space-between; font-size: var(--text-sm); margin-bottom: var(--sp-1);">
                     <span>{{ browser.name }}</span>
                     <span style="font-weight: 600;">{{ browser.count|number_format }}{% if totalRange > 0 %} <span style="color: var(--text-secondary); font-weight: 400;">({{ ((browser.count / totalRange) * 100)|round(1) }}%)</span>{% endif %}</span>
                 </div>
-                <div style="background: var(--bg-subdued); border-radius: var(--radius-100); height: 8px; overflow: hidden;">
-                    <div style="background: {{ browser_colors[loop.index0] ?? '#1A7BA8' }}; height: 100%; width: {{ (browser.count / max_browser * 100)|round }}%; border-radius: var(--radius-100); transition: width 0.3s ease;"></div>
+                <div style="background: var(--bg-subdued); border-radius: var(--radius-sm); height: 8px; overflow: hidden;">
+                    <div style="background: {{ browser_colors[loop.index0] ?? '#1A7BA8' }}; height: 100%; width: {{ (browser.count / max_browser * 100)|round }}%; border-radius: var(--radius-sm); transition: width 0.3s ease;"></div>
                 </div>
             </div>
             {% else %}
-            <div style="text-align: center; color: var(--text-secondary); padding: var(--space-400);">No browser data</div>
+            <div style="text-align: center; color: var(--text-secondary); padding: var(--sp-4);">No browser data</div>
             {% endfor %}
         </div>
     </div>
@@ -264,14 +264,14 @@
     {# Device Breakdown #}
     <div class="card">
         <div class="card-header"><h3 style="margin:0; font-size:1rem;">Devices</h3></div>
-        <div class="card-body" style="padding: var(--space-400);">
+        <div class="card-body" style="padding: var(--sp-4);">
             {% set device_icons = {'Desktop': 'M4 6h16v10H4zm2 12h12', 'Mobile': 'M7 2h10v20H7z', 'Tablet': 'M6 2h12v20H6z'} %}
             {% set device_colors = {'Desktop': '#1A7BA8', 'Mobile': '#047B5D', 'Tablet': '#B98900'} %}
             {% set max_device = deviceBreakdown[0].count|default(1) %}
 
             {# SVG Donut Chart #}
             {% if deviceBreakdown|length > 0 %}
-            <div style="display: flex; justify-content: center; margin-bottom: var(--space-400);">
+            <div style="display: flex; justify-content: center; margin-bottom: var(--sp-4);">
                 <svg viewBox="0 0 120 120" style="width: 120px; height: 120px;">
                     {% set offset = 0 %}
                     {% set total = 0 %}
@@ -292,12 +292,12 @@
             {% endif %}
 
             {% for device in deviceBreakdown %}
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--space-200) 0; {% if not loop.last %}border-bottom: 1px solid var(--border);{% endif %}">
-                <div style="display: flex; align-items: center; gap: var(--space-200);">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--sp-2) 0; {% if not loop.last %}border-bottom: 1px solid var(--border);{% endif %}">
+                <div style="display: flex; align-items: center; gap: var(--sp-2);">
                     <span style="width: 10px; height: 10px; background: {{ device_colors[device.name] ?? '#999' }}; border-radius: 50%; display: inline-block;"></span>
-                    <span style="font-size: var(--font-sm);">{{ device.name }}</span>
+                    <span style="font-size: var(--text-sm);">{{ device.name }}</span>
                 </div>
-                <div style="font-size: var(--font-sm);">
+                <div style="font-size: var(--text-sm);">
                     <strong>{{ device.count|number_format }}</strong>
                     {% if totalRange > 0 %}
                     <span style="color: var(--text-secondary);">({{ ((device.count / totalRange) * 100)|round(1) }}%)</span>
@@ -305,7 +305,7 @@
                 </div>
             </div>
             {% else %}
-            <div style="text-align: center; color: var(--text-secondary); padding: var(--space-400);">No device data</div>
+            <div style="text-align: center; color: var(--text-secondary); padding: var(--sp-4);">No device data</div>
             {% endfor %}
         </div>
     </div>
@@ -313,21 +313,21 @@
     {# Content Sections #}
     <div class="card">
         <div class="card-header"><h3 style="margin:0; font-size:1rem;">Content Sections</h3></div>
-        <div class="card-body" style="padding: var(--space-400);">
+        <div class="card-body" style="padding: var(--sp-4);">
             {% set max_section = topSections[0].views|default(1) %}
             {% set section_colors = ['#1A7BA8', '#2C6ECB', '#047B5D', '#6D28D9', '#B98900', '#DB2777', '#EA580C', '#0D9488', '#7C3AED', '#DC2626'] %}
             {% for section in topSections %}
-            <div style="margin-bottom: var(--space-300);">
-                <div style="display: flex; justify-content: space-between; font-size: var(--font-sm); margin-bottom: var(--space-100);">
+            <div style="margin-bottom: var(--sp-3);">
+                <div style="display: flex; justify-content: space-between; font-size: var(--text-sm); margin-bottom: var(--sp-1);">
                     <span style="text-transform: capitalize;">/{{ section.section }}</span>
                     <span style="font-weight: 600;">{{ section.views|number_format }}</span>
                 </div>
-                <div style="background: var(--bg-subdued); border-radius: var(--radius-100); height: 8px; overflow: hidden;">
-                    <div style="background: {{ section_colors[loop.index0] ?? '#1A7BA8' }}; height: 100%; width: {{ (section.views / max_section * 100)|round }}%; border-radius: var(--radius-100);"></div>
+                <div style="background: var(--bg-subdued); border-radius: var(--radius-sm); height: 8px; overflow: hidden;">
+                    <div style="background: {{ section_colors[loop.index0] ?? '#1A7BA8' }}; height: 100%; width: {{ (section.views / max_section * 100)|round }}%; border-radius: var(--radius-sm);"></div>
                 </div>
             </div>
             {% else %}
-            <div style="text-align: center; color: var(--text-secondary); padding: var(--space-400);">No section data</div>
+            <div style="text-align: center; color: var(--text-secondary); padding: var(--sp-4);">No section data</div>
             {% endfor %}
         </div>
     </div>

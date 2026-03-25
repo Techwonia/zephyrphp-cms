@@ -34,7 +34,7 @@
         }
 
         body {
-            font-family: var(--font);
+            font-family: var(--font-sans);
             font-size: 13px;
             color: var(--text);
             background: var(--bg-app);
@@ -84,7 +84,7 @@
         .device-btn svg { width: 18px; height: 18px; }
         .topbar-page-select {
             background: transparent; border: none; color: #fff;
-            font-size: 13px; font-weight: 500; font-family: var(--font);
+            font-size: 13px; font-weight: 500; font-family: var(--font-sans);
             padding: 4px 8px; cursor: pointer; outline: none;
             appearance: none; max-width: 160px;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
@@ -112,13 +112,13 @@
 
         .topbar-btn {
             padding: 7px 16px; border-radius: 6px; font-size: 13px; font-weight: 500;
-            cursor: pointer; border: none; transition: all 0.15s; font-family: var(--font);
+            cursor: pointer; border: none; transition: all 0.15s; font-family: var(--font-sans);
         }
         .topbar-btn-outline { background: transparent; color: #aaa; border: 1px solid #444; }
         .topbar-btn-outline:hover:not(:disabled) { color: #fff; border-color: #666; }
         .topbar-btn-outline:disabled { opacity: 0.35; cursor: not-allowed; }
-        .topbar-btn-primary { background: var(--primary); color: #fff; }
-        .topbar-btn-primary:hover { background: var(--primary-hover); }
+        .topbar-btn-primary { background: var(--zui-primary-500); color: #fff; }
+        .topbar-btn-primary:hover { background: var(--zui-primary-600); }
         .topbar-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
         .topbar-btn-icon {
             display: flex; align-items: center; justify-content: center;
@@ -190,7 +190,7 @@
             justify-content: center;
             line-height: 1;
         }
-        .ab-panel-btn:hover { background: var(--bg-hover); color: var(--text); }
+        .ab-panel-btn:hover { background: var(--bg-surface-hover); color: var(--text); }
         .ab-panel-subheader {
             font-size: 11px; font-weight: 700; text-transform: uppercase;
             letter-spacing: 0.05em; color: var(--text-disabled); margin-bottom: 10px;
@@ -201,8 +201,8 @@
             cursor: pointer;
             transition: background 0.1s;
         }
-        .ab-page-item:hover { background: var(--bg-hover); }
-        .ab-page-item.active { background: rgba(0,91,211,0.06); border-left: 3px solid var(--primary); }
+        .ab-page-item:hover { background: var(--bg-surface-hover); }
+        .ab-page-item.active { background: rgba(0,91,211,0.06); border-left: 3px solid var(--zui-primary-500); }
         .ab-page-title { font-size: 13px; font-weight: 600; color: var(--text); }
         .ab-page-url { font-size: 11px; color: var(--text-disabled); margin-top: 2px; font-family: monospace; }
 
@@ -222,8 +222,8 @@
             transition: all 0.1s; border-left: 2px solid transparent;
             position: relative; min-height: 36px;
         }
-        .tree-item:hover { background: var(--bg-hover); }
-        .tree-item.active { background: var(--primary-bg); border-left-color: var(--primary); color: var(--primary); }
+        .tree-item:hover { background: var(--bg-surface-hover); }
+        .tree-item.active { background: var(--zui-primary-50); border-left-color: var(--zui-primary-500); color: var(--zui-primary-500); }
         .tree-item-chevron {
             flex-shrink: 0; color: var(--text-disabled); width: 24px; height: 24px;
             display: flex; align-items: center; justify-content: center;
@@ -256,8 +256,8 @@
             transition: all 0.1s; border-left: 2px solid transparent;
             min-height: 32px;
         }
-        .tree-subitem:hover { background: var(--bg-hover); }
-        .tree-subitem.active { background: var(--primary-bg); border-left-color: var(--primary); color: var(--primary); }
+        .tree-subitem:hover { background: var(--bg-surface-hover); }
+        .tree-subitem.active { background: var(--zui-primary-50); border-left-color: var(--zui-primary-500); color: var(--zui-primary-500); }
         .tree-subitem-icon {
             flex-shrink: 0; width: 20px; height: 20px; margin-right: 8px;
             display: flex; align-items: center; justify-content: center;
@@ -273,11 +273,11 @@
         .tree-add-block {
             display: flex; align-items: center; gap: 6px;
             padding: 5px 12px 5px 52px; margin: 0;
-            cursor: pointer; font-size: 12px; color: var(--primary);
+            cursor: pointer; font-size: 12px; color: var(--zui-primary-500);
             transition: background 0.1s; min-height: 30px; border: none; background: none;
-            font-family: var(--font); width: 100%;
+            font-family: var(--font-sans); width: 100%;
         }
-        .tree-add-block:hover { background: var(--bg-hover); }
+        .tree-add-block:hover { background: var(--bg-surface-hover); }
 
         /* Context menu */
         .tree-item-menu {
@@ -289,7 +289,7 @@
             background: none; border: none; cursor: pointer; color: var(--text-disabled);
             padding: 2px 4px; border-radius: 4px; display: flex; align-items: center;
         }
-        .tree-item-menu-btn:hover { color: var(--text); background: var(--bg-hover); }
+        .tree-item-menu-btn:hover { color: var(--text); background: var(--bg-surface-hover); }
         .context-menu {
             position: fixed;
             background: var(--bg-surface); border: 1px solid var(--border);
@@ -303,10 +303,10 @@
             padding: 7px 12px; border-radius: 6px; cursor: pointer;
             font-size: 12px; color: var(--text); border: none;
             background: none; width: 100%; text-align: left;
-            font-family: var(--font); transition: background 0.1s;
+            font-family: var(--font-sans); transition: background 0.1s;
         }
-        .context-menu-item:hover { background: var(--bg-hover); }
-        .context-menu-item.danger { color: var(--danger); }
+        .context-menu-item:hover { background: var(--bg-surface-hover); }
+        .context-menu-item.danger { color: var(--zui-error-600); }
         .context-menu-item.danger:hover { background: rgba(215,44,13,0.06); }
         .context-menu-item svg { width: 14px; height: 14px; flex-shrink: 0; }
         .context-menu-divider { height: 1px; background: var(--border); margin: 4px 0; }
@@ -317,12 +317,12 @@
         .add-section-btn {
             display: flex; align-items: center; justify-content: center; gap: 6px;
             width: 100%; margin: 0; padding: 10px 16px;
-            border: none; border-top: 1px dashed var(--border-dark);
+            border: none; border-top: 1px dashed var(--chrome-border);
             background: transparent; color: var(--text-secondary);
             cursor: pointer; font-size: 13px; font-weight: 500;
-            font-family: var(--font); transition: all 0.15s;
+            font-family: var(--font-sans); transition: all 0.15s;
         }
-        .add-section-btn:hover { color: var(--primary); background: rgba(0,91,211,0.02); }
+        .add-section-btn:hover { color: var(--zui-primary-500); background: rgba(0,91,211,0.02); }
 
         /* ── Preview ── */
         .preview-panel {
@@ -363,13 +363,13 @@
             background: none; border: none; cursor: pointer; color: var(--text-secondary);
             padding: 4px; border-radius: 4px; transition: all 0.15s; display: flex;
         }
-        .right-header-back:hover { background: var(--bg-hover); color: var(--text); }
+        .right-header-back:hover { background: var(--bg-surface-hover); color: var(--text); }
         .right-header-title { flex: 1; font-size: 14px; font-weight: 600; }
         .right-header-close {
             background: none; border: none; cursor: pointer; color: var(--text-secondary);
             padding: 4px; border-radius: 4px; transition: all 0.15s; display: flex;
         }
-        .right-header-close:hover { background: var(--bg-hover); color: var(--text); }
+        .right-header-close:hover { background: var(--bg-surface-hover); color: var(--text); }
         .right-body { flex: 1; overflow-y: auto; padding: 16px; }
 
         /* ── Settings Form Controls ── */
@@ -381,10 +381,10 @@
         .setting-input {
             width: 100%; padding: 8px 10px;
             border: 1px solid var(--border); border-radius: 6px;
-            font-size: 13px; font-family: var(--font);
+            font-size: 13px; font-family: var(--font-sans);
             background: var(--bg-surface); transition: border-color 0.15s;
         }
-        .setting-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(0,91,211,0.15); }
+        .setting-input:focus { outline: none; border-color: var(--zui-primary-500); box-shadow: 0 0 0 2px rgba(0,91,211,0.15); }
         textarea.setting-input { resize: vertical; min-height: 80px; }
         .color-field { display: flex; align-items: center; gap: 8px; }
         .color-swatch {
@@ -398,9 +398,9 @@
             border: 1px solid var(--border); border-radius: 6px;
             font-size: 13px; font-family: monospace;
         }
-        .color-hex:focus { outline: none; border-color: var(--primary); }
+        .color-hex:focus { outline: none; border-color: var(--zui-primary-500); }
         .range-field { display: flex; align-items: center; gap: 8px; }
-        .range-slider { flex: 1; accent-color: var(--primary); height: 4px; }
+        .range-slider { flex: 1; accent-color: var(--zui-primary-500); height: 4px; }
         .range-value { min-width: 40px; text-align: right; font-size: 12px; font-weight: 500; color: var(--text-secondary); }
         select.setting-input {
             appearance: none;
@@ -410,11 +410,11 @@
             padding-right: 28px;
         }
         .checkbox-field { display: flex; align-items: center; gap: 8px; }
-        .checkbox-field input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--primary); }
+        .checkbox-field input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--zui-primary-500); }
         .checkbox-label-text { font-size: 13px; color: var(--text); cursor: pointer; }
         .image-field-preview {
             width: 100%; height: 120px;
-            border: 1px dashed var(--border-dark); border-radius: 6px;
+            border: 1px dashed var(--chrome-border); border-radius: 6px;
             display: flex; align-items: center; justify-content: center;
             background: var(--bg-subdued); color: var(--text-disabled);
             font-size: 12px; overflow: hidden; position: relative;
@@ -431,8 +431,8 @@
         }
         .image-field-actions button {
             flex: 1; padding: 5px 0; font-size: 11px;
-            border: 1px solid var(--border-dark); border-radius: 4px;
-            background: var(--bg); color: var(--text); cursor: pointer;
+            border: 1px solid var(--chrome-border); border-radius: 4px;
+            background: var(--bg-app); color: var(--text); cursor: pointer;
         }
         .image-field-actions button:hover { background: var(--bg-subdued); }
         /* Media browser modal */
@@ -489,8 +489,8 @@
             display: flex; justify-content: center; gap: 6px; padding: 12px 0 0;
         }
         .media-browser-pagination button {
-            padding: 4px 10px; font-size: 11px; border: 1px solid var(--border-dark);
-            border-radius: 4px; background: var(--bg); color: var(--text); cursor: pointer;
+            padding: 4px 10px; font-size: 11px; border: 1px solid var(--chrome-border);
+            border-radius: 4px; background: var(--bg-app); color: var(--text); cursor: pointer;
         }
         .media-browser-pagination button:disabled { opacity: 0.4; cursor: default; }
         .media-browser-uploading {
@@ -501,10 +501,10 @@
         .font-picker-trigger {
             display: flex; align-items: center; gap: 8px; width: 100%;
             padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px;
-            background: var(--bg-surface); cursor: pointer; font-family: var(--font);
+            background: var(--bg-surface); cursor: pointer; font-family: var(--font-sans);
             transition: border-color 0.15s;
         }
-        .font-picker-trigger:hover { border-color: var(--border-dark); }
+        .font-picker-trigger:hover { border-color: var(--chrome-border); }
         .font-picker-trigger .fp-preview {
             flex: 1; font-size: 14px; color: var(--text); white-space: nowrap;
             overflow: hidden; text-overflow: ellipsis;
@@ -531,9 +531,9 @@
         }
         .font-picker-search input {
             width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px;
-            font-size: 13px; font-family: var(--font);
+            font-size: 13px; font-family: var(--font-sans);
         }
-        .font-picker-search input:focus { outline: none; border-color: var(--primary); }
+        .font-picker-search input:focus { outline: none; border-color: var(--zui-primary-500); }
         .font-picker-categories {
             display: flex; gap: 4px; padding: 10px 18px; border-bottom: 1px solid var(--border);
             overflow-x: auto; flex-shrink: 0;
@@ -541,9 +541,9 @@
         .font-picker-cat {
             padding: 4px 10px; font-size: 11px; font-weight: 500; border-radius: 20px;
             border: 1px solid var(--border); background: transparent; cursor: pointer;
-            white-space: nowrap; font-family: var(--font); color: var(--text-secondary);
+            white-space: nowrap; font-family: var(--font-sans); color: var(--text-secondary);
         }
-        .font-picker-cat.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .font-picker-cat.active { background: var(--zui-primary-500); color: #fff; border-color: var(--zui-primary-500); }
         .font-picker-list {
             flex: 1; overflow-y: auto; padding: 8px 0;
         }
@@ -551,8 +551,8 @@
             display: flex; align-items: center; justify-content: space-between;
             padding: 10px 18px; cursor: pointer; transition: background 0.1s;
         }
-        .font-picker-item:hover { background: var(--bg-hover); }
-        .font-picker-item.selected { background: var(--primary-bg); }
+        .font-picker-item:hover { background: var(--bg-surface-hover); }
+        .font-picker-item.selected { background: var(--zui-primary-50); }
         .font-picker-item .fp-name { font-size: 13px; font-weight: 500; }
         .font-picker-item .fp-sample { font-size: 18px; color: var(--text); }
 
@@ -583,9 +583,9 @@
         .css-prop-label { font-size: 11px; color: var(--text-secondary); }
         .css-prop-input {
             padding: 5px 8px; border: 1px solid var(--border); border-radius: 4px;
-            font-size: 12px; font-family: var(--font); background: var(--bg-surface);
+            font-size: 12px; font-family: var(--font-sans); background: var(--bg-surface);
         }
-        .css-prop-input:focus { outline: none; border-color: var(--primary); }
+        .css-prop-input:focus { outline: none; border-color: var(--zui-primary-500); }
         .css-prop-input.small { width: 70px; }
         .css-prop-inline { display: flex; gap: 4px; align-items: center; }
         .css-editor-code {
@@ -620,9 +620,9 @@
         .section-gallery-tab {
             padding: 6px 14px; font-size: 12px; font-weight: 500; border-radius: 20px;
             border: 1px solid var(--border); background: transparent; cursor: pointer;
-            font-family: var(--font); color: var(--text-secondary);
+            font-family: var(--font-sans); color: var(--text-secondary);
         }
-        .section-gallery-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .section-gallery-tab.active { background: var(--zui-primary-500); color: #fff; border-color: var(--zui-primary-500); }
         .section-gallery-grid {
             flex: 1; overflow-y: auto; padding: 16px 20px;
             display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px;
@@ -631,7 +631,7 @@
             border: 2px solid var(--border); border-radius: 8px;
             overflow: hidden; cursor: pointer; transition: all 0.15s;
         }
-        .section-gallery-card:hover { border-color: var(--primary); box-shadow: 0 2px 8px rgba(0,91,211,0.1); }
+        .section-gallery-card:hover { border-color: var(--zui-primary-500); box-shadow: 0 2px 8px rgba(0,91,211,0.1); }
         .section-gallery-card-preview {
             height: 100px; background: var(--bg-subdued);
             display: flex; align-items: center; justify-content: center;
@@ -647,7 +647,7 @@
             display: flex; align-items: center; justify-content: space-between;
             padding: 12px 16px; cursor: pointer; transition: background 0.15s;
         }
-        .settings-group-header:hover { background: var(--bg-hover); }
+        .settings-group-header:hover { background: var(--bg-surface-hover); }
         .settings-group-title { font-size: 13px; font-weight: 500; }
         .settings-group-chevron { color: var(--text-disabled); transition: transform 0.2s; }
         .settings-group-chevron.open { transform: rotate(90deg); }
@@ -660,9 +660,9 @@
             padding: 4px 10px; font-size: 11px; font-weight: 500;
             background: transparent; border: 1px solid var(--border);
             border-radius: 4px; cursor: pointer; color: var(--text-secondary);
-            font-family: var(--font); transition: all 0.15s;
+            font-family: var(--font-sans); transition: all 0.15s;
         }
-        .add-block-btn:hover { border-color: var(--primary); color: var(--primary); }
+        .add-block-btn:hover { border-color: var(--zui-primary-500); color: var(--zui-primary-500); }
         .block-item { border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; overflow: hidden; }
         .block-header {
             display: flex; align-items: center; gap: 6px;
@@ -676,24 +676,24 @@
             background: none; border: none; cursor: pointer;
             color: var(--text-disabled); font-size: 14px; padding: 0 2px;
         }
-        .block-header .block-remove:hover { color: var(--danger); }
+        .block-header .block-remove:hover { color: var(--zui-error-600); }
         .block-body { padding: 12px; display: none; border-top: 1px solid var(--border); }
         .block-body.open { display: block; }
 
         .remove-section-btn {
             display: flex; align-items: center; justify-content: center; gap: 6px;
             width: 100%; margin-top: 20px; padding: 8px;
-            background: transparent; border: 1px solid var(--danger); border-radius: 6px;
-            color: var(--danger); cursor: pointer; font-size: 12px;
-            font-family: var(--font); font-weight: 500; transition: all 0.15s;
+            background: transparent; border: 1px solid var(--zui-error-600); border-radius: 6px;
+            color: var(--zui-error-600); cursor: pointer; font-size: 12px;
+            font-family: var(--font-sans); font-weight: 500; transition: all 0.15s;
         }
-        .remove-section-btn:hover { background: var(--danger); color: #fff; }
+        .remove-section-btn:hover { background: var(--zui-error-600); color: #fff; }
 
         /* Layout select buttons */
         .layout-select-btns { display: flex; gap: 8px; }
         .layout-select-btn {
             flex: 1; padding: 12px 8px; border-radius: 6px; cursor: pointer;
-            font-size: 12px; font-weight: 500; font-family: var(--font);
+            font-size: 12px; font-weight: 500; font-family: var(--font-sans);
             display: flex; flex-direction: column; align-items: center; gap: 6px;
             transition: all 0.15s;
         }
@@ -713,11 +713,11 @@
             display: flex; align-items: center; gap: 6px;
             padding: 6px 16px; margin: 2px 0;
             border: none; background: transparent;
-            color: var(--primary); cursor: pointer;
-            font-size: 12px; font-weight: 500; font-family: var(--font);
+            color: var(--zui-primary-500); cursor: pointer;
+            font-size: 12px; font-weight: 500; font-family: var(--font-sans);
             transition: background 0.1s; width: 100%;
         }
-        .tree-group-add-section:hover { background: var(--bg-hover); }
+        .tree-group-add-section:hover { background: var(--bg-surface-hover); }
         .tree-group-add-section svg { width: 14px; height: 14px; }
 
         /* ── Section Picker Dropdown ── */
@@ -739,10 +739,10 @@
         .section-picker-search input {
             width: 100%; padding: 8px 12px;
             border: 1px solid var(--border); border-radius: 6px;
-            font-size: 13px; font-family: var(--font);
+            font-size: 13px; font-family: var(--font-sans);
             background: var(--bg-subdued);
         }
-        .section-picker-search input:focus { outline: none; border-color: var(--primary); background: #fff; }
+        .section-picker-search input:focus { outline: none; border-color: var(--zui-primary-500); background: #fff; }
         .section-picker-tabs {
             display: flex; border-bottom: 1px solid var(--border); padding: 0 16px;
         }
@@ -750,10 +750,10 @@
             padding: 8px 12px; font-size: 12px; font-weight: 500;
             color: var(--text-secondary); background: none; border: none;
             border-bottom: 2px solid transparent; cursor: pointer;
-            font-family: var(--font); transition: all 0.15s;
+            font-family: var(--font-sans); transition: all 0.15s;
         }
         .section-picker-tab:hover { color: var(--text); }
-        .section-picker-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .section-picker-tab.active { color: var(--zui-primary-500); border-bottom-color: var(--zui-primary-500); }
         .section-picker-inner {
             display: flex; flex: 1; overflow: hidden; min-height: 0;
         }
@@ -765,15 +765,15 @@
             padding: 9px 16px; cursor: pointer; font-size: 13px;
             color: var(--text); transition: background 0.1s;
             border: none; background: none; width: 100%;
-            font-family: var(--font); text-align: left;
+            font-family: var(--font-sans); text-align: left;
         }
-        .section-picker-list-item:hover { background: var(--bg-hover); }
-        .section-picker-list-item.active { background: var(--primary-bg); color: var(--primary); font-weight: 500; }
+        .section-picker-list-item:hover { background: var(--bg-surface-hover); }
+        .section-picker-list-item.active { background: var(--zui-primary-50); color: var(--zui-primary-500); font-weight: 500; }
         .section-picker-list-item-icon {
             width: 24px; height: 24px; flex-shrink: 0;
             display: flex; align-items: center; justify-content: center; font-size: 14px;
         }
-        .section-picker-list-item.create { color: var(--primary); font-weight: 500; border-top: 1px solid var(--border); }
+        .section-picker-list-item.create { color: var(--zui-primary-500); font-weight: 500; border-top: 1px solid var(--border); }
         .section-picker-preview {
             flex: 1; display: flex; flex-direction: column; align-items: center;
             justify-content: center; padding: 24px; background: var(--bg-subdued);
@@ -789,19 +789,19 @@
             width: 100%; padding: 8px 12px;
             border: 1px solid var(--border); border-radius: 6px;
             background: var(--bg-surface); cursor: pointer;
-            font-size: 13px; font-family: var(--font); color: var(--text);
+            font-size: 13px; font-family: var(--font-sans); color: var(--text);
             transition: border-color 0.15s;
         }
-        .link-picker-trigger:hover { border-color: var(--primary); }
+        .link-picker-trigger:hover { border-color: var(--zui-primary-500); }
         .link-picker-trigger-icon { flex-shrink: 0; width: 16px; color: var(--text-disabled); }
-        .link-picker-trigger-url { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--primary); text-align: left; }
+        .link-picker-trigger-url { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--zui-primary-500); text-align: left; }
         .link-picker-trigger-placeholder { flex: 1; color: var(--text-disabled); text-align: left; }
         .link-picker-trigger-clear {
             flex-shrink: 0; width: 20px; height: 20px; border: none; background: none;
             cursor: pointer; color: var(--text-disabled); display: flex; align-items: center; justify-content: center;
             border-radius: 4px; padding: 0;
         }
-        .link-picker-trigger-clear:hover { color: var(--danger); background: rgba(215,44,13,0.06); }
+        .link-picker-trigger-clear:hover { color: var(--zui-error-600); background: rgba(215,44,13,0.06); }
         .link-picker-overlay {
             display: none; position: fixed; inset: 0;
             background: rgba(0,0,0,0.3); z-index: 1000;
@@ -827,11 +827,11 @@
         .link-picker-tabs { display: flex; border-bottom: 1px solid var(--border); }
         .link-picker-tab {
             flex: 1; padding: 10px; text-align: center; border: none; background: none;
-            cursor: pointer; font-size: 12px; font-weight: 500; font-family: var(--font);
+            cursor: pointer; font-size: 12px; font-weight: 500; font-family: var(--font-sans);
             color: var(--text-secondary); border-bottom: 2px solid transparent; transition: all 0.15s;
         }
         .link-picker-tab:hover { color: var(--text); }
-        .link-picker-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .link-picker-tab.active { color: var(--zui-primary-500); border-bottom-color: var(--zui-primary-500); }
         .link-picker-tab-content { display: none; padding: 16px; }
         .link-picker-tab-content.active { display: block; }
         .link-picker-list { padding: 0; }
@@ -840,8 +840,8 @@
             padding: 8px 12px; cursor: pointer; border-radius: 6px;
             font-size: 13px; transition: background 0.1s;
         }
-        .link-picker-item:hover { background: var(--bg-hover); }
-        .link-picker-item.selected { background: var(--primary-bg); color: var(--primary); }
+        .link-picker-item:hover { background: var(--bg-surface-hover); }
+        .link-picker-item.selected { background: var(--zui-primary-50); color: var(--zui-primary-500); }
         .link-picker-item-icon { width: 20px; color: var(--text-disabled); text-align: center; flex-shrink: 0; }
         .link-picker-item-label { flex: 1; }
         .link-picker-section-label {
@@ -857,9 +857,9 @@
         .link-picker-input-group input[type="email"],
         .link-picker-input-group input[type="text"] {
             width: 100%; padding: 8px 12px; border: 1px solid var(--border);
-            border-radius: 6px; font-size: 13px; font-family: var(--font);
+            border-radius: 6px; font-size: 13px; font-family: var(--font-sans);
         }
-        .link-picker-input-group input:focus { outline: none; border-color: var(--primary); }
+        .link-picker-input-group input:focus { outline: none; border-color: var(--zui-primary-500); }
         .link-picker-checkbox {
             display: flex; align-items: center; gap: 8px;
             font-size: 13px; cursor: pointer; padding: 4px 0;
@@ -870,24 +870,24 @@
         }
         .link-picker-footer .btn-apply {
             padding: 8px 20px; border: none; border-radius: 6px;
-            background: var(--primary); color: #fff; font-size: 13px;
-            font-weight: 500; font-family: var(--font); cursor: pointer;
+            background: var(--zui-primary-500); color: #fff; font-size: 13px;
+            font-weight: 500; font-family: var(--font-sans); cursor: pointer;
             transition: background 0.15s;
         }
-        .link-picker-footer .btn-apply:hover { background: var(--primary-hover); }
+        .link-picker-footer .btn-apply:hover { background: var(--zui-primary-600); }
         .link-picker-footer .btn-cancel {
             padding: 8px 16px; border: 1px solid var(--border); border-radius: 6px;
             background: var(--bg-surface); color: var(--text); font-size: 13px;
-            font-weight: 500; font-family: var(--font); cursor: pointer;
+            font-weight: 500; font-family: var(--font-sans); cursor: pointer;
             transition: all 0.15s;
         }
-        .link-picker-footer .btn-cancel:hover { background: var(--bg-hover); }
+        .link-picker-footer .btn-cancel:hover { background: var(--bg-surface-hover); }
         .link-picker-back-btn {
             background: none; border: none; cursor: pointer; color: var(--text-secondary);
-            font-size: 13px; font-family: var(--font); display: flex; align-items: center; gap: 4px;
+            font-size: 13px; font-family: var(--font-sans); display: flex; align-items: center; gap: 4px;
             padding: 8px 12px; border-radius: 6px; margin-bottom: 8px;
         }
-        .link-picker-back-btn:hover { background: var(--bg-hover); color: var(--text); }
+        .link-picker-back-btn:hover { background: var(--bg-surface-hover); color: var(--text); }
 
         /* ── Toast ── */
         .toast {
@@ -999,7 +999,7 @@
                 <div class="ab-panel-header">Theme Settings</div>
                 <div id="themeSettingsGroups" style="padding: 8px 0;"><!-- Populated by JS --></div>
                 <div style="padding:0 12px 12px;">
-                    <button type="button" id="openCssEditorBtn" style="width:100%;padding:8px 12px;background:transparent;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;font-family:var(--font);color:var(--text-secondary);display:flex;align-items:center;gap:6px;transition:all 0.15s;margin-bottom:12px;" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)';" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-secondary)';">
+                    <button type="button" id="openCssEditorBtn" style="width:100%;padding:8px 12px;background:transparent;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;font-family:var(--font-sans);color:var(--text-secondary);display:flex;align-items:center;gap:6px;transition:all 0.15s;margin-bottom:12px;" onmouseover="this.style.borderColor='var(--zui-primary-500)';this.style.color='var(--zui-primary-500)';" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-secondary)';">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                         Custom CSS Editor
                     </button>
@@ -1017,7 +1017,7 @@
                                 <textarea name="description" rows="2"
                                     style="width:100%; padding:6px 10px; border:1px solid var(--border); border-radius:6px; font-size:13px; background:var(--bg-app); resize:vertical;">{{ theme.getDescription() ?? '' }}</textarea>
                             </div>
-                            <button type="submit" style="padding:6px 14px; background:var(--primary); color:#fff; border:none; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;">Save Info</button>
+                            <button type="submit" style="padding:6px 14px; background:var(--zui-primary-500); color:#fff; border:none; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;">Save Info</button>
                         </form>
                     </div>
                 </div>
@@ -1096,7 +1096,7 @@
         </div>
         <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
             <button id="cancelAddPage" style="padding:8px 16px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-size:13px;">Cancel</button>
-            <button id="confirmAddPage" style="padding:8px 16px; background:var(--primary); color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600;">Create Page</button>
+            <button id="confirmAddPage" style="padding:8px 16px; background:var(--zui-primary-500); color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600;">Create Page</button>
         </div>
     </div>
 </div>
@@ -1982,9 +1982,9 @@
                 picker.style.cssText = 'border:1px solid var(--border);border-radius:8px;padding:8px;margin-top:8px;background:var(--bg-subdued);';
                 schema.blocks.forEach(function(bt) {
                     var item = document.createElement('button');
-                    item.style.cssText = 'display:flex;align-items:center;gap:8px;width:100%;padding:6px 10px;border:none;background:none;cursor:pointer;border-radius:6px;font-size:12px;font-family:var(--font);color:var(--text);transition:background 0.1s;';
+                    item.style.cssText = 'display:flex;align-items:center;gap:8px;width:100%;padding:6px 10px;border:none;background:none;cursor:pointer;border-radius:6px;font-size:12px;font-family:var(--font-sans);color:var(--text);transition:background 0.1s;';
                     item.innerHTML = '<span style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;background:var(--bg-surface);border-radius:4px;font-size:11px;border:1px solid var(--border);">' + (BLOCK_TYPE_ICONS[bt.type] || '•') + '</span> ' + (bt.name || bt.type);
-                    item.addEventListener('mouseenter', function() { this.style.background = 'var(--bg-hover)'; });
+                    item.addEventListener('mouseenter', function() { this.style.background = 'var(--bg-surface-hover)'; });
                     item.addEventListener('mouseleave', function() { this.style.background = 'none'; });
                     item.addEventListener('click', function() { picker.remove(); addBlockOfType(sec, bt, sectionId); });
                     picker.appendChild(item);
@@ -2317,7 +2317,7 @@
                 btn.type = 'button';
                 var isActive = (String(value) === String(opt.value));
                 btn.className = 'layout-select-btn';
-                btn.style.cssText = 'background:' + (isActive ? 'var(--primary-bg)' : 'var(--bg-subdued)') + ';border:' + (isActive ? '2px solid var(--primary)' : '1px solid var(--border)') + ';color:' + (isActive ? 'var(--primary)' : 'var(--text-secondary)') + ';';
+                btn.style.cssText = 'background:' + (isActive ? 'var(--zui-primary-50)' : 'var(--bg-subdued)') + ';border:' + (isActive ? '2px solid var(--zui-primary-500)' : '1px solid var(--border)') + ';color:' + (isActive ? 'var(--zui-primary-500)' : 'var(--text-secondary)') + ';';
                 btn.innerHTML = '<span>' + opt.label + '</span>';
                 btn.addEventListener('click', function() {
                     onChange(opt.value);
@@ -2705,7 +2705,7 @@
                 backBtn.addEventListener('click', function() { showCollectionTypes(); });
                 content.appendChild(backBtn);
                 var err = document.createElement('div');
-                err.style.cssText = 'padding:12px;color:var(--danger);font-size:13px;';
+                err.style.cssText = 'padding:12px;color:var(--zui-error-600);font-size:13px;';
                 err.textContent = 'Failed to load entries';
                 content.appendChild(err);
             });
@@ -2796,7 +2796,7 @@
         var galleryItem = document.createElement('button');
         galleryItem.className = 'section-picker-list-item create';
         galleryItem.innerHTML =
-            '<span class="section-picker-list-item-icon" style="color:var(--primary);">&#x1F5BC;</span>' +
+            '<span class="section-picker-list-item-icon" style="color:var(--zui-primary-500);">&#x1F5BC;</span>' +
             '<span>Browse Gallery</span>';
         galleryItem.addEventListener('click', function() {
             closeSectionPicker();
@@ -2808,7 +2808,7 @@
         var createItem = document.createElement('button');
         createItem.className = 'section-picker-list-item create';
         createItem.innerHTML =
-            '<span class="section-picker-list-item-icon" style="color:var(--primary);">+</span>' +
+            '<span class="section-picker-list-item-icon" style="color:var(--zui-primary-500);">+</span>' +
             '<span>Create New</span>';
         createItem.addEventListener('click', function() { showCreateSectionForm(); });
         list.appendChild(createItem);
@@ -2820,9 +2820,9 @@
         preview.innerHTML =
             '<div style="width:100%;padding:0 8px;">' +
             '<div style="margin-bottom:12px;"><label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;">Section Name</label>' +
-            '<input type="text" id="newSectionNameInput" placeholder="e.g. Pricing Table" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);"></div>' +
+            '<input type="text" id="newSectionNameInput" placeholder="e.g. Pricing Table" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font-sans);"></div>' +
             '<div style="display:flex;gap:8px;">' +
-            '<button id="createNewSectionBtn" style="padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;font-weight:500;">Create & Add</button>' +
+            '<button id="createNewSectionBtn" style="padding:8px 16px;background:var(--zui-primary-500);color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;font-weight:500;">Create & Add</button>' +
             '<button id="cancelNewSectionBtn" style="padding:8px 16px;background:transparent;color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:13px;cursor:pointer;">Back</button></div></div>';
 
         document.getElementById('newSectionNameInput').focus();

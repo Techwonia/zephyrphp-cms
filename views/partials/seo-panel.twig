@@ -10,7 +10,7 @@
             <input type="text" id="meta_title" name="meta_title" class="form-control"
                    value="{{ entry.meta_title ?? '' }}" maxlength="255"
                    oninput="updateSeoCounter(this, 'meta-title-counter', 60)">
-            <div class="text-muted" style="display: flex; justify-content: space-between; font-size: 0.85em; margin-top: 4px;">
+            <div class="text-secondary text-sm" style="display: flex; justify-content: space-between; font-size: 0.85em; margin-top: 4px;">
                 <span>Recommended: 30–60 characters</span>
                 <span id="meta-title-counter">{{ (entry.meta_title ?? '')|length }} / 60</span>
             </div>
@@ -21,7 +21,7 @@
             <textarea id="meta_description" name="meta_description" class="form-control"
                       rows="3" maxlength="500"
                       oninput="updateSeoCounter(this, 'meta-desc-counter', 160)">{{ entry.meta_description ?? '' }}</textarea>
-            <div class="text-muted" style="display: flex; justify-content: space-between; font-size: 0.85em; margin-top: 4px;">
+            <div class="text-secondary text-sm" style="display: flex; justify-content: space-between; font-size: 0.85em; margin-top: 4px;">
                 <span>Recommended: 120–160 characters</span>
                 <span id="meta-desc-counter">{{ (entry.meta_description ?? '')|length }} / 160</span>
             </div>
@@ -31,7 +31,7 @@
             <label for="og_image">Open Graph Image URL</label>
             <input type="text" id="og_image" name="og_image" class="form-control"
                    value="{{ entry.og_image ?? '' }}" placeholder="https://example.com/image.jpg">
-            <p class="text-muted" style="font-size: 0.85em;">Preview image for social media shares. Recommended: 1200x630px.</p>
+            <p class="text-secondary text-sm" style="font-size: 0.85em;">Preview image for social media shares. Recommended: 1200x630px.</p>
         </div>
 
         <div style="display: flex; gap: 16px; flex-wrap: wrap;">

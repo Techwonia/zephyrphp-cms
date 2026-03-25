@@ -10,22 +10,22 @@
     .edit-topbar {
         display: flex;
         align-items: center;
-        gap: var(--space-400);
-        margin-bottom: var(--space-600);
+        gap: var(--sp-4);
+        margin-bottom: var(--sp-6);
     }
     .edit-topbar .back-link {
         display: inline-flex;
         align-items: center;
-        gap: var(--space-200);
+        gap: var(--sp-2);
         color: var(--text-secondary);
-        font-size: var(--font-sm);
+        font-size: var(--text-sm);
         text-decoration: none;
         transition: color 0.15s;
     }
-    .edit-topbar .back-link:hover { color: var(--color-primary); text-decoration: none; }
+    .edit-topbar .back-link:hover { color: var(--zui-primary-500); text-decoration: none; }
     .edit-topbar .back-link svg { width: 16px; height: 16px; }
     .edit-topbar .collection-title {
-        font-size: var(--font-xl);
+        font-size: var(--text-xl);
         font-weight: 700;
         color: var(--text);
         flex: 1;
@@ -33,20 +33,20 @@
     .edit-topbar .btn-view-entries {
         display: inline-flex;
         align-items: center;
-        gap: var(--space-200);
-        padding: var(--space-200) var(--space-400);
+        gap: var(--sp-2);
+        padding: var(--sp-2) var(--sp-4);
         border: 1px solid var(--border);
-        border-radius: var(--radius-200);
+        border-radius: var(--radius);
         background: var(--bg-surface);
         color: var(--text);
-        font-size: var(--font-sm);
+        font-size: var(--text-sm);
         font-weight: 500;
         text-decoration: none;
         transition: all 0.15s;
     }
     .edit-topbar .btn-view-entries:hover {
-        border-color: var(--color-primary);
-        color: var(--color-primary);
+        border-color: var(--zui-primary-500);
+        color: var(--zui-primary-500);
         text-decoration: none;
     }
 
@@ -54,30 +54,30 @@
     .edit-layout {
         display: grid;
         grid-template-columns: 180px 1fr;
-        gap: var(--space-600);
+        gap: var(--sp-6);
         align-items: start;
     }
 
     /* Section sidebar nav */
     .section-nav {
         position: sticky;
-        top: calc(var(--topbar-height) + var(--space-600));
+        top: calc(var(--topbar-height) + var(--sp-6));
         display: flex;
         flex-direction: column;
         gap: 2px;
         background: var(--bg-surface);
-        border-radius: var(--radius-200);
-        padding: var(--space-200);
+        border-radius: var(--radius);
+        padding: var(--sp-2);
         border: 1px solid var(--border);
     }
     .section-nav a {
         display: block;
-        padding: var(--space-200) var(--space-300);
+        padding: var(--sp-2) var(--sp-3);
         color: var(--text-secondary);
-        font-size: var(--font-sm);
+        font-size: var(--text-sm);
         font-weight: 500;
         text-decoration: none;
-        border-radius: var(--radius-100);
+        border-radius: var(--radius-sm);
         border-left: 3px solid transparent;
         transition: all 0.15s;
     }
@@ -87,9 +87,9 @@
         text-decoration: none;
     }
     .section-nav a.active {
-        color: var(--color-primary);
+        color: var(--zui-primary-500);
         background: rgba(26, 123, 168, 0.06);
-        border-left-color: var(--color-primary);
+        border-left-color: var(--zui-primary-500);
         font-weight: 600;
     }
 
@@ -101,18 +101,18 @@
 
     /* Section cards */
     .edit-section {
-        margin-bottom: var(--space-600);
-        scroll-margin-top: calc(var(--topbar-height) + var(--space-400));
+        margin-bottom: var(--sp-6);
+        scroll-margin-top: calc(var(--topbar-height) + var(--sp-4));
     }
     .section-card {
         background: var(--bg-surface);
         border: 1px solid var(--border);
-        border-radius: var(--radius-200);
+        border-radius: var(--radius);
         overflow: hidden;
     }
     .section-header {
-        padding: var(--space-400) var(--space-500);
-        font-size: var(--font-sm);
+        padding: var(--sp-4) var(--sp-5);
+        font-size: var(--text-sm);
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.06em;
@@ -121,32 +121,32 @@
         background: var(--bg-subdued);
     }
     .section-body {
-        padding: var(--space-500);
+        padding: var(--sp-5);
     }
 
     /* Form elements within sections */
-    .edit-section .form-group { margin-bottom: var(--space-400); }
+    .edit-section .form-group { margin-bottom: var(--sp-4); }
     .edit-section .form-group:last-child { margin-bottom: 0; }
     .edit-section .form-group label {
         display: block;
-        font-size: var(--font-sm);
+        font-size: var(--text-sm);
         font-weight: 600;
         color: var(--text);
-        margin-bottom: var(--space-100);
+        margin-bottom: var(--sp-1);
     }
     .edit-section .form-control {
         width: 100%;
-        padding: var(--space-200) var(--space-300);
+        padding: var(--sp-2) var(--sp-3);
         border: 1px solid var(--border);
-        border-radius: var(--radius-100);
-        font-size: var(--font-base);
+        border-radius: var(--radius-sm);
+        font-size: var(--text-base);
         background: var(--bg-surface);
         color: var(--text);
         transition: border-color 0.15s;
     }
     .edit-section .form-control:focus {
         outline: none;
-        border-color: var(--color-primary);
+        border-color: var(--zui-primary-500);
         box-shadow: 0 0 0 2px rgba(26, 123, 168, 0.12);
     }
     .edit-section .form-control:disabled,
@@ -158,36 +158,36 @@
     .edit-section .form-hint {
         font-size: 0.75rem;
         color: var(--text-secondary);
-        margin-top: var(--space-100);
+        margin-top: var(--sp-1);
         line-height: 1.4;
     }
     .form-row-2 {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: var(--space-400);
+        gap: var(--sp-4);
     }
     .form-row-3 {
         display: grid;
         grid-template-columns: 1fr 1fr 1fr;
-        gap: var(--space-400);
+        gap: var(--sp-4);
     }
 
     /* Feature toggles grid */
     .features-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: var(--space-300);
-        margin-top: var(--space-400);
-        padding-top: var(--space-400);
+        gap: var(--sp-3);
+        margin-top: var(--sp-4);
+        padding-top: var(--sp-4);
         border-top: 1px solid var(--border);
     }
     .feature-toggle {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: var(--space-200) var(--space-300);
+        padding: var(--sp-2) var(--sp-3);
         border: 1px solid var(--border);
-        border-radius: var(--radius-100);
+        border-radius: var(--radius-sm);
         background: var(--bg-subdued);
         transition: border-color 0.15s;
     }
@@ -198,7 +198,7 @@
         gap: 1px;
     }
     .feature-toggle .feature-label {
-        font-size: var(--font-sm);
+        font-size: var(--text-sm);
         font-weight: 500;
         color: var(--text);
     }
@@ -211,13 +211,13 @@
     .system-fields-toggle {
         display: flex;
         align-items: center;
-        gap: var(--space-200);
-        padding: var(--space-300) var(--space-500);
+        gap: var(--sp-2);
+        padding: var(--sp-3) var(--sp-5);
         background: var(--bg-subdued);
         border-bottom: 1px solid var(--border);
         cursor: pointer;
         user-select: none;
-        font-size: var(--font-sm);
+        font-size: var(--text-sm);
         font-weight: 600;
         color: var(--text-secondary);
         transition: background 0.15s;
@@ -238,16 +238,16 @@
     .system-field-row {
         display: flex;
         align-items: center;
-        padding: var(--space-200) var(--space-500);
+        padding: var(--sp-2) var(--sp-5);
         border-bottom: 1px solid var(--bg-subdued);
-        font-size: var(--font-sm);
-        gap: var(--space-300);
+        font-size: var(--text-sm);
+        gap: var(--sp-3);
     }
     .system-field-row:last-child { border-bottom: none; }
     .system-field-row .sf-icon {
         width: 28px;
         height: 28px;
-        border-radius: var(--radius-100);
+        border-radius: var(--radius-sm);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -270,7 +270,7 @@
     }
     .system-field-row .sf-badges {
         display: flex;
-        gap: var(--space-100);
+        gap: var(--sp-1);
         flex-wrap: wrap;
         flex: 1;
     }
@@ -316,7 +316,7 @@
         font-weight: 500;
     }
     .badge-slug-source {
-        background: var(--color-primary);
+        background: var(--zui-primary-500);
         color: #fff;
     }
     .badge-relation {
@@ -341,23 +341,23 @@
     .custom-field-row {
         display: flex;
         align-items: center;
-        padding: var(--space-300) var(--space-500);
+        padding: var(--sp-3) var(--sp-5);
         border-bottom: 1px solid var(--bg-subdued);
-        gap: var(--space-300);
+        gap: var(--sp-3);
         transition: background 0.15s;
     }
     .custom-field-row:last-child { border-bottom: none; }
     .custom-field-row:hover { background: var(--bg-surface-hover); }
     .custom-field-row.dragging { opacity: 0.4; background: var(--bg-subdued); }
-    .custom-field-row.drag-over { border-top: 2px solid var(--color-primary); }
+    .custom-field-row.drag-over { border-top: 2px solid var(--zui-primary-500); }
 
     .drag-handle {
         cursor: grab;
         color: var(--border-hover);
         display: flex;
         align-items: center;
-        padding: var(--space-100);
-        border-radius: var(--radius-100);
+        padding: var(--sp-1);
+        border-radius: var(--radius-sm);
         transition: color 0.15s;
         flex-shrink: 0;
     }
@@ -368,7 +368,7 @@
     .field-type-icon {
         width: 32px;
         height: 32px;
-        border-radius: var(--radius-100);
+        border-radius: var(--radius-sm);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -401,11 +401,11 @@
     .field-name-line {
         display: flex;
         align-items: baseline;
-        gap: var(--space-200);
+        gap: var(--sp-2);
     }
     .field-name-text {
         font-weight: 600;
-        font-size: var(--font-base);
+        font-size: var(--text-base);
         color: var(--text);
     }
     .field-slug-text {
@@ -415,14 +415,14 @@
     }
     .field-badges-line {
         display: flex;
-        gap: var(--space-100);
+        gap: var(--sp-1);
         flex-wrap: wrap;
         margin-top: 3px;
     }
 
     .field-actions {
         display: flex;
-        gap: var(--space-100);
+        gap: var(--sp-1);
         flex-shrink: 0;
     }
     .field-action-btn {
@@ -432,7 +432,7 @@
         align-items: center;
         justify-content: center;
         border: 1px solid transparent;
-        border-radius: var(--radius-100);
+        border-radius: var(--radius-sm);
         background: transparent;
         color: var(--text-secondary);
         cursor: pointer;
@@ -451,43 +451,43 @@
     .field-action-btn svg { width: 15px; height: 15px; }
 
     .add-field-bar {
-        padding: var(--space-400) var(--space-500);
+        padding: var(--sp-4) var(--sp-5);
         text-align: center;
         border-top: 1px solid var(--border);
     }
     .btn-add-field {
         display: inline-flex;
         align-items: center;
-        gap: var(--space-200);
-        padding: var(--space-200) var(--space-500);
+        gap: var(--sp-2);
+        padding: var(--sp-2) var(--sp-5);
         border: 1px dashed var(--border-hover);
-        border-radius: var(--radius-200);
+        border-radius: var(--radius);
         background: transparent;
-        color: var(--color-primary);
-        font-size: var(--font-sm);
+        color: var(--zui-primary-500);
+        font-size: var(--text-sm);
         font-weight: 600;
         cursor: pointer;
         transition: all 0.15s;
     }
     .btn-add-field:hover {
-        border-color: var(--color-primary);
+        border-color: var(--zui-primary-500);
         background: rgba(26, 123, 168, 0.04);
     }
     .btn-add-field svg { width: 16px; height: 16px; }
 
     .empty-fields-message {
         text-align: center;
-        padding: var(--space-800) var(--space-500);
+        padding: var(--sp-8) var(--sp-5);
         color: var(--text-secondary);
-        font-size: var(--font-sm);
+        font-size: var(--text-sm);
     }
 
     .slug-warning {
-        padding: var(--space-200) var(--space-400);
-        margin: 0 var(--space-500) var(--space-300);
+        padding: var(--sp-2) var(--sp-4);
+        margin: 0 var(--sp-5) var(--sp-3);
         background: #FFF3CD;
         border: 1px solid #FFC107;
-        border-radius: var(--radius-100);
+        border-radius: var(--radius-sm);
         font-size: 0.75rem;
         color: #856404;
         line-height: 1.5;
@@ -511,7 +511,7 @@
     }
     .modal-dialog {
         background: var(--bg-surface);
-        border-radius: var(--radius-300);
+        border-radius: var(--radius-lg);
         width: 580px;
         max-height: 85vh;
         overflow-y: auto;
@@ -521,16 +521,16 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: var(--space-400) var(--space-500);
+        padding: var(--sp-4) var(--sp-5);
         border-bottom: 1px solid var(--border);
         position: sticky;
         top: 0;
         background: var(--bg-surface);
         z-index: 1;
-        border-radius: var(--radius-300) var(--radius-300) 0 0;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     }
     .modal-header h3 {
-        font-size: var(--font-md);
+        font-size: var(--text-md);
         font-weight: 700;
     }
     .modal-close {
@@ -543,66 +543,66 @@
         background: transparent;
         color: var(--text-secondary);
         cursor: pointer;
-        border-radius: var(--radius-100);
+        border-radius: var(--radius-sm);
         transition: all 0.15s;
     }
     .modal-close:hover { background: var(--bg-subdued); color: var(--text); }
     .modal-close svg { width: 18px; height: 18px; }
-    .modal-body { padding: var(--space-500); }
+    .modal-body { padding: var(--sp-5); }
     .modal-footer {
         display: flex;
         justify-content: flex-end;
-        gap: var(--space-300);
-        padding: var(--space-400) var(--space-500);
+        gap: var(--sp-3);
+        padding: var(--sp-4) var(--sp-5);
         border-top: 1px solid var(--border);
         position: sticky;
         bottom: 0;
         background: var(--bg-surface);
-        border-radius: 0 0 var(--radius-300) var(--radius-300);
+        border-radius: 0 0 var(--radius-lg) var(--radius-lg);
     }
-    .modal-body .form-group { margin-bottom: var(--space-400); }
+    .modal-body .form-group { margin-bottom: var(--sp-4); }
     .modal-body .form-group:last-child { margin-bottom: 0; }
     .modal-body .form-group label {
         display: block;
-        font-size: var(--font-sm);
+        font-size: var(--text-sm);
         font-weight: 600;
-        margin-bottom: var(--space-100);
+        margin-bottom: var(--sp-1);
         color: var(--text);
     }
     .modal-body .form-control {
         width: 100%;
-        padding: var(--space-200) var(--space-300);
+        padding: var(--sp-2) var(--sp-3);
         border: 1px solid var(--border);
-        border-radius: var(--radius-100);
-        font-size: var(--font-base);
+        border-radius: var(--radius-sm);
+        font-size: var(--text-base);
         background: var(--bg-surface);
         color: var(--text);
     }
     .modal-body .form-control:focus {
         outline: none;
-        border-color: var(--color-primary);
+        border-color: var(--zui-primary-500);
         box-shadow: 0 0 0 2px rgba(26, 123, 168, 0.12);
     }
     .modal-body .form-hint {
         font-size: 0.75rem;
         color: var(--text-secondary);
-        margin-top: var(--space-100);
+        margin-top: var(--sp-1);
     }
 
     /* Type selector grid */
     .type-selector-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
-        gap: var(--space-200);
+        gap: var(--sp-2);
     }
     .type-selector-btn {
         display: flex;
         flex-direction: column;
         align-items: center;
         gap: 4px;
-        padding: var(--space-200) var(--space-100);
+        padding: var(--sp-2) var(--sp-1);
         border: 2px solid var(--border);
-        border-radius: var(--radius-100);
+        border-radius: var(--radius-sm);
         background: var(--bg-surface);
         cursor: pointer;
         transition: all 0.15s;
@@ -610,13 +610,13 @@
     }
     .type-selector-btn:hover { border-color: var(--border-hover); background: var(--bg-surface-hover); }
     .type-selector-btn.selected {
-        border-color: var(--color-primary);
+        border-color: var(--zui-primary-500);
         background: rgba(26, 123, 168, 0.06);
     }
     .type-selector-btn .type-icon {
         width: 28px;
         height: 28px;
-        border-radius: var(--radius-100);
+        border-radius: var(--radius-sm);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -629,7 +629,7 @@
         font-weight: 500;
         color: var(--text-secondary);
     }
-    .type-selector-btn.selected .type-name { color: var(--color-primary); font-weight: 600; }
+    .type-selector-btn.selected .type-name { color: var(--zui-primary-500); font-weight: 600; }
 
     /* Modal section dividers */
     .modal-section-title {
@@ -638,8 +638,8 @@
         text-transform: uppercase;
         letter-spacing: 0.06em;
         color: var(--text-secondary);
-        margin: var(--space-400) 0 var(--space-300);
-        padding-bottom: var(--space-200);
+        margin: var(--sp-4) 0 var(--sp-3);
+        padding-bottom: var(--sp-2);
         border-bottom: 1px solid var(--border);
     }
 
@@ -647,18 +647,18 @@
     .properties-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: var(--space-200);
+        gap: var(--sp-2);
     }
     .property-toggle {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: var(--space-200) var(--space-300);
-        border-radius: var(--radius-100);
+        padding: var(--sp-2) var(--sp-3);
+        border-radius: var(--radius-sm);
         background: var(--bg-subdued);
     }
     .property-toggle .prop-label {
-        font-size: var(--font-sm);
+        font-size: var(--text-sm);
         font-weight: 500;
     }
 
@@ -668,10 +668,10 @@
     .perm-table {
         width: 100%;
         border-collapse: collapse;
-        font-size: var(--font-sm);
+        font-size: var(--text-sm);
     }
     .perm-table th, .perm-table td {
-        padding: var(--space-200) var(--space-300);
+        padding: var(--sp-2) var(--sp-3);
         border-bottom: 1px solid var(--bg-subdued);
     }
     .perm-table th {
@@ -688,14 +688,14 @@
     .workflow-stage-row {
         display: flex;
         align-items: center;
-        gap: var(--space-300);
-        margin-bottom: var(--space-200);
+        gap: var(--sp-3);
+        margin-bottom: var(--sp-2);
     }
     .workflow-stage-row .stage-label {
         min-width: 120px;
         font-weight: 500;
         text-transform: capitalize;
-        font-size: var(--font-sm);
+        font-size: var(--text-sm);
     }
     .workflow-stage-row .form-control { flex: 1; }
 
@@ -703,16 +703,16 @@
        Submit settings
        ============================================ */
     .submit-settings-panel {
-        margin-top: var(--space-400);
-        padding: var(--space-400);
+        margin-top: var(--sp-4);
+        padding: var(--sp-4);
         border: 1px solid var(--border);
-        border-radius: var(--radius-200);
+        border-radius: var(--radius);
         background: var(--bg-subdued);
     }
     .submit-settings-panel h4 {
-        font-size: var(--font-sm);
+        font-size: var(--text-sm);
         font-weight: 700;
-        margin-bottom: var(--space-300);
+        margin-bottom: var(--sp-3);
         color: var(--text);
     }
 
@@ -720,32 +720,32 @@
        Save bar
        ============================================ */
     .save-bar {
-        padding: var(--space-500) 0 var(--space-300);
+        padding: var(--sp-5) 0 var(--sp-3);
     }
     .btn-save {
         display: inline-flex;
         align-items: center;
-        gap: var(--space-200);
-        padding: var(--space-300) var(--space-600);
-        background: var(--color-primary);
-        color: var(--color-primary-text);
+        gap: var(--sp-2);
+        padding: var(--sp-3) var(--sp-6);
+        background: var(--zui-primary-500);
+        color: #FFF;
         border: none;
-        border-radius: var(--radius-200);
-        font-size: var(--font-base);
+        border-radius: var(--radius);
+        font-size: var(--text-base);
         font-weight: 600;
         cursor: pointer;
         transition: background 0.15s;
     }
-    .btn-save:hover { background: var(--color-primary-hover); }
+    .btn-save:hover { background: var(--zui-primary-600); }
     .btn-save:active { background: var(--color-primary-pressed); }
 
     .btn-secondary {
-        padding: var(--space-200) var(--space-400);
+        padding: var(--sp-2) var(--sp-4);
         background: var(--bg-surface);
         color: var(--text);
         border: 1px solid var(--border);
-        border-radius: var(--radius-200);
-        font-size: var(--font-sm);
+        border-radius: var(--radius);
+        font-size: var(--text-sm);
         font-weight: 500;
         cursor: pointer;
         transition: all 0.15s;
@@ -753,17 +753,17 @@
     .btn-secondary:hover { border-color: var(--border-hover); background: var(--bg-surface-hover); }
 
     .btn-primary-sm {
-        padding: var(--space-200) var(--space-400);
-        background: var(--color-primary);
-        color: var(--color-primary-text);
+        padding: var(--sp-2) var(--sp-4);
+        background: var(--zui-primary-500);
+        color: #FFF;
         border: none;
-        border-radius: var(--radius-200);
-        font-size: var(--font-sm);
+        border-radius: var(--radius);
+        font-size: var(--text-sm);
         font-weight: 600;
         cursor: pointer;
         transition: background 0.15s;
     }
-    .btn-primary-sm:hover { background: var(--color-primary-hover); }
+    .btn-primary-sm:hover { background: var(--zui-primary-600); }
 
     /* Responsive */
     @media (max-width: 768px) {
@@ -779,7 +779,7 @@
             border-bottom: 3px solid transparent;
             white-space: nowrap;
         }
-        .section-nav a.active { border-bottom-color: var(--color-primary); border-left-color: transparent; }
+        .section-nav a.active { border-bottom-color: var(--zui-primary-500); border-left-color: transparent; }
         .features-grid { grid-template-columns: 1fr; }
         .form-row-2, .form-row-3 { grid-template-columns: 1fr; }
         .type-selector-grid { grid-template-columns: repeat(3, 1fr); }
@@ -946,7 +946,7 @@
                         </div>
 
                         {# Hierarchy max depth config #}
-                        <div id="hierarchy-depth-group" style="{% if not collection.hasHierarchy() %}display:none;{% endif %}margin-top:var(--space-300);">
+                        <div id="hierarchy-depth-group" style="{% if not collection.hasHierarchy() %}display:none;{% endif %}margin-top:var(--sp-3);">
                             <div class="form-group">
                                 <label>Max Depth</label>
                                 <input type="number" name="hierarchy_max_depth" class="form-control" min="0" max="20"
@@ -956,7 +956,7 @@
                         </div>
 
                         {# Slug source info #}
-                        <div id="slug-source-group" style="{% if not collection.hasSlug() %}display:none;{% endif %}margin-top:var(--space-300);">
+                        <div id="slug-source-group" style="{% if not collection.hasSlug() %}display:none;{% endif %}margin-top:var(--sp-3);">
                             <div class="form-hint">
                                 {% if collection.getSlugSourceField() %}
                                     Slug is auto-generated from the <strong>{{ collection.getSlugSourceField() }}</strong> field.
@@ -971,7 +971,7 @@
                             {% set ss = collection.getSubmitSettings() ?? {} %}
                             <div class="submit-settings-panel">
                                 <h4>Public Submit Settings</h4>
-                                <div class="form-hint" style="margin-bottom:var(--space-300);">
+                                <div class="form-hint" style="margin-bottom:var(--sp-3);">
                                     Allow visitors to submit entries via <code>POST /collections/{{ collection.getSlug() }}/submit</code>
                                     or use <code>{{ '{{' }} render_collection_form('{{ collection.getSlug() }}') {{ '}}' }}</code> in Twig templates.
                                 </div>
@@ -996,9 +996,9 @@
                                     <div class="form-hint">Redirect after submission instead of showing success message.</div>
                                 </div>
 
-                                <div class="form-row-2" style="margin-bottom:var(--space-300);">
+                                <div class="form-row-2" style="margin-bottom:var(--sp-3);">
                                     <div class="feature-toggle">
-                                        <span class="feature-label" style="font-size:var(--font-sm);">Email Notification</span>
+                                        <span class="feature-label" style="font-size:var(--text-sm);">Email Notification</span>
                                         <label class="toggle-switch">
                                             <input type="checkbox" name="submit_email_notify" value="1"
                                                    {% if ss.email_notify ?? false %}checked{% endif %}>
@@ -1006,7 +1006,7 @@
                                         </label>
                                     </div>
                                     <div class="feature-toggle">
-                                        <span class="feature-label" style="font-size:var(--font-sm);">Honeypot (Bot Protection)</span>
+                                        <span class="feature-label" style="font-size:var(--text-sm);">Honeypot (Bot Protection)</span>
                                         <label class="toggle-switch">
                                             <input type="checkbox" name="submit_honeypot_enabled" value="1"
                                                    {% if ss.honeypot_enabled ?? false %}checked{% endif %}>
@@ -1279,7 +1279,7 @@
             <div class="section-card">
                 <div class="section-header">Access Control</div>
                 <div class="section-body">
-                    <div class="form-hint" style="margin-bottom:var(--space-300);">
+                    <div class="form-hint" style="margin-bottom:var(--sp-3);">
                         Override global entry permissions for this collection. When configured, only roles
                         with explicitly granted actions can interact with entries. Leave unchecked to use global permissions.
                         Admin role always has full access.
@@ -1292,7 +1292,7 @@
                         {% set collPerms = collection.getPermissions() ?? {} %}
                         {% set actions = ['view', 'create', 'edit', 'delete', 'publish'] %}
 
-                        <div class="feature-toggle" style="margin-bottom:var(--space-400);">
+                        <div class="feature-toggle" style="margin-bottom:var(--sp-4);">
                             <span class="feature-label">Enable per-collection permissions</span>
                             <label class="toggle-switch">
                                 <input type="checkbox" name="enable_custom_permissions" value="1"
@@ -1337,7 +1337,7 @@
                             {% endif %}
                         </div>
 
-                        <div style="margin-top:var(--space-400);">
+                        <div style="margin-top:var(--sp-4);">
                             <button type="submit" class="btn-primary-sm">Save Permissions</button>
                         </div>
                     </form>
@@ -1350,7 +1350,7 @@
             <div class="section-card">
                 <div class="section-header">Workflow</div>
                 <div class="section-body">
-                    <div class="form-hint" style="margin-bottom:var(--space-300);">
+                    <div class="form-hint" style="margin-bottom:var(--sp-3);">
                         Enable workflow to require entries to pass through approval stages before publishing.
                         The entry's status field becomes the workflow stage name.
                     </div>
@@ -1359,7 +1359,7 @@
                         {{ csrf_field() | raw }}
                         <input type="hidden" name="_save_workflow" value="1">
 
-                        <div class="feature-toggle" style="margin-bottom:var(--space-400);">
+                        <div class="feature-toggle" style="margin-bottom:var(--sp-4);">
                             <span class="feature-label">Enable Workflow</span>
                             <label class="toggle-switch">
                                 <input type="checkbox" name="workflow_enabled" value="1"
@@ -1370,7 +1370,7 @@
                         </div>
 
                         <div id="workflow-config" style="{% if not collection.isWorkflowEnabled() %}display:none;{% endif %}">
-                            <div class="form-group" style="margin-bottom:var(--space-400);">
+                            <div class="form-group" style="margin-bottom:var(--sp-4);">
                                 <label>Stages (comma-separated)</label>
                                 <input type="text" name="workflow_stages" class="form-control"
                                        value="{{ collection.getWorkflowStages()|join(', ') }}"
@@ -1378,9 +1378,9 @@
                                 <div class="form-hint">Minimum 2 stages. First stage is the entry default, last is the final published state.</div>
                             </div>
 
-                            <div style="margin-bottom:var(--space-400);">
-                                <label style="display:block;font-size:var(--font-sm);font-weight:600;margin-bottom:var(--space-200);">Reviewers per Stage</label>
-                                <div class="form-hint" style="margin-bottom:var(--space-200);">
+                            <div style="margin-bottom:var(--sp-4);">
+                                <label style="display:block;font-size:var(--text-sm);font-weight:600;margin-bottom:var(--sp-2);">Reviewers per Stage</label>
+                                <div class="form-hint" style="margin-bottom:var(--sp-2);">
                                     Enter user IDs (comma-separated) who can advance/reject entries at each stage. Leave empty to allow any user.
                                 </div>
                                 {% for stage in collection.getWorkflowStages() %}

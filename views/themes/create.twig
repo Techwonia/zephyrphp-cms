@@ -28,7 +28,7 @@
                 <input type="text" id="slug" name="slug" class="form-control"
                        value="{{ flash('_old_input').slug ?? '' }}"
                        placeholder="Auto-generated from name">
-                <small class="text-muted">Used as directory name. Leave empty to auto-generate.</small>
+                <small class="text-secondary text-sm">Used as directory name. Leave empty to auto-generate.</small>
             </div>
 
             <div class="form-group">
@@ -39,7 +39,7 @@
                         <option value="{{ theme.getSlug() }}">{{ theme.getName() }}</option>
                     {% endfor %}
                 </select>
-                <small class="text-muted">Optionally duplicate an existing theme's files.</small>
+                <small class="text-secondary text-sm">Optionally duplicate an existing theme's files.</small>
             </div>
 
             <div class="form-group">

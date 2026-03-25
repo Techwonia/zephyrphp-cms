@@ -1,7 +1,7 @@
 {% if logs|length > 0 %}
 <div style="display: flex; flex-direction: column; gap: 8px;">
     {% for log in logs %}
-    <div style="display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border-color);">
+    <div style="display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border);">
         {% set actionColor = {
             'created': '#d4edda',
             'updated': '#fff3cd',
@@ -25,5 +25,5 @@
     <a href="{{ admin_url('activity-log') }}" style="font-size: 0.85em;">View all activity &rarr;</a>
 </div>
 {% else %}
-<p class="text-muted">No activity recorded yet.</p>
+<p class="text-secondary text-sm">No activity recorded yet.</p>
 {% endif %}

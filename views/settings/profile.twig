@@ -16,7 +16,7 @@
         <form method="POST" action="{{ admin_url('settings/profile') }}">
             {{ csrf_field() | raw }}
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4);">
                 <div class="form-group">
                     <label for="name">Name *</label>
                     <input type="text" id="name" name="name" class="form-control"
@@ -38,10 +38,10 @@
                 </div>
             </div>
 
-            <hr style="margin: var(--space-500) 0; border: none; border-top: 1px solid var(--border-default);">
+            <hr style="margin: var(--sp-5) 0; border: none; border-top: 1px solid var(--border);">
 
-            <h3 style="margin-bottom: var(--space-400); font-size: 1rem;">Change Password</h3>
-            <p style="color: var(--text-secondary); margin-bottom: var(--space-400); font-size: 0.875rem;">Leave blank to keep your current password.</p>
+            <h3 style="margin-bottom: var(--sp-4); font-size: 1rem;">Change Password</h3>
+            <p style="color: var(--text-secondary); margin-bottom: var(--sp-4); font-size: 0.875rem;">Leave blank to keep your current password.</p>
 
             <div class="form-group">
                 <label for="current_password">Current Password</label>
@@ -52,7 +52,7 @@
                 {% endif %}
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4);">
                 <div class="form-group">
                     <label for="new_password">New Password</label>
                     <input type="password" id="new_password" name="new_password" class="form-control"
@@ -80,30 +80,30 @@
 </div>
 
 {# ── Two-Factor Authentication ── #}
-<div class="card" style="margin-top: var(--space-500);">
+<div class="card" style="margin-top: var(--sp-5);">
     <div class="card-body">
-        <h3 style="margin-bottom: var(--space-300); font-size: 1rem;">Two-Factor Authentication</h3>
+        <h3 style="margin-bottom: var(--sp-3); font-size: 1rem;">Two-Factor Authentication</h3>
 
         {% if profile.isTwoFactorEnabled is defined and profile.isTwoFactorEnabled() %}
-            <div style="display: flex; align-items: center; gap: var(--space-300); margin-bottom: var(--space-400);">
+            <div style="display: flex; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-4);">
                 <span style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2); border-radius: 6px; font-size: 0.8125rem; color: #22c55e; font-weight: 500;">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
                     2FA is active
                 </span>
             </div>
-            <p style="color: var(--text-secondary); font-size: 0.8125rem; margin-bottom: var(--space-400); line-height: 1.6;">
+            <p style="color: var(--text-secondary); font-size: 0.8125rem; margin-bottom: var(--sp-4); line-height: 1.6;">
                 Your account is protected with two-factor authentication. To disable it, enter your current password below.
             </p>
 
             {% if flash('2fa_recovery_codes') %}
-                <div style="background: rgba(6,182,212,0.06); border: 1px solid rgba(6,182,212,0.15); border-radius: 8px; padding: var(--space-400); margin-bottom: var(--space-400);">
-                    <h4 style="font-size: 0.875rem; font-weight: 600; margin-bottom: var(--space-200); color: var(--accent-primary);">Recovery Codes</h4>
-                    <p style="color: var(--text-secondary); font-size: 0.8125rem; margin-bottom: var(--space-300); line-height: 1.6;">
-                        Save these recovery codes in a safe place. Each code can only be used once. <strong style="color: var(--text-primary);">These will not be shown again.</strong>
+                <div style="background: rgba(6,182,212,0.06); border: 1px solid rgba(6,182,212,0.15); border-radius: 8px; padding: var(--sp-4); margin-bottom: var(--sp-4);">
+                    <h4 style="font-size: 0.875rem; font-weight: 600; margin-bottom: var(--sp-2); color: var(--accent-primary);">Recovery Codes</h4>
+                    <p style="color: var(--text-secondary); font-size: 0.8125rem; margin-bottom: var(--sp-3); line-height: 1.6;">
+                        Save these recovery codes in a safe place. Each code can only be used once. <strong style="color: var(--text-heading);">These will not be shown again.</strong>
                     </p>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; max-width: 320px; font-family: monospace; font-size: 0.875rem;">
                         {% for code in flash('2fa_recovery_codes') %}
-                            <div style="padding: 6px 10px; background: var(--bg-secondary); border: 1px solid var(--border-default); border-radius: 4px; text-align: center;">{{ code }}</div>
+                            <div style="padding: 6px 10px; background: var(--bg-subdued); border: 1px solid var(--border); border-radius: 4px; text-align: center;">{{ code }}</div>
                         {% endfor %}
                     </div>
                 </div>
@@ -126,7 +126,7 @@
                 </button>
             </form>
         {% else %}
-            <p style="color: var(--text-secondary); font-size: 0.8125rem; margin-bottom: var(--space-400); line-height: 1.6;">
+            <p style="color: var(--text-secondary); font-size: 0.8125rem; margin-bottom: var(--sp-4); line-height: 1.6;">
                 Add an extra layer of security to your account by enabling two-factor authentication (2FA).
                 You will need an authenticator app such as Google Authenticator, Authy, or 1Password.
             </p>

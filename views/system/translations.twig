@@ -9,15 +9,15 @@
 
 <div class="page-header" style="display: flex; align-items: center; justify-content: space-between;">
     <h1>Translation Manager</h1>
-    <div style="display: flex; gap: var(--space-200);">
+    <div style="display: flex; gap: var(--sp-2);">
         <a href="{{ admin_url('system/translations/progress') }}" class="btn btn-outline btn-sm">Translation Progress</a>
     </div>
 </div>
 
 {# Locale & Group Selector #}
-<div class="card" style="margin-bottom: var(--space-500);">
+<div class="card" style="margin-bottom: var(--sp-5);">
     <div class="card-body">
-        <form method="GET" action="{{ admin_url('system/translations') }}" style="display: flex; gap: var(--space-300); align-items: flex-end; flex-wrap: wrap;">
+        <form method="GET" action="{{ admin_url('system/translations') }}" style="display: flex; gap: var(--sp-3); align-items: flex-end; flex-wrap: wrap;">
             <div>
                 <label class="form-label">Locale</label>
                 <select name="locale" class="form-control" style="min-width: 120px;" onchange="this.form.submit()">
@@ -48,7 +48,7 @@
             </div>
             <div>
                 <label class="form-label">Search</label>
-                <div style="display: flex; gap: var(--space-200);">
+                <div style="display: flex; gap: var(--sp-2);">
                     <input type="text" name="search" class="form-control" value="{{ search }}" placeholder="Search keys or values...">
                     <button type="submit" class="btn btn-outline btn-sm">Filter</button>
                 </div>
@@ -58,9 +58,9 @@
 </div>
 
 {# Actions Row: Create Group, Create Locale, Export, Import #}
-<div style="display: flex; gap: var(--space-400); margin-bottom: var(--space-500); flex-wrap: wrap; align-items: flex-end;">
+<div style="display: flex; gap: var(--sp-4); margin-bottom: var(--sp-5); flex-wrap: wrap; align-items: flex-end;">
     {# Create Group #}
-    <form method="POST" action="{{ admin_url('system/translations/create-group') }}" style="display: flex; gap: var(--space-200); align-items: flex-end;">
+    <form method="POST" action="{{ admin_url('system/translations/create-group') }}" style="display: flex; gap: var(--sp-2); align-items: flex-end;">
         {{ csrf_field() | raw }}
         <input type="hidden" name="locale" value="{{ selectedLocale }}">
         <div>
@@ -71,7 +71,7 @@
     </form>
 
     {# Create Locale #}
-    <form method="POST" action="{{ admin_url('system/translations/create-locale') }}" style="display: flex; gap: var(--space-200); align-items: flex-end;">
+    <form method="POST" action="{{ admin_url('system/translations/create-locale') }}" style="display: flex; gap: var(--sp-2); align-items: flex-end;">
         {{ csrf_field() | raw }}
         <div>
             <label class="form-label">New Locale</label>
@@ -82,10 +82,10 @@
 
     {# Export #}
     {% if selectedLocale %}
-    <div style="display: flex; gap: var(--space-200); align-items: flex-end;">
+    <div style="display: flex; gap: var(--sp-2); align-items: flex-end;">
         <div>
             <label class="form-label">Export ({{ selectedLocale }})</label>
-            <div style="display: flex; gap: var(--space-100);">
+            <div style="display: flex; gap: var(--sp-1);">
                 <a href="{{ admin_url('system/translations/export?locale=' ~ selectedLocale ~ '&format=json') }}" class="btn btn-outline btn-sm">JSON</a>
                 <a href="{{ admin_url('system/translations/export?locale=' ~ selectedLocale ~ '&format=csv') }}" class="btn btn-outline btn-sm">CSV</a>
             </div>
@@ -107,7 +107,7 @@
     <input type="hidden" name="locale" value="{{ selectedLocale }}">
     <input type="hidden" name="group" value="{{ selectedGroup }}">
 
-    <div class="card" style="margin-bottom: var(--space-400);">
+    <div class="card" style="margin-bottom: var(--sp-4);">
         <div class="card-header">
             <h3 style="margin:0; font-size:1rem;">{{ selectedGroup }} ({{ selectedLocale }}) — {{ translations|length }} keys</h3>
         </div>
@@ -140,7 +140,7 @@
                                 {% if compareTranslations[key] is defined %}
                                     {{ compareTranslations[key] }}
                                 {% else %}
-                                    <span style="color: var(--color-critical); font-size: 0.75rem;">Missing</span>
+                                    <span style="color: var(--zui-error-600); font-size: 0.75rem;">Missing</span>
                                 {% endif %}
                             </td>
                             {% endif %}
@@ -150,7 +150,7 @@
                                     <input type="hidden" name="locale" value="{{ selectedLocale }}">
                                     <input type="hidden" name="group" value="{{ selectedGroup }}">
                                     <input type="hidden" name="key" value="{{ key }}">
-                                    <button type="submit" class="btn btn-outline btn-sm" style="color: var(--color-critical); padding: 2px 6px;" title="Delete key" onclick="return confirm('Delete key {{ key }}?')">&times;</button>
+                                    <button type="submit" class="btn btn-outline btn-sm" style="color: var(--zui-error-600); padding: 2px 6px;" title="Delete key" onclick="return confirm('Delete key {{ key }}?')">&times;</button>
                                 </form>
                             </td>
                         </tr>
@@ -159,13 +159,13 @@
                 </table>
             </div>
             {% else %}
-            <div style="padding: var(--space-400); color: var(--text-secondary);">No translation keys in this group yet.</div>
+            <div style="padding: var(--sp-4); color: var(--text-secondary);">No translation keys in this group yet.</div>
             {% endif %}
         </div>
     </div>
 
     {% if translations|length > 0 %}
-    <div style="margin-bottom: var(--space-500);">
+    <div style="margin-bottom: var(--sp-5);">
         <button type="submit" class="btn btn-primary">Save Translations</button>
     </div>
     {% endif %}
@@ -175,7 +175,7 @@
 <div class="card">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">Add New Key</h3></div>
     <div class="card-body">
-        <form method="POST" action="{{ admin_url('system/translations/add-key') }}" style="display: flex; gap: var(--space-300); align-items: flex-end;">
+        <form method="POST" action="{{ admin_url('system/translations/add-key') }}" style="display: flex; gap: var(--sp-3); align-items: flex-end;">
             {{ csrf_field() | raw }}
             <input type="hidden" name="locale" value="{{ selectedLocale }}">
             <input type="hidden" name="group" value="{{ selectedGroup }}">
@@ -216,7 +216,7 @@
                 {{ csrf_field() | raw }}
                 <input type="hidden" name="locale" value="{{ selectedLocale }}">
 
-                <div style="margin-bottom: var(--space-400);">
+                <div style="margin-bottom: var(--sp-4);">
                     <label class="form-label">File (JSON or CSV)</label>
                     <input type="file" name="file" class="form-control" accept=".json,.csv" required>
                     <span style="font-size: 0.75rem; color: var(--text-secondary);">
@@ -225,7 +225,7 @@
                     </span>
                 </div>
 
-                <div style="margin-bottom: var(--space-400);">
+                <div style="margin-bottom: var(--sp-4);">
                     <label class="form-label">Import Mode</label>
                     <select name="mode" class="form-control">
                         <option value="merge">Merge (keep existing, add/update new)</option>
@@ -233,7 +233,7 @@
                     </select>
                 </div>
 
-                <div style="display: flex; gap: var(--space-200); justify-content: flex-end;">
+                <div style="display: flex; gap: var(--sp-2); justify-content: flex-end;">
                     <button type="button" class="btn btn-outline" onclick="document.getElementById('importModal').style.display='none'">Cancel</button>
                     <button type="submit" class="btn btn-primary">Import</button>
                 </div>

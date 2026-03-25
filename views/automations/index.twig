@@ -42,14 +42,14 @@
                             {% if rule.getTriggerType() == 'schedule' and rule.getSchedule() %}
                                 {{ schedules[rule.getSchedule()] ?? rule.getSchedule() }}
                             {% else %}
-                                <span class="text-muted">--</span>
+                                <span class="text-secondary text-sm">--</span>
                             {% endif %}
                         </td>
                         <td>
                             {% if rule.getLastRunAt() %}
                                 {{ rule.getLastRunAt()|date('M d, Y H:i') }}
                             {% else %}
-                                <span class="text-muted">Never</span>
+                                <span class="text-secondary text-sm">Never</span>
                             {% endif %}
                         </td>
                         <td style="text-align: center;">
@@ -82,7 +82,7 @@
 </div>
 
 {% if totalPages > 1 %}
-<div class="pagination" style="margin-top: var(--space-400); display: flex; gap: var(--space-200); justify-content: center;">
+<div class="pagination" style="margin-top: var(--sp-4); display: flex; gap: var(--sp-2); justify-content: center;">
     {% if page > 1 %}
         <a href="{{ admin_url('automations?page=' ~ (page - 1)) }}" class="btn btn-outline btn-sm">Previous</a>
     {% endif %}

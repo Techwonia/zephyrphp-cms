@@ -12,30 +12,30 @@
 </div>
 
 {# Status Overview #}
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-400); margin-bottom: var(--space-500);">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--sp-4); margin-bottom: var(--sp-5);">
     <div class="card">
-        <div class="card-body" style="text-align: center; padding: var(--space-400);">
-            <div style="font-size: 2rem; font-weight: 700; color: var(--primary);">{{ php.version }}</div>
+        <div class="card-body" style="text-align: center; padding: var(--sp-4);">
+            <div style="font-size: 2rem; font-weight: 700; color: var(--zui-primary-500);">{{ php.version }}</div>
             <div style="color: var(--text-secondary); font-size: 0.85rem;">PHP Version</div>
         </div>
     </div>
     <div class="card">
-        <div class="card-body" style="text-align: center; padding: var(--space-400);">
-            <div style="font-size: 2rem; font-weight: 700; color: {% if database.connected %}var(--success){% else %}var(--danger){% endif %};">
+        <div class="card-body" style="text-align: center; padding: var(--sp-4);">
+            <div style="font-size: 2rem; font-weight: 700; color: {% if database.connected %}var(--zui-success-600){% else %}var(--zui-error-600){% endif %};">
                 {% if database.connected %}Connected{% else %}Error{% endif %}
             </div>
             <div style="color: var(--text-secondary); font-size: 0.85rem;">Database</div>
         </div>
     </div>
     <div class="card">
-        <div class="card-body" style="text-align: center; padding: var(--space-400);">
-            <div style="font-size: 2rem; font-weight: 700; color: {% if disk.used_percent > 90 %}var(--danger){% elseif disk.used_percent > 70 %}var(--warning){% else %}var(--success){% endif %};">{{ disk.used_percent }}%</div>
+        <div class="card-body" style="text-align: center; padding: var(--sp-4);">
+            <div style="font-size: 2rem; font-weight: 700; color: {% if disk.used_percent > 90 %}var(--zui-error-600){% elseif disk.used_percent > 70 %}var(--zui-warning-600){% else %}var(--zui-success-600){% endif %};">{{ disk.used_percent }}%</div>
             <div style="color: var(--text-secondary); font-size: 0.85rem;">Disk Usage</div>
         </div>
     </div>
     <div class="card">
-        <div class="card-body" style="text-align: center; padding: var(--space-400);">
-            <div style="font-size: 2rem; font-weight: 700; color: {% if maintenance.active %}var(--warning){% else %}var(--success){% endif %};">
+        <div class="card-body" style="text-align: center; padding: var(--sp-4);">
+            <div style="font-size: 2rem; font-weight: 700; color: {% if maintenance.active %}var(--zui-warning-600){% else %}var(--zui-success-600){% endif %};">
                 {% if maintenance.active %}Down{% else %}Live{% endif %}
             </div>
             <div style="color: var(--text-secondary); font-size: 0.85rem;">App Status</div>
@@ -44,7 +44,7 @@
 </div>
 
 {# Environment #}
-<div class="card" style="margin-bottom: var(--space-500);">
+<div class="card" style="margin-bottom: var(--sp-5);">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">Environment</h3></div>
     <div class="card-body">
         <div class="table-responsive">
@@ -63,7 +63,7 @@
 </div>
 
 {# PHP Info #}
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400); margin-bottom: var(--space-500);">
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); margin-bottom: var(--sp-5);">
     <div class="card">
         <div class="card-header"><h3 style="margin:0; font-size:1rem;">PHP Configuration</h3></div>
         <div class="card-body">
@@ -97,12 +97,12 @@
 </div>
 
 {# Storage Sizes #}
-<div class="card" style="margin-bottom: var(--space-500);">
+<div class="card" style="margin-bottom: var(--sp-5);">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">Storage Usage</h3></div>
     <div class="card-body">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--space-400);">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--sp-4);">
             {% for name, size in storage %}
-            <div style="text-align: center; padding: var(--space-300); background: var(--bg-secondary); border-radius: var(--radius);">
+            <div style="text-align: center; padding: var(--sp-3); background: var(--bg-subdued); border-radius: var(--radius);">
                 <div style="font-size: 1.25rem; font-weight: 600;">{{ size }}</div>
                 <div style="color: var(--text-secondary); font-size: 0.85rem;">{{ name|replace({'_': ' '})|title }}</div>
             </div>
@@ -113,7 +113,7 @@
 
 {# Database Info #}
 {% if database.connected %}
-<div class="card" style="margin-bottom: var(--space-500);">
+<div class="card" style="margin-bottom: var(--sp-5);">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">Database</h3></div>
     <div class="card-body">
         <table class="data-table">
@@ -130,7 +130,7 @@
 {% endif %}
 
 {# Directory Permissions #}
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400); margin-bottom: var(--space-500);">
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); margin-bottom: var(--sp-5);">
     <div class="card">
         <div class="card-header"><h3 style="margin:0; font-size:1rem;">Directory Permissions</h3></div>
         <div class="card-body">
@@ -141,9 +141,9 @@
                         <td>{{ dir }}</td>
                         <td>
                             {% if writable %}
-                                <span class="badge" style="background: var(--success); color: #fff;">Writable</span>
+                                <span class="badge" style="background: var(--zui-success-600); color: #fff;">Writable</span>
                             {% else %}
-                                <span class="badge" style="background: var(--danger); color: #fff;">Not Writable</span>
+                                <span class="badge" style="background: var(--zui-error-600); color: #fff;">Not Writable</span>
                             {% endif %}
                         </td>
                     </tr>
@@ -163,9 +163,9 @@
                         <td>{{ ext }}</td>
                         <td>
                             {% if loaded %}
-                                <span class="badge" style="background: var(--success); color: #fff;">Loaded</span>
+                                <span class="badge" style="background: var(--zui-success-600); color: #fff;">Loaded</span>
                             {% else %}
-                                <span class="badge" style="background: var(--danger); color: #fff;">Missing</span>
+                                <span class="badge" style="background: var(--zui-error-600); color: #fff;">Missing</span>
                             {% endif %}
                         </td>
                     </tr>

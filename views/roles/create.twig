@@ -16,7 +16,7 @@
         <form method="POST" action="{{ admin_url('roles') }}">
             {{ csrf_field() | raw }}
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4);">
                 <div class="form-group">
                     <label for="name">Name *</label>
                     <input type="text" id="name" name="name" class="form-control"

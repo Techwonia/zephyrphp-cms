@@ -12,10 +12,10 @@
 </div>
 
 {# Create Backup #}
-<div class="card" style="margin-bottom: var(--space-500);">
+<div class="card" style="margin-bottom: var(--sp-5);">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">Create New Backup</h3></div>
     <div class="card-body">
-        <div style="display: flex; gap: var(--space-300);">
+        <div style="display: flex; gap: var(--sp-3);">
             <form method="POST" action="{{ admin_url('system/backups/create') }}" style="display: inline;">
                 {{ csrf_field() | raw }}
                 <input type="hidden" name="type" value="full">
@@ -59,7 +59,7 @@
                         <td>{{ backup.size }}</td>
                         <td>{{ backup.created }}</td>
                         <td>
-                            <div style="display: flex; gap: var(--space-200);">
+                            <div style="display: flex; gap: var(--sp-2);">
                                 <a href="{{ admin_url('system/backups/' ~ backup.name ~ '/download') }}" class="btn btn-outline btn-sm">Download</a>
                                 <form method="POST" action="{{ admin_url('system/backups/' ~ backup.name ~ '/delete') }}" style="display: inline;" onsubmit="return confirm('Delete this backup?')">
                                     {{ csrf_field() | raw }}

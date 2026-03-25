@@ -52,7 +52,7 @@
             <div class="form-group">
                 <label>Slug</label>
                 <input type="text" class="form-control" value="{{ theme.getSlug() }}" disabled>
-                <small class="text-muted">Cannot be changed after creation.</small>
+                <small class="text-secondary text-sm">Cannot be changed after creation.</small>
             </div>
 
             <div class="form-group">
@@ -69,7 +69,7 @@
     {# Pages Tab #}
     <div class="tab-panel" id="tab-pages">
         <div class="pages-header">
-            <p class="text-muted">Manage pages that belong to this theme. Each page has a URL, template, and layout.</p>
+            <p class="text-secondary text-sm">Manage pages that belong to this theme. Each page has a URL, template, and layout.</p>
             <button class="btn btn-primary btn-sm" id="addPageBtn">Add Page</button>
         </div>
 
@@ -146,7 +146,7 @@
                             <span style="padding:6px 2px 6px 10px; background:var(--bg-subdued,#f7f7f7); color:var(--text-secondary); font-size:13px; border-right:1px solid var(--border-color,#ccc); flex-shrink:0;">/</span>
                             <input type="text" id="pageSlug" placeholder="about" style="width:100%; padding:6px 10px; border:none; font-size:13px; outline:none;">
                         </div>
-                        <small class="text-muted">Auto-generated from title. Edit if needed.</small>
+                        <small class="text-secondary text-sm">Auto-generated from title. Edit if needed.</small>
                     </div>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-400,16px);">
                         <div class="form-group">
@@ -158,11 +158,11 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="pageCollection">Collection <small class="text-muted">(optional)</small></label>
+                            <label for="pageCollection">Collection <small class="text-secondary text-sm">(optional)</small></label>
                             <select id="pageCollection" class="form-control">
                                 <option value="">-- None --</option>
                             </select>
-                            <small class="text-muted">Auto-generates a controller for data fetching.</small>
+                            <small class="text-secondary text-sm">Auto-generates a controller for data fetching.</small>
                         </div>
                     </div>
                     <div style="margin-top:var(--space-300,12px); padding:12px 14px; background:var(--bg-subdued,#f7f7f7); border:1px solid var(--border-subdued,#e1e1e1); border-radius:8px;">
@@ -171,12 +171,12 @@
                                 <input type="checkbox" id="pageAuthRequired" style="width:16px; height:16px;">
                                 <span>Require Login (Protected Page)</span>
                             </label>
-                            <small class="text-muted" style="margin-left:24px;">Only authenticated users can access this page.</small>
+                            <small class="text-secondary text-sm" style="margin-left:24px;">Only authenticated users can access this page.</small>
                         </div>
                         <div id="pageRolesGroup" style="display:none; margin-top:8px; margin-left:24px;">
-                            <label style="font-size:0.8125rem; margin-bottom:4px; display:block;">Allowed Roles <small class="text-muted">(leave empty = any logged-in user)</small></label>
+                            <label style="font-size:0.8125rem; margin-bottom:4px; display:block;">Allowed Roles <small class="text-secondary text-sm">(leave empty = any logged-in user)</small></label>
                             <input type="text" id="pageAllowedRoles" class="form-control" placeholder="customer, admin" style="font-size:0.8125rem;">
-                            <small class="text-muted">Comma-separated role slugs. Empty means all authenticated users.</small>
+                            <small class="text-secondary text-sm">Comma-separated role slugs. Empty means all authenticated users.</small>
                         </div>
                     </div>
                     <div id="pageDynamicHint" style="display:none; padding:10px 12px; background:rgba(0,128,96,0.06); border:1px solid rgba(0,128,96,0.15); border-radius:6px; font-size:0.8125rem; color:var(--text-primary,#303030); margin-top:8px;">
@@ -202,7 +202,7 @@
                 <div class="form-group">
                     <label for="sectionName">Section Name *</label>
                     <input type="text" id="sectionName" class="form-control" placeholder="e.g. Pricing Table">
-                    <small class="text-muted">A .twig file will be created in the sections/ directory.</small>
+                    <small class="text-secondary text-sm">A .twig file will be created in the sections/ directory.</small>
                 </div>
             </div>
             <div class="modal-footer">

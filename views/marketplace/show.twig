@@ -28,16 +28,16 @@
     </div>
 </div>
 
-<div style="display:grid; grid-template-columns:2fr 1fr; gap:var(--space-500);">
+<div style="display:grid; grid-template-columns:2fr 1fr; gap:var(--sp-5);">
     {# Main Content #}
     <div>
         <div class="card">
             <div class="card-body">
-                <h3 style="margin-bottom:var(--space-300);">Description</h3>
+                <h3 style="margin-bottom:var(--sp-3);">Description</h3>
                 <p style="color:var(--text-secondary); line-height:1.7;">{{ item.description ?? 'No description available.' }}</p>
 
                 {% if item.features is defined and item.features %}
-                <h3 style="margin-top:var(--space-500); margin-bottom:var(--space-300);">Features</h3>
+                <h3 style="margin-top:var(--sp-5); margin-bottom:var(--sp-3);">Features</h3>
                 <ul style="color:var(--text-secondary); padding-left:20px;">
                     {% for feature in item.features %}
                     <li style="margin-bottom:8px;">{{ feature }}</li>
@@ -48,11 +48,11 @@
         </div>
 
         {% if reviews is not empty %}
-        <div class="card" style="margin-top:var(--space-500);">
+        <div class="card" style="margin-top:var(--sp-5);">
             <div class="card-header"><h3>Reviews</h3></div>
             <div class="card-body">
                 {% for review in reviews %}
-                <div style="padding:var(--space-300) 0; border-bottom:1px solid var(--border-default); {% if loop.last %}border-bottom:none;{% endif %}">
+                <div style="padding:var(--sp-3) 0; border-bottom:1px solid var(--border); {% if loop.last %}border-bottom:none;{% endif %}">
                     <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
                         <strong>{{ review.author ?? 'Anonymous' }}</strong>
                         <span style="color:var(--text-secondary); font-size:0.8rem;">{{ review.created_at ?? '' }}</span>
@@ -83,7 +83,7 @@
         </div>
 
         {% if item.requires is defined and item.requires %}
-        <div class="card" style="margin-top:var(--space-300);">
+        <div class="card" style="margin-top:var(--sp-3);">
             <div class="card-body">
                 <h4 style="margin-bottom:8px;">Requirements</h4>
                 <ul style="font-size:0.8rem; color:var(--text-secondary); padding-left:16px;">

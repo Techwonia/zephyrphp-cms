@@ -393,7 +393,7 @@
     padding: 7px 14px;
     font-size: 13px;
     cursor: pointer;
-    color: var(--text-primary);
+    color: var(--text-heading);
     transition: background 0.12s, color 0.12s;
     border-radius: 0;
     user-select: none;
@@ -438,7 +438,7 @@
 .ml-sidebar-tag {
     display: inline-block;
     padding: 2px 10px;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border);
     border-radius: 12px;
     font-size: 11px;
     cursor: pointer;
@@ -448,13 +448,13 @@
     background: var(--bg-surface);
 }
 .ml-sidebar-tag:hover {
-    border-color: var(--color-primary);
-    color: var(--color-primary);
+    border-color: var(--zui-primary-500);
+    color: var(--zui-primary-500);
 }
 .ml-sidebar-tag.active {
-    background: var(--color-primary);
+    background: var(--zui-primary-500);
     color: #fff;
-    border-color: var(--color-primary);
+    border-color: var(--zui-primary-500);
 }
 .ml-tag-clear {
     border-style: dashed;
@@ -484,7 +484,7 @@
     align-items: center;
     gap: 12px;
     padding: 10px 16px;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border);
     flex-shrink: 0;
 }
 .ml-search {
@@ -492,7 +492,7 @@
     align-items: center;
     gap: 6px;
     padding: 6px 12px;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border);
     border-radius: 6px;
     background: var(--bg-subdued, #fafafa);
     flex: 1;
@@ -505,7 +505,7 @@
     font-size: 13px;
     width: 100%;
     background: transparent;
-    color: var(--text-primary);
+    color: var(--text-heading);
 }
 .ml-toolbar-actions {
     display: flex;
@@ -515,20 +515,20 @@
 }
 .ml-filter-select {
     padding: 5px 10px;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border);
     border-radius: 6px;
     font-size: 12px;
     background: var(--bg-surface);
-    color: var(--text-primary);
+    color: var(--text-heading);
     cursor: pointer;
     outline: none;
 }
 .ml-filter-select:focus {
-    border-color: var(--color-primary);
+    border-color: var(--zui-primary-500);
 }
 .ml-view-toggle {
     display: flex;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border);
     border-radius: 6px;
     overflow: hidden;
 }
@@ -543,10 +543,10 @@
     transition: all 0.12s;
 }
 .ml-view-btn:not(:last-child) {
-    border-right: 1px solid var(--border-color);
+    border-right: 1px solid var(--border);
 }
 .ml-view-btn.active {
-    background: var(--color-primary);
+    background: var(--zui-primary-500);
     color: #fff;
 }
 .ml-view-btn.active svg {
@@ -559,7 +559,7 @@
     align-items: center;
     gap: 6px;
     padding: 8px 16px;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border);
     flex-shrink: 0;
     flex-wrap: wrap;
 }
@@ -599,7 +599,7 @@
     gap: 12px;
     padding: 10px 14px;
     background: var(--bg-subdued, #f8f9fa);
-    border: 1px solid var(--color-primary);
+    border: 1px solid var(--zui-primary-500);
     border-radius: 8px;
     margin-bottom: 12px;
 }
@@ -622,7 +622,7 @@
 }
 .ml-bulk-move-select {
     padding: 4px 8px;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border);
     border-radius: 5px;
     font-size: 12px;
     background: var(--bg-surface);
@@ -638,7 +638,7 @@
 .ml-file-card {
     position: relative;
     background: var(--bg-surface);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border);
     border-radius: 10px;
     overflow: hidden;
     transition: box-shadow 0.15s, border-color 0.15s, transform 0.15s;
@@ -661,7 +661,7 @@
     opacity: 1;
 }
 .ml-file-card.selected {
-    border-color: var(--color-primary);
+    border-color: var(--zui-primary-500);
     box-shadow: 0 0 0 2px rgba(4, 123, 93, 0.15);
 }
 .ml-file-checkbox {
@@ -714,7 +714,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    color: var(--text-primary);
+    color: var(--text-heading);
     line-height: 1.4;
 }
 .ml-file-meta {
@@ -762,7 +762,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--text-primary);
+    color: var(--text-heading);
     box-shadow: 0 1px 4px rgba(0,0,0,0.1);
     transition: background 0.12s;
 }
@@ -836,22 +836,22 @@
 }
 .ml-page-btn {
     padding: 6px 12px;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border);
     border-radius: 6px;
     text-decoration: none;
     font-size: 13px;
-    color: var(--text-primary);
+    color: var(--text-heading);
     background: var(--bg-surface);
     transition: all 0.12s;
 }
 .ml-page-btn:hover {
-    border-color: var(--color-primary);
-    color: var(--color-primary);
+    border-color: var(--zui-primary-500);
+    color: var(--zui-primary-500);
 }
 .ml-page-current {
-    background: var(--color-primary);
+    background: var(--zui-primary-500);
     color: #fff;
-    border-color: var(--color-primary);
+    border-color: var(--zui-primary-500);
 }
 .ml-page-info {
     font-size: 12px;
@@ -868,7 +868,7 @@
 .ml-empty h3 {
     margin: 16px 0 6px;
     font-size: 17px;
-    color: var(--text-primary);
+    color: var(--text-heading);
     font-weight: 600;
 }
 .ml-empty p {
@@ -895,7 +895,7 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    color: var(--color-primary);
+    color: var(--zui-primary-500);
 }
 .ml-dropzone-inner p {
     font-size: 16px;
@@ -940,7 +940,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 16px 20px;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border);
 }
 .ml-modal-header h3 {
     margin: 0;
@@ -958,7 +958,7 @@
     transition: color 0.12s;
 }
 .ml-modal-close:hover {
-    color: var(--text-primary);
+    color: var(--text-heading);
 }
 .ml-modal-body {
     padding: 20px;
@@ -980,17 +980,17 @@
 .ml-upload-folder-row label {
     font-size: 13px;
     font-weight: 600;
-    color: var(--text-primary);
+    color: var(--text-heading);
     white-space: nowrap;
 }
 .ml-upload-folder-select {
     flex: 1;
     padding: 7px 10px;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border);
     border-radius: 6px;
     font-size: 13px;
     background: var(--bg-surface);
-    color: var(--text-primary);
+    color: var(--text-heading);
 }
 .ml-upload-zone {
     display: flex;
@@ -999,7 +999,7 @@
     justify-content: center;
     gap: 8px;
     padding: 40px 20px;
-    border: 2px dashed var(--border-color);
+    border: 2px dashed var(--border);
     border-radius: 10px;
     cursor: pointer;
     transition: all 0.2s;
@@ -1008,9 +1008,9 @@
 }
 .ml-upload-zone:hover,
 .ml-upload-zone.drag-over {
-    border-color: var(--color-primary);
+    border-color: var(--zui-primary-500);
     background: rgba(4, 123, 93, 0.04);
-    color: var(--color-primary);
+    color: var(--zui-primary-500);
 }
 .ml-upload-zone p {
     margin: 0;
@@ -1052,7 +1052,7 @@
 .md-sidebar {
     width: 280px;
     flex-shrink: 0;
-    border-left: 1px solid var(--border-color);
+    border-left: 1px solid var(--border);
     display: flex;
     flex-direction: column;
 }
@@ -1074,7 +1074,7 @@
 }
 .md-info-value {
     font-size: 13px;
-    color: var(--text-primary);
+    color: var(--text-heading);
     word-break: break-all;
 }
 .md-info-meta {
@@ -1082,8 +1082,8 @@
     grid-template-columns: 1fr 1fr;
     gap: 10px;
     padding: 12px 0;
-    border-top: 1px solid var(--border-color);
-    border-bottom: 1px solid var(--border-color);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
     margin: 12px 0;
 }
 .md-meta-item {
@@ -1107,42 +1107,42 @@
 .md-url-input {
     flex: 1;
     padding: 5px 8px;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border);
     border-radius: 5px;
     font-size: 11px;
     font-family: monospace;
     background: var(--bg-subdued, #f8f8f8);
-    color: var(--text-primary);
+    color: var(--text-heading);
     min-width: 0;
 }
 .md-copy-btn {
     padding: 5px 10px;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border);
     border-radius: 5px;
     background: var(--bg-surface);
     font-size: 11px;
     cursor: pointer;
     white-space: nowrap;
     transition: all 0.12s;
-    color: var(--text-primary);
+    color: var(--text-heading);
 }
 .md-copy-btn:hover {
-    border-color: var(--color-primary);
-    color: var(--color-primary);
+    border-color: var(--zui-primary-500);
+    color: var(--zui-primary-500);
 }
 .md-form-input {
     width: 100%;
     padding: 6px 10px;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border);
     border-radius: 6px;
     font-size: 13px;
     background: var(--bg-surface);
-    color: var(--text-primary);
+    color: var(--text-heading);
     outline: none;
     transition: border-color 0.12s;
 }
 .md-form-input:focus {
-    border-color: var(--color-primary);
+    border-color: var(--zui-primary-500);
 }
 .md-tag-chips {
     display: flex;
@@ -1162,7 +1162,7 @@
     display: flex;
     gap: 8px;
     padding: 12px 16px;
-    border-top: 1px solid var(--border-color);
+    border-top: 1px solid var(--border);
     background: var(--bg-subdued, #fafafa);
 }
 .md-actions .btn:last-child {
@@ -1175,7 +1175,7 @@
     font-weight: 600;
     display: block;
     margin-bottom: 4px;
-    color: var(--text-primary);
+    color: var(--text-heading);
 }
 .ml-form-hint {
     font-size: 11px;
@@ -1191,7 +1191,7 @@
     width: 360px;
     max-height: 50vh;
     background: var(--bg-surface);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border);
     border-radius: 12px;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
     z-index: 999;
@@ -1205,7 +1205,7 @@
     justify-content: space-between;
     padding: 10px 14px;
     background: var(--bg-subdued, #f8f8f8);
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border);
     font-size: 13px;
     font-weight: 600;
     flex-shrink: 0;
@@ -1265,7 +1265,7 @@
     .ml-main { margin-left: 0; margin-top: 12px; }
     .ml-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
     .md-layout { flex-direction: column; }
-    .md-sidebar { width: 100%; border-left: none; border-top: 1px solid var(--border-color); }
+    .md-sidebar { width: 100%; border-left: none; border-top: 1px solid var(--border); }
     .md-preview { min-height: 200px; }
     .ml-modal-lg { max-width: 95vw; }
 }

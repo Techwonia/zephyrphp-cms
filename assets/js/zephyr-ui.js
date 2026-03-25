@@ -493,6 +493,13 @@
     initBulkSelect();
     revealContent();
     convertFlashToToast();
+
+    // Enable transitions after first paint (prevents sidebar slide-in flicker)
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        document.documentElement.classList.add('zui-ready');
+      });
+    });
   }
 
   // Run when DOM is ready

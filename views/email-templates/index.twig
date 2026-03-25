@@ -3,7 +3,7 @@
 {% block title %}Email Templates{% endblock %}
 
 {% block content %}
-<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-600);">
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--sp-6);">
     <h1 style="margin: 0;">Email Templates</h1>
 </div>
 
@@ -22,8 +22,8 @@
             {% for template in templates %}
             <tr>
                 <td style="font-weight: 500;">{{ template.getName() }}</td>
-                <td><code style="font-size: var(--font-xs); background: var(--bg-subdued); padding: 2px 6px; border-radius: var(--radius-100);">{{ template.getSlug() }}</code></td>
-                <td style="color: var(--text-secondary); font-size: var(--font-sm);">{{ template.getSubject()|length > 50 ? template.getSubject()|slice(0, 50) ~ '...' : template.getSubject() }}</td>
+                <td><code style="font-size: var(--text-xs); background: var(--bg-subdued); padding: 2px 6px; border-radius: var(--radius-sm);">{{ template.getSlug() }}</code></td>
+                <td style="color: var(--text-secondary); font-size: var(--text-sm);">{{ template.getSubject()|length > 50 ? template.getSubject()|slice(0, 50) ~ '...' : template.getSubject() }}</td>
                 <td style="text-align: center;">
                     {% if template.isActive() %}
                         <span class="badge badge-success">Active</span>
@@ -40,7 +40,7 @@
             {% endfor %}
             {% if templates|length == 0 %}
             <tr>
-                <td colspan="5" style="text-align: center; color: var(--text-secondary); padding: var(--space-600);">No email templates found.</td>
+                <td colspan="5" style="text-align: center; color: var(--text-secondary); padding: var(--sp-6);">No email templates found.</td>
             </tr>
             {% endif %}
         </tbody>

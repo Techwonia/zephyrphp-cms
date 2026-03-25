@@ -10,28 +10,28 @@
 <div class="page-header" style="display: flex; align-items: center; justify-content: space-between;">
     <div>
         <h1>Workflow Builder</h1>
-        <p style="color: var(--text-secondary); margin-top: var(--space-100);">Configure workflow stages, transitions, and reviewers per collection.</p>
+        <p style="color: var(--text-secondary); margin-top: var(--sp-1);">Configure workflow stages, transitions, and reviewers per collection.</p>
     </div>
     <button class="btn btn-primary" onclick="document.getElementById('enableModal').style.display='flex'">+ Enable Workflow</button>
 </div>
 
 {% if collections is empty %}
     <div class="card">
-        <div class="card-body" style="text-align: center; padding: var(--space-600); color: var(--text-secondary);">
+        <div class="card-body" style="text-align: center; padding: var(--sp-6); color: var(--text-secondary);">
             No workflow-enabled collections found. Click "Enable Workflow" above to get started.
         </div>
     </div>
 {% else %}
     {% for collection in collections %}
-    <div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card" style="margin-bottom: var(--sp-5);">
         <div class="card-header" style="display: flex; align-items: center; justify-content: space-between;">
             <h3 style="margin: 0; font-size: 1rem;">
                 {% if collection.icon %}
-                    <i class="{{ collection.icon }}" style="margin-right: var(--space-100);"></i>
+                    <i class="{{ collection.icon }}" style="margin-right: var(--sp-1);"></i>
                 {% endif %}
                 {{ collection.name }}
             </h3>
-            <div style="display: flex; align-items: center; gap: var(--space-200);">
+            <div style="display: flex; align-items: center; gap: var(--sp-2);">
                 <span class="badge" style="background: var(--bg-subdued); color: var(--text-secondary); font-size: 0.8rem;">
                     {{ collection.total }} {{ collection.total == 1 ? 'entry' : 'entries' }}
                 </span>
@@ -40,13 +40,13 @@
                 <form method="POST" action="{{ admin_url('system/workflow/disable') }}" style="margin:0;" onsubmit="return confirm('Disable workflow for {{ collection.name }}?')">
                     {{ csrf_field() | raw }}
                     <input type="hidden" name="slug" value="{{ collection.slug }}">
-                    <button type="submit" class="btn btn-outline btn-sm" style="color: var(--color-critical); border-color: var(--color-critical);">Disable</button>
+                    <button type="submit" class="btn btn-outline btn-sm" style="color: var(--zui-error-600); border-color: var(--zui-error-600);">Disable</button>
                 </form>
             </div>
         </div>
         <div class="card-body">
             {# Pipeline visualization #}
-            <div style="display: flex; align-items: center; gap: 0; overflow-x: auto; padding: var(--space-400) 0;">
+            <div style="display: flex; align-items: center; gap: 0; overflow-x: auto; padding: var(--sp-4) 0;">
                 {% for stage in collection.stages %}
                     {% set bgColor = 'var(--bg-subdued)' %}
                     {% set textColor = 'var(--text)' %}
@@ -59,20 +59,20 @@
                         {% set borderColor = 'var(--text-secondary)' %}
                     {% elseif stage.name == 'review' %}
                         {% set bgColor = 'rgba(234, 179, 8, 0.1)' %}
-                        {% set countColor = 'var(--color-warning)' %}
-                        {% set borderColor = 'var(--color-warning)' %}
+                        {% set countColor = 'var(--zui-warning-600)' %}
+                        {% set borderColor = 'var(--zui-warning-600)' %}
                     {% elseif stage.name == 'approved' %}
                         {% set bgColor = 'rgba(59, 130, 246, 0.1)' %}
-                        {% set countColor = 'var(--color-info)' %}
-                        {% set borderColor = 'var(--color-info)' %}
+                        {% set countColor = 'var(--zui-info-600)' %}
+                        {% set borderColor = 'var(--zui-info-600)' %}
                     {% elseif stage.name == 'published' %}
                         {% set bgColor = 'rgba(34, 197, 94, 0.1)' %}
-                        {% set countColor = 'var(--color-success)' %}
-                        {% set borderColor = 'var(--color-success)' %}
+                        {% set countColor = 'var(--zui-success-600)' %}
+                        {% set borderColor = 'var(--zui-success-600)' %}
                     {% elseif stage.name == 'rejected' %}
                         {% set bgColor = 'rgba(215, 44, 13, 0.1)' %}
-                        {% set countColor = 'var(--color-critical)' %}
-                        {% set borderColor = 'var(--color-critical)' %}
+                        {% set countColor = 'var(--zui-error-600)' %}
+                        {% set borderColor = 'var(--zui-error-600)' %}
                     {% endif %}
 
                     <div style="
@@ -81,10 +81,10 @@
                         align-items: center;
                         justify-content: center;
                         min-width: 120px;
-                        padding: var(--space-300) var(--space-400);
+                        padding: var(--sp-3) var(--sp-4);
                         background: {{ bgColor }};
                         border: 2px solid {{ borderColor }};
-                        border-radius: var(--radius-200);
+                        border-radius: var(--radius);
                         text-align: center;
                         position: relative;
                         {% if collection.bottleneck == stage.name and stage.count > 0 %}
@@ -94,7 +94,7 @@
                         <div style="font-size: 1.75rem; font-weight: 700; color: {{ countColor }}; line-height: 1;">
                             {{ stage.count }}
                         </div>
-                        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: var(--space-100); text-transform: capitalize;">
+                        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: var(--sp-1); text-transform: capitalize;">
                             {{ stage.name }}
                         </div>
                         {% if collection.bottleneck == stage.name and stage.count > 0 %}
@@ -102,7 +102,7 @@
                                 position: absolute;
                                 top: -10px;
                                 right: -10px;
-                                background: var(--color-warning);
+                                background: var(--zui-warning-600);
                                 color: #fff;
                                 font-size: 0.65rem;
                                 font-weight: 600;
@@ -117,7 +117,7 @@
                         <div style="
                             display: inline-flex;
                             align-items: center;
-                            padding: 0 var(--space-100);
+                            padding: 0 var(--sp-1);
                             color: var(--text-secondary);
                             font-size: 1.25rem;
                             flex-shrink: 0;
@@ -129,8 +129,8 @@
             {# Stats row #}
             <div style="
                 display: flex;
-                gap: var(--space-400);
-                padding-top: var(--space-300);
+                gap: var(--sp-4);
+                padding-top: var(--sp-3);
                 border-top: 1px solid var(--border);
                 font-size: 0.85rem;
                 color: var(--text-secondary);
@@ -145,22 +145,22 @@
 
         {# Edit Stages Panel (hidden by default) #}
         <div class="card-body" id="editPanel_{{ collection.slug }}" style="display: none; border-top: 1px solid var(--border); background: var(--bg-subdued);">
-            <h4 style="font-size: 0.9rem; margin-bottom: var(--space-300);">Edit Workflow Stages</h4>
+            <h4 style="font-size: 0.9rem; margin-bottom: var(--sp-3);">Edit Workflow Stages</h4>
             <form method="POST" action="{{ admin_url('system/workflow/save-stages') }}">
                 {{ csrf_field() | raw }}
                 <input type="hidden" name="slug" value="{{ collection.slug }}">
 
-                <div id="stageList_{{ collection.slug }}" style="display: flex; flex-direction: column; gap: var(--space-200); margin-bottom: var(--space-400);">
+                <div id="stageList_{{ collection.slug }}" style="display: flex; flex-direction: column; gap: var(--sp-2); margin-bottom: var(--sp-4);">
                     {% for stage in collection.stages %}
-                    <div class="wf-stage-row" style="display: flex; align-items: center; gap: var(--space-200);">
+                    <div class="wf-stage-row" style="display: flex; align-items: center; gap: var(--sp-2);">
                         <span style="color: var(--text-secondary); font-size: 0.8rem; min-width: 20px;">{{ loop.index }}.</span>
                         <input type="text" name="stages[]" value="{{ stage.name }}" class="form-control" style="flex: 1; max-width: 250px;" pattern="[a-z0-9_-]+" required placeholder="stage_name">
-                        <button type="button" class="btn btn-outline btn-sm" onclick="removeStageRow(this)" style="color: var(--color-critical);" title="Remove">&times;</button>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="removeStageRow(this)" style="color: var(--zui-error-600);" title="Remove">&times;</button>
                     </div>
                     {% endfor %}
                 </div>
 
-                <div style="display: flex; gap: var(--space-200); align-items: center;">
+                <div style="display: flex; gap: var(--sp-2); align-items: center;">
                     <button type="button" class="btn btn-outline btn-sm" onclick="addStageRow('{{ collection.slug }}')">+ Add Stage</button>
                     <button type="submit" class="btn btn-primary btn-sm">Save Stages</button>
                     <span style="font-size: 0.75rem; color: var(--text-secondary);">Use lowercase letters, numbers, underscores, hyphens only. Min 2 stages.</span>
@@ -170,18 +170,18 @@
 
         {# Reviewer Assignment Panel (hidden by default) #}
         <div class="card-body" id="reviewerPanel_{{ collection.slug }}" style="display: none; border-top: 1px solid var(--border); background: var(--bg-subdued);">
-            <h4 style="font-size: 0.9rem; margin-bottom: var(--space-300);">Reviewer Assignments</h4>
-            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: var(--space-300);">
+            <h4 style="font-size: 0.9rem; margin-bottom: var(--sp-3);">Reviewer Assignments</h4>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: var(--sp-3);">
                 Assign users who can advance entries from each stage. Leave empty to allow any authenticated user.
             </p>
             <form method="POST" action="{{ admin_url('system/workflow/save-reviewers') }}">
                 {{ csrf_field() | raw }}
                 <input type="hidden" name="slug" value="{{ collection.slug }}">
 
-                <div style="display: flex; flex-direction: column; gap: var(--space-300);">
+                <div style="display: flex; flex-direction: column; gap: var(--sp-3);">
                     {% for stage in collection.stages %}
                         {% if not loop.last %}
-                        <div style="display: flex; align-items: flex-start; gap: var(--space-300); padding: var(--space-200) 0; border-bottom: 1px solid var(--border);">
+                        <div style="display: flex; align-items: flex-start; gap: var(--sp-3); padding: var(--sp-2) 0; border-bottom: 1px solid var(--border);">
                             <div style="min-width: 120px; padding-top: 6px;">
                                 <strong style="text-transform: capitalize; font-size: 0.85rem;">{{ stage.name }}</strong>
                                 <div style="font-size: 0.75rem; color: var(--text-secondary);">Who can advance?</div>
@@ -201,7 +201,7 @@
                     {% endfor %}
                 </div>
 
-                <div style="margin-top: var(--space-300);">
+                <div style="margin-top: var(--sp-3);">
                     <button type="submit" class="btn btn-primary btn-sm">Save Reviewers</button>
                 </div>
             </form>
@@ -211,13 +211,13 @@
 {% endif %}
 
 {# Recent Transitions #}
-<div class="card" style="margin-top: var(--space-500);">
+<div class="card" style="margin-top: var(--sp-5);">
     <div class="card-header">
         <h3 style="margin: 0; font-size: 1rem;">Recent Transitions</h3>
     </div>
     <div class="card-body">
         {% if transitions is empty %}
-            <p style="text-align: center; color: var(--text-secondary); padding: var(--space-400);">
+            <p style="text-align: center; color: var(--text-secondary); padding: var(--sp-4);">
                 No workflow transitions recorded yet.
             </p>
         {% else %}
@@ -247,9 +247,9 @@
                             <td>{{ t.user }}</td>
                             <td>
                                 {% if t.action == 'advance' %}
-                                    <span class="badge" style="background: var(--color-success); color: #fff;">Advance</span>
+                                    <span class="badge" style="background: var(--zui-success-600); color: #fff;">Advance</span>
                                 {% elseif t.action == 'reject' %}
-                                    <span class="badge" style="background: var(--color-critical); color: #fff;">Reject</span>
+                                    <span class="badge" style="background: var(--zui-error-600); color: #fff;">Reject</span>
                                 {% else %}
                                     <span class="badge" style="background: var(--bg-subdued); color: var(--text-secondary);">{{ t.action|capitalize }}</span>
                                 {% endif %}
@@ -273,7 +273,7 @@
         <div class="card-body">
             <form method="POST" action="{{ admin_url('system/workflow/enable') }}">
                 {{ csrf_field() | raw }}
-                <div style="margin-bottom: var(--space-400);">
+                <div style="margin-bottom: var(--sp-4);">
                     <label class="form-label">Select Collection</label>
                     <select name="slug" class="form-control" required>
                         <option value="">-- Choose --</option>
@@ -284,10 +284,10 @@
                         {% endfor %}
                     </select>
                 </div>
-                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: var(--space-400);">
+                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: var(--sp-4);">
                     Default stages: Draft &rarr; Review &rarr; Approved &rarr; Published. You can customize stages after enabling.
                 </p>
-                <div style="display: flex; gap: var(--space-200); justify-content: flex-end;">
+                <div style="display: flex; gap: var(--sp-2); justify-content: flex-end;">
                     <button type="button" class="btn btn-outline" onclick="document.getElementById('enableModal').style.display='none'">Cancel</button>
                     <button type="submit" class="btn btn-primary">Enable</button>
                 </div>
@@ -320,10 +320,10 @@ function addStageRow(slug) {
     var count = list.querySelectorAll('.wf-stage-row').length + 1;
     var row = document.createElement('div');
     row.className = 'wf-stage-row';
-    row.style.cssText = 'display: flex; align-items: center; gap: var(--space-200);';
+    row.style.cssText = 'display: flex; align-items: center; gap: var(--sp-2);';
     row.innerHTML = '<span style="color: var(--text-secondary); font-size: 0.8rem; min-width: 20px;">' + count + '.</span>' +
         '<input type="text" name="stages[]" value="" class="form-control" style="flex: 1; max-width: 250px;" pattern="[a-z0-9_-]+" required placeholder="new_stage">' +
-        '<button type="button" class="btn btn-outline btn-sm" onclick="removeStageRow(this)" style="color: var(--color-critical);" title="Remove">&times;</button>';
+        '<button type="button" class="btn btn-outline btn-sm" onclick="removeStageRow(this)" style="color: var(--zui-error-600);" title="Remove">&times;</button>';
     list.appendChild(row);
     row.querySelector('input').focus();
 }

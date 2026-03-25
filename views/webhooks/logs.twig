@@ -9,7 +9,7 @@
 
 <div class="page-header">
     <h1>Delivery Logs</h1>
-    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: var(--space-200);">
+    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: var(--sp-2);">
         <strong>URL:</strong> <code>{{ webhook.url }}</code>
         &nbsp;|&nbsp;
         <strong>Events:</strong> {{ webhook.events|join(', ') }}
@@ -36,11 +36,11 @@
                         <td><span class="badge">{{ log.event }}</span></td>
                         <td>
                             {% if log.error %}
-                                <span class="badge" style="background: var(--danger); color: white;">Error</span>
+                                <span class="badge" style="background: var(--zui-error-600); color: white;">Error</span>
                             {% elseif log.response_code >= 200 and log.response_code < 300 %}
-                                <span class="badge" style="background: var(--success); color: white;">{{ log.response_code }}</span>
+                                <span class="badge" style="background: var(--zui-success-600); color: white;">{{ log.response_code }}</span>
                             {% else %}
-                                <span class="badge" style="background: var(--warning); color: white;">{{ log.response_code }}</span>
+                                <span class="badge" style="background: var(--zui-warning-600); color: white;">{{ log.response_code }}</span>
                             {% endif %}
                         </td>
                         <td style="font-size: 0.85rem;">{{ log.duration_ms }}ms</td>
@@ -54,12 +54,12 @@
                     </tr>
                     {% if log.error or log.response_body %}
                     <tr>
-                        <td colspan="5" style="background: var(--bg-secondary); padding: var(--space-200) var(--space-400);">
+                        <td colspan="5" style="background: var(--bg-subdued); padding: var(--sp-2) var(--sp-4);">
                             <details>
                                 <summary style="cursor: pointer; font-size: 0.85rem; color: var(--text-secondary);">
                                     {% if log.error %}Error{% else %}Response{% endif %}
                                 </summary>
-                                <pre style="margin-top: var(--space-200); font-size: 0.8rem; white-space: pre-wrap; max-height: 150px; overflow-y: auto;">{% if log.error %}{{ log.error }}{% else %}{{ log.response_body }}{% endif %}</pre>
+                                <pre style="margin-top: var(--sp-2); font-size: 0.8rem; white-space: pre-wrap; max-height: 150px; overflow-y: auto;">{% if log.error %}{{ log.error }}{% else %}{{ log.response_body }}{% endif %}</pre>
                             </details>
                         </td>
                     </tr>
@@ -77,7 +77,7 @@
 </div>
 {% endif %}
 
-<div style="margin-top: var(--space-400);">
+<div style="margin-top: var(--sp-4);">
     <a href="{{ admin_url('webhooks') }}" class="btn btn-outline">Back to Webhooks</a>
 </div>
 

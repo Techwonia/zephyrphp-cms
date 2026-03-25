@@ -16,7 +16,7 @@
         <form method="POST" action="{{ admin_url('roles/' ~ editRole.getId()) }}">
             {{ csrf_field() | raw }}
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4);">
                 <div class="form-group">
                     <label for="name">Name *</label>
                     <input type="text" id="name" name="name" class="form-control"
@@ -48,12 +48,12 @@
             </div>
 
             {% if editRole.getSlug() != 'admin' and allPermissions is defined %}
-            <div class="form-group" style="margin-top: var(--space-400);">
+            <div class="form-group" style="margin-top: var(--sp-4);">
                 <label><strong>Permissions</strong></label>
-                <p class="text-muted" style="margin-bottom: 12px;">Select which CMS features this role can access. Admin role has all permissions by default.</p>
+                <p class="text-secondary text-sm" style="margin-bottom: 12px;">Select which CMS features this role can access. Admin role has all permissions by default.</p>
 
                 {% for group, perms in allPermissions %}
-                <div style="margin-bottom: 16px; padding: 12px; background: var(--bg-secondary); border-radius: 8px;">
+                <div style="margin-bottom: 16px; padding: 12px; background: var(--bg-subdued); border-radius: 8px;">
                     <strong style="display: block; margin-bottom: 8px;">{{ group }}</strong>
                     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px;">
                         {% for key, label in perms %}

@@ -13,7 +13,7 @@
 
 <div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
     <h1 style="margin: 0;">Translate to {{ language.getName() }} ({{ language.getNativeName() }})</h1>
-    <div style="display: flex; gap: var(--space-200); align-items: center;">
+    <div style="display: flex; gap: var(--sp-2); align-items: center;">
         {# Language selector #}
         <select onchange="if(this.value) window.location.href=this.value;" class="form-control" style="width: auto;">
             {% for lang in languages %}
@@ -37,26 +37,26 @@
     {{ csrf_field() | raw }}
 
     {% if translatableFields|length == 0 %}
-    <div class="card" style="padding: var(--space-600); text-align: center;">
+    <div class="card" style="padding: var(--sp-6); text-align: center;">
         <p style="color: var(--text-secondary); margin: 0;">This collection has no translatable text fields.</p>
     </div>
     {% else %}
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4);">
         {# Left: source (default locale) #}
         <div>
-            <div style="font-weight: 600; margin-bottom: var(--space-300); padding: var(--space-200) 0; border-bottom: 2px solid var(--border);">
+            <div style="font-weight: 600; margin-bottom: var(--sp-3); padding: var(--sp-2) 0; border-bottom: 2px solid var(--border);">
                 Source (Original)
             </div>
             {% for field in translatableFields %}
-            <div class="card" style="margin-bottom: var(--space-300);">
-                <div style="padding: var(--space-300) var(--space-400);">
-                    <label class="form-label" style="font-weight: 600; color: var(--text-secondary); font-size: var(--font-xs); text-transform: uppercase; letter-spacing: 0.05em;">
+            <div class="card" style="margin-bottom: var(--sp-3);">
+                <div style="padding: var(--sp-3) var(--sp-4);">
+                    <label class="form-label" style="font-weight: 600; color: var(--text-secondary); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em;">
                         {{ field.getLabel() }}
                     </label>
                     {% if field.getType() == 'textarea' or field.getType() == 'richtext' %}
-                    <div style="background: var(--bg-subdued); padding: var(--space-300); border-radius: var(--radius-100); min-height: 80px; font-size: var(--font-sm); white-space: pre-wrap; word-break: break-word;">{{ entry[field.getSlug()] ?? '' }}</div>
+                    <div style="background: var(--bg-subdued); padding: var(--sp-3); border-radius: var(--radius-sm); min-height: 80px; font-size: var(--text-sm); white-space: pre-wrap; word-break: break-word;">{{ entry[field.getSlug()] ?? '' }}</div>
                     {% else %}
-                    <div style="background: var(--bg-subdued); padding: var(--space-200) var(--space-300); border-radius: var(--radius-100); font-size: var(--font-sm);">{{ entry[field.getSlug()] ?? '' }}</div>
+                    <div style="background: var(--bg-subdued); padding: var(--sp-2) var(--sp-3); border-radius: var(--radius-sm); font-size: var(--text-sm);">{{ entry[field.getSlug()] ?? '' }}</div>
                     {% endif %}
                 </div>
             </div>
@@ -65,18 +65,18 @@
 
         {# Right: translation #}
         <div>
-            <div style="font-weight: 600; margin-bottom: var(--space-300); padding: var(--space-200) 0; border-bottom: 2px solid var(--color-primary);">
+            <div style="font-weight: 600; margin-bottom: var(--sp-3); padding: var(--sp-2) 0; border-bottom: 2px solid var(--zui-primary-500);">
                 {{ language.getName() }} ({{ locale }})
             </div>
             {% for field in translatableFields %}
-            <div class="card" style="margin-bottom: var(--space-300);">
-                <div style="padding: var(--space-300) var(--space-400);">
-                    <label class="form-label" style="font-weight: 600; color: var(--text-secondary); font-size: var(--font-xs); text-transform: uppercase; letter-spacing: 0.05em;">
+            <div class="card" style="margin-bottom: var(--sp-3);">
+                <div style="padding: var(--sp-3) var(--sp-4);">
+                    <label class="form-label" style="font-weight: 600; color: var(--text-secondary); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em;">
                         {{ field.getLabel() }}
                         {% if translations[field.getSlug()] is defined and translations[field.getSlug()] %}
-                            <span style="color: var(--color-success); font-size: 0.8em; font-weight: 400;">Translated</span>
+                            <span style="color: var(--zui-success-600); font-size: 0.8em; font-weight: 400;">Translated</span>
                         {% else %}
-                            <span style="color: var(--color-warning); font-size: 0.8em; font-weight: 400;">Not translated</span>
+                            <span style="color: var(--zui-warning-600); font-size: 0.8em; font-weight: 400;">Not translated</span>
                         {% endif %}
                     </label>
                     {% if field.getType() == 'textarea' or field.getType() == 'richtext' %}
@@ -92,7 +92,7 @@
         </div>
     </div>
 
-    <div style="margin-top: var(--space-400); display: flex; gap: var(--space-200);">
+    <div style="margin-top: var(--sp-4); display: flex; gap: var(--sp-2);">
         <button type="submit" class="btn btn-primary">Save Translations</button>
         <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id) }}" class="btn btn-outline">Cancel</a>
     </div>

@@ -17,11 +17,11 @@
 </div>
 
 {% if status.connected %}
-<div class="alert alert-success" style="margin-bottom: var(--space-400);">
+<div class="alert alert-success" style="margin-bottom: var(--sp-4);">
     <strong>Status:</strong> {{ status.message }}
 </div>
 {% else %}
-<div class="alert alert-error" style="margin-bottom: var(--space-400);">
+<div class="alert alert-error" style="margin-bottom: var(--sp-4);">
     <strong>Status:</strong> {{ status.message }}
 </div>
 {% endif %}
@@ -31,7 +31,7 @@
         <form method="POST" action="{{ admin_url('settings/database') }}" id="db-settings-form">
             {{ csrf_field() | raw }}
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4);">
 
                 {# Left Column #}
                 <div>
@@ -78,7 +78,7 @@
                             </button>
                         </div>
                         <div id="db-dropdown" style="display: none; position: relative;">
-                            <div id="db-list" style="position: absolute; top: 0; left: 0; right: 60px; max-height: 200px; overflow-y: auto; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.3);"></div>
+                            <div id="db-list" style="position: absolute; top: 0; left: 0; right: 60px; max-height: 200px; overflow-y: auto; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.3);"></div>
                         </div>
                     </div>
 
@@ -104,7 +104,7 @@
             </div>
 
             {# Test Result #}
-            <div id="test-result" style="display: none; margin-bottom: var(--space-400);"></div>
+            <div id="test-result" style="display: none; margin-bottom: var(--sp-4);"></div>
 
             {# Actions #}
             <div class="form-actions" style="display: flex; gap: 8px; align-items: center;">
@@ -117,7 +117,7 @@
                 <a href="{{ admin_url() }}" class="btn btn-outline">Cancel</a>
             </div>
 
-            <p class="text-muted" style="margin-top: var(--space-200);">
+            <p class="text-secondary text-sm" style="margin-top: var(--sp-2);">
                 A backup of your .env file will be saved before any changes are applied.
             </p>
         </form>
@@ -222,7 +222,7 @@
         var currentDb = document.getElementById('DB_DATABASE').value;
         var html = '';
         databases.forEach(function(db) {
-            var isActive = db === currentDb ? ' style="background: var(--color-primary); color: #fff;"' : '';
+            var isActive = db === currentDb ? ' style="background: var(--zui-primary-500); color: #fff;"' : '';
             html += '<div class="db-option"' + isActive + ' data-db="' + db + '">' + db + '</div>';
         });
         dbList.innerHTML = html;
@@ -257,11 +257,11 @@
     .db-option {
         padding: 0.6rem 1rem;
         cursor: pointer;
-        border-bottom: 1px solid var(--border-color);
+        border-bottom: 1px solid var(--border);
         transition: background 0.15s;
     }
     .db-option:hover {
-        background: var(--bg-hover);
+        background: var(--bg-surface-hover);
     }
     .db-option:last-child {
         border-bottom: none;

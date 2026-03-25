@@ -16,7 +16,7 @@
         <form method="POST" action="{{ admin_url('users/' ~ editUser.getId()) }}">
             {{ csrf_field() | raw }}
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4);">
                 <div class="form-group">
                     <label for="name">Name *</label>
                     <input type="text" id="name" name="name" class="form-control"
@@ -51,9 +51,9 @@
             {% if roles|length > 0 %}
             <div class="form-group">
                 <label>Roles</label>
-                <div style="display: flex; flex-wrap: wrap; gap: var(--space-300);">
+                <div style="display: flex; flex-wrap: wrap; gap: var(--sp-3);">
                     {% for role in roles %}
-                    <label style="display: flex; align-items: center; gap: var(--space-100); cursor: pointer; font-weight: normal;">
+                    <label style="display: flex; align-items: center; gap: var(--sp-1); cursor: pointer; font-weight: normal;">
                         <input type="checkbox" name="roles[]" value="{{ role.getId() }}"
                                {% if role.getId() in userRoleIds %}checked{% endif %}>
                         {{ role.getName() }}

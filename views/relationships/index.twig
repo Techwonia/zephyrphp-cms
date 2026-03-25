@@ -9,30 +9,30 @@
 
 <div class="page-header">
     <h1>Relationship Graph</h1>
-    <p style="color: var(--text-secondary); margin: var(--space-100) 0 0;">Visual map of how your collections relate to each other.</p>
+    <p style="color: var(--text-secondary); margin: var(--sp-1) 0 0;">Visual map of how your collections relate to each other.</p>
 </div>
 
 {% if nodes|length == 0 %}
-<div class="card" style="text-align: center; padding: var(--space-800);">
-    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--text-disabled)" stroke-width="1.5" style="margin-bottom: var(--space-300);">
+<div class="card" style="text-align: center; padding: var(--sp-8);">
+    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--text-disabled)" stroke-width="1.5" style="margin-bottom: var(--sp-3);">
         <circle cx="12" cy="12" r="10"></circle>
         <line x1="12" y1="8" x2="12" y2="12"></line>
         <line x1="12" y1="16" x2="12.01" y2="16"></line>
     </svg>
-    <h3 style="color: var(--text-secondary); margin-bottom: var(--space-200);">No Collections Yet</h3>
-    <p style="color: var(--text-disabled); margin-bottom: var(--space-400);">Create some collections and add relation fields to see the relationship graph.</p>
+    <h3 style="color: var(--text-secondary); margin-bottom: var(--sp-2);">No Collections Yet</h3>
+    <p style="color: var(--text-disabled); margin-bottom: var(--sp-4);">Create some collections and add relation fields to see the relationship graph.</p>
     <a href="{{ admin_url('collections/create') }}" class="btn btn-primary">Create Collection</a>
 </div>
 
 {% elseif edges|length == 0 %}
-<div class="card" style="margin-bottom: var(--space-400);">
-    <div class="card-body" style="text-align: center; padding: var(--space-600);">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-disabled)" stroke-width="1.5" style="margin-bottom: var(--space-200);">
+<div class="card" style="margin-bottom: var(--sp-4);">
+    <div class="card-body" style="text-align: center; padding: var(--sp-6);">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-disabled)" stroke-width="1.5" style="margin-bottom: var(--sp-2);">
             <circle cx="12" cy="12" r="10"></circle>
             <line x1="12" y1="8" x2="12" y2="12"></line>
             <line x1="12" y1="16" x2="12.01" y2="16"></line>
         </svg>
-        <h3 style="color: var(--text-secondary); margin-bottom: var(--space-100);">No Relationships Found</h3>
+        <h3 style="color: var(--text-secondary); margin-bottom: var(--sp-1);">No Relationships Found</h3>
         <p style="color: var(--text-disabled);">Your collections exist but none have relation fields yet. Add a "relation" field type to a collection to see connections here.</p>
     </div>
 </div>
@@ -52,19 +52,19 @@
 
 {% else %}
 {# Legend #}
-<div class="card" style="margin-bottom: var(--space-400);">
-    <div class="card-body" style="display: flex; align-items: center; gap: var(--space-400); flex-wrap: wrap; padding: var(--space-200) var(--space-400);">
+<div class="card" style="margin-bottom: var(--sp-4);">
+    <div class="card-body" style="display: flex; align-items: center; gap: var(--sp-4); flex-wrap: wrap; padding: var(--sp-2) var(--sp-4);">
         <span style="font-weight: 600; color: var(--text-secondary); font-size: 0.85rem;">Legend:</span>
         <span class="legend-item">
-            <svg width="40" height="12"><line x1="0" y1="6" x2="40" y2="6" stroke="var(--color-primary)" stroke-width="2"/></svg>
+            <svg width="40" height="12"><line x1="0" y1="6" x2="40" y2="6" stroke="var(--zui-primary-500)" stroke-width="2"/></svg>
             <span>one-to-one</span>
         </span>
         <span class="legend-item">
-            <svg width="40" height="12"><line x1="0" y1="6" x2="40" y2="6" stroke="var(--color-success)" stroke-width="2" stroke-dasharray="6,3"/></svg>
+            <svg width="40" height="12"><line x1="0" y1="6" x2="40" y2="6" stroke="var(--zui-success-600)" stroke-width="2" stroke-dasharray="6,3"/></svg>
             <span>one-to-many</span>
         </span>
         <span class="legend-item">
-            <svg width="40" height="12"><line x1="0" y1="6" x2="40" y2="6" stroke="var(--color-warning)" stroke-width="2" stroke-dasharray="3,3"/></svg>
+            <svg width="40" height="12"><line x1="0" y1="6" x2="40" y2="6" stroke="var(--zui-warning-600)" stroke-width="2" stroke-dasharray="3,3"/></svg>
             <span>many-to-many</span>
         </span>
     </div>
@@ -81,13 +81,13 @@
             <svg id="graph-svg" class="graph-svg">
                 <defs>
                     <marker id="arrow-one-to-one" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
-                        <polygon points="0 0, 10 3.5, 0 7" fill="var(--color-primary)" />
+                        <polygon points="0 0, 10 3.5, 0 7" fill="var(--zui-primary-500)" />
                     </marker>
                     <marker id="arrow-one-to-many" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
-                        <polygon points="0 0, 10 3.5, 0 7" fill="var(--color-success)" />
+                        <polygon points="0 0, 10 3.5, 0 7" fill="var(--zui-success-600)" />
                     </marker>
                     <marker id="arrow-many-to-many" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
-                        <polygon points="0 0, 10 3.5, 0 7" fill="var(--color-warning)" />
+                        <polygon points="0 0, 10 3.5, 0 7" fill="var(--zui-warning-600)" />
                     </marker>
                 </defs>
             </svg>
@@ -133,33 +133,33 @@
     position: absolute;
     background: var(--bg-surface);
     border: 2px solid var(--border);
-    border-radius: var(--radius-200);
-    padding: var(--space-300) var(--space-400);
+    border-radius: var(--radius);
+    padding: var(--sp-3) var(--sp-4);
     min-width: 160px;
     cursor: grab;
-    box-shadow: var(--shadow-card);
+    box-shadow: var(--shadow-sm);
     transition: box-shadow 0.15s, border-color 0.15s;
     text-align: center;
     z-index: 2;
 }
 
 .graph-node:hover {
-    box-shadow: var(--shadow-card-hover);
-    border-color: var(--color-primary);
+    box-shadow: var(--shadow);
+    border-color: var(--zui-primary-500);
 }
 
 .graph-node.dragging {
     cursor: grabbing;
-    box-shadow: var(--shadow-dropdown);
-    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    border-color: var(--zui-primary-500);
     z-index: 10;
 }
 
 .graph-node-icon {
     width: 32px;
     height: 32px;
-    margin: 0 auto var(--space-100);
-    background: var(--color-primary);
+    margin: 0 auto var(--sp-1);
+    background: var(--zui-primary-500);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -194,7 +194,7 @@
     color: var(--text-secondary);
     background: var(--bg-surface);
     padding: 1px 6px;
-    border-radius: var(--radius-100);
+    border-radius: var(--radius-sm);
     border: 1px solid var(--border);
     white-space: nowrap;
     pointer-events: none;
@@ -205,7 +205,7 @@
 .legend-item {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-100);
+    gap: var(--sp-1);
     font-size: 0.8rem;
     color: var(--text-secondary);
 }
@@ -337,17 +337,17 @@
             var color, dash, marker;
             switch (edge.type) {
                 case 'one-to-many':
-                    color = 'var(--color-success)';
+                    color = 'var(--zui-success-600)';
                     dash = '6,3';
                     marker = 'url(#arrow-one-to-many)';
                     break;
                 case 'many-to-many':
-                    color = 'var(--color-warning)';
+                    color = 'var(--zui-warning-600)';
                     dash = '3,3';
                     marker = 'url(#arrow-many-to-many)';
                     break;
                 default: // one-to-one
-                    color = 'var(--color-primary)';
+                    color = 'var(--zui-primary-500)';
                     dash = '';
                     marker = 'url(#arrow-one-to-one)';
                     break;

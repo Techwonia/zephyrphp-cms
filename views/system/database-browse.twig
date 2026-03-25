@@ -39,7 +39,7 @@
 
 {# Pagination #}
 {% if lastPage > 1 %}
-<div style="display: flex; justify-content: center; gap: var(--space-200); margin-top: var(--space-400);">
+<div style="display: flex; justify-content: center; gap: var(--sp-2); margin-top: var(--sp-4);">
     {% if page > 1 %}
         <a href="{{ admin_url('system/database/browse/' ~ table ~ '?page=' ~ page - 1) }}" class="btn btn-outline btn-sm">&laquo; Previous</a>
     {% endif %}

@@ -12,36 +12,36 @@
 </div>
 
 {# Stats Cards Row 1 #}
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-400); margin-bottom: var(--space-500);">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--sp-4); margin-bottom: var(--sp-5);">
     <div class="card">
-        <div class="card-body" style="text-align: center; padding: var(--space-400);">
-            <div style="font-size: 2rem; font-weight: 700; color: var(--primary);">{{ phpInfo.version }}</div>
+        <div class="card-body" style="text-align: center; padding: var(--sp-4);">
+            <div style="font-size: 2rem; font-weight: 700; color: var(--zui-primary-500);">{{ phpInfo.version }}</div>
             <div style="color: var(--text-secondary); font-size: 0.85rem;">PHP Version</div>
         </div>
     </div>
     <div class="card">
-        <div class="card-body" style="text-align: center; padding: var(--space-400);">
-            <div style="font-size: 2rem; font-weight: 700; color: {% if memory.percentage > 90 %}var(--danger){% elseif memory.percentage > 70 %}var(--warning){% else %}var(--success){% endif %};" id="memory-percent">{{ memory.percentage }}%</div>
+        <div class="card-body" style="text-align: center; padding: var(--sp-4);">
+            <div style="font-size: 2rem; font-weight: 700; color: {% if memory.percentage > 90 %}var(--zui-error-600){% elseif memory.percentage > 70 %}var(--zui-warning-600){% else %}var(--zui-success-600){% endif %};" id="memory-percent">{{ memory.percentage }}%</div>
             <div style="color: var(--text-secondary); font-size: 0.85rem;">Memory Usage</div>
-            <div style="background: var(--bg-secondary); border-radius: 4px; height: 24px; overflow: hidden; margin-top: var(--space-200);">
-                <div id="memory-bar" style="background: {% if memory.percentage > 90 %}var(--danger){% elseif memory.percentage > 70 %}var(--warning){% else %}var(--success){% endif %}; height: 100%; width: {{ memory.percentage }}%; transition: width 0.5s ease;"></div>
+            <div style="background: var(--bg-subdued); border-radius: 4px; height: 24px; overflow: hidden; margin-top: var(--sp-2);">
+                <div id="memory-bar" style="background: {% if memory.percentage > 90 %}var(--zui-error-600){% elseif memory.percentage > 70 %}var(--zui-warning-600){% else %}var(--zui-success-600){% endif %}; height: 100%; width: {{ memory.percentage }}%; transition: width 0.5s ease;"></div>
             </div>
             <div style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 4px;" id="memory-detail">{{ memory.current }} / {{ memory.limit }}</div>
         </div>
     </div>
     <div class="card">
-        <div class="card-body" style="text-align: center; padding: var(--space-400);">
-            <div style="font-size: 2rem; font-weight: 700; color: {% if disk.percentage > 90 %}var(--danger){% elseif disk.percentage > 70 %}var(--warning){% else %}var(--success){% endif %};" id="disk-percent">{{ disk.percentage }}%</div>
+        <div class="card-body" style="text-align: center; padding: var(--sp-4);">
+            <div style="font-size: 2rem; font-weight: 700; color: {% if disk.percentage > 90 %}var(--zui-error-600){% elseif disk.percentage > 70 %}var(--zui-warning-600){% else %}var(--zui-success-600){% endif %};" id="disk-percent">{{ disk.percentage }}%</div>
             <div style="color: var(--text-secondary); font-size: 0.85rem;">Disk Usage</div>
-            <div style="background: var(--bg-secondary); border-radius: 4px; height: 24px; overflow: hidden; margin-top: var(--space-200);">
-                <div id="disk-bar" style="background: {% if disk.percentage > 90 %}var(--danger){% elseif disk.percentage > 70 %}var(--warning){% else %}var(--success){% endif %}; height: 100%; width: {{ disk.percentage }}%; transition: width 0.5s ease;"></div>
+            <div style="background: var(--bg-subdued); border-radius: 4px; height: 24px; overflow: hidden; margin-top: var(--sp-2);">
+                <div id="disk-bar" style="background: {% if disk.percentage > 90 %}var(--zui-error-600){% elseif disk.percentage > 70 %}var(--zui-warning-600){% else %}var(--zui-success-600){% endif %}; height: 100%; width: {{ disk.percentage }}%; transition: width 0.5s ease;"></div>
             </div>
             <div style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 4px;" id="disk-detail">{{ disk.used }} / {{ disk.total }}</div>
         </div>
     </div>
     <div class="card">
-        <div class="card-body" style="text-align: center; padding: var(--space-400);">
-            <div style="font-size: 2rem; font-weight: 700; color: var(--primary);">{{ uptime.formatted }}</div>
+        <div class="card-body" style="text-align: center; padding: var(--sp-4);">
+            <div style="font-size: 2rem; font-weight: 700; color: var(--zui-primary-500);">{{ uptime.formatted }}</div>
             <div style="color: var(--text-secondary); font-size: 0.85rem;">Uptime</div>
             <div style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 4px;">Since {{ uptime.start_time }}</div>
         </div>
@@ -49,51 +49,51 @@
 </div>
 
 {# Stats Cards Row 2 #}
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-400); margin-bottom: var(--space-500);">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--sp-4); margin-bottom: var(--sp-5);">
     <div class="card">
-        <div class="card-body" style="text-align: center; padding: var(--space-400);">
-            <div style="font-size: 2rem; font-weight: 700; color: var(--primary);">
+        <div class="card-body" style="text-align: center; padding: var(--sp-4);">
+            <div style="font-size: 2rem; font-weight: 700; color: var(--zui-primary-500);">
                 {% if database.connected %}{{ database.size }}{% else %}N/A{% endif %}
             </div>
             <div style="color: var(--text-secondary); font-size: 0.85rem;">Database Size</div>
         </div>
     </div>
     <div class="card">
-        <div class="card-body" style="text-align: center; padding: var(--space-400);">
-            <div style="font-size: 2rem; font-weight: 700; color: var(--primary);">
+        <div class="card-body" style="text-align: center; padding: var(--sp-4);">
+            <div style="font-size: 2rem; font-weight: 700; color: var(--zui-primary-500);">
                 {% if database.connected %}{{ database.table_count }}{% else %}N/A{% endif %}
             </div>
             <div style="color: var(--text-secondary); font-size: 0.85rem;">Tables</div>
         </div>
     </div>
     <div class="card">
-        <div class="card-body" style="text-align: center; padding: var(--space-400);">
-            <div style="font-size: 2rem; font-weight: 700; color: {% if opcache and opcache.hit_rate > 80 %}var(--success){% elseif opcache %}var(--warning){% else %}var(--text-secondary){% endif %};">
+        <div class="card-body" style="text-align: center; padding: var(--sp-4);">
+            <div style="font-size: 2rem; font-weight: 700; color: {% if opcache and opcache.hit_rate > 80 %}var(--zui-success-600){% elseif opcache %}var(--zui-warning-600){% else %}var(--text-secondary){% endif %};">
                 {% if opcache %}{{ opcache.hit_rate }}%{% else %}N/A{% endif %}
             </div>
             <div style="color: var(--text-secondary); font-size: 0.85rem;">OPcache Hit Rate</div>
         </div>
     </div>
     <div class="card">
-        <div class="card-body" style="text-align: center; padding: var(--space-400);">
-            <div style="font-size: 2rem; font-weight: 700; color: {% if errorCount > 50 %}var(--danger){% elseif errorCount > 10 %}var(--warning){% else %}var(--success){% endif %};">{{ errorCount }}</div>
+        <div class="card-body" style="text-align: center; padding: var(--sp-4);">
+            <div style="font-size: 2rem; font-weight: 700; color: {% if errorCount > 50 %}var(--zui-error-600){% elseif errorCount > 10 %}var(--zui-warning-600){% else %}var(--zui-success-600){% endif %};">{{ errorCount }}</div>
             <div style="color: var(--text-secondary); font-size: 0.85rem;">Errors Today</div>
         </div>
     </div>
 </div>
 
 {# Memory & Disk Detail #}
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400); margin-bottom: var(--space-500);">
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); margin-bottom: var(--sp-5);">
     <div class="card">
         <div class="card-header"><h3 style="margin:0; font-size:1rem;">Memory Usage</h3></div>
         <div class="card-body">
-            <div style="margin-bottom: var(--space-300);">
+            <div style="margin-bottom: var(--sp-3);">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
                     <span>Used</span>
                     <span id="memory-used-label">{{ memory.current }} / {{ memory.limit }} ({{ memory.percentage }}%)</span>
                 </div>
-                <div style="background: var(--bg-secondary); border-radius: 4px; height: 24px; overflow: hidden;">
-                    <div id="memory-bar-detail" style="background: {% if memory.percentage > 90 %}var(--danger){% elseif memory.percentage > 70 %}var(--warning){% else %}var(--success){% endif %}; height: 100%; width: {{ memory.percentage }}%; transition: width 0.5s ease;"></div>
+                <div style="background: var(--bg-subdued); border-radius: 4px; height: 24px; overflow: hidden;">
+                    <div id="memory-bar-detail" style="background: {% if memory.percentage > 90 %}var(--zui-error-600){% elseif memory.percentage > 70 %}var(--zui-warning-600){% else %}var(--zui-success-600){% endif %}; height: 100%; width: {{ memory.percentage }}%; transition: width 0.5s ease;"></div>
                 </div>
             </div>
             <table class="data-table">
@@ -109,13 +109,13 @@
     <div class="card">
         <div class="card-header"><h3 style="margin:0; font-size:1rem;">Disk Usage</h3></div>
         <div class="card-body">
-            <div style="margin-bottom: var(--space-300);">
+            <div style="margin-bottom: var(--sp-3);">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
                     <span>Used</span>
                     <span id="disk-used-label">{{ disk.used }} / {{ disk.total }} ({{ disk.percentage }}%)</span>
                 </div>
-                <div style="background: var(--bg-secondary); border-radius: 4px; height: 24px; overflow: hidden;">
-                    <div id="disk-bar-detail" style="background: {% if disk.percentage > 90 %}var(--danger){% elseif disk.percentage > 70 %}var(--warning){% else %}var(--success){% endif %}; height: 100%; width: {{ disk.percentage }}%; transition: width 0.5s ease;"></div>
+                <div style="background: var(--bg-subdued); border-radius: 4px; height: 24px; overflow: hidden;">
+                    <div id="disk-bar-detail" style="background: {% if disk.percentage > 90 %}var(--zui-error-600){% elseif disk.percentage > 70 %}var(--zui-warning-600){% else %}var(--zui-success-600){% endif %}; height: 100%; width: {{ disk.percentage }}%; transition: width 0.5s ease;"></div>
                 </div>
             </div>
             <table class="data-table">
@@ -130,7 +130,7 @@
 </div>
 
 {# PHP Configuration #}
-<div class="card" style="margin-bottom: var(--space-500);">
+<div class="card" style="margin-bottom: var(--sp-5);">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">PHP Configuration</h3></div>
     <div class="card-body">
         <table class="data-table">
@@ -148,7 +148,7 @@
 
 {# Database Stats #}
 {% if database.connected %}
-<div class="card" style="margin-bottom: var(--space-500);">
+<div class="card" style="margin-bottom: var(--sp-5);">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">Database</h3></div>
     <div class="card-body">
         <table class="data-table">
@@ -165,7 +165,7 @@
 {% endif %}
 
 {# Request Stats #}
-<div class="card" style="margin-bottom: var(--space-500);">
+<div class="card" style="margin-bottom: var(--sp-5);">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">Request Statistics</h3></div>
     <div class="card-body">
         <div style="font-size: 1.5rem; font-weight: 700;" id="request-count">{{ requestCount }}</div>
@@ -175,17 +175,17 @@
 
 {# OPcache #}
 {% if opcache %}
-<div class="card" style="margin-bottom: var(--space-500);">
+<div class="card" style="margin-bottom: var(--sp-5);">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">OPcache</h3></div>
     <div class="card-body">
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-400); margin-bottom: var(--space-400);">
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--sp-4); margin-bottom: var(--sp-4);">
             <div>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
                     <span style="font-weight: 600;">Hit Rate</span>
                     <span>{{ opcache.hit_rate }}%</span>
                 </div>
-                <div style="background: var(--bg-secondary); border-radius: 4px; height: 24px; overflow: hidden;">
-                    <div style="background: var(--success); height: 100%; width: {{ opcache.hit_rate }}%;"></div>
+                <div style="background: var(--bg-subdued); border-radius: 4px; height: 24px; overflow: hidden;">
+                    <div style="background: var(--zui-success-600); height: 100%; width: {{ opcache.hit_rate }}%;"></div>
                 </div>
             </div>
             <div>
@@ -193,8 +193,8 @@
                     <span style="font-weight: 600;">Memory Usage</span>
                     <span>{{ opcache.memory_percentage }}%</span>
                 </div>
-                <div style="background: var(--bg-secondary); border-radius: 4px; height: 24px; overflow: hidden;">
-                    <div style="background: {% if opcache.memory_percentage > 90 %}var(--danger){% elseif opcache.memory_percentage > 70 %}var(--warning){% else %}var(--primary){% endif %}; height: 100%; width: {{ opcache.memory_percentage }}%;"></div>
+                <div style="background: var(--bg-subdued); border-radius: 4px; height: 24px; overflow: hidden;">
+                    <div style="background: {% if opcache.memory_percentage > 90 %}var(--zui-error-600){% elseif opcache.memory_percentage > 70 %}var(--zui-warning-600){% else %}var(--zui-primary-500){% endif %}; height: 100%; width: {{ opcache.memory_percentage }}%;"></div>
                 </div>
             </div>
             <div style="text-align: center;">
@@ -214,12 +214,12 @@
 {% endif %}
 
 {# Loaded Extensions #}
-<div class="card" style="margin-bottom: var(--space-500);">
+<div class="card" style="margin-bottom: var(--sp-5);">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">Loaded Extensions ({{ extensions|length }})</h3></div>
     <div class="card-body">
-        <div style="display: flex; flex-wrap: wrap; gap: var(--space-200);">
+        <div style="display: flex; flex-wrap: wrap; gap: var(--sp-2);">
             {% for ext in extensions %}
-            <span class="badge" style="background: var(--bg-secondary); padding: 4px 10px; border-radius: 4px; font-size: 0.8rem;">{{ ext }}</span>
+            <span class="badge" style="background: var(--bg-subdued); padding: 4px 10px; border-radius: 4px; font-size: 0.8rem;">{{ ext }}</span>
             {% endfor %}
         </div>
     </div>

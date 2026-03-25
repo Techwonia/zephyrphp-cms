@@ -114,6 +114,27 @@
   --text-xl:   1.25rem;    /* 20px */
   --text-2xl:  1.5rem;     /* 24px */
 
+  /* — Legacy aliases (backward compat for page templates) — */
+  --color-primary: var(--zui-primary-500);
+  --color-primary-hover: var(--zui-primary-600);
+  --color-primary-text: #FFF;
+  --color-critical: var(--zui-error-600);
+  --color-critical-bg: var(--zui-error-50);
+  --color-success: var(--zui-success-600);
+  --color-success-bg: var(--zui-success-50);
+  --color-warning: var(--zui-warning-600);
+  --color-warning-bg: var(--zui-warning-50);
+  --color-info: var(--zui-info-600);
+  --color-info-bg: var(--zui-info-50);
+  --danger: var(--zui-error-600);
+  --danger-bg: var(--zui-error-50);
+  --success: var(--zui-success-600);
+  --warning: var(--zui-warning-600);
+  --info: var(--zui-info-600);
+  --primary: var(--zui-primary-500);
+  --primary-hover: var(--zui-primary-600);
+  --primary-bg: var(--zui-primary-50);
+
   /* — Transitions — */
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
   --duration: 150ms;
@@ -493,6 +514,10 @@ img, svg { display: block; max-width: 100%; }
 }
 
 /* — Sidebar Panel — */
+/* Suppress transitions on initial load to prevent slide-in flicker */
+html:not(.zui-ready) .cms-sidebar-panel,
+html:not(.zui-ready) .cms-main { transition: none !important; }
+
 .cms-sidebar-panel {
   position: fixed;
   left: var(--activity-w);
@@ -510,6 +535,9 @@ img, svg { display: block; max-width: 100%; }
 }
 
 .cms-sidebar-panel.open { transform: translateX(0); }
+
+/* When panel is open via data attribute (restored from localStorage before JS) */
+[data-panel="open"] .cms-sidebar-panel { transform: translateX(0); }
 
 .sidebar-panel-header {
   display: flex;

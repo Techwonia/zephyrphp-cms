@@ -38,7 +38,7 @@
                             {% for role in u.getRoles() %}
                                 <span class="badge badge-info">{{ role.getName() }}</span>
                             {% else %}
-                                <span class="text-muted">&mdash;</span>
+                                <span class="text-secondary text-sm">&mdash;</span>
                             {% endfor %}
                         </td>
                         <td>{{ u.getCreatedAt() ? u.getCreatedAt()|date('M d, Y') : '&mdash;' }}</td>
@@ -94,7 +94,7 @@
                                 {% if item.roleName %}
                                     <span class="badge badge-info">{{ item.roleName }}</span>
                                 {% else %}
-                                    <span class="text-muted">&mdash;</span>
+                                    <span class="text-secondary text-sm">&mdash;</span>
                                 {% endif %}
                             </td>
                             <td>{{ item.inviterName ?? '&mdash;' }}</td>

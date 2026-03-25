@@ -3,14 +3,14 @@
 {% block title %}Notifications{% endblock %}
 
 {% block content %}
-<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-600);">
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--sp-6);">
     <div>
         <h1 style="margin: 0;">Notifications</h1>
         {% if unreadCount > 0 %}
-        <p style="color: var(--text-secondary); margin: var(--space-100) 0 0;">{{ unreadCount }} unread</p>
+        <p style="color: var(--text-secondary); margin: var(--sp-1) 0 0;">{{ unreadCount }} unread</p>
         {% endif %}
     </div>
-    <div style="display: flex; gap: var(--space-200);">
+    <div style="display: flex; gap: var(--sp-2);">
         {% if unreadCount > 0 %}
         <form method="POST" action="{{ admin_url('notifications/read-all') }}" style="margin: 0;">
             <input type="hidden" name="_token" value="{{ csrf_token() }}">
@@ -25,14 +25,14 @@
 <div class="card">
     <div style="divide-y: 1px solid var(--border);">
         {% for notification in notifications %}
-        <div style="display: flex; align-items: flex-start; gap: var(--space-400); padding: var(--space-400) var(--space-500); border-bottom: 1px solid var(--border); {% if not notification.isRead() %}background: var(--color-info-bg);{% endif %}">
+        <div style="display: flex; align-items: flex-start; gap: var(--sp-4); padding: var(--sp-4) var(--sp-5); border-bottom: 1px solid var(--border); {% if not notification.isRead() %}background: var(--zui-info-50);{% endif %}">
             <div style="flex-shrink: 0; margin-top: 2px;">
                 {% if notification.getType() == 'entry_published' %}
-                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--color-success);"></span>
+                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--zui-success-600);"></span>
                 {% elseif notification.getType() == 'form_submitted' %}
-                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--color-info);"></span>
+                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--zui-info-600);"></span>
                 {% elseif notification.getType() == 'user_registered' %}
-                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--color-warning);"></span>
+                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--zui-warning-600);"></span>
                 {% else %}
                     <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--text-secondary);"></span>
                 {% endif %}
@@ -46,18 +46,18 @@
                     {% endif %}
                 </div>
                 {% if notification.getBody() %}
-                <div style="color: var(--text-secondary); font-size: var(--font-sm); margin-top: var(--space-100);">
+                <div style="color: var(--text-secondary); font-size: var(--text-sm); margin-top: var(--sp-1);">
                     {{ notification.getBody()|length > 120 ? notification.getBody()|slice(0, 120) ~ '...' : notification.getBody() }}
                 </div>
                 {% endif %}
-                <div style="color: var(--text-disabled); font-size: var(--font-xs); margin-top: var(--space-100);">
+                <div style="color: var(--text-disabled); font-size: var(--text-xs); margin-top: var(--sp-1);">
                     {{ notification.getCreatedAt()|date('M j, Y g:i A') }}
                 </div>
             </div>
             {% if not notification.isRead() %}
             <form method="POST" action="{{ admin_url('notifications/' ~ notification.getId() ~ '/read') }}" style="margin: 0; flex-shrink: 0;">
                 <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                <button type="submit" class="btn btn-outline btn-sm" title="Mark as read" style="padding: 4px 8px; font-size: var(--font-xs);">
+                <button type="submit" class="btn btn-outline btn-sm" title="Mark as read" style="padding: 4px 8px; font-size: var(--text-xs);">
                     Mark read
                 </button>
             </form>
@@ -68,13 +68,13 @@
 </div>
 
 {% if notifications|length >= 20 %}
-<div style="text-align: center; margin-top: var(--space-600);">
+<div style="text-align: center; margin-top: var(--sp-6);">
     <a href="{{ admin_url('notifications?page=' ~ page + 1) }}" class="btn btn-outline btn-sm">Load more</a>
 </div>
 {% endif %}
 
 {% else %}
-<div class="card" style="padding: var(--space-800); text-align: center;">
+<div class="card" style="padding: var(--sp-8); text-align: center;">
     <p style="color: var(--text-secondary); margin: 0;">No notifications yet.</p>
 </div>
 {% endif %}

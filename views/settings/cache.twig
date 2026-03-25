@@ -12,10 +12,10 @@
 </div>
 
 {# Current Stats #}
-<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-400); margin-bottom: var(--space-500);">
+<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-4); margin-bottom: var(--sp-5);">
     <div class="card">
         <div class="card-body" style="text-align: center;">
-            <div style="font-size: 1.2rem; font-weight: 700; text-transform: uppercase; color: var(--primary);">{{ stats.driver }}</div>
+            <div style="font-size: 1.2rem; font-weight: 700; text-transform: uppercase; color: var(--zui-primary-500);">{{ stats.driver }}</div>
             <div style="color: var(--text-secondary); font-size: 0.85rem;">Active Driver</div>
         </div>
     </div>
@@ -34,13 +34,13 @@
 </div>
 
 {% if redisStatus is not null %}
-<div class="card" style="margin-bottom: var(--space-500);">
-    <div class="card-body" style="display: flex; align-items: center; gap: var(--space-300);">
+<div class="card" style="margin-bottom: var(--sp-5);">
+    <div class="card-body" style="display: flex; align-items: center; gap: var(--sp-3);">
         {% if redisStatus.connected %}
-            <span class="badge" style="background: var(--success); color: white;">Connected</span>
+            <span class="badge" style="background: var(--zui-success-600); color: white;">Connected</span>
             <span>Redis: {{ redisStatus.info }}</span>
         {% else %}
-            <span class="badge" style="background: var(--danger); color: white;">Disconnected</span>
+            <span class="badge" style="background: var(--zui-error-600); color: white;">Disconnected</span>
             <span>{{ redisStatus.error }}</span>
         {% endif %}
     </div>
@@ -51,10 +51,10 @@
     {{ csrf_field() | raw }}
 
     {# Driver Selection #}
-    <div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card" style="margin-bottom: var(--sp-5);">
         <div class="card-header"><h3 style="margin:0; font-size:1rem;">Cache Driver</h3></div>
         <div class="card-body">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4);">
                 <div class="form-group">
                     <label for="CACHE_DRIVER">Driver</label>
                     <select id="CACHE_DRIVER" name="CACHE_DRIVER" class="form-control">
@@ -75,10 +75,10 @@
     </div>
 
     {# Redis Settings #}
-    <div class="card" style="margin-bottom: var(--space-500);">
+    <div class="card" style="margin-bottom: var(--sp-5);">
         <div class="card-header"><h3 style="margin:0; font-size:1rem;">Redis Configuration</h3></div>
         <div class="card-body">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4);">
                 <div class="form-group">
                     <label for="REDIS_HOST">Host</label>
                     <input type="text" id="REDIS_HOST" name="REDIS_HOST" class="form-control" value="{{ settings.REDIS_HOST }}" placeholder="127.0.0.1">
@@ -99,12 +99,12 @@
         </div>
     </div>
 
-    <div style="display: flex; gap: var(--space-300);">
+    <div style="display: flex; gap: var(--sp-3);">
         <button type="submit" class="btn btn-primary">Save Cache Settings</button>
     </div>
 </form>
 
-<div style="margin-top: var(--space-400);">
+<div style="margin-top: var(--sp-4);">
     <form method="POST" action="{{ admin_url('settings/cache/test-redis') }}" style="display: inline;">
         {{ csrf_field() | raw }}
         <button type="submit" class="btn btn-outline btn-sm">Test Redis Connection</button>

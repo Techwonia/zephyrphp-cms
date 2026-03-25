@@ -12,9 +12,9 @@
 </div>
 
 {# Search #}
-<div class="card" style="margin-bottom: var(--space-500);">
+<div class="card" style="margin-bottom: var(--sp-5);">
     <div class="card-body">
-        <form method="GET" action="{{ admin_url('redirects') }}" style="display: flex; gap: var(--space-300); align-items: end;">
+        <form method="GET" action="{{ admin_url('redirects') }}" style="display: flex; gap: var(--sp-3); align-items: end;">
             <div class="form-group" style="flex: 1; margin-bottom: 0;">
                 <label for="search">Search Redirects</label>
                 <input type="text" id="search" name="search" class="form-control" placeholder="Search by path or URL..." value="{{ search }}">
@@ -28,13 +28,13 @@
 </div>
 
 {# Create Redirect #}
-<div class="card" style="margin-bottom: var(--space-500);">
+<div class="card" style="margin-bottom: var(--sp-5);">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">Add Redirect</h3></div>
     <div class="card-body">
         <form method="POST" action="{{ admin_url('redirects') }}">
             {{ csrf_field() | raw }}
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: var(--space-400); align-items: end;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: var(--sp-4); align-items: end;">
                 <div class="form-group" style="margin-bottom: 0;">
                     <label for="from_path">From Path</label>
                     <input type="text" id="from_path" name="from_path" class="form-control" placeholder="/old-page" required>
@@ -54,7 +54,7 @@
                 </div>
             </div>
 
-            <div class="form-actions" style="margin-top: var(--space-400);">
+            <div class="form-actions" style="margin-top: var(--sp-4);">
                 <button type="submit" class="btn btn-primary">Add Redirect</button>
             </div>
         </form>
@@ -97,7 +97,7 @@
                         </td>
                         <td>
                             {% if redirect.isActive %}
-                                <span class="badge" style="background: var(--success); color: #fff;">Active</span>
+                                <span class="badge" style="background: var(--zui-success-600); color: #fff;">Active</span>
                             {% else %}
                                 <span class="badge">Inactive</span>
                             {% endif %}
@@ -105,7 +105,7 @@
                         <td>{{ redirect.hitCount }}</td>
                         <td>{{ redirect.lastHitAt ? redirect.lastHitAt|date('M j, Y H:i') : 'Never' }}</td>
                         <td>
-                            <div style="display: flex; gap: var(--space-200); flex-wrap: wrap;">
+                            <div style="display: flex; gap: var(--sp-2); flex-wrap: wrap;">
                                 <button type="button" class="btn btn-outline btn-sm" onclick="toggleEdit({{ redirect.id }})">Edit</button>
                                 <form method="POST" action="{{ admin_url('redirects/' ~ redirect.id ~ '/toggle') }}" style="display: inline;">
                                     {{ csrf_field() | raw }}
@@ -121,7 +121,7 @@
                     {# Edit mode (hidden by default) #}
                     <tr id="redirect-edit-{{ redirect.id }}" style="display: none;">
                         <td colspan="7">
-                            <form method="POST" action="{{ admin_url('redirects/' ~ redirect.id) }}" style="display: flex; gap: var(--space-300); align-items: end;">
+                            <form method="POST" action="{{ admin_url('redirects/' ~ redirect.id) }}" style="display: flex; gap: var(--sp-3); align-items: end;">
                                 {{ csrf_field() | raw }}
                                 <div class="form-group" style="flex: 1; margin-bottom: 0;">
                                     <label>From Path</label>
@@ -152,7 +152,7 @@
 
 {# Pagination #}
 {% if totalPages > 1 %}
-<div style="display: flex; justify-content: center; gap: var(--space-200); margin-top: var(--space-500);">
+<div style="display: flex; justify-content: center; gap: var(--sp-2); margin-top: var(--sp-5);">
     {% if page > 1 %}
         <a href="{{ admin_url('redirects') }}?page={{ page - 1 }}{{ search ? '&search=' ~ search|url_encode : '' }}" class="btn btn-outline btn-sm">Previous</a>
     {% endif %}

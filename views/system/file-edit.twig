@@ -9,11 +9,11 @@
 
 <div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
     <h1>{{ filename }}</h1>
-    <div style="display: flex; gap: var(--space-200); align-items: center;">
+    <div style="display: flex; gap: var(--sp-2); align-items: center;">
         <span class="badge">{{ extension }}</span>
         <span style="font-size: 0.85rem; color: var(--text-secondary);">{{ size }}</span>
         {% if not writable %}
-            <span class="badge" style="background: var(--danger); color: white;">Read Only</span>
+            <span class="badge" style="background: var(--zui-error-600); color: white;">Read Only</span>
         {% endif %}
     </div>
 </div>
@@ -24,7 +24,7 @@
     <input type="hidden" name="root" value="{{ root }}">
     <input type="hidden" name="file" value="{{ file }}">
 
-    <div class="card" style="margin-bottom: var(--space-400);">
+    <div class="card" style="margin-bottom: var(--sp-4);">
         <div class="card-body" style="padding: 0;">
             <textarea name="content" class="form-control" style="font-family: monospace; font-size: 0.85rem; min-height: 500px; border: none; border-radius: 0; resize: vertical; tab-size: 4; white-space: pre; overflow-wrap: normal; overflow-x: auto;">{{ content }}</textarea>
         </div>
@@ -34,16 +34,16 @@
         <div style="font-size: 0.85rem; color: var(--text-secondary);">
             Last modified: {{ modified }}
         </div>
-        <div style="display: flex; gap: var(--space-200);">
+        <div style="display: flex; gap: var(--sp-2);">
             <a href="{{ admin_url('system/files?root=' ~ root) }}" class="btn btn-outline">Cancel</a>
             <button type="submit" class="btn btn-primary">Save File</button>
         </div>
     </div>
 </form>
 {% else %}
-<div class="card" style="margin-bottom: var(--space-400);">
+<div class="card" style="margin-bottom: var(--sp-4);">
     <div class="card-body" style="padding: 0;">
-        <pre style="margin: 0; padding: var(--space-400); font-size: 0.85rem; overflow-x: auto; white-space: pre;">{{ content }}</pre>
+        <pre style="margin: 0; padding: var(--sp-4); font-size: 0.85rem; overflow-x: auto; white-space: pre;">{{ content }}</pre>
     </div>
 </div>
 

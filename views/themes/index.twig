@@ -39,11 +39,11 @@
         <form method="POST" action="{{ admin_url('themes/install') }}" enctype="multipart/form-data">
             {{ csrf_field() | raw }}
             <div class="modal-body">
-                <p class="text-muted" style="margin-bottom:12px;">Upload a ZIP containing a valid <code>theme.json</code>.</p>
+                <p class="text-secondary text-sm" style="margin-bottom:12px;">Upload a ZIP containing a valid <code>theme.json</code>.</p>
                 <div class="form-group">
                     <label for="theme_zip">Theme ZIP File</label>
                     <input type="file" id="theme_zip" name="theme_zip" accept=".zip" required class="form-control">
-                    <small class="text-muted">Maximum: 50MB</small>
+                    <small class="text-secondary text-sm">Maximum: 50MB</small>
                 </div>
                 <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;cursor:pointer;">
                     <input type="checkbox" name="overwrite" value="1"> Overwrite if exists

@@ -15,7 +15,7 @@
 </div>
 
 {# ═══ Global Permission Matrix ═══ #}
-<div class="card" style="margin-bottom: var(--space-500);">
+<div class="card" style="margin-bottom: var(--sp-5);">
     <div class="card-header">
         <h3 style="margin: 0; font-size: 1rem;">Global Permission Matrix</h3>
     </div>
@@ -40,7 +40,7 @@
                     <tbody>
                         {# Built-in permissions #}
                         {% for group, perms in allPermissions %}
-                        <tr style="background: var(--bg-secondary);">
+                        <tr style="background: var(--bg-subdued);">
                             <td colspan="{{ roles|length }}"><strong>{{ group }}</strong></td>
                         </tr>
                         {% for key, label in perms %}
@@ -69,7 +69,7 @@
                             {% for cp in customPermissions %}
                                 {% if cp.group_name != currentGroup %}
                                     {% set currentGroup = cp.group_name %}
-                                    <tr style="background: var(--bg-secondary);">
+                                    <tr style="background: var(--bg-subdued);">
                                         <td colspan="{{ roles|length }}"><strong>{{ currentGroup }}</strong> <span class="badge" style="font-size: 0.6rem;">Custom</span></td>
                                     </tr>
                                 {% endif %}
@@ -95,7 +95,7 @@
                 </table>
             </div>
 
-            <div style="padding: var(--space-300) var(--space-400); border-top: 1px solid var(--border-color); display: flex; gap: var(--space-300); align-items: center;">
+            <div style="padding: var(--sp-3) var(--sp-4); border-top: 1px solid var(--border); display: flex; gap: var(--sp-3); align-items: center;">
                 <button type="submit" class="btn btn-primary">Save All Permissions</button>
                 <span style="color: var(--text-secondary); font-size: 0.8rem;">Admin role always has all permissions and cannot be modified.</span>
             </div>
@@ -105,7 +105,7 @@
 
 {# ═══ Per-Collection Permissions ═══ #}
 {% if collections|length > 0 %}
-<div class="card" style="margin-bottom: var(--space-500);">
+<div class="card" style="margin-bottom: var(--sp-5);">
     <div class="card-header">
         <h3 style="margin: 0; font-size: 1rem;">Per-Collection Permissions</h3>
         <p style="margin: 4px 0 0; font-size: 0.8rem; color: var(--text-secondary);">
@@ -117,15 +117,15 @@
             {{ csrf_field() | raw }}
 
             {% for col in collections %}
-            <details style="border-bottom: 1px solid var(--border-color);">
-                <summary style="padding: var(--space-300) var(--space-400); cursor: pointer; font-weight: 600;">
+            <details style="border-bottom: 1px solid var(--border);">
+                <summary style="padding: var(--sp-3) var(--sp-4); cursor: pointer; font-weight: 600;">
                     {{ col.name }}
                     <span style="font-size: 0.8rem; color: var(--text-secondary); font-weight: normal;">({{ col.slug }})</span>
                     {% if col.permissions|length > 0 %}
-                        <span class="badge" style="margin-left: var(--space-200); font-size: 0.65rem;">Custom</span>
+                        <span class="badge" style="margin-left: var(--sp-2); font-size: 0.65rem;">Custom</span>
                     {% endif %}
                 </summary>
-                <div style="padding: 0 var(--space-400) var(--space-400);">
+                <div style="padding: 0 var(--sp-4) var(--sp-4);">
                     <div class="table-responsive">
                         <table class="data-table" style="font-size: 0.85rem;">
                             <thead>
@@ -159,7 +159,7 @@
             </details>
             {% endfor %}
 
-            <div style="padding: var(--space-300) var(--space-400);">
+            <div style="padding: var(--sp-3) var(--sp-4);">
                 <button type="submit" class="btn btn-primary">Save Collection Permissions</button>
             </div>
         </form>
@@ -177,9 +177,9 @@
     </div>
     <div class="card-body">
         {# Add form #}
-        <form method="POST" action="{{ admin_url('permissions/custom/add') }}" style="margin-bottom: var(--space-400);">
+        <form method="POST" action="{{ admin_url('permissions/custom/add') }}" style="margin-bottom: var(--sp-4);">
             {{ csrf_field() | raw }}
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: var(--space-300); align-items: flex-end;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: var(--sp-3); align-items: flex-end;">
                 <div class="form-group" style="margin-bottom: 0;">
                     <label class="form-label">Permission Key</label>
                     <input type="text" name="permission_key" class="form-control" placeholder="e.g. reports.export" pattern="[a-z][a-z0-9_\.\-]*" required>

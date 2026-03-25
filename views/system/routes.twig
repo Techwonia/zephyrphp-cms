@@ -11,8 +11,8 @@
     <h1>Route Viewer <span style="color: var(--text-secondary); font-weight: 400; font-size: 1rem;">({{ totalRoutes }} routes)</span></h1>
 </div>
 
-<div class="search-bar" style="margin-bottom: var(--space-400);">
-    <form method="GET" action="{{ admin_url('system/routes') }}" class="search-form" style="display: flex; gap: var(--space-200);">
+<div class="search-bar" style="margin-bottom: var(--sp-4);">
+    <form method="GET" action="{{ admin_url('system/routes') }}" class="search-form" style="display: flex; gap: var(--sp-2);">
         <input type="text" name="search" class="form-control" placeholder="Search by URI or controller..." value="{{ search }}" style="flex: 1;">
         <select name="method" class="form-control" style="width: 120px;">
             <option value="">All Methods</option>
@@ -42,7 +42,7 @@
                     {% for route in routes %}
                     <tr>
                         <td>
-                            <span class="badge" style="{% if route.method == 'GET' %}background: var(--success); color: #fff;{% elseif route.method == 'POST' %}background: var(--primary); color: #fff;{% elseif route.method == 'PUT' or route.method == 'PATCH' %}background: var(--warning); color: #000;{% elseif route.method == 'DELETE' %}background: var(--danger); color: #fff;{% endif %}">{{ route.method }}</span>
+                            <span class="badge" style="{% if route.method == 'GET' %}background: var(--zui-success-600); color: #fff;{% elseif route.method == 'POST' %}background: var(--zui-primary-500); color: #fff;{% elseif route.method == 'PUT' or route.method == 'PATCH' %}background: var(--zui-warning-600); color: #000;{% elseif route.method == 'DELETE' %}background: var(--zui-error-600); color: #fff;{% endif %}">{{ route.method }}</span>
                         </td>
                         <td style="font-family: monospace; font-size: 0.85rem;">{{ route.uri }}</td>
                         <td style="font-family: monospace; font-size: 0.8rem; color: var(--text-secondary); max-width: 300px; overflow: hidden; text-overflow: ellipsis;">{{ route.action }}</td>

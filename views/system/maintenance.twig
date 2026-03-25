@@ -12,14 +12,14 @@
 </div>
 
 {# Current Status #}
-<div class="card" style="margin-bottom: var(--space-500);">
+<div class="card" style="margin-bottom: var(--sp-5);">
     <div class="card-body" style="display: flex; align-items: center; justify-content: space-between;">
         <div>
             <div style="font-size: 1.25rem; font-weight: 700;">
                 {% if isDown %}
-                    <span style="color: var(--warning);">Application is in Maintenance Mode</span>
+                    <span style="color: var(--zui-warning-600);">Application is in Maintenance Mode</span>
                 {% else %}
-                    <span style="color: var(--success);">Application is Live</span>
+                    <span style="color: var(--zui-success-600);">Application is Live</span>
                 {% endif %}
             </div>
             {% if isDown and data.time is defined %}
@@ -39,7 +39,7 @@
 
 {% if isDown and data %}
 {# Current settings when down #}
-<div class="card" style="margin-bottom: var(--space-500);">
+<div class="card" style="margin-bottom: var(--sp-5);">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">Current Maintenance Settings</h3></div>
     <div class="card-body">
         <table class="data-table">
@@ -67,7 +67,7 @@
                 <textarea id="message" name="message" class="form-control" rows="3" placeholder="We are currently performing maintenance. Please check back soon."></textarea>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4);">
                 <div class="form-group">
                     <label for="retry">Retry After (seconds)</label>
                     <input type="number" id="retry" name="retry" class="form-control" placeholder="60" min="0">

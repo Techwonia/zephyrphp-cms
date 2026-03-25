@@ -7,7 +7,7 @@
                 <span class="widget-list-title">{{ review.entry_title ?? '#' ~ review.entry_id }}</span>
                 <span class="widget-list-meta">{{ review.collection_name }} &middot; {{ review.stage|capitalize }}</span>
             </div>
-            <span class="badge" style="background: var(--color-warning-subdued); color: var(--color-warning); font-size: var(--font-xs); padding: 2px 8px; border-radius: var(--radius-full);">
+            <span class="badge" style="background: var(--color-warning-subdued); color: var(--zui-warning-600); font-size: var(--text-xs); padding: 2px 8px; border-radius: var(--radius-full);">
                 {{ review.stage|capitalize }}
             </span>
         </div>
@@ -15,5 +15,5 @@
     {% endfor %}
 </div>
 {% else %}
-<p class="text-muted" style="text-align: center; padding: var(--space-400) 0;">No pending reviews</p>
+<p class="text-secondary text-sm" style="text-align: center; padding: var(--sp-4) 0;">No pending reviews</p>
 {% endif %}

@@ -12,7 +12,7 @@
 </div>
 
 {# Application Settings #}
-<div class="card" style="margin-bottom: var(--space-500);">
+<div class="card" style="margin-bottom: var(--sp-5);">
     <div class="card-header">
         <h3 style="margin: 0; font-size: 1rem;">Application Settings</h3>
     </div>
@@ -20,7 +20,7 @@
         <form method="POST" action="{{ admin_url('settings/system') }}">
             {{ csrf_field() | raw }}
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4);">
                 <div class="form-group">
                     <label for="APP_NAME">App Name</label>
                     <input type="text" id="APP_NAME" name="APP_NAME" class="form-control"
@@ -57,9 +57,9 @@
                 </div>
             </div>
 
-            <h4 style="margin: var(--space-500) 0 var(--space-300); font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Authentication & Session</h4>
+            <h4 style="margin: var(--sp-5) 0 var(--sp-3); font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Authentication & Session</h4>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4);">
                 <div class="form-group">
                     <label for="AUTH_HOME">Post-Login Redirect (Customers)</label>
                     <input type="text" id="AUTH_HOME" name="AUTH_HOME" class="form-control"
@@ -82,9 +82,9 @@
                 </div>
             </div>
 
-            <h4 style="margin: var(--space-500) 0 var(--space-300); font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">CMS Configuration</h4>
+            <h4 style="margin: var(--sp-5) 0 var(--sp-3); font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">CMS Configuration</h4>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4);">
                 <div class="form-group">
                     <label for="CMS_THEME">Fallback Theme</label>
                     <input type="text" id="CMS_THEME" name="CMS_THEME" class="form-control"
@@ -100,9 +100,9 @@
                 </div>
             </div>
 
-            <h4 style="margin: var(--space-500) 0 var(--space-300); font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Security & CSP</h4>
+            <h4 style="margin: var(--sp-5) 0 var(--sp-3); font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Security & CSP</h4>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-400);">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4);">
                 <div class="form-group">
                     <label for="CSP_ENABLED">Content Security Policy</label>
                     <select id="CSP_ENABLED" name="CSP_ENABLED" class="form-control">
@@ -155,8 +155,8 @@
             </div>
 
             {# ── Quick Presets ── #}
-            <div style="margin: var(--space-500) 0 var(--space-300);">
-                <h5 style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: var(--space-200);">Quick Add — Common Services</h5>
+            <div style="margin: var(--sp-5) 0 var(--sp-3);">
+                <h5 style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: var(--sp-2);">Quick Add — Common Services</h5>
                 <div style="display: flex; flex-wrap: wrap; gap: 6px;">
                     <button type="button" class="csp-preset-btn" data-preset="google-fonts" title="Adds fonts.googleapis.com + fonts.gstatic.com">Google Fonts</button>
                     <button type="button" class="csp-preset-btn" data-preset="google-analytics" title="Adds googletagmanager.com + google-analytics.com">Google Analytics</button>
@@ -172,7 +172,7 @@
             </div>
 
             {# ── CSP Source Directives with Tag UI ── #}
-            <h5 style="margin: var(--space-300) 0 var(--space-200); font-size: 0.8rem; color: var(--text-secondary);">Allowed External Sources</h5>
+            <h5 style="margin: var(--sp-3) 0 var(--sp-2); font-size: 0.8rem; color: var(--text-secondary);">Allowed External Sources</h5>
 
             {% set cspFields = [
                 { id: 'CSP_SCRIPT_SRC', label: 'Scripts', icon: '&lt;/&gt;', help: 'External JavaScript files (CDNs, analytics, payment)' },
@@ -202,9 +202,9 @@
             </div>
             {% endfor %}
 
-            <h4 style="margin: var(--space-500) 0 var(--space-300); font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Asset Configuration</h4>
+            <h4 style="margin: var(--sp-5) 0 var(--sp-3); font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Asset Configuration</h4>
 
-            <div style="background: var(--bg-subdued); border: 1px solid var(--border-default); border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+            <div style="background: var(--bg-subdued); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 16px;">
                 <p style="margin: 0 0 8px; font-size: 0.875rem;">Manage asset collections, preloads, preconnects, CDN, and versioning in the dedicated Asset Settings page.</p>
                 <a href="{{ admin_url('settings/assets') }}" class="btn btn-sm btn-primary">Open Asset Settings</a>
             </div>
@@ -217,7 +217,7 @@
 </div>
 
 {# System Information #}
-<div class="card" style="margin-bottom: var(--space-500);">
+<div class="card" style="margin-bottom: var(--sp-5);">
     <div class="card-header">
         <h3 style="margin: 0; font-size: 1rem;">System Information</h3>
     </div>
@@ -243,7 +243,7 @@
         <h3 style="margin: 0; font-size: 1rem;">Loaded PHP Extensions ({{ extensions|length }})</h3>
     </div>
     <div class="card-body">
-        <div style="display: flex; flex-wrap: wrap; gap: var(--space-200);">
+        <div style="display: flex; flex-wrap: wrap; gap: var(--sp-2);">
             {% for ext in extensions %}
                 <span class="badge" style="background: var(--bg-subdued); color: var(--text-secondary);">{{ ext }}</span>
             {% endfor %}
@@ -254,14 +254,14 @@
 <style>
     .csp-preset-btn {
         padding: 5px 12px; font-size: 12px; border-radius: 6px;
-        border: 1px solid var(--border-default); background: var(--bg-subdued);
+        border: 1px solid var(--border); background: var(--bg-subdued);
         color: var(--text-secondary); cursor: pointer; transition: all 0.15s;
     }
-    .csp-preset-btn:hover { border-color: var(--color-primary); color: var(--color-primary); background: var(--bg); }
-    .csp-preset-btn.applied { border-color: var(--color-success); color: var(--color-success); background: rgba(4,123,93,0.06); }
+    .csp-preset-btn:hover { border-color: var(--zui-primary-500); color: var(--zui-primary-500); background: var(--bg-app); }
+    .csp-preset-btn.applied { border-color: var(--zui-success-600); color: var(--zui-success-600); background: rgba(4,123,93,0.06); }
 
     .csp-directive-group {
-        background: var(--bg-subdued); border: 1px solid var(--border-default);
+        background: var(--bg-subdued); border: 1px solid var(--border);
         border-radius: 8px; padding: 12px 14px; margin-bottom: 8px;
     }
     .csp-directive-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
@@ -277,25 +277,25 @@
 
     .csp-tag {
         display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px 3px 10px;
-        background: var(--bg); border: 1px solid var(--border-default); border-radius: 5px;
+        background: var(--bg-app); border: 1px solid var(--border); border-radius: 5px;
         font-size: 12px; color: var(--text); font-family: monospace;
     }
     .csp-tag-remove {
         border: none; background: none; color: var(--text-secondary); cursor: pointer;
         font-size: 14px; padding: 0 2px; line-height: 1; border-radius: 3px;
     }
-    .csp-tag-remove:hover { color: var(--color-critical); background: rgba(215,44,13,0.08); }
+    .csp-tag-remove:hover { color: var(--zui-error-600); background: rgba(215,44,13,0.08); }
 
     .csp-add-row { display: flex; gap: 6px; }
     .csp-add-input {
         flex: 1; padding: 5px 10px; font-size: 12px; border-radius: 6px;
-        border: 1px solid var(--border-default); background: var(--bg); color: var(--text);
+        border: 1px solid var(--border); background: var(--bg-app); color: var(--text);
         font-family: monospace;
     }
-    .csp-add-input:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 2px rgba(26,123,168,0.15); }
+    .csp-add-input:focus { outline: none; border-color: var(--zui-primary-500); box-shadow: 0 0 0 2px rgba(26,123,168,0.15); }
     .csp-add-btn {
-        padding: 5px 14px; font-size: 12px; border-radius: 6px; border: 1px solid var(--color-primary);
-        background: var(--color-primary); color: #fff; cursor: pointer; white-space: nowrap;
+        padding: 5px 14px; font-size: 12px; border-radius: 6px; border: 1px solid var(--zui-primary-500);
+        background: var(--zui-primary-500); color: #fff; cursor: pointer; white-space: nowrap;
     }
     .csp-add-btn:hover { opacity: 0.9; }
 </style>

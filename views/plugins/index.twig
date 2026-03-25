@@ -17,16 +17,16 @@
 
 {# Flash messages #}
 {% if flash('success') %}
-<div class="alert alert-success" style="margin-bottom: var(--space-400);">{{ flash('success') }}</div>
+<div class="alert alert-success" style="margin-bottom: var(--sp-4);">{{ flash('success') }}</div>
 {% endif %}
 {% if flash('errors') %}
 {% for error in flash('errors') %}
-<div class="alert alert-danger" style="margin-bottom: var(--space-400);">{{ error }}</div>
+<div class="alert alert-danger" style="margin-bottom: var(--sp-4);">{{ error }}</div>
 {% endfor %}
 {% endif %}
 
 {# Filter tabs + Search #}
-<div class="card" style="margin-bottom: var(--space-500);">
+<div class="card" style="margin-bottom: var(--sp-5);">
     <div class="card-body">
         <div class="plugin-toolbar">
             <div class="plugin-tabs">
@@ -141,7 +141,7 @@
         <form method="POST" action="{{ admin_url('plugins/install') }}" enctype="multipart/form-data">
             {{ csrf_field() | raw }}
             <div class="modal-body">
-                <div class="form-group" style="margin-bottom: var(--space-400);">
+                <div class="form-group" style="margin-bottom: var(--sp-4);">
                     <label class="form-label">Upload ZIP File</label>
                     <input type="file" name="plugin_zip" accept=".zip" class="form-control">
                     <small class="form-hint">Upload a plugin .zip archive (max 50 MB).</small>
@@ -191,7 +191,7 @@
 }
 .plugin-tab:hover {
     background: var(--bg-subdued, #f5f5f5);
-    color: var(--text-primary);
+    color: var(--text-heading);
 }
 .plugin-tab.active {
     background: var(--color-primary, #111);

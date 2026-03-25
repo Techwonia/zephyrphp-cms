@@ -9,7 +9,7 @@
 
 <div class="page-header">
     <h1>Import Preview</h1>
-    <p style="color: var(--text-secondary); margin-top: var(--space-100);">
+    <p style="color: var(--text-secondary); margin-top: var(--sp-1);">
         {{ totalRows }} row(s) found. Map file columns to collection fields, then confirm.
     </p>
 </div>
@@ -19,7 +19,7 @@
     <input type="hidden" name="temp_file" value="{{ tempFile }}">
 
     {# Column Mapping #}
-    <div class="card" style="margin-bottom: var(--space-400);">
+    <div class="card" style="margin-bottom: var(--sp-4);">
         <div class="card-header"><h3 style="margin: 0; font-size: 1rem;">Column Mapping</h3></div>
         <div class="card-body" style="padding: 0;">
             <div class="table-responsive">
@@ -64,7 +64,7 @@
     </div>
 
     {# Data Preview #}
-    <div class="card" style="margin-bottom: var(--space-400);">
+    <div class="card" style="margin-bottom: var(--sp-4);">
         <div class="card-header"><h3 style="margin: 0; font-size: 1rem;">Data Preview (first {{ preview|length }} of {{ totalRows }} rows)</h3></div>
         <div class="card-body" style="padding: 0;">
             <div class="table-responsive">
@@ -95,7 +95,7 @@
     </div>
 
     {# Actions #}
-    <div style="display: flex; gap: var(--space-300); align-items: center;">
+    <div style="display: flex; gap: var(--sp-3); align-items: center;">
         <button type="submit" class="btn btn-primary" onclick="return confirm('Import {{ totalRows }} entries into {{ collection.name }}?')">
             Import {{ totalRows }} Entries
         </button>

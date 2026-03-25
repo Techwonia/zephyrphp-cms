@@ -13,24 +13,24 @@
 
 <div class="card">
     <div class="card-body">
-        <p style="color: var(--text-secondary); margin-bottom: var(--space-500); line-height: 1.6;">
+        <p style="color: var(--text-secondary); margin-bottom: var(--sp-5); line-height: 1.6;">
             Scan the QR code below with your authenticator app (Google Authenticator, Authy, 1Password, etc.),
             or manually enter the secret key. Then enter the 6-digit code to verify and activate 2FA.
         </p>
 
         {% if flash('errors').code is defined %}
-            <div class="alert alert--error" style="margin-bottom: var(--space-400);">{{ flash('errors').code }}</div>
+            <div class="alert alert--error" style="margin-bottom: var(--sp-4);">{{ flash('errors').code }}</div>
         {% endif %}
 
         <!-- Setup Key Section -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-500); margin-bottom: var(--space-500);">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-5); margin-bottom: var(--sp-5);">
             <!-- OTPAuth URI -->
             <div>
-                <h3 style="font-size: 0.875rem; font-weight: 600; margin-bottom: var(--space-300);">Authenticator Link</h3>
-                <p style="color: var(--text-secondary); font-size: 0.8125rem; margin-bottom: var(--space-300);">
+                <h3 style="font-size: 0.875rem; font-weight: 600; margin-bottom: var(--sp-3);">Authenticator Link</h3>
+                <p style="color: var(--text-secondary); font-size: 0.8125rem; margin-bottom: var(--sp-3);">
                     Click the link below to open it in your authenticator app, or copy and paste it:
                 </p>
-                <div style="background: var(--bg-secondary); border: 1px solid var(--border-default); border-radius: 8px; padding: var(--space-300); word-break: break-all; font-size: 0.75rem; font-family: monospace; color: var(--text-secondary); position: relative;">
+                <div style="background: var(--bg-subdued); border: 1px solid var(--border); border-radius: 8px; padding: var(--sp-3); word-break: break-all; font-size: 0.75rem; font-family: monospace; color: var(--text-secondary); position: relative;">
                     <a href="{{ uri }}" style="color: var(--accent-primary); text-decoration: none; word-break: break-all;">{{ uri }}</a>
                     <button type="button" class="btn btn-sm" style="position: absolute; top: 6px; right: 6px; font-size: 0.7rem; padding: 4px 8px;" onclick="copyToClipboard('{{ uri }}', this)" title="Copy URI">
                         Copy
@@ -40,11 +40,11 @@
 
             <!-- Manual Secret Key -->
             <div>
-                <h3 style="font-size: 0.875rem; font-weight: 600; margin-bottom: var(--space-300);">Manual Entry Key</h3>
-                <p style="color: var(--text-secondary); font-size: 0.8125rem; margin-bottom: var(--space-300);">
+                <h3 style="font-size: 0.875rem; font-weight: 600; margin-bottom: var(--sp-3);">Manual Entry Key</h3>
+                <p style="color: var(--text-secondary); font-size: 0.8125rem; margin-bottom: var(--sp-3);">
                     If you cannot scan the link, enter this key manually in your authenticator app:
                 </p>
-                <div style="background: var(--bg-secondary); border: 1px solid var(--border-default); border-radius: 8px; padding: var(--space-300); font-family: monospace; font-size: 1rem; font-weight: 600; letter-spacing: 0.15em; text-align: center; color: var(--accent-primary); position: relative;">
+                <div style="background: var(--bg-subdued); border: 1px solid var(--border); border-radius: 8px; padding: var(--sp-3); font-family: monospace; font-size: 1rem; font-weight: 600; letter-spacing: 0.15em; text-align: center; color: var(--accent-primary); position: relative;">
                     {{ secret }}
                     <button type="button" class="btn btn-sm" style="position: absolute; top: 50%; right: 8px; transform: translateY(-50%); font-size: 0.7rem; padding: 4px 8px;" onclick="copyToClipboard('{{ secret }}', this)" title="Copy secret key">
                         Copy
@@ -53,11 +53,11 @@
             </div>
         </div>
 
-        <hr style="margin: var(--space-500) 0; border: none; border-top: 1px solid var(--border-default);">
+        <hr style="margin: var(--sp-5) 0; border: none; border-top: 1px solid var(--border);">
 
         <!-- Verification Form -->
-        <h3 style="font-size: 0.875rem; font-weight: 600; margin-bottom: var(--space-300);">Verify Setup</h3>
-        <p style="color: var(--text-secondary); font-size: 0.8125rem; margin-bottom: var(--space-400);">
+        <h3 style="font-size: 0.875rem; font-weight: 600; margin-bottom: var(--sp-3);">Verify Setup</h3>
+        <p style="color: var(--text-secondary); font-size: 0.8125rem; margin-bottom: var(--sp-4);">
             Enter the 6-digit code displayed in your authenticator app to confirm the setup:
         </p>
 
@@ -78,7 +78,7 @@
 
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Enable Two-Factor Authentication</button>
-                <a href="{{ admin_url('settings/profile') }}" class="btn btn-secondary" style="margin-left: var(--space-200);">Cancel</a>
+                <a href="{{ admin_url('settings/profile') }}" class="btn btn-secondary" style="margin-left: var(--sp-2);">Cancel</a>
             </div>
         </form>
     </div>
