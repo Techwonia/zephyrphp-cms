@@ -6,30 +6,36 @@
 <div class="page-header">
     <div>
         <h1>Dashboard</h1>
-        <p class="text-muted" style="margin-top: 2px;">Welcome back, {{ user.getName() }}</p>
+        <p class="page-header-sub">Welcome back, {{ user.getName() }}</p>
     </div>
-    <div class="page-actions">
+    <div class="page-header-actions">
         <button class="btn btn-outline btn-sm" id="customize-btn" onclick="toggleCustomize()">Customize</button>
     </div>
 </div>
 
 <div class="stats-grid">
     <div class="stat-card">
-        <div class="stat-icon stat-icon-green">&#128203;</div>
+        <div class="stat-icon primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        </div>
         <div>
             <div class="stat-value">{{ totalCollections }}</div>
             <div class="stat-label">Collections</div>
         </div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon stat-icon-blue">&#128196;</div>
+        <div class="stat-icon info">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
         <div>
             <div class="stat-value">{{ totalEntries }}</div>
             <div class="stat-label">Total Entries</div>
         </div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon stat-icon-orange">&#128247;</div>
+        <div class="stat-icon warning">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </div>
         <div>
             <div class="stat-value">{{ totalMedia }}</div>
             <div class="stat-label">Media Files</div>
@@ -38,21 +44,19 @@
 </div>
 
 {# Customize overlay #}
-<div id="customize-panel" style="display: none; margin-bottom: var(--space-400);">
+<div id="customize-panel" class="hidden mb-4">
     <div class="card">
-        <div class="card-header">
-            <h3>Customize Dashboard</h3>
-        </div>
+        <div class="card-header"><h3>Customize Dashboard</h3></div>
         <div class="card-body">
-            <p class="text-muted" style="margin-bottom: 12px;">Toggle widgets and change their size. Changes save automatically.</p>
-            <div id="widget-toggles" style="display: flex; flex-direction: column; gap: 8px;">
+            <p class="text-secondary text-sm mb-3">Toggle widgets and change their size. Changes save automatically.</p>
+            <div id="widget-toggles" class="flex flex-col gap-2">
                 {% for id, widget in widgets %}
-                <div style="display: flex; align-items: center; gap: 12px; padding: 8px; background: var(--bg-secondary); border-radius: 6px;">
-                    <label style="display: flex; align-items: center; gap: 6px; flex: 1; cursor: pointer;">
+                <div class="flex items-center gap-3" style="padding:var(--sp-2);background:var(--bg-subdued);border-radius:var(--radius)">
+                    <label class="flex items-center gap-2 flex-1" style="cursor:pointer">
                         <input type="checkbox" class="widget-toggle" data-widget-id="{{ id }}" checked>
-                        <span>{{ widget.title }}</span>
+                        <span class="text-sm">{{ widget.title }}</span>
                     </label>
-                    <select class="form-control widget-size-select" data-widget-id="{{ id }}" style="width: auto; padding: 4px 8px; font-size: 0.85em;">
+                    <select class="form-control" data-widget-id="{{ id }}" style="width:auto;height:30px;padding:0 var(--sp-6) 0 var(--sp-2);font-size:var(--text-xs)">
                         <option value="third" {% if widget.size == 'third' %}selected{% endif %}>Small</option>
                         <option value="half" {% if widget.size == 'half' %}selected{% endif %}>Medium</option>
                         <option value="full" {% if widget.size == 'full' %}selected{% endif %}>Large</option>
@@ -66,16 +70,14 @@
 
 {# Widget grid #}
 {% if widgets|length > 0 %}
-<div class="widget-grid" id="widget-grid" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--space-400); margin-bottom: var(--space-500);">
+<div class="widget-grid mb-6" id="widget-grid">
     {% for id, widget in widgets %}
-    {% set colSpan = widget.size == 'full' ? '1 / -1' : (widget.size == 'third' ? 'span 2' : 'span 3') %}
-    <div class="card widget-card" data-widget-id="{{ id }}" style="grid-column: {{ colSpan }};">
-        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-            <h3>{{ widget.title }}</h3>
-        </div>
+    {% set sizeClass = widget.size == 'full' ? 'widget-full' : (widget.size == 'third' ? 'widget-third' : 'widget-half') %}
+    <div class="card widget-card {{ sizeClass }}" data-widget-id="{{ id }}">
+        <div class="card-header"><h3>{{ widget.title }}</h3></div>
         <div class="card-body">
             {% if widget.data._error is defined %}
-                <p class="text-muted">{{ widget.data._error }}</p>
+                <p class="text-secondary">{{ widget.data._error }}</p>
             {% else %}
                 {% include widget.template with widget.data %}
             {% endif %}
@@ -88,120 +90,103 @@
 {# Collections table #}
 {% if collections|length > 0 %}
 <div class="card">
-    <div class="card-header">
-        <h3>Collections</h3>
-    </div>
-    <div class="table-responsive">
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Slug</th>
-                    <th>Fields</th>
-                    <th>Entries</th>
-                    <th>API</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for collection in collections %}
-                <tr>
-                    <td><strong>{{ collection.getName() }}</strong></td>
-                    <td><code>{{ collection.getSlug() }}</code></td>
-                    <td>{{ collection.getFields()|length }}</td>
-                    <td>{{ stats[collection.getSlug()] ?? 0 }}</td>
-                    <td>
-                        {% if collection.isApiEnabled() %}
-                            <span class="badge badge-info">API</span>
-                        {% else %}
-                            <span class="text-muted">&mdash;</span>
-                        {% endif %}
-                    </td>
-                    <td class="actions-cell">
-                        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="btn btn-sm btn-outline">Entries</a>
-                        <a href="{{ admin_url('collections/' ~ collection.getSlug()) }}" class="btn btn-sm btn-outline">Edit</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="card-header"><h3>Collections</h3></div>
+    <div class="card-body-flush">
+        <div class="data-table-wrap">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Slug</th>
+                        <th>Fields</th>
+                        <th>Entries</th>
+                        <th>API</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for collection in collections %}
+                    <tr>
+                        <td><span class="font-semibold">{{ collection.getName() }}</span></td>
+                        <td><code class="text-mono text-sm text-secondary">{{ collection.getSlug() }}</code></td>
+                        <td>{{ collection.getFields()|length }}</td>
+                        <td>{{ stats[collection.getSlug()] ?? 0 }}</td>
+                        <td>
+                            {% if collection.isApiEnabled() %}
+                                <span class="badge badge-info"><span class="badge-dot"></span>API</span>
+                            {% else %}
+                                <span class="text-secondary">&mdash;</span>
+                            {% endif %}
+                        </td>
+                        <td class="actions-cell">
+                            <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="btn btn-sm btn-outline">Entries</a>
+                            <a href="{{ admin_url('collections/' ~ collection.getSlug()) }}" class="btn btn-sm btn-ghost">Edit</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 {% else %}
-<div class="card">
-    <div class="card-body empty-state">
-        <h3>No collections yet</h3>
-        <p>Create your first collection to start building your content.</p>
-        <a href="{{ admin_url('collections/create') }}" class="btn btn-primary">Create Collection</a>
+<div class="empty-state">
+    <div class="empty-state-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
     </div>
+    <h2>No collections yet</h2>
+    <p>Create your first collection to start building your content.</p>
+    <a href="{{ admin_url('collections/create') }}" class="btn btn-primary">Create Collection</a>
 </div>
 {% endif %}
 
 <script nonce="{{ csp_nonce() }}">
 function toggleCustomize() {
     var panel = document.getElementById('customize-panel');
-    panel.style.display = panel.style.display === 'none' ? '' : 'none';
+    panel.classList.toggle('hidden');
 }
 
 function saveLayout() {
     var widgets = document.querySelectorAll('.widget-card');
     var toggles = document.querySelectorAll('.widget-toggle');
-    var sizes = document.querySelectorAll('.widget-size-select');
+    var sizes = document.querySelectorAll('[data-widget-id].form-control');
+    var toggleMap = {}, sizeMap = {};
 
-    var toggleMap = {};
-    var sizeMap = {};
-
-    toggles.forEach(function(t) {
-        toggleMap[t.getAttribute('data-widget-id')] = t.checked;
-    });
-    sizes.forEach(function(s) {
-        sizeMap[s.getAttribute('data-widget-id')] = s.value;
-    });
+    toggles.forEach(function(t) { toggleMap[t.getAttribute('data-widget-id')] = t.checked; });
+    sizes.forEach(function(s) { sizeMap[s.getAttribute('data-widget-id')] = s.value; });
 
     var layout = [];
     var position = 0;
     widgets.forEach(function(w) {
         var wid = w.getAttribute('data-widget-id');
-        layout.push({
-            widget_id: wid,
-            position: position++,
-            size: sizeMap[wid] || 'half',
-            visible: toggleMap[wid] !== undefined ? toggleMap[wid] : true
-        });
+        layout.push({ widget_id: wid, position: position++, size: sizeMap[wid] || 'half', visible: toggleMap[wid] !== undefined ? toggleMap[wid] : true });
     });
 
     var formData = new FormData();
     formData.append('layout', JSON.stringify(layout));
+    var csrfInput = document.querySelector('input[name="_token"], input[name="csrf_token"]');
+    if (csrfInput) formData.append('csrf_token', csrfInput.value);
 
-    var csrfInput = document.querySelector('input[name="_token"]');
-    if (csrfInput) {
-        formData.append('_token', csrfInput.value);
-    }
-
-    fetch('/admin/dashboard/layout', {
-        method: 'POST',
-        body: formData
-    }).catch(function() {});
+    fetch('{{ admin_url("dashboard/layout") }}', { method: 'POST', body: formData }).catch(function() {});
 }
 
 document.querySelectorAll('.widget-toggle').forEach(function(toggle) {
     toggle.addEventListener('change', function() {
         var wid = this.getAttribute('data-widget-id');
         var card = document.querySelector('.widget-card[data-widget-id="' + wid + '"]');
-        if (card) {
-            card.style.display = this.checked ? '' : 'none';
-        }
+        if (card) card.style.display = this.checked ? '' : 'none';
         saveLayout();
     });
 });
 
-document.querySelectorAll('.widget-size-select').forEach(function(select) {
+document.querySelectorAll('[data-widget-id].form-control').forEach(function(select) {
     select.addEventListener('change', function() {
         var wid = this.getAttribute('data-widget-id');
         var card = document.querySelector('.widget-card[data-widget-id="' + wid + '"]');
         if (card) {
             var size = this.value;
-            card.style.gridColumn = size === 'full' ? '1 / -1' : (size === 'third' ? 'span 2' : 'span 3');
+            card.className = card.className.replace(/widget-(full|half|third)/g, '');
+            card.classList.add(size === 'full' ? 'widget-full' : (size === 'third' ? 'widget-third' : 'widget-half'));
         }
         saveLayout();
     });
