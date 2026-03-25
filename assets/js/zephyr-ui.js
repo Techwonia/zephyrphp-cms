@@ -161,19 +161,10 @@
     var savedSection = document.documentElement.getAttribute('data-panel-section') || getSidebarSection();
 
     if (savedState === 'open' && savedSection) {
-      // Show the saved section's nav list
-      var navList = panel.querySelector('[data-nav="' + savedSection + '"]');
-      if (navList) navList.classList.add('active');
-
-      // Mark activity bar item active
+      // Nav list + header already visible via CSS [data-panel-section] rules
+      // Just mark the activity bar item active
       var abItem = activityBar.querySelector('[data-section="' + savedSection + '"]');
       if (abItem) abItem.classList.add('active');
-
-      // Update panel title
-      var title = panel.querySelector('.sidebar-panel-title');
-      if (title && abItem) {
-        title.textContent = abItem.getAttribute('data-tooltip') || savedSection;
-      }
     }
 
     // Activity bar clicks
@@ -212,15 +203,14 @@
       if (title) title.textContent = item.getAttribute('data-tooltip') || section;
     });
 
-    // Close button
-    var closeBtn = panel.querySelector('.sidebar-panel-close');
-    if (closeBtn) {
+    // Close buttons (one per section header)
+    panel.querySelectorAll('.sidebar-panel-close').forEach(function (closeBtn) {
       closeBtn.addEventListener('click', function () {
         setSidebarState('closed', '');
         activityBar.querySelectorAll('.ab-item').forEach(function (i) { i.classList.remove('active'); });
         panel.querySelectorAll('.sidebar-nav-list').forEach(function (l) { l.classList.remove('active'); });
       });
-    }
+    });
 
     // Auto-detect current section from URL (only if sidebar not already open)
     if (savedState !== 'open') {

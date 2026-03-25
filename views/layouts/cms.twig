@@ -159,12 +159,17 @@
 
         {# Sidebar Panel #}
         <aside class="cms-sidebar-panel" id="sidebarPanel">
-            <div class="sidebar-panel-header">
-                <span class="sidebar-panel-title" id="panelTitle"></span>
-                <button class="sidebar-panel-close" id="panelClose" aria-label="Close panel">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                </button>
-            </div>
+            {# Per-section headers — CSS shows the matching one via [data-panel-section] #}
+            {% for section in sidebar_sections %}
+                {% if section.items|length > 1 and section.id != 'footer' %}
+                <div class="sidebar-panel-header" data-section-header="{{ section.id }}">
+                    <span class="sidebar-panel-title">{{ section.label ?? section.id|upper }}</span>
+                    <button class="sidebar-panel-close" aria-label="Close panel">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                {% endif %}
+            {% endfor %}
             <nav class="sidebar-panel-nav">
                 {% for section in sidebar_sections %}
                     {% if section.items|length > 1 and section.id != 'footer' %}
