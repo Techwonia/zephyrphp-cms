@@ -1,0 +1,217 @@
+/* ── Full-width active card ── */
+.th-card--full {
+    margin-bottom: 28px;
+}
+.th-card--full .th-card-thumb {
+    aspect-ratio: 16 / 6;
+}
+.th-card--full .th-card-body {
+    padding: 16px 20px;
+}
+.th-card--full .th-card-name {
+    font-size: 16px;
+}
+.th-card-meta {
+    font-size: 11px;
+    color: var(--text-secondary, #999);
+    padding: 2px 8px;
+    background: var(--bg-subdued, #f5f5f5);
+    border-radius: 4px;
+}
+.th-section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary, #666);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 0 0 14px;
+}
+
+/* ── Grid ── */
+.th-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+}
+
+/* ── Card ── */
+.th-card {
+    background: var(--bg-surface, #fff);
+    border: 1px solid var(--border-color, #e1e1e1);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: box-shadow 0.15s;
+}
+.th-card:hover {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+}
+.th-card--active {
+    border-color: var(--color-primary, #047B5D);
+    border-width: 2px;
+}
+
+/* ── Thumbnail ── */
+.th-card-thumb {
+    display: block;
+    position: relative;
+    background: #f4f4f5;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    cursor: pointer;
+    text-decoration: none;
+}
+.th-thumb-inner {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+}
+.th-thumb-iframe {
+    position: absolute;
+    top: 0; left: 0;
+    width: 1440px;
+    height: 900px;
+    transform-origin: top left;
+    border: none;
+    pointer-events: none;
+}
+.th-thumb-hover {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+.th-card-thumb:hover .th-thumb-hover {
+    opacity: 1;
+}
+.th-thumb-hover-btn {
+    padding: 8px 24px;
+    background: #fff;
+    color: #303030;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.th-badge-active {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    padding: 3px 10px;
+    background: var(--color-primary, #047B5D);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 4px;
+    z-index: 2;
+    letter-spacing: 0.02em;
+}
+
+/* ── Card Body ── */
+.th-card-body {
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.th-card-info {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    min-width: 0;
+}
+.th-card-name {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.th-card-version {
+    font-size: 11px;
+    color: var(--text-secondary, #999);
+    flex-shrink: 0;
+}
+.th-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+/* ── Dots Menu ── */
+.th-dots-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--border-color, #e1e1e1);
+    border-radius: 6px;
+    background: none;
+    cursor: pointer;
+    color: var(--text-secondary, #666);
+    transition: all 0.1s;
+}
+.th-dots-btn:hover {
+    background: var(--bg-subdued, #f5f5f5);
+    color: var(--text-primary, #303030);
+}
+
+/* ── Dropdown ── */
+.th-dropdown { position: relative; display: inline-block; }
+.th-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 200;
+    min-width: 170px;
+    padding: 4px;
+    background: var(--bg-surface, #fff);
+    border: 1px solid var(--border-color, #e1e1e1);
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+}
+.th-dropdown-menu--right { left: auto; right: 0; }
+.th-dropdown-menu.is-open { display: block; }
+.th-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 7px 10px;
+    font-size: 13px;
+    color: var(--text-primary, #303030);
+    background: none;
+    border: none;
+    border-radius: 5px;
+    text-decoration: none;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    transition: background 0.1s;
+}
+.th-dropdown-item:hover { background: var(--bg-subdued, #f5f5f5); }
+.th-dropdown-item--danger { color: var(--color-danger, #dc3545); }
+.th-dropdown-item--danger:hover { background: #fef2f2; }
+.th-dropdown-divider { height: 1px; background: var(--border-color, #e5e5e5); margin: 4px 0; }
+
+/* ── Modal ── */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000; }
+.modal-box { background:var(--bg-surface,#fff); border-radius:10px; box-shadow:0 8px 32px rgba(0,0,0,0.2); width:100%; max-width:440px; overflow:hidden; }
+.modal-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--border-color,#e5e5e5); }
+.modal-header h3 { margin:0; font-size:1rem; }
+.modal-close { background:none; border:none; font-size:1.4rem; cursor:pointer; color:var(--text-secondary,#616161); line-height:1; padding:0 4px; }
+.modal-close:hover { color:var(--text-primary,#303030); }
+.modal-body { padding:20px; }
+.modal-footer { padding:12px 20px; border-top:1px solid var(--border-color,#e5e5e5); display:flex; gap:8px; justify-content:flex-end; }
+
+/* ── Responsive ── */
+@media (max-width: 700px) {
+    .th-grid { grid-template-columns: 1fr; }
+}
