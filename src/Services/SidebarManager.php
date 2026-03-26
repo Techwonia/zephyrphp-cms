@@ -224,33 +224,17 @@ class SidebarManager
      */
     public function registerDefaults(): void
     {
-        // --- Home (no section label) ---
-        $this->addSection('home', '', 0);
-        $this->addItem('home', [
-            'id' => 'home',
-            'label' => 'Home',
-            'url' => admin_url(),
-            'icon' => 'home',
-            'position' => 1,
-            'match' => 'exact:/cms',
-        ]);
+        // ── Home (direct link — no sidebar panel) ──
+        $this->addSection('home', '', 0, 'home', admin_url());
 
-        // --- Media (direct link in activity bar — single item = no panel) ---
-        $this->addSection('media', '', 8);
-        $this->addItem('media', [
-            'id' => 'media',
-            'label' => 'Media',
-            'url' => admin_url('media'),
-            'icon' => 'image',
-            'position' => 1,
-            'match' => 'prefix:' . admin_url('media'),
-        ]);
+        // ── Collections (main content management) ──
+        $this->addSection('collections', 'Collections', 5, 'database', admin_url('collections'));
 
-        // --- Content (for items that don't fit elsewhere) ---
-        $this->addSection('content', 'Content', 10);
+        // ── Media (direct link — no sidebar panel) ──
+        $this->addSection('media', '', 8, 'image', admin_url('media'));
 
-        // --- Design ---
-        $this->addSection('design', 'Design', 20);
+        // ── Design (theming, AI, marketplace) ──
+        $this->addSection('design', 'Design', 20, 'palette', admin_url('themes'));
         $this->addItem('design', [
             'id' => 'themes',
             'label' => 'Themes',
@@ -260,8 +244,8 @@ class SidebarManager
             'match' => 'prefix:' . admin_url('themes'),
         ]);
 
-        // --- Admin ---
-        $this->addSection('admin', 'Admin', 30);
+        // ── Admin (users, roles, permissions, keys) ──
+        $this->addSection('admin', 'Admin', 30, 'shield', admin_url('users'));
         $this->addItem('admin', [
             'id' => 'users',
             'label' => 'Users',
@@ -290,15 +274,16 @@ class SidebarManager
             'match' => 'prefix:' . admin_url('api-keys'),
         ]);
 
-        // --- Settings ---
-        $this->addSection('settings', 'Settings', 40);
+        // ── Settings (app configuration) ──
+        $this->addSection('settings', 'Settings', 40, 'settings', admin_url('settings/system'));
         $this->addItem('settings', [
-            'id' => 'profile',
-            'label' => 'Profile',
-            'url' => admin_url('settings/profile'),
-            'icon' => 'user',
+            'id' => 'system',
+            'label' => 'System',
+            'url' => admin_url('settings/system'),
+            'icon' => 'settings',
+            'permission' => 'settings.view',
             'position' => 1,
-            'match' => 'prefix:' . admin_url('settings/profile'),
+            'match' => 'prefix:' . admin_url('settings/system'),
         ]);
         $this->addItem('settings', [
             'id' => 'database',
@@ -310,31 +295,33 @@ class SidebarManager
             'match' => 'prefix:' . admin_url('settings/database'),
         ]);
         $this->addItem('settings', [
-            'id' => 'system',
-            'label' => 'System',
-            'url' => admin_url('settings/system'),
-            'icon' => 'settings',
-            'permission' => 'settings.view',
-            'position' => 3,
-            'match' => 'prefix:' . admin_url('settings/system'),
-        ]);
-        $this->addItem('settings', [
             'id' => 'assets',
             'label' => 'Assets',
             'url' => admin_url('settings/assets'),
             'icon' => 'file',
             'permission' => 'settings.view',
-            'position' => 4,
+            'position' => 3,
             'match' => 'prefix:' . admin_url('settings/assets'),
         ]);
+        $this->addItem('settings', [
+            'id' => 'profile',
+            'label' => 'Profile',
+            'url' => admin_url('settings/profile'),
+            'icon' => 'user',
+            'position' => 10,
+            'match' => 'prefix:' . admin_url('settings/profile'),
+        ]);
 
-        // --- Footer (Back to site) ---
-        $this->addSection('footer', '', 100);
+        // ── System (developer tools) ──
+        $this->addSection('system', 'System', 45, 'terminal', admin_url('system/health'));
+
+        // ── Footer (back to site — globe icon) ──
+        $this->addSection('footer', '', 100, 'globe', '/');
         $this->addItem('footer', [
             'id' => 'back-to-site',
-            'label' => 'Back to Site',
+            'label' => 'Visit Site',
             'url' => '/',
-            'icon' => 'arrow-left',
+            'icon' => 'globe',
             'position' => 1,
         ]);
     }

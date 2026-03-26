@@ -597,22 +597,18 @@ img, svg { display: block; max-width: 100%; }
 /* Instant nav list + header visibility via data-panel-section (set in <head>, no JS needed) */
 [data-section-header] { display: none; }
 
-[data-panel-section="home"] [data-section-header="home"],
-[data-panel-section="media"] [data-section-header="media"],
 [data-panel-section="collections"] [data-section-header="collections"],
-[data-panel-section="content"] [data-section-header="content"],
 [data-panel-section="design"] [data-section-header="design"],
 [data-panel-section="admin"] [data-section-header="admin"],
 [data-panel-section="settings"] [data-section-header="settings"],
 [data-panel-section="system"] [data-section-header="system"],
-[data-panel-section="home"] [data-nav="home"],
-[data-panel-section="media"] [data-nav="media"],
+[data-panel-section="footer"] [data-section-header="footer"],
 [data-panel-section="collections"] [data-nav="collections"],
-[data-panel-section="content"] [data-nav="content"],
 [data-panel-section="design"] [data-nav="design"],
 [data-panel-section="admin"] [data-nav="admin"],
 [data-panel-section="settings"] [data-nav="settings"],
-[data-panel-section="system"] [data-nav="system"] { display: block; }
+[data-panel-section="system"] [data-nav="system"],
+[data-panel-section="footer"] [data-nav="footer"] { display: block; }
 
 .sidebar-nav-header {
   padding: var(--sp-3) var(--sp-4) var(--sp-1);

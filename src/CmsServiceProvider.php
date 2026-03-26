@@ -210,152 +210,137 @@ class CmsServiceProvider
             // Collections table may not exist yet
         }
 
-        // Add Marketplace sidebar item (themes only)
-        $sidebar->addItem('content', [
+        // ── Design section items ──
+        $sidebar->addItem('design', [
+            'id' => 'ai-builder',
+            'label' => 'AI Builder',
+            'url' => admin_url('ai-builder'),
+            'icon' => 'sparkles',
+            'position' => 2,
+            'match' => 'prefix:' . admin_url('ai-builder'),
+        ]);
+        $sidebar->addItem('design', [
             'id' => 'marketplace',
             'label' => 'Marketplace',
             'url' => admin_url('marketplace'),
             'icon' => 'store',
+            'position' => 3,
             'match' => 'prefix:' . admin_url('marketplace'),
         ]);
-
-        // Add Plugins sidebar item
-        $sidebar->addItem('content', [
+        $sidebar->addItem('design', [
             'id' => 'plugins',
             'label' => 'Plugins',
             'url' => admin_url('plugins'),
             'icon' => 'puzzle',
             'permission' => 'apps.view',
+            'position' => 4,
             'match' => 'prefix:' . admin_url('plugins'),
         ]);
-
-        // Add Activity Log sidebar item
-        $sidebar->addItem('admin', [
-            'id' => 'activity-log',
-            'label' => 'Activity Log',
-            'url' => admin_url('activity-log'),
-            'icon' => 'clock',
-            'match' => 'prefix:' . admin_url('activity-log'),
-        ]);
-
-        // Add AI Builder sidebar item
-        $sidebar->addItem('content', [
-            'id' => 'ai-builder',
-            'label' => 'AI Builder',
-            'url' => admin_url('ai-builder'),
-            'icon' => 'sparkles',
-            'match' => 'prefix:' . admin_url('ai-builder'),
-        ]);
-
-        // Global Blocks and Relationships moved to Collection Manager section
-
-        // Add Languages sidebar item
-        $sidebar->addItem('admin', [
-            'id' => 'languages',
-            'label' => 'Languages',
-            'url' => admin_url('languages'),
-            'icon' => 'globe',
-            'match' => 'prefix:' . admin_url('languages'),
-        ]);
-
-        // Add Notifications sidebar item
-        $sidebar->addItem('admin', [
-            'id' => 'notifications',
-            'label' => 'Notifications',
-            'url' => admin_url('notifications'),
-            'icon' => 'bell',
-            'match' => 'prefix:' . admin_url('notifications'),
-        ]);
-
-        // Add Email Templates sidebar item
-        $sidebar->addItem('admin', [
-            'id' => 'email-templates',
-            'label' => 'Email Templates',
-            'url' => admin_url('email-templates'),
-            'icon' => 'mail',
-            'match' => 'prefix:' . admin_url('email-templates'),
-        ]);
-
-        // Add Webhooks sidebar item
-        $sidebar->addItem('admin', [
-            'id' => 'webhooks',
-            'label' => 'Webhooks',
-            'url' => admin_url('webhooks'),
-            'icon' => 'link',
-            'match' => 'prefix:' . admin_url('webhooks'),
-        ]);
-
-        // Add Redirects sidebar item
-        $sidebar->addItem('admin', [
+        $sidebar->addItem('design', [
             'id' => 'redirects',
             'label' => 'Redirects',
             'url' => admin_url('redirects'),
             'icon' => 'corner-down-right',
             'permission' => 'settings.view',
+            'position' => 5,
             'match' => 'prefix:' . admin_url('redirects'),
         ]);
 
+        // ── Admin section items ──
         $sidebar->addItem('admin', [
             'id' => 'permission-builder',
-            'label' => 'Permission Builder',
+            'label' => 'Permissions',
             'url' => admin_url('permissions'),
-            'icon' => 'shield',
+            'icon' => 'lock',
             'permission' => 'roles.manage',
+            'position' => 4,
             'match' => 'prefix:' . admin_url('permissions'),
         ]);
+        $sidebar->addItem('admin', [
+            'id' => 'activity-log',
+            'label' => 'Activity Log',
+            'url' => admin_url('activity-log'),
+            'icon' => 'clock',
+            'position' => 5,
+            'match' => 'prefix:' . admin_url('activity-log'),
+        ]);
+        $sidebar->addItem('admin', [
+            'id' => 'languages',
+            'label' => 'Languages',
+            'url' => admin_url('languages'),
+            'icon' => 'globe',
+            'position' => 6,
+            'match' => 'prefix:' . admin_url('languages'),
+        ]);
+        $sidebar->addItem('admin', [
+            'id' => 'notifications',
+            'label' => 'Notifications',
+            'url' => admin_url('notifications'),
+            'icon' => 'bell',
+            'position' => 7,
+            'match' => 'prefix:' . admin_url('notifications'),
+        ]);
+        $sidebar->addItem('admin', [
+            'id' => 'email-templates',
+            'label' => 'Email Templates',
+            'url' => admin_url('email-templates'),
+            'icon' => 'mail',
+            'position' => 8,
+            'match' => 'prefix:' . admin_url('email-templates'),
+        ]);
+        $sidebar->addItem('admin', [
+            'id' => 'webhooks',
+            'label' => 'Webhooks',
+            'url' => admin_url('webhooks'),
+            'icon' => 'link',
+            'position' => 9,
+            'match' => 'prefix:' . admin_url('webhooks'),
+        ]);
 
-        // Add Mail Settings to settings section
+        // ── Settings section items ──
         $sidebar->addItem('settings', [
             'id' => 'mail',
             'label' => 'Mail',
             'url' => admin_url('settings/mail'),
             'icon' => 'mail',
             'permission' => 'settings.view',
-            'position' => 5,
+            'position' => 4,
             'match' => 'prefix:' . admin_url('settings/mail'),
         ]);
-
-        // Auth Settings
         $sidebar->addItem('settings', [
             'id' => 'auth-settings',
             'label' => 'Authentication',
             'url' => admin_url('settings/auth'),
             'icon' => 'shield',
             'permission' => 'settings.view',
-            'position' => 6,
+            'position' => 5,
             'match' => 'prefix:' . admin_url('settings/auth'),
         ]);
-
-        // API Settings
         $sidebar->addItem('settings', [
             'id' => 'api-settings',
             'label' => 'API',
             'url' => admin_url('settings/api'),
             'icon' => 'code',
             'permission' => 'settings.view',
-            'position' => 7,
+            'position' => 6,
             'match' => 'prefix:' . admin_url('settings/api'),
         ]);
-
-        // Cache Settings
         $sidebar->addItem('settings', [
             'id' => 'cache-settings',
             'label' => 'Cache',
             'url' => admin_url('settings/cache'),
             'icon' => 'zap',
             'permission' => 'settings.view',
-            'position' => 8,
+            'position' => 7,
             'match' => 'prefix:' . admin_url('settings/cache'),
         ]);
-
-        // Error Pages
         $sidebar->addItem('settings', [
             'id' => 'error-pages',
             'label' => 'Error Pages',
             'url' => admin_url('settings/error-pages'),
             'icon' => 'alert-triangle',
             'permission' => 'settings.edit',
-            'position' => 9,
+            'position' => 8,
             'match' => 'prefix:' . admin_url('settings/error-pages'),
         ]);
 
