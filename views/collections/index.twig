@@ -6,7 +6,7 @@
 <div class="breadcrumb">
     <a href="{{ admin_url() }}">Dashboard</a>
     <svg class="breadcrumb-sep" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg>
-    Collections
+    <span class="breadcrumb-current">Collections</span>
 </div>
 
 <div class="page-header">
@@ -16,79 +16,112 @@
     </div>
     <div class="page-header-actions">
         <a href="{{ admin_url('collections/create') }}" class="btn btn-primary">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            {% include '@cms/partials/sidebar-icon.twig' with {icon: 'plus'} only %}
             New Collection
         </a>
     </div>
 </div>
 
 {% if collections|length > 0 %}
+
+{# Stats bar #}
+{% set total_entries = 0 %}
+{% for collection in collections %}
+    {% set total_entries = total_entries + (stats[collection.getSlug()] ?? 0) %}
+{% endfor %}
+<div class="collection-stats-bar">
+    <div class="collection-stat-pill">
+        {% include '@cms/partials/sidebar-icon.twig' with {icon: 'layers'} only %}
+        <strong>{{ collections|length }}</strong> collections
+    </div>
+    <div class="collection-stat-pill">
+        {% include '@cms/partials/sidebar-icon.twig' with {icon: 'file-text'} only %}
+        <strong>{{ total_entries }}</strong> total entries
+    </div>
+</div>
+
+{# Cards grid #}
 <div class="collections-grid">
     {% for collection in collections %}
-    <div class="collection-card card-hover">
+    <div class="collection-card">
         <div class="collection-card-body">
-            <div class="collection-card-icon">
-                {% include '@cms/partials/sidebar-icon.twig' with {icon: collection.getIcon() ?? 'database'} only %}
+            {# Top: icon + name/slug #}
+            <div class="collection-card-top">
+                <div class="collection-card-icon">
+                    {% include '@cms/partials/sidebar-icon.twig' with {icon: collection.getIcon() ?? 'layers'} only %}
+                </div>
+                <div class="collection-card-info">
+                    <div class="collection-card-name">{{ collection.getName() }}</div>
+                    <div class="collection-card-slug">{{ collection.getSlug() }}</div>
+                </div>
             </div>
 
-            <h3 class="collection-card-name">{{ collection.getName() }}</h3>
-            <p class="collection-card-slug">{{ collection.getSlug() }}</p>
-            <p class="collection-card-desc">{{ collection.getDescription() | default('No description provided') }}</p>
+            {# Description #}
+            {% if collection.getDescription() %}
+                <p class="collection-card-desc">{{ collection.getDescription() }}</p>
+            {% endif %}
 
-            <div class="collection-card-stats">
-                <span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            {# Meta: stats + badges #}
+            <div class="collection-card-meta">
+                <div class="collection-card-stat">
+                    {% include '@cms/partials/sidebar-icon.twig' with {icon: 'grid'} only %}
                     <strong>{{ collection.getFields()|length }}</strong> fields
-                </span>
-                <span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                </div>
+                <div class="collection-card-stat">
+                    {% include '@cms/partials/sidebar-icon.twig' with {icon: 'file-text'} only %}
                     <strong>{{ stats[collection.getSlug()] ?? 0 }}</strong> entries
-                </span>
-            </div>
-
-            <div class="collection-card-badges">
-                {% if collection.isApiEnabled() %}
-                <span class="badge badge-info">API</span>
-                {% endif %}
-                {% if collection.isPublishable() %}
-                <span class="badge badge-success">Publishable</span>
-                {% endif %}
-                {% if collection.isSeoEnabled() is defined and collection.isSeoEnabled() %}
-                <span class="badge badge-warning">SEO</span>
-                {% endif %}
-                {% if collection.isTranslatable() is defined and collection.isTranslatable() %}
-                <span class="badge badge-primary">Translatable</span>
-                {% endif %}
-                {% if collection.isSubmittable() is defined and collection.isSubmittable() %}
-                <span class="badge badge-error">Submittable</span>
-                {% endif %}
+                </div>
+                <div class="collection-card-badges">
+                    {% if collection.isApiEnabled() %}
+                        <span class="badge badge-info">API</span>
+                    {% endif %}
+                    {% if collection.isPublishable() %}
+                        <span class="badge badge-success">Pub</span>
+                    {% endif %}
+                    {% if collection.isSeoEnabled() is defined and collection.isSeoEnabled() %}
+                        <span class="badge badge-warning">SEO</span>
+                    {% endif %}
+                    {% if collection.isTranslatable() is defined and collection.isTranslatable() %}
+                        <span class="badge badge-primary">i18n</span>
+                    {% endif %}
+                </div>
             </div>
         </div>
 
+        {# Footer actions #}
         <div class="collection-card-footer">
             <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="btn btn-sm btn-soft">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                {% include '@cms/partials/sidebar-icon.twig' with {icon: 'file-text'} only %}
                 Entries
             </a>
             <a href="{{ admin_url('collections/' ~ collection.getSlug()) }}" class="btn btn-sm btn-ghost">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                Edit
+                {% include '@cms/partials/sidebar-icon.twig' with {icon: 'settings'} only %}
+                Settings
             </a>
-
             <div class="dropdown ml-auto">
                 <button type="button" class="btn btn-sm btn-icon btn-ghost" data-dropdown="dd-{{ collection.getSlug() }}">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
                 </button>
                 <div class="dropdown-menu up" id="dd-{{ collection.getSlug() }}">
-                    <a href="{{ admin_url('collections/' ~ collection.getSlug()) }}" class="dropdown-item">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9"/></svg>
-                        Settings
+                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/create') }}" class="dropdown-item">
+                        {% include '@cms/partials/sidebar-icon.twig' with {icon: 'plus'} only %}
+                        New Entry
                     </a>
+                    <a href="{{ admin_url('collections/' ~ collection.getSlug()) }}" class="dropdown-item">
+                        {% include '@cms/partials/sidebar-icon.twig' with {icon: 'settings'} only %}
+                        Edit Collection
+                    </a>
+                    {% if collection.isApiEnabled() %}
+                    <a href="{{ admin_url('settings/api') }}" class="dropdown-item">
+                        {% include '@cms/partials/sidebar-icon.twig' with {icon: 'code'} only %}
+                        API Settings
+                    </a>
+                    {% endif %}
                     <div class="dropdown-divider"></div>
                     <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/delete') }}">
                         {{ csrf_field() | raw }}
                         <button type="submit" class="dropdown-item danger" data-confirm="Delete collection '{{ collection.getName() }}'? This will drop the table and all data permanently!">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            {% include '@cms/partials/sidebar-icon.twig' with {icon: 'archive'} only %}
                             Delete Collection
                         </button>
                     </form>
@@ -98,17 +131,23 @@
     </div>
     {% endfor %}
 </div>
+
 {% else %}
-<div class="empty-state">
-    <div class="empty-state-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+{# Empty state #}
+<div class="card">
+    <div class="card-body">
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                {% include '@cms/partials/sidebar-icon.twig' with {icon: 'layers'} only %}
+            </div>
+            <h2>No collections yet</h2>
+            <p>Collections define your content structure — like blog posts, products, or pages. Create your first one to start managing content.</p>
+            <a href="{{ admin_url('collections/create') }}" class="btn btn-primary">
+                {% include '@cms/partials/sidebar-icon.twig' with {icon: 'plus'} only %}
+                Create Your First Collection
+            </a>
+        </div>
     </div>
-    <h2>No collections yet</h2>
-    <p>Collections define your content structure — like blog posts, products, or pages. Create one to start managing your content.</p>
-    <a href="{{ admin_url('collections/create') }}" class="btn btn-primary">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Create Your First Collection
-    </a>
 </div>
 {% endif %}
 {% endblock %}
