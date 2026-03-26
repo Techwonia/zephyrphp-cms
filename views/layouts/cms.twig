@@ -9,6 +9,9 @@
     {# Sidebar state: set data-panel BEFORE any CSS loads so layout renders correctly on first paint #}
     <script nonce="{{ csp_nonce() }}">(function(){var p=localStorage.getItem('zui-panel')||'closed';var s=localStorage.getItem('zui-panel-section')||'';document.documentElement.setAttribute('data-panel',p);document.documentElement.setAttribute('data-panel-section',s)})()</script>
 
+    {# Preload Inter font to prevent FOUT (flash of unstyled text) #}
+    <link rel="preload" href="/cms-assets/fonts/inter/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+
     {# ZephyrUI Design System — local CSS, no CDN #}
     <link rel="stylesheet" href="/cms-assets/css/zephyr-ui.css">
     <link rel="stylesheet" href="/cms-assets/css/quill.snow.css">
