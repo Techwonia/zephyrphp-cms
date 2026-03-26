@@ -4,8 +4,8 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="{{ admin_url() }}">Dashboard</a>
-    <svg class="breadcrumb-sep" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg>
+    <a href="{{ admin_url() }}">{% include '@cms/partials/sidebar-icon.twig' with {icon: 'home'} only %} Dashboard</a>
+    <span class="breadcrumb-sep">/</span>
     <span class="breadcrumb-current">Collections</span>
 </div>
 
@@ -23,24 +23,6 @@
 </div>
 
 {% if collections|length > 0 %}
-
-{# Stats bar #}
-{% set total_entries = 0 %}
-{% for collection in collections %}
-    {% set total_entries = total_entries + (stats[collection.getSlug()] ?? 0) %}
-{% endfor %}
-<div class="collection-stats-bar">
-    <div class="collection-stat-pill">
-        {% include '@cms/partials/sidebar-icon.twig' with {icon: 'layers'} only %}
-        <strong>{{ collections|length }}</strong> collections
-    </div>
-    <div class="collection-stat-pill">
-        {% include '@cms/partials/sidebar-icon.twig' with {icon: 'file-text'} only %}
-        <strong>{{ total_entries }}</strong> total entries
-    </div>
-</div>
-
-{# Cards grid #}
 <div class="collections-grid">
     {% for collection in collections %}
     <div class="collection-card">
@@ -76,7 +58,7 @@
                         <span class="badge badge-info">API</span>
                     {% endif %}
                     {% if collection.isPublishable() %}
-                        <span class="badge badge-success">Pub</span>
+                        <span class="badge badge-success"><span class="badge-dot"></span> Publish</span>
                     {% endif %}
                     {% if collection.isSeoEnabled() is defined and collection.isSeoEnabled() %}
                         <span class="badge badge-warning">SEO</span>

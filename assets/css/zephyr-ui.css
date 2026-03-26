@@ -847,24 +847,29 @@ img, svg { display: block; max-width: 100%; }
 .breadcrumb {
   display: flex;
   align-items: center;
-  gap: var(--sp-2);
+  gap: var(--sp-1);
   font-size: var(--text-sm);
   color: var(--text-secondary);
-  margin-bottom: var(--sp-6);
+  margin-bottom: var(--sp-5);
 }
 
 .breadcrumb a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   color: var(--text-secondary);
   text-decoration: none;
-  padding: var(--sp-1) var(--sp-2);
+  padding: 2px var(--sp-2);
   border-radius: var(--radius-sm);
   font-weight: 400;
-  transition: color var(--duration) var(--ease), background var(--duration) var(--ease);
+  transition: color 120ms ease, background 120ms ease;
 }
+
+.breadcrumb a svg { width: 14px; height: 14px; opacity: 0.6; }
 .breadcrumb a:hover { color: var(--zui-primary-600); background: var(--zui-primary-50); }
 
-.breadcrumb-sep { color: var(--zui-gray-300); flex-shrink: 0; font-size: var(--text-xs); }
-.breadcrumb-current { color: var(--text-heading); font-weight: 500; }
+.breadcrumb-sep { color: var(--zui-gray-300); flex-shrink: 0; font-size: var(--text-sm); padding: 0 2px; }
+.breadcrumb-current { color: var(--text-heading); font-weight: 600; }
 
 /* ============================================================
    6. BUTTONS
