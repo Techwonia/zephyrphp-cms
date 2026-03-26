@@ -154,7 +154,7 @@
                 </a>
                 {# Profile avatar #}
                 <a href="{{ admin_url('settings/profile') }}" class="ab-avatar" data-tooltip="Profile">
-                    {{ auth().name[:1]|upper ?? 'U' }}
+                    {{ (auth().name[:1]|default('U'))|upper }}
                 </a>
             </div>
         </nav>
