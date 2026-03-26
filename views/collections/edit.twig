@@ -209,10 +209,10 @@
                             </div>
                         </div>
                     </div>
-                </div>
 
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary">{% include '@cms/partials/sidebar-icon.twig' with {icon: 'file'} only %} Save General</button>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">{% include '@cms/partials/sidebar-icon.twig' with {icon: 'file'} only %} Save General</button>
+            </div>
         </div>
     </form>
 </div>
@@ -428,34 +428,31 @@
     <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug()) }}">
         {{ csrf_field() | raw }}
         <div class="form-section">
-            <div class="form-section-body">
-                        <div class="form-group">
-                            <label for="url_prefix">URL Prefix</label>
-                            <input type="text" id="url_prefix" name="url_prefix" class="form-control"
-                                   value="{{ collection.getUrlPrefix() }}"
-                                   placeholder="e.g. blog, products, news">
-                            <div class="form-hint">Auto-creates frontend routes: <code>/prefix</code> (list) and <code>/prefix/{slug}</code> (detail). Leave empty for no auto-routing.</div>
-                        </div>
+            <div class="form-group">
+                <label for="url_prefix">URL Prefix</label>
+                <input type="text" id="url_prefix" name="url_prefix" class="form-control"
+                       value="{{ collection.getUrlPrefix() }}"
+                       placeholder="e.g. blog, products, news">
+                <div class="form-hint">Auto-creates frontend routes: <code>/prefix</code> (list) and <code>/prefix/{slug}</code> (detail). Leave empty for no auto-routing.</div>
+            </div>
 
-                        <div class="form-row-2">
-                            <div class="form-group">
-                                <label for="items_per_page">Items Per Page</label>
-                                <input type="number" id="items_per_page" name="items_per_page" class="form-control"
-                                       value="{{ collection.getItemsPerPage() }}" min="1" max="100">
-                            </div>
-
-                            <div class="form-group">
-                                <label for="api_rate_limit">API Rate Limit (req/min)</label>
-                                <input type="number" id="api_rate_limit" name="api_rate_limit" class="form-control"
-                                       value="{{ collection.getApiRateLimit() }}" min="0">
-                                <div class="form-hint">0 = no limit. Applies to <code>/api/admin/{{ collection.getSlug() }}</code></div>
-                            </div>
-                        </div>
-                    </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="items_per_page">Items Per Page</label>
+                    <input type="number" id="items_per_page" name="items_per_page" class="form-control"
+                           value="{{ collection.getItemsPerPage() }}" min="1" max="100">
                 </div>
+                <div class="form-group">
+                    <label for="api_rate_limit">API Rate Limit (req/min)</label>
+                    <input type="number" id="api_rate_limit" name="api_rate_limit" class="form-control"
+                           value="{{ collection.getApiRateLimit() }}" min="0">
+                    <div class="form-hint">0 = no limit. Applies to <code>/api/admin/{{ collection.getSlug() }}</code></div>
+                </div>
+            </div>
 
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary">{% include '@cms/partials/sidebar-icon.twig' with {icon: 'file'} only %} Save API Settings</button>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">{% include '@cms/partials/sidebar-icon.twig' with {icon: 'file'} only %} Save API Settings</button>
+            </div>
         </div>
     </form>
 </div>
@@ -463,29 +460,33 @@
 {# ===== ACCESS CONTROL TAB ===== #}
 <div class="tab-panel" data-tab-panel="permissions">
     <div class="form-section">
-        <div class="form-section-body">
-                    <div class="form-hint" class="mb-3">
-                        Override global entry permissions for this collection. When configured, only roles
-                        with explicitly granted actions can interact with entries. Leave unchecked to use global permissions.
-                        Admin role always has full access.
-                    </div>
+        <p class="text-sm text-secondary mb-5">
+            Override global entry permissions for this collection. When configured, only roles
+            with explicitly granted actions can interact with entries. Leave unchecked to use global permissions.
+            Admin role always has full access.
+        </p>
 
-                    <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug()) }}">
-                        {{ csrf_field() | raw }}
-                        <input type="hidden" name="_save_permissions" value="1">
+        <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug()) }}">
+            {{ csrf_field() | raw }}
+            <input type="hidden" name="_save_permissions" value="1">
 
-                        {% set collPerms = collection.getPermissions() ?? {} %}
-                        {% set actions = ['view', 'create', 'edit', 'delete', 'publish'] %}
+            {% set collPerms = collection.getPermissions() ?? {} %}
+            {% set actions = ['view', 'create', 'edit', 'delete', 'publish'] %}
 
-                        <div class="feature-toggle" class="mb-4">
-                            <span class="feature-label">Enable per-collection permissions</span>
-                            <label class="toggle-switch">
-                                <input type="checkbox" name="enable_custom_permissions" value="1"
-                                       id="enable_custom_perms"
-                                       {% if collPerms is not empty %}checked{% endif %}>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
+            <div class="toggle-row">
+                <div class="toggle-icon icon-primary">{% include '@cms/partials/sidebar-icon.twig' with {icon: 'shield'} only %}</div>
+                <div class="toggle-info">
+                    <div class="toggle-name">Enable per-collection permissions</div>
+                    <div class="toggle-desc">Override global permissions for this collection</div>
+                </div>
+                <label class="toggle">
+                    <input type="checkbox" name="enable_custom_permissions" value="1"
+                           id="enable_custom_perms"
+                           {% if collPerms is not empty %}checked{% endif %}>
+                    <div class="toggle-track"></div>
+                    <div class="toggle-thumb"></div>
+                </label>
+            </div>
 
                         <div id="permissions-grid" style="{% if collPerms is empty %}display:none;{% endif %}">
                             {% if roles is not empty %}
@@ -520,37 +521,40 @@
                             {% else %}
                                 <div class="form-hint">No roles found. Create roles in <a href="{{ admin_url('roles') }}">Roles</a> first.</div>
                             {% endif %}
-                        </div>
+            </div>
 
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">{% include '@cms/partials/sidebar-icon.twig' with {icon: 'file'} only %} Save Permissions</button>
-                        </div>
-                    </form>
-                </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">{% include '@cms/partials/sidebar-icon.twig' with {icon: 'file'} only %} Save Permissions</button>
+            </div>
+        </form>
     </div>
 </div>
 
 {# ===== WORKFLOW TAB ===== #}
 <div class="tab-panel" data-tab-panel="workflow">
     <div class="form-section">
-        <div class="form-section-body">
-                    <div class="form-hint" class="mb-3">
-                        Enable workflow to require entries to pass through approval stages before publishing.
-                        The entry's status field becomes the workflow stage name.
-                    </div>
+        <p class="text-sm text-secondary mb-5">
+            Enable workflow to require entries to pass through approval stages before publishing.
+            The entry's status field becomes the workflow stage name.
+        </p>
 
-                    <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug()) }}">
-                        {{ csrf_field() | raw }}
-                        <input type="hidden" name="_save_workflow" value="1">
+        <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug()) }}">
+            {{ csrf_field() | raw }}
+            <input type="hidden" name="_save_workflow" value="1">
 
-                        <div class="feature-toggle" class="mb-4">
-                            <span class="feature-label">Enable Workflow</span>
-                            <label class="toggle-switch">
-                                <input type="checkbox" name="workflow_enabled" value="1"
-                                       id="workflow_enabled_check"
-                                       {% if collection.isWorkflowEnabled() %}checked{% endif %}>
-                                <span class="toggle-slider"></span>
-                            </label>
+            <div class="toggle-row">
+                <div class="toggle-icon icon-info">{% include '@cms/partials/sidebar-icon.twig' with {icon: 'git-branch'} only %}</div>
+                <div class="toggle-info">
+                    <div class="toggle-name">Enable Workflow</div>
+                    <div class="toggle-desc">Require approval stages before publishing</div>
+                </div>
+                <label class="toggle">
+                    <input type="checkbox" name="workflow_enabled" value="1"
+                           id="workflow_enabled_check"
+                           {% if collection.isWorkflowEnabled() %}checked{% endif %}>
+                    <div class="toggle-track"></div>
+                    <div class="toggle-thumb"></div>
+                </label>
                         </div>
 
                         <div id="workflow-config" style="{% if not collection.isWorkflowEnabled() %}display:none;{% endif %}">
@@ -580,11 +584,10 @@
                             </div>
                         </div>
 
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">{% include '@cms/partials/sidebar-icon.twig' with {icon: 'file'} only %} Save Workflow</button>
-                        </div>
-                    </form>
-                </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">{% include '@cms/partials/sidebar-icon.twig' with {icon: 'file'} only %} Save Workflow</button>
+            </div>
+        </form>
     </div>
 </div>
 
