@@ -21,6 +21,7 @@
     localStorage.setItem(SIDEBAR_KEY, state);
     if (section !== undefined) {
       localStorage.setItem(SIDEBAR_SECTION_KEY, section || '');
+      document.documentElement.setAttribute('data-panel-section', section || '');
     }
     document.documentElement.setAttribute('data-panel', state);
   }
