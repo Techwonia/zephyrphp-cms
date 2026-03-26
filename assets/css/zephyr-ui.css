@@ -847,10 +847,10 @@ img, svg { display: block; max-width: 100%; }
 .breadcrumb {
   display: flex;
   align-items: center;
-  gap: var(--sp-1);
+  gap: 6px;
   font-size: var(--text-sm);
   color: var(--text-secondary);
-  margin-bottom: var(--sp-5);
+  margin-bottom: var(--sp-4);
 }
 
 .breadcrumb a {
@@ -868,7 +868,7 @@ img, svg { display: block; max-width: 100%; }
 .breadcrumb a svg { width: 14px; height: 14px; opacity: 0.6; }
 .breadcrumb a:hover { color: var(--zui-primary-600); background: var(--zui-primary-50); }
 
-.breadcrumb-sep { color: var(--zui-gray-300); flex-shrink: 0; font-size: var(--text-sm); padding: 0 2px; }
+.breadcrumb-sep { color: var(--zui-gray-300); flex-shrink: 0; font-size: var(--text-xs); }
 .breadcrumb-current { color: var(--text-heading); font-weight: 600; }
 
 /* ============================================================

@@ -26,27 +26,22 @@
     </div>
 </div>
 
-{# ===== TWO-COLUMN LAYOUT ===== #}
-<div class="edit-layout">
-    {# Sidebar nav #}
-    <nav class="section-nav">
-        <a href="#section-general" class="active">General</a>
-        <a href="#section-fields">Fields</a>
-        <a href="#section-routing">API & Routing</a>
-        <a href="#section-permissions">Access Control</a>
-        <a href="#section-workflow">Workflow</a>
-    </nav>
+{# ===== TAB LAYOUT ===== #}
+<div class="tab-nav" id="collectionTabs">
+    <button class="tab-btn active" data-tab="general">General</button>
+    <button class="tab-btn" data-tab="fields">Fields</button>
+    <button class="tab-btn" data-tab="routing">API & Routing</button>
+    <button class="tab-btn" data-tab="permissions">Access Control</button>
+    <button class="tab-btn" data-tab="workflow">Workflow</button>
+</div>
 
-    {# Main content #}
-    <div class="edit-content">
-        <form id="main-settings-form" method="POST" action="{{ admin_url('collections/' ~ collection.getSlug()) }}">
-            {{ csrf_field() | raw }}
+{# ===== GENERAL TAB ===== #}
+<div class="tab-panel active" data-tab-panel="general">
+    <form id="main-settings-form" method="POST" action="{{ admin_url('collections/' ~ collection.getSlug()) }}">
+        {{ csrf_field() | raw }}
 
-            {# ===== GENERAL SECTION ===== #}
-            <div id="section-general" class="edit-section">
-                <div class="form-section">
-                    <div class="form-section-title">General</div>
-                    <div class="form-section-body">
+        <div class="form-section">
+            <div class="form-section-body">
                         <div class="form-group">
                             <label for="name">Collection Name</label>
                             <input type="text" id="name" name="name" class="form-control"
@@ -215,12 +210,18 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
-            {# ===== FIELDS SECTION ===== #}
-            <div id="section-fields" class="edit-section">
-                <div class="form-section">
-                    <div class="form-section-title">Fields</div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">{% include '@cms/partials/sidebar-icon.twig' with {icon: 'file'} only %} Save General</button>
+        </div>
+    </form>
+</div>
+
+{# ===== FIELDS TAB ===== #}
+<div class="tab-panel" data-tab-panel="fields">
+    <form id="main-settings-form-fields" method="POST" action="{{ admin_url('collections/' ~ collection.getSlug()) }}">
+        {{ csrf_field() | raw }}
+        <div class="form-section">
 
                     {# System fields — collapsible #}
                     {% set systemFieldCount = 4 + (collection.hasSlug() ? 1 : 0) + (collection.isPublishable() ? 2 : 0) %}
@@ -418,13 +419,16 @@
                         </button>
                     </div>
                 </div>
-            </div>
+        </div>
+    </form>
+</div>
 
-            {# ===== API & ROUTING SECTION ===== #}
-            <div id="section-routing" class="edit-section">
-                <div class="form-section">
-                    <div class="form-section-title">API & Routing</div>
-                    <div class="form-section-body">
+{# ===== API & ROUTING TAB ===== #}
+<div class="tab-panel" data-tab-panel="routing">
+    <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug()) }}">
+        {{ csrf_field() | raw }}
+        <div class="form-section">
+            <div class="form-section-body">
                         <div class="form-group">
                             <label for="url_prefix">URL Prefix</label>
                             <input type="text" id="url_prefix" name="url_prefix" class="form-control"
@@ -449,19 +453,17 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
-            {# Save button for main settings form #}
-            <div class="save-bar" id="main-save-bar" style="display:none;">
-                {# This is positioned before permissions/workflow which have their own forms #}
-            </div>
-        </form>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">{% include '@cms/partials/sidebar-icon.twig' with {icon: 'file'} only %} Save API Settings</button>
+        </div>
+    </form>
+</div>
 
-        {# ===== ACCESS CONTROL SECTION ===== #}
-        <div id="section-permissions" class="edit-section">
-            <div class="form-section">
-                <div class="form-section-title">Access Control</div>
-                <div class="form-section-body">
+{# ===== ACCESS CONTROL TAB ===== #}
+<div class="tab-panel" data-tab-panel="permissions">
+    <div class="form-section">
+        <div class="form-section-body">
                     <div class="form-hint" class="mb-3">
                         Override global entry permissions for this collection. When configured, only roles
                         with explicitly granted actions can interact with entries. Leave unchecked to use global permissions.
@@ -520,19 +522,18 @@
                             {% endif %}
                         </div>
 
-                        <div class="mt-4">
-                            <button type="submit" class="btn-primary-sm">Save Permissions</button>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">{% include '@cms/partials/sidebar-icon.twig' with {icon: 'file'} only %} Save Permissions</button>
                         </div>
                     </form>
                 </div>
-            </div>
-        </div>
+    </div>
+</div>
 
-        {# ===== WORKFLOW SECTION ===== #}
-        <div id="section-workflow" class="edit-section">
-            <div class="form-section">
-                <div class="form-section-title">Workflow</div>
-                <div class="form-section-body">
+{# ===== WORKFLOW TAB ===== #}
+<div class="tab-panel" data-tab-panel="workflow">
+    <div class="form-section">
+        <div class="form-section-body">
                     <div class="form-hint" class="mb-3">
                         Enable workflow to require entries to pass through approval stages before publishing.
                         The entry's status field becomes the workflow stage name.
@@ -579,22 +580,11 @@
                             </div>
                         </div>
 
-                        <div>
-                            <button type="submit" class="btn-primary-sm">Save Workflow</button>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">{% include '@cms/partials/sidebar-icon.twig' with {icon: 'file'} only %} Save Workflow</button>
                         </div>
                     </form>
                 </div>
-            </div>
-        </div>
-
-        {# Main save button — at the very bottom #}
-        <div class="save-bar">
-            <button type="submit" form="main-settings-form" class="btn-save">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                Save Changes
-            </button>
-        </div>
-
     </div>
 </div>
 
@@ -871,29 +861,30 @@
     var collectionSlug = '{{ collection.getSlug() }}';
 
     // ========================================================================
-    // Scroll Spy
+    // Tab Switching with URL Hash
     // ========================================================================
-    var sections = document.querySelectorAll('.edit-section');
-    var navLinks = document.querySelectorAll('.section-nav a');
-    var observer = new IntersectionObserver(function(entries) {
-        entries.forEach(function(entry) {
-            if (entry.isIntersecting) {
-                navLinks.forEach(function(link) { link.classList.remove('active'); });
-                var activeLink = document.querySelector('.section-nav a[href="#' + entry.target.id + '"]');
-                if (activeLink) activeLink.classList.add('active');
-            }
-        });
-    }, { rootMargin: '-20% 0px -70% 0px' });
-    sections.forEach(function(section) { observer.observe(section); });
+    var tabBtns = document.querySelectorAll('#collectionTabs .tab-btn');
+    var tabPanels = document.querySelectorAll('.tab-panel[data-tab-panel]');
 
-    // Smooth scroll on nav click
-    navLinks.forEach(function(link) {
-        link.addEventListener('click', function(e) {
+    function switchTab(tabName) {
+        tabBtns.forEach(function(b) { b.classList.toggle('active', b.getAttribute('data-tab') === tabName); });
+        tabPanels.forEach(function(p) { p.classList.toggle('active', p.getAttribute('data-tab-panel') === tabName); });
+        history.replaceState(null, '', '#' + tabName);
+        window.scrollTo(0, 0);
+    }
+
+    tabBtns.forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
             e.preventDefault();
-            var target = document.querySelector(this.getAttribute('href'));
-            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            switchTab(this.getAttribute('data-tab'));
         });
     });
+
+    // Restore tab from URL hash on load
+    var hash = window.location.hash.replace('#', '');
+    if (hash && document.querySelector('[data-tab-panel="' + hash + '"]')) {
+        switchTab(hash);
+    }
 
     // ========================================================================
     // System Fields Toggle
