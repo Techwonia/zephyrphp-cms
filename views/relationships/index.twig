@@ -15,7 +15,7 @@
 
 {% if nodes|length == 0 %}
 <div class="card" style="text-align: center; padding: var(--sp-8);">
-    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--text-disabled)" stroke-width="1.5" style="margin-bottom: var(--sp-3);">
+    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--text-disabled)" stroke-width="1.5" class="mb-3">
         <circle cx="12" cy="12" r="10"></circle>
         <line x1="12" y1="8" x2="12" y2="12"></line>
         <line x1="12" y1="16" x2="12.01" y2="16"></line>
@@ -26,7 +26,7 @@
 </div>
 
 {% elseif edges|length == 0 %}
-<div class="card" style="margin-bottom: var(--sp-4);">
+<div class="card" class="mb-4">
     <div class="card-body" style="text-align: center; padding: var(--sp-6);">
         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-disabled)" stroke-width="1.5" style="margin-bottom: var(--sp-2);">
             <circle cx="12" cy="12" r="10"></circle>
@@ -53,7 +53,7 @@
 
 {% else %}
 {# Legend #}
-<div class="card" style="margin-bottom: var(--sp-4);">
+<div class="card" class="mb-4">
     <div class="card-body" style="display: flex; align-items: center; gap: var(--sp-4); flex-wrap: wrap; padding: var(--sp-2) var(--sp-4);">
         <span style="font-weight: 600; color: var(--text-secondary); font-size: 0.85rem;">Legend:</span>
         <span class="legend-item">
@@ -73,7 +73,7 @@
 
 {# Graph #}
 <div class="card">
-    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+    <div class="card-header" class="flex items-center justify-between">
         <h3>Collections ({{ nodes|length }}) &mdash; Relations ({{ edges|length }})</h3>
         <button type="button" class="btn btn-outline btn-sm" id="reset-layout-btn">Reset Layout</button>
     </div>

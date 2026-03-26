@@ -16,7 +16,7 @@
         <form method="POST" action="{{ admin_url('roles/' ~ editRole.getId()) }}">
             {{ csrf_field() | raw }}
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4);">
+            <div class="grid grid-2 gap-4">
                 <div class="form-group">
                     <label for="name">Name *</label>
                     <input type="text" id="name" name="name" class="form-control"
@@ -33,7 +33,7 @@
                            value="{{ flash('_old_input').slug ?? editRole.getSlug() }}"
                            {% if editRole.getSlug() == 'admin' %}readonly{% endif %}>
                     {% if editRole.getSlug() == 'admin' %}
-                        <small style="color: var(--text-secondary);">The admin slug cannot be changed.</small>
+                        <small class="text-secondary">The admin slug cannot be changed.</small>
                     {% endif %}
                     {% if flash('errors').slug is defined %}
                         <div class="invalid-feedback">{{ flash('errors').slug }}</div>
@@ -48,7 +48,7 @@
             </div>
 
             {% if editRole.getSlug() != 'admin' and allPermissions is defined %}
-            <div class="form-group" style="margin-top: var(--sp-4);">
+            <div class="form-group" class="mt-4">
                 <label><strong>Permissions</strong></label>
                 <p class="text-secondary text-sm" style="margin-bottom: 12px;">Select which CMS features this role can access. Admin role has all permissions by default.</p>
 

@@ -26,8 +26,8 @@
                         <th>Trigger</th>
                         <th>Schedule</th>
                         <th>Last Run</th>
-                        <th style="text-align: center;">Status</th>
-                        <th style="text-align: right;">Actions</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -52,7 +52,7 @@
                                 <span class="text-secondary text-sm">Never</span>
                             {% endif %}
                         </td>
-                        <td style="text-align: center;">
+                        <td class="text-center">
                             {% if rule.isActive() %}
                                 <span class="badge badge-success">Active</span>
                             {% else %}

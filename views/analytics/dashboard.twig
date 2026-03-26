@@ -10,12 +10,12 @@
 
 <div class="page-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--sp-3);">
     <h1>Site Analytics</h1>
-    <div style="display: flex; align-items: center; gap: var(--sp-2);">
+    <div class="flex items-center gap-2">
         {% if liveVisitors is defined %}
         <div style="display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-4); background: var(--zui-success-50); border-radius: var(--radius-full); font-size: var(--text-sm);">
             <span style="width: 8px; height: 8px; background: var(--zui-success-600); border-radius: 50%; display: inline-block; animation: livePulse 2s infinite;"></span>
             <strong style="color: var(--zui-success-600);">{{ liveVisitors }}</strong>
-            <span style="color: var(--text-secondary);">live now</span>
+            <span class="text-secondary">live now</span>
         </div>
         {% endif %}
         <div class="analytics-range-picker" style="display: flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden;">
@@ -28,7 +28,7 @@
 </div>
 
 {% if error is defined and error %}
-<div class="card" style="margin-bottom: var(--sp-5);">
+<div class="card" class="mb-5">
     <div class="card-body" style="color: var(--zui-error-600);">
         <strong>Error:</strong> {{ error }}
     </div>
@@ -76,8 +76,8 @@
 </div>
 
 {# ── Traffic Chart (SVG Polyline) ── #}
-<div class="card" style="margin-bottom: var(--sp-5);">
-    <div class="card-header" style="display: flex; align-items: center; justify-content: space-between;">
+<div class="card" class="mb-5">
+    <div class="card-header" class="flex items-center justify-between">
         <h3 style="margin:0; font-size:1rem;">Traffic Overview</h3>
         <div style="display: flex; align-items: center; gap: var(--sp-4); font-size: var(--text-xs); color: var(--text-secondary);">
             <span style="display: flex; align-items: center; gap: var(--sp-1);"><span style="width: 12px; height: 3px; background: var(--zui-primary-500); border-radius: 2px; display: inline-block;"></span> Page Views</span>
@@ -172,7 +172,7 @@
                     <thead>
                         <tr>
                             <th>Page</th>
-                            <th style="text-align: right;">Views</th>
+                            <th class="text-right">Views</th>
                             <th style="width: 120px;"></th>
                         </tr>
                     </thead>
@@ -205,7 +205,7 @@
                     <thead>
                         <tr>
                             <th>Source</th>
-                            <th style="text-align: right;">Visits</th>
+                            <th class="text-right">Visits</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -214,12 +214,12 @@
                         <tr>
                             <td>
                                 {% if ref.source == 'Direct / None' %}
-                                    <span style="color: var(--text-secondary);">{{ ref.source }}</span>
+                                    <span class="text-secondary">{{ ref.source }}</span>
                                 {% else %}
                                     {{ ref.source }}
                                 {% endif %}
                             </td>
-                            <td style="text-align: right;">
+                            <td class="text-right">
                                 <div style="display: flex; align-items: center; justify-content: flex-end; gap: var(--sp-2);">
                                     <div style="width: 60px; background: var(--bg-subdued); border-radius: var(--radius-sm); height: 6px; overflow: hidden;">
                                         <div style="background: var(--zui-info-600); height: 100%; width: {{ (ref.count / max_ref * 100)|round }}%; border-radius: var(--radius-sm);"></div>
@@ -247,10 +247,10 @@
             {% set max_browser = browserBreakdown[0].count|default(1) %}
             {% set browser_colors = ['#1A7BA8', '#047B5D', '#B98900', '#D72C0D', '#2C6ECB', '#6D28D9', '#DB2777', '#EA580C'] %}
             {% for browser in browserBreakdown %}
-            <div style="margin-bottom: var(--sp-3);">
+            <div class="mb-3">
                 <div style="display: flex; justify-content: space-between; font-size: var(--text-sm); margin-bottom: var(--sp-1);">
                     <span>{{ browser.name }}</span>
-                    <span style="font-weight: 600;">{{ browser.count|number_format }}{% if totalRange > 0 %} <span style="color: var(--text-secondary); font-weight: 400;">({{ ((browser.count / totalRange) * 100)|round(1) }}%)</span>{% endif %}</span>
+                    <span class="font-semibold">{{ browser.count|number_format }}{% if totalRange > 0 %} <span style="color: var(--text-secondary); font-weight: 400;">({{ ((browser.count / totalRange) * 100)|round(1) }}%)</span>{% endif %}</span>
                 </div>
                 <div style="background: var(--bg-subdued); border-radius: var(--radius-sm); height: 8px; overflow: hidden;">
                     <div style="background: {{ browser_colors[loop.index0] ?? '#1A7BA8' }}; height: 100%; width: {{ (browser.count / max_browser * 100)|round }}%; border-radius: var(--radius-sm); transition: width 0.3s ease;"></div>
@@ -294,14 +294,14 @@
 
             {% for device in deviceBreakdown %}
             <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--sp-2) 0; {% if not loop.last %}border-bottom: 1px solid var(--border);{% endif %}">
-                <div style="display: flex; align-items: center; gap: var(--sp-2);">
+                <div class="flex items-center gap-2">
                     <span style="width: 10px; height: 10px; background: {{ device_colors[device.name] ?? '#999' }}; border-radius: 50%; display: inline-block;"></span>
                     <span style="font-size: var(--text-sm);">{{ device.name }}</span>
                 </div>
                 <div style="font-size: var(--text-sm);">
                     <strong>{{ device.count|number_format }}</strong>
                     {% if totalRange > 0 %}
-                    <span style="color: var(--text-secondary);">({{ ((device.count / totalRange) * 100)|round(1) }}%)</span>
+                    <span class="text-secondary">({{ ((device.count / totalRange) * 100)|round(1) }}%)</span>
                     {% endif %}
                 </div>
             </div>
@@ -318,10 +318,10 @@
             {% set max_section = topSections[0].views|default(1) %}
             {% set section_colors = ['#1A7BA8', '#2C6ECB', '#047B5D', '#6D28D9', '#B98900', '#DB2777', '#EA580C', '#0D9488', '#7C3AED', '#DC2626'] %}
             {% for section in topSections %}
-            <div style="margin-bottom: var(--sp-3);">
+            <div class="mb-3">
                 <div style="display: flex; justify-content: space-between; font-size: var(--text-sm); margin-bottom: var(--sp-1);">
                     <span style="text-transform: capitalize;">/{{ section.section }}</span>
-                    <span style="font-weight: 600;">{{ section.views|number_format }}</span>
+                    <span class="font-semibold">{{ section.views|number_format }}</span>
                 </div>
                 <div style="background: var(--bg-subdued); border-radius: var(--radius-sm); height: 8px; overflow: hidden;">
                     <div style="background: {{ section_colors[loop.index0] ?? '#1A7BA8' }}; height: 100%; width: {{ (section.views / max_section * 100)|round }}%; border-radius: var(--radius-sm);"></div>

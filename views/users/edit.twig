@@ -16,7 +16,7 @@
         <form method="POST" action="{{ admin_url('users/' ~ editUser.getId()) }}">
             {{ csrf_field() | raw }}
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4);">
+            <div class="grid grid-2 gap-4">
                 <div class="form-group">
                     <label for="name">Name *</label>
                     <input type="text" id="name" name="name" class="form-control"
@@ -42,7 +42,7 @@
                 <label for="password">New Password</label>
                 <input type="password" id="password" name="password" class="form-control"
                        placeholder="Leave blank to keep current password">
-                <small style="color: var(--text-secondary);">Only fill this if you want to change the password.</small>
+                <small class="text-secondary">Only fill this if you want to change the password.</small>
                 {% if flash('errors').password is defined %}
                     <div class="invalid-feedback">{{ flash('errors').password }}</div>
                 {% endif %}

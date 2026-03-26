@@ -7,7 +7,7 @@
     <a href="{{ admin_url() }}">Dashboard</a> <svg class="breadcrumb-sep" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg> System / Database Tools
 </div>
 
-<div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
+<div class="page-header" class="flex items-center justify-between">
     <h1>Database Tools</h1>
     <form method="POST" action="{{ admin_url('system/database/backup') }}">
         {{ csrf_field() | raw }}
@@ -42,7 +42,7 @@
 {% if tables|length > 0 %}
 <div class="card">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">Tables</h3></div>
-    <div class="card-body" style="padding: 0;">
+    <div class="card-body" class="p-0">
         <div class="table-responsive">
             <table class="data-table">
                 <thead>
@@ -57,7 +57,7 @@
                     {% for table in tables %}
                     <tr>
                         <td>
-                            <a href="{{ admin_url('system/database/browse/' ~ table.name) }}" style="font-weight: 600;">{{ table.name }}</a>
+                            <a href="{{ admin_url('system/database/browse/' ~ table.name) }}" class="font-semibold">{{ table.name }}</a>
                         </td>
                         <td>{{ table.column_count }}</td>
                         <td>{{ table.row_count }}</td>
@@ -74,12 +74,12 @@
 
 {# Table Schema Detail #}
 {% for table in tables %}
-<details style="margin-top: var(--sp-4);">
+<details class="mt-4">
     <summary style="cursor: pointer; padding: 12px 16px; background: var(--bg-subdued); border-radius: var(--radius); font-weight: 600;">
         {{ table.name }} - Schema ({{ table.column_count }} columns, {{ table.indexes|length }} indexes)
     </summary>
     <div class="card" style="margin-top: var(--sp-2); border-top-left-radius: 0; border-top-right-radius: 0;">
-        <div class="card-body" style="padding: 0;">
+        <div class="card-body" class="p-0">
             <table class="data-table">
                 <thead>
                     <tr>
@@ -93,10 +93,10 @@
                 <tbody>
                     {% for col in table.columns %}
                     <tr>
-                        <td style="font-weight: 600;">{{ col.name }}</td>
+                        <td class="font-semibold">{{ col.name }}</td>
                         <td><span class="badge">{{ col.type }}{% if col.length %}({{ col.length }}){% endif %}</span></td>
                         <td>{{ col.nullable ? 'Yes' : 'No' }}</td>
-                        <td style="color: var(--text-secondary);">{{ col.default ?? '-' }}</td>
+                        <td class="text-secondary">{{ col.default ?? '-' }}</td>
                         <td>{{ col.autoincrement ? 'Yes' : '' }}</td>
                     </tr>
                     {% endfor %}

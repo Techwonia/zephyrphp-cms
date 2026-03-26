@@ -60,7 +60,7 @@
                             {% if _entryVal in (_relLabels|keys) %}
                                 <span class="truncate">{{ _relLabels[_entryVal] }}</span>
                             {% else %}
-                                <span class="truncate" style="color: var(--text-secondary);">#{{ _entryVal }}</span>
+                                <span class="truncate" class="text-secondary">#{{ _entryVal }}</span>
                             {% endif %}
                         {% else %}
                             {% set _cellVal = entry[field.getSlug()]|default('') %}

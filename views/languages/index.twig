@@ -4,11 +4,11 @@
 
 {% block content %}
 <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--sp-6);">
-    <h1 style="margin: 0;">Languages</h1>
+    <h1 class="p-0">Languages</h1>
 </div>
 
 {# Add Language Form #}
-<div class="card" style="margin-bottom: var(--sp-6);">
+<div class="card" class="mb-6">
     <div style="padding: var(--sp-4) var(--sp-5); border-bottom: 1px solid var(--border); font-weight: 600;">Add Language</div>
     <div style="padding: var(--sp-5);">
         <form method="POST" action="{{ admin_url('languages') }}" style="display: flex; gap: var(--sp-3); flex-wrap: wrap; align-items: flex-end;">
@@ -50,30 +50,30 @@
                 <th>Code</th>
                 <th>Name</th>
                 <th>Native Name</th>
-                <th style="text-align: center;">Default</th>
-                <th style="text-align: center;">Active</th>
-                <th style="text-align: right;">Actions</th>
+                <th class="text-center">Default</th>
+                <th class="text-center">Active</th>
+                <th class="text-right">Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for lang in languages %}
             <tr>
                 <td><code style="background: var(--bg-subdued); padding: 2px 6px; border-radius: var(--radius-sm); font-size: var(--text-xs);">{{ lang.getCode() }}</code></td>
-                <td style="font-weight: 500;">{{ lang.getName() }}</td>
+                <td class="font-medium">{{ lang.getName() }}</td>
                 <td>{{ lang.getNativeName() }}</td>
-                <td style="text-align: center;">
+                <td class="text-center">
                     {% if lang.isDefault() %}
                         <span class="badge badge-success">Default</span>
                     {% endif %}
                 </td>
-                <td style="text-align: center;">
+                <td class="text-center">
                     {% if lang.isActive() %}
                         <span class="badge badge-success">Active</span>
                     {% else %}
                         <span class="badge badge-default">Inactive</span>
                     {% endif %}
                 </td>
-                <td style="text-align: right;">
+                <td class="text-right">
                     <button onclick="editLanguage({{ lang.getId() }}, '{{ lang.getName()|e('js') }}', '{{ lang.getNativeName()|e('js') }}', {{ lang.isActive() ? 'true' : 'false' }}, {{ lang.isDefault() ? 'true' : 'false' }})" class="btn btn-outline btn-sm">Edit</button>
                     {% if not lang.isDefault() %}
                     <form method="POST" action="{{ admin_url('languages/' ~ lang.getId() ~ '/delete') }}" style="display: inline;" class="confirm-delete" data-message="Delete this language and all its translations?">
@@ -99,11 +99,11 @@
         <h3 style="margin:0 0 var(--sp-4);">Edit Language</h3>
         <form id="edit-form" method="POST">
             <input type="hidden" name="_token" value="{{ csrf_token() }}">
-            <div class="form-group" style="margin-bottom: var(--sp-3);">
+            <div class="form-group" class="mb-3">
                 <label class="form-label">Name</label>
                 <input type="text" name="name" id="edit-name" class="form-control" required>
             </div>
-            <div class="form-group" style="margin-bottom: var(--sp-3);">
+            <div class="form-group" class="mb-3">
                 <label class="form-label">Native Name</label>
                 <input type="text" name="native_name" id="edit-native" class="form-control">
             </div>

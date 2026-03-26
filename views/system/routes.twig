@@ -11,9 +11,9 @@
     <h1>Route Viewer <span style="color: var(--text-secondary); font-weight: 400; font-size: 1rem;">({{ totalRoutes }} routes)</span></h1>
 </div>
 
-<div class="search-bar" style="margin-bottom: var(--sp-4);">
-    <form method="GET" action="{{ admin_url('system/routes') }}" class="search-form" style="display: flex; gap: var(--sp-2);">
-        <input type="text" name="search" class="form-control" placeholder="Search by URI or controller..." value="{{ search }}" style="flex: 1;">
+<div class="search-bar" class="mb-4">
+    <form method="GET" action="{{ admin_url('system/routes') }}" class="search-form" class="flex gap-2">
+        <input type="text" name="search" class="form-control" placeholder="Search by URI or controller..." value="{{ search }}" class="flex-1">
         <select name="method" class="form-control" style="width: 120px;">
             <option value="">All Methods</option>
             {% for method in methods %}
@@ -26,7 +26,7 @@
 
 {% if routes|length > 0 %}
 <div class="card">
-    <div class="card-body" style="padding: 0;">
+    <div class="card-body" class="p-0">
         <div class="table-responsive">
             <table class="data-table">
                 <thead>

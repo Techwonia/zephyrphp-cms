@@ -15,10 +15,10 @@
 <form method="POST" action="{{ admin_url('settings/auth') }}">
     {{ csrf_field() | raw }}
 
-    <div class="card" style="margin-bottom: var(--sp-5);">
+    <div class="card" class="mb-5">
         <div class="card-header"><h3 style="margin:0; font-size:1rem;">Feature Toggles</h3></div>
         <div class="card-body">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4);">
+            <div class="grid grid-2 gap-4">
                 {% set featureLabels = {
                     'AUTH_REGISTRATION': 'User Registration',
                     'AUTH_PASSWORD_RESET': 'Password Reset',
@@ -30,7 +30,7 @@
                     'AUTH_API_KEYS': 'API Key Auth',
                 } %}
                 {% for key, label in featureLabels %}
-                <div style="display: flex; align-items: center; gap: var(--sp-2);">
+                <div class="flex items-center gap-2">
                     <input type="hidden" name="{{ key }}" value="false">
                     <input type="checkbox" id="{{ key }}" name="{{ key }}" value="true" {{ features[key] == 'true' or features[key] == '1' ? 'checked' : '' }}>
                     <label for="{{ key }}" style="margin: 0; cursor: pointer;">{{ label }}</label>
@@ -41,10 +41,10 @@
     </div>
 
     {# Password Policy #}
-    <div class="card" style="margin-bottom: var(--sp-5);">
+    <div class="card" class="mb-5">
         <div class="card-header"><h3 style="margin:0; font-size:1rem;">Password Policy</h3></div>
         <div class="card-body">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4);">
+            <div class="grid grid-2 gap-4">
                 <div class="form-group">
                     <label for="AUTH_PASSWORD_MIN_LENGTH">Minimum Length</label>
                     <input type="number" id="AUTH_PASSWORD_MIN_LENGTH" name="AUTH_PASSWORD_MIN_LENGTH" class="form-control" value="{{ passwordPolicy.AUTH_PASSWORD_MIN_LENGTH }}" min="4" max="128">
@@ -58,7 +58,7 @@
                     'AUTH_PASSWORD_CHECK_PWNED': 'Check HaveIBeenPwned Database',
                 } %}
                 {% for key, label in policyLabels %}
-                <div style="display: flex; align-items: center; gap: var(--sp-2);">
+                <div class="flex items-center gap-2">
                     <input type="hidden" name="{{ key }}" value="false">
                     <input type="checkbox" id="{{ key }}" name="{{ key }}" value="true" {{ passwordPolicy[key] == 'true' or passwordPolicy[key] == '1' ? 'checked' : '' }}>
                     <label for="{{ key }}" style="margin: 0; cursor: pointer;">{{ label }}</label>
@@ -69,7 +69,7 @@
     </div>
 
     {# Rate Limiting #}
-    <div class="card" style="margin-bottom: var(--sp-5);">
+    <div class="card" class="mb-5">
         <div class="card-header"><h3 style="margin:0; font-size:1rem;">Rate Limiting</h3></div>
         <div class="card-body">
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--sp-4);">
@@ -111,10 +111,10 @@
     </div>
 
     {# JWT Settings #}
-    <div class="card" style="margin-bottom: var(--sp-5);">
+    <div class="card" class="mb-5">
         <div class="card-header"><h3 style="margin:0; font-size:1rem;">JWT Configuration</h3></div>
         <div class="card-body">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4);">
+            <div class="grid grid-2 gap-4">
                 <div class="form-group">
                     <label for="JWT_SECRET">JWT Secret</label>
                     <input type="password" id="JWT_SECRET" name="JWT_SECRET" class="form-control" value="{{ jwt.JWT_SECRET }}" placeholder="Leave blank to keep current">
@@ -130,22 +130,22 @@
                 <div class="form-group">
                     <label for="JWT_LIFETIME">Access Token Lifetime (seconds)</label>
                     <input type="number" id="JWT_LIFETIME" name="JWT_LIFETIME" class="form-control" value="{{ jwt.JWT_LIFETIME }}" min="60">
-                    <small style="color: var(--text-secondary);">Default: 3600 (1 hour)</small>
+                    <small class="text-secondary">Default: 3600 (1 hour)</small>
                 </div>
                 <div class="form-group">
                     <label for="JWT_REFRESH">Refresh Token Lifetime (seconds)</label>
                     <input type="number" id="JWT_REFRESH" name="JWT_REFRESH" class="form-control" value="{{ jwt.JWT_REFRESH }}" min="60">
-                    <small style="color: var(--text-secondary);">Default: 2592000 (30 days)</small>
+                    <small class="text-secondary">Default: 2592000 (30 days)</small>
                 </div>
             </div>
         </div>
     </div>
 
     {# Session Settings #}
-    <div class="card" style="margin-bottom: var(--sp-5);">
+    <div class="card" class="mb-5">
         <div class="card-header"><h3 style="margin:0; font-size:1rem;">Session Settings</h3></div>
         <div class="card-body">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4);">
+            <div class="grid grid-2 gap-4">
                 <div class="form-group">
                     <label for="SESSION_DRIVER">Session Driver</label>
                     <select id="SESSION_DRIVER" name="SESSION_DRIVER" class="form-control">
@@ -170,7 +170,7 @@
         </div>
     </div>
 
-    <div style="margin-bottom: var(--sp-5);">
+    <div class="mb-5">
         <button type="submit" class="btn btn-primary">Save Authentication Settings</button>
     </div>
 </form>
@@ -178,7 +178,7 @@
 {# OAuth Providers #}
 <div class="card">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">OAuth Providers (Social Login)</h3></div>
-    <div class="card-body" style="padding: 0;">
+    <div class="card-body" class="p-0">
         {% for provider in providers %}
         <details style="border-bottom: 1px solid var(--border);">
             <summary style="padding: var(--sp-3) var(--sp-4); cursor: pointer; display: flex; justify-content: space-between; align-items: center;">

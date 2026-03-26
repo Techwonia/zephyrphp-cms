@@ -12,7 +12,7 @@
 </div>
 
 {% if error is defined and error %}
-<div class="card" style="margin-bottom: var(--sp-5);">
+<div class="card" class="mb-5">
     <div class="card-body" style="color: var(--zui-error-600);">
         <strong>Error loading analytics:</strong> {{ error }}
     </div>
@@ -54,7 +54,7 @@
 </div>
 
 {# Requests Per Day Chart #}
-<div class="card" style="margin-bottom: var(--sp-5);">
+<div class="card" class="mb-5">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">Requests Per Day (Last 30 Days)</h3></div>
     <div class="card-body">
         {% set max_count = 1 %}
@@ -140,7 +140,7 @@
 </div>
 
 {# Top Endpoints #}
-<div class="card" style="margin-bottom: var(--sp-5);">
+<div class="card" class="mb-5">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">Top Endpoints (7 Days)</h3></div>
     <div class="card-body">
         <div class="table-responsive">
@@ -173,7 +173,7 @@
 </div>
 
 {# Recent Requests #}
-<div class="card" style="margin-bottom: var(--sp-5);">
+<div class="card" class="mb-5">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">Recent Requests</h3></div>
     <div class="card-body">
         <div class="table-responsive">

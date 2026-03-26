@@ -44,7 +44,7 @@
 </div>
 
 {# Environment #}
-<div class="card" style="margin-bottom: var(--sp-5);">
+<div class="card" class="mb-5">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">Environment</h3></div>
     <div class="card-body">
         <div class="table-responsive">
@@ -85,11 +85,11 @@
         <div class="card-body">
             <table class="data-table">
                 <tbody>
-                    <tr><td style="font-weight:600;">Current Memory</td><td>{{ memory.current }}</td></tr>
-                    <tr><td style="font-weight:600;">Peak Memory</td><td>{{ memory.peak }}</td></tr>
-                    <tr><td style="font-weight:600;">Memory Limit</td><td>{{ memory.limit }}</td></tr>
-                    <tr><td style="font-weight:600;">Disk Total</td><td>{{ disk.total }}</td></tr>
-                    <tr><td style="font-weight:600;">Disk Free</td><td>{{ disk.free }}</td></tr>
+                    <tr><td class="font-semibold">Current Memory</td><td>{{ memory.current }}</td></tr>
+                    <tr><td class="font-semibold">Peak Memory</td><td>{{ memory.peak }}</td></tr>
+                    <tr><td class="font-semibold">Memory Limit</td><td>{{ memory.limit }}</td></tr>
+                    <tr><td class="font-semibold">Disk Total</td><td>{{ disk.total }}</td></tr>
+                    <tr><td class="font-semibold">Disk Free</td><td>{{ disk.free }}</td></tr>
                 </tbody>
             </table>
         </div>
@@ -97,7 +97,7 @@
 </div>
 
 {# Storage Sizes #}
-<div class="card" style="margin-bottom: var(--sp-5);">
+<div class="card" class="mb-5">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">Storage Usage</h3></div>
     <div class="card-body">
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--sp-4);">
@@ -113,16 +113,16 @@
 
 {# Database Info #}
 {% if database.connected %}
-<div class="card" style="margin-bottom: var(--sp-5);">
+<div class="card" class="mb-5">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">Database</h3></div>
     <div class="card-body">
         <table class="data-table">
             <tbody>
                 <tr><td style="width:180px; font-weight:600;">Driver</td><td>{{ database.driver }}</td></tr>
-                <tr><td style="font-weight:600;">Host</td><td>{{ database.host }}</td></tr>
-                <tr><td style="font-weight:600;">Database</td><td>{{ database.database }}</td></tr>
-                <tr><td style="font-weight:600;">Tables</td><td>{{ database.table_count }}</td></tr>
-                <tr><td style="font-weight:600;">Size</td><td>{{ database.size }}</td></tr>
+                <tr><td class="font-semibold">Host</td><td>{{ database.host }}</td></tr>
+                <tr><td class="font-semibold">Database</td><td>{{ database.database }}</td></tr>
+                <tr><td class="font-semibold">Tables</td><td>{{ database.table_count }}</td></tr>
+                <tr><td class="font-semibold">Size</td><td>{{ database.size }}</td></tr>
             </tbody>
         </table>
     </div>

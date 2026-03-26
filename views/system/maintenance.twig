@@ -12,8 +12,8 @@
 </div>
 
 {# Current Status #}
-<div class="card" style="margin-bottom: var(--sp-5);">
-    <div class="card-body" style="display: flex; align-items: center; justify-content: space-between;">
+<div class="card" class="mb-5">
+    <div class="card-body" class="flex items-center justify-between">
         <div>
             <div style="font-size: 1.25rem; font-weight: 700;">
                 {% if isDown %}
@@ -39,15 +39,15 @@
 
 {% if isDown and data %}
 {# Current settings when down #}
-<div class="card" style="margin-bottom: var(--sp-5);">
+<div class="card" class="mb-5">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">Current Maintenance Settings</h3></div>
     <div class="card-body">
         <table class="data-table">
             <tbody>
                 <tr><td style="width:180px; font-weight:600;">Message</td><td>{{ data.message|default('Default message') }}</td></tr>
-                {% if data.retry is defined %}<tr><td style="font-weight:600;">Retry After</td><td>{{ data.retry }} seconds</td></tr>{% endif %}
-                {% if data.allowed is defined %}<tr><td style="font-weight:600;">Allowed IPs</td><td>{{ data.allowed|join(', ') }}</td></tr>{% endif %}
-                {% if data.secret is defined %}<tr><td style="font-weight:600;">Bypass Secret</td><td>{{ data.secret }}</td></tr>{% endif %}
+                {% if data.retry is defined %}<tr><td class="font-semibold">Retry After</td><td>{{ data.retry }} seconds</td></tr>{% endif %}
+                {% if data.allowed is defined %}<tr><td class="font-semibold">Allowed IPs</td><td>{{ data.allowed|join(', ') }}</td></tr>{% endif %}
+                {% if data.secret is defined %}<tr><td class="font-semibold">Bypass Secret</td><td>{{ data.secret }}</td></tr>{% endif %}
             </tbody>
         </table>
     </div>
@@ -67,24 +67,24 @@
                 <textarea id="message" name="message" class="form-control" rows="3" placeholder="We are currently performing maintenance. Please check back soon."></textarea>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4);">
+            <div class="grid grid-2 gap-4">
                 <div class="form-group">
                     <label for="retry">Retry After (seconds)</label>
                     <input type="number" id="retry" name="retry" class="form-control" placeholder="60" min="0">
-                    <small style="color: var(--text-secondary);">Sets the Retry-After HTTP header</small>
+                    <small class="text-secondary">Sets the Retry-After HTTP header</small>
                 </div>
 
                 <div class="form-group">
                     <label for="secret">Bypass Secret</label>
                     <input type="text" id="secret" name="secret" class="form-control" placeholder="my-secret-token">
-                    <small style="color: var(--text-secondary);">Access via ?bypass=secret in URL</small>
+                    <small class="text-secondary">Access via ?bypass=secret in URL</small>
                 </div>
             </div>
 
             <div class="form-group">
                 <label for="allowed">Allowed IP Addresses</label>
                 <textarea id="allowed" name="allowed" class="form-control" rows="3" placeholder="One IP per line&#10;127.0.0.1&#10;192.168.1.100"></textarea>
-                <small style="color: var(--text-secondary);">These IPs can access the site during maintenance</small>
+                <small class="text-secondary">These IPs can access the site during maintenance</small>
             </div>
 
             <div class="form-actions">

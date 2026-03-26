@@ -12,7 +12,7 @@
 </div>
 
 {# Application Settings #}
-<div class="card" style="margin-bottom: var(--sp-5);">
+<div class="card" class="mb-5">
     <div class="card-header">
         <h3 style="margin: 0; font-size: 1rem;">Application Settings</h3>
     </div>
@@ -20,7 +20,7 @@
         <form method="POST" action="{{ admin_url('settings/system') }}">
             {{ csrf_field() | raw }}
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4);">
+            <div class="grid grid-2 gap-4">
                 <div class="form-group">
                     <label for="APP_NAME">App Name</label>
                     <input type="text" id="APP_NAME" name="APP_NAME" class="form-control"
@@ -59,12 +59,12 @@
 
             <h4 style="margin: var(--sp-5) 0 var(--sp-3); font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Authentication & Session</h4>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4);">
+            <div class="grid grid-2 gap-4">
                 <div class="form-group">
                     <label for="AUTH_HOME">Post-Login Redirect (Customers)</label>
                     <input type="text" id="AUTH_HOME" name="AUTH_HOME" class="form-control"
                            value="{{ authSettings.AUTH_HOME }}" placeholder="/">
-                    <small style="color: var(--text-secondary);">Where non-admin users go after login. Admins always go to /cms.</small>
+                    <small class="text-secondary">Where non-admin users go after login. Admins always go to /cms.</small>
                 </div>
 
                 <div class="form-group">
@@ -84,25 +84,25 @@
 
             <h4 style="margin: var(--sp-5) 0 var(--sp-3); font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">CMS Configuration</h4>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4);">
+            <div class="grid grid-2 gap-4">
                 <div class="form-group">
                     <label for="CMS_THEME">Fallback Theme</label>
                     <input type="text" id="CMS_THEME" name="CMS_THEME" class="form-control"
                            value="{{ cmsSettings.CMS_THEME }}" placeholder="starter">
-                    <small style="color: var(--text-secondary);">Used when no live theme is set in the database.</small>
+                    <small class="text-secondary">Used when no live theme is set in the database.</small>
                 </div>
 
                 <div class="form-group">
                     <label for="VIEWS_PATH">Views Path</label>
                     <input type="text" id="VIEWS_PATH" name="VIEWS_PATH" class="form-control"
                            value="{{ cmsSettings.VIEWS_PATH }}" placeholder="pages">
-                    <small style="color: var(--text-secondary);">Relative path to the templates directory.</small>
+                    <small class="text-secondary">Relative path to the templates directory.</small>
                 </div>
             </div>
 
             <h4 style="margin: var(--sp-5) 0 var(--sp-3); font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Security & CSP</h4>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4);">
+            <div class="grid grid-2 gap-4">
                 <div class="form-group">
                     <label for="CSP_ENABLED">Content Security Policy</label>
                     <select id="CSP_ENABLED" name="CSP_ENABLED" class="form-control">
@@ -118,21 +118,21 @@
                         <option value="moderate" {% if securitySettings.CSP_LEVEL == 'moderate' %}selected{% endif %}>Moderate (Default)</option>
                         <option value="relaxed" {% if securitySettings.CSP_LEVEL == 'relaxed' %}selected{% endif %}>Relaxed (Development)</option>
                     </select>
-                    <small style="color: var(--text-secondary);">Strict uses nonces only. Moderate allows Google Fonts. Relaxed allows unsafe-inline.</small>
+                    <small class="text-secondary">Strict uses nonces only. Moderate allows Google Fonts. Relaxed allows unsafe-inline.</small>
                 </div>
 
                 <div class="form-group">
                     <label for="CSP_REPORT_URI">CSP Report URI</label>
                     <input type="text" id="CSP_REPORT_URI" name="CSP_REPORT_URI" class="form-control"
                            value="{{ securitySettings.CSP_REPORT_URI }}" placeholder="/api/csp-report">
-                    <small style="color: var(--text-secondary);">Endpoint for CSP violation reports.</small>
+                    <small class="text-secondary">Endpoint for CSP violation reports.</small>
                 </div>
 
                 <div class="form-group">
                     <label for="HSTS_MAX_AGE">HSTS Max Age (seconds)</label>
                     <input type="number" id="HSTS_MAX_AGE" name="HSTS_MAX_AGE" class="form-control"
                            value="{{ securitySettings.HSTS_MAX_AGE }}" placeholder="31536000" min="0">
-                    <small style="color: var(--text-secondary);">HTTP Strict Transport Security duration. 31536000 = 1 year.</small>
+                    <small class="text-secondary">HTTP Strict Transport Security duration. 31536000 = 1 year.</small>
                 </div>
 
                 <div class="form-group">
@@ -141,7 +141,7 @@
                         <option value="false" {% if securitySettings.HSTS_PRELOAD == 'false' %}selected{% endif %}>Disabled</option>
                         <option value="true" {% if securitySettings.HSTS_PRELOAD == 'true' %}selected{% endif %}>Enabled</option>
                     </select>
-                    <small style="color: var(--text-secondary);">Include preload directive in HSTS header.</small>
+                    <small class="text-secondary">Include preload directive in HSTS header.</small>
                 </div>
 
                 <div class="form-group">
@@ -150,7 +150,7 @@
                         <option value="false" {% if securitySettings.USE_ISOLATION_HEADERS == 'false' %}selected{% endif %}>Disabled</option>
                         <option value="true" {% if securitySettings.USE_ISOLATION_HEADERS == 'true' %}selected{% endif %}>Enabled</option>
                     </select>
-                    <small style="color: var(--text-secondary);">Cross-Origin isolation headers. May break third-party embeds.</small>
+                    <small class="text-secondary">Cross-Origin isolation headers. May break third-party embeds.</small>
                 </div>
             </div>
 
@@ -217,7 +217,7 @@
 </div>
 
 {# System Information #}
-<div class="card" style="margin-bottom: var(--sp-5);">
+<div class="card" class="mb-5">
     <div class="card-header">
         <h3 style="margin: 0; font-size: 1rem;">System Information</h3>
     </div>

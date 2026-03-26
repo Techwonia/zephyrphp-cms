@@ -5,10 +5,10 @@
 {% block content %}
 <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--sp-6);">
     <div>
-        <h1 style="margin: 0;">Edit: {{ template.getName() }}</h1>
+        <h1 class="p-0">Edit: {{ template.getName() }}</h1>
         <p style="color: var(--text-secondary); margin: var(--sp-1) 0 0;">Slug: <code style="font-size: var(--text-xs); background: var(--bg-subdued); padding: 2px 6px; border-radius: var(--radius-sm);">{{ template.getSlug() }}</code></p>
     </div>
-    <div style="display: flex; gap: var(--sp-2);">
+    <div class="flex gap-2">
         <a href="{{ admin_url('email-templates/' ~ template.getId() ~ '/preview') }}" target="_blank" class="btn btn-outline btn-sm">Preview</a>
         <button onclick="testSend({{ template.getId() }})" class="btn btn-outline btn-sm">Test Send</button>
         <a href="{{ admin_url('email-templates') }}" class="btn btn-outline btn-sm">Back</a>
@@ -19,26 +19,26 @@
     <input type="hidden" name="_token" value="{{ csrf_token() }}">
 
     <div style="padding: var(--sp-5);">
-        <div class="form-group" style="margin-bottom: var(--sp-4);">
+        <div class="form-group" class="mb-4">
             <label class="form-label">Name</label>
             <input type="text" name="name" class="form-control" value="{{ template.getName() }}" required>
         </div>
 
-        <div class="form-group" style="margin-bottom: var(--sp-4);">
+        <div class="form-group" class="mb-4">
             <label class="form-label">Subject Line</label>
             <input type="text" name="subject" class="form-control" value="{{ template.getSubject() }}" required>
-            <small style="color: var(--text-secondary);">Use Twig variables: {{ '{{ app_name }}' }}, {{ '{{ entry_title }}' }}, {{ '{{ collection_name }}' }}, {{ '{{ user_name }}' }}</small>
+            <small class="text-secondary">Use Twig variables: {{ '{{ app_name }}' }}, {{ '{{ entry_title }}' }}, {{ '{{ collection_name }}' }}, {{ '{{ user_name }}' }}</small>
         </div>
 
-        <div class="form-group" style="margin-bottom: var(--sp-4);">
+        <div class="form-group" class="mb-4">
             <label class="form-label">Body (Twig HTML)</label>
             <textarea name="body_twig" class="form-control" rows="15" style="font-family: var(--font-mono); font-size: var(--text-sm);" required>{{ template.getBodyTwig() }}</textarea>
-            <small style="color: var(--text-secondary);">
+            <small class="text-secondary">
                 Available variables: {{ '{{ app_name }}' }}, {{ '{{ entry_title }}' }}, {{ '{{ collection_name }}' }}, {{ '{{ entry_url }}' }}, {{ '{{ admin_url }}' }}, {{ '{{ user_name }}' }}, {{ '{{ user_email }}' }}, {{ '{{ fields }}' }}
             </small>
         </div>
 
-        <div class="form-group" style="margin-bottom: var(--sp-4);">
+        <div class="form-group" class="mb-4">
             <label style="display: flex; align-items: center; gap: var(--sp-2); cursor: pointer;">
                 <input type="checkbox" name="is_active" value="1" {% if template.isActive() %}checked{% endif %}>
                 <span>Active</span>

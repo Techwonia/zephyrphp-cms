@@ -7,7 +7,7 @@
     <a href="{{ admin_url() }}">Dashboard</a> <svg class="breadcrumb-sep" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg> System / Sessions
 </div>
 
-<div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
+<div class="page-header" class="flex items-center justify-between">
     <h1>Session Manager</h1>
     <form method="POST" action="{{ admin_url('system/sessions/terminate-all') }}" onsubmit="return confirm('Terminate ALL other sessions? All users except you will be logged out.')">
         {{ csrf_field() | raw }}
@@ -18,13 +18,13 @@
 {# Stats #}
 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-4); margin-bottom: var(--sp-5);">
     <div class="card">
-        <div class="card-body" style="text-align: center;">
+        <div class="card-body" class="text-center">
             <div style="font-size: 2rem; font-weight: 700; color: var(--zui-primary-500);">{{ stats.active_sessions }}</div>
             <div style="color: var(--text-secondary); font-size: 0.85rem;">Active Sessions</div>
         </div>
     </div>
     <div class="card">
-        <div class="card-body" style="text-align: center;">
+        <div class="card-body" class="text-center">
             <div style="font-size: 2rem; font-weight: 700; color: var(--zui-primary-500);">{{ stats.unique_users }}</div>
             <div style="color: var(--text-secondary); font-size: 0.85rem;">Unique Users</div>
         </div>
@@ -32,9 +32,9 @@
 </div>
 
 {# Active Sessions #}
-<div class="card" style="margin-bottom: var(--sp-5);">
+<div class="card" class="mb-5">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">Active Sessions</h3></div>
-    <div class="card-body" style="padding: 0;">
+    <div class="card-body" class="p-0">
         {% if sessions|length > 0 %}
         <div class="table-responsive">
             <table class="data-table">
@@ -54,9 +54,9 @@
                         <td>
                             {% if session.user_name %}
                                 <strong>{{ session.user_name }}</strong>
-                                <br><small style="color: var(--text-secondary);">{{ session.user_email }}</small>
+                                <br><small class="text-secondary">{{ session.user_email }}</small>
                             {% else %}
-                                <em style="color: var(--text-secondary);">Guest</em>
+                                <em class="text-secondary">Guest</em>
                             {% endif %}
                         </td>
                         <td style="font-family: monospace; font-size: 0.85rem;">{{ session.ip_address }}</td>
@@ -88,7 +88,7 @@
 {% if history|length > 0 %}
 <div class="card">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">Recent Login History</h3></div>
-    <div class="card-body" style="padding: 0;">
+    <div class="card-body" class="p-0">
         <div class="table-responsive">
             <table class="data-table">
                 <thead>

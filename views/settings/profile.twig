@@ -16,7 +16,7 @@
         <form method="POST" action="{{ admin_url('settings/profile') }}">
             {{ csrf_field() | raw }}
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4);">
+            <div class="grid grid-2 gap-4">
                 <div class="form-group">
                     <label for="name">Name *</label>
                     <input type="text" id="name" name="name" class="form-control"
@@ -52,7 +52,7 @@
                 {% endif %}
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4);">
+            <div class="grid grid-2 gap-4">
                 <div class="form-group">
                     <label for="new_password">New Password</label>
                     <input type="password" id="new_password" name="new_password" class="form-control"

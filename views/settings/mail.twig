@@ -11,13 +11,13 @@
     <h1>Mail Settings</h1>
 </div>
 
-<div class="card" style="margin-bottom: var(--sp-5);">
+<div class="card" class="mb-5">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">Mail Configuration</h3></div>
     <div class="card-body">
         <form method="POST" action="{{ admin_url('settings/mail') }}">
             {{ csrf_field() | raw }}
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4);">
+            <div class="grid grid-2 gap-4">
                 <div class="form-group">
                     <label for="MAIL_DRIVER">Mail Driver</label>
                     <select id="MAIL_DRIVER" name="MAIL_DRIVER" class="form-control">

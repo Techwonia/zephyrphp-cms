@@ -7,7 +7,7 @@
     <a href="{{ admin_url() }}">Dashboard</a> <svg class="breadcrumb-sep" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg> System / Logs
 </div>
 
-<div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
+<div class="page-header" class="flex items-center justify-between">
     <h1>Log Viewer</h1>
     {% if files|length > 0 %}
     <form method="POST" action="{{ admin_url('system/logs/clear-all') }}" style="display: inline;" onsubmit="return confirm('Delete ALL log files?')">
@@ -21,7 +21,7 @@
     {# File list sidebar #}
     <div class="card">
         <div class="card-header"><h3 style="margin:0; font-size:1rem;">Log Files</h3></div>
-        <div class="card-body" style="padding: 0;">
+        <div class="card-body" class="p-0">
             {% if files|length == 0 %}
                 <div style="padding: var(--sp-4); color: var(--text-secondary);">No log files found.</div>
             {% else %}
@@ -39,10 +39,10 @@
     {# Log content #}
     <div>
         {% if selectedFile %}
-        <div class="card" style="margin-bottom: var(--sp-4);">
-            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="card" class="mb-4">
+            <div class="card-header" class="flex items-center justify-between">
                 <h3 style="margin:0; font-size:1rem;">{{ selectedFile }} <span style="color: var(--text-secondary); font-weight: 400;">({{ totalLines }} lines)</span></h3>
-                <div style="display: flex; gap: var(--sp-2);">
+                <div class="flex gap-2">
                     <a href="{{ admin_url('system/logs/download?file=' ~ selectedFile|url_encode) }}" class="btn btn-outline btn-sm">Download</a>
                     <form method="POST" action="{{ admin_url('system/logs/clear') }}" style="display: inline;" onsubmit="return confirm('Delete this log file?')">
                         {{ csrf_field() | raw }}
@@ -54,11 +54,11 @@
         </div>
 
         {# Search #}
-        <div class="card" style="margin-bottom: var(--sp-4);">
+        <div class="card" class="mb-4">
             <div class="card-body" style="padding: var(--sp-3);">
-                <form method="GET" action="{{ admin_url('system/logs') }}" style="display: flex; gap: var(--sp-2);">
+                <form method="GET" action="{{ admin_url('system/logs') }}" class="flex gap-2">
                     <input type="hidden" name="file" value="{{ selectedFile }}">
-                    <input type="text" name="search" class="form-control" placeholder="Search logs..." value="{{ search }}" style="flex: 1;">
+                    <input type="text" name="search" class="form-control" placeholder="Search logs..." value="{{ search }}" class="flex-1">
                     <button type="submit" class="btn btn-outline">Search</button>
                 </form>
             </div>
@@ -73,7 +73,7 @@
                     {% for entry in lines %}
                     <div style="padding: 6px 16px; border-bottom: 1px solid var(--border); font-family: monospace; font-size: 0.8rem; {% if entry.level == 'error' %}background: rgba(220,38,38,0.05);{% elseif entry.level == 'warning' %}background: rgba(245,158,11,0.05);{% endif %}">
                         {% if entry.timestamp %}
-                            <span style="color: var(--text-secondary);">[{{ entry.timestamp }}]</span>
+                            <span class="text-secondary">[{{ entry.timestamp }}]</span>
                         {% endif %}
                         <span style="{% if entry.level == 'error' %}color: var(--zui-error-600);{% elseif entry.level == 'warning' %}color: var(--zui-warning-600);{% elseif entry.level == 'trace' %}color: var(--text-secondary);{% endif %}">{{ entry.content }}</span>
                     </div>

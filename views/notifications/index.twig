@@ -5,14 +5,14 @@
 {% block content %}
 <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--sp-6);">
     <div>
-        <h1 style="margin: 0;">Notifications</h1>
+        <h1 class="p-0">Notifications</h1>
         {% if unreadCount > 0 %}
         <p style="color: var(--text-secondary); margin: var(--sp-1) 0 0;">{{ unreadCount }} unread</p>
         {% endif %}
     </div>
-    <div style="display: flex; gap: var(--sp-2);">
+    <div class="flex gap-2">
         {% if unreadCount > 0 %}
-        <form method="POST" action="{{ admin_url('notifications/read-all') }}" style="margin: 0;">
+        <form method="POST" action="{{ admin_url('notifications/read-all') }}" class="p-0">
             <input type="hidden" name="_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-outline btn-sm">Mark all as read</button>
         </form>

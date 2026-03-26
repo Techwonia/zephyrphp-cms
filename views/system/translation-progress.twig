@@ -49,7 +49,7 @@
 {% if hasMissing %}
 <div class="card">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">Missing Translations</h3></div>
-    <div class="card-body" style="padding: 0;">
+    <div class="card-body" class="p-0">
         {% for locale, groups in missing %}
             {% if groups|length > 0 %}
             <details style="border-bottom: 1px solid var(--border);">
@@ -63,7 +63,7 @@
                 </summary>
                 <div style="padding: 0 var(--sp-4) var(--sp-4);">
                     {% for group, keys in groups %}
-                    <div style="margin-bottom: var(--sp-3);">
+                    <div class="mb-3">
                         <strong>{{ group }}</strong> ({{ keys|length }} missing)
                         <div style="margin-top: var(--sp-1);">
                             {% for key in keys %}

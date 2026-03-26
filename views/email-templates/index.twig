@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--sp-6);">
-    <h1 style="margin: 0;">Email Templates</h1>
+    <h1 class="p-0">Email Templates</h1>
 </div>
 
 <div class="card">
@@ -14,24 +14,24 @@
                 <th>Name</th>
                 <th>Slug</th>
                 <th>Subject</th>
-                <th style="text-align: center;">Active</th>
-                <th style="text-align: right;">Actions</th>
+                <th class="text-center">Active</th>
+                <th class="text-right">Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for template in templates %}
             <tr>
-                <td style="font-weight: 500;">{{ template.getName() }}</td>
+                <td class="font-medium">{{ template.getName() }}</td>
                 <td><code style="font-size: var(--text-xs); background: var(--bg-subdued); padding: 2px 6px; border-radius: var(--radius-sm);">{{ template.getSlug() }}</code></td>
                 <td style="color: var(--text-secondary); font-size: var(--text-sm);">{{ template.getSubject()|length > 50 ? template.getSubject()|slice(0, 50) ~ '...' : template.getSubject() }}</td>
-                <td style="text-align: center;">
+                <td class="text-center">
                     {% if template.isActive() %}
                         <span class="badge badge-success">Active</span>
                     {% else %}
                         <span class="badge badge-default">Inactive</span>
                     {% endif %}
                 </td>
-                <td style="text-align: right;">
+                <td class="text-right">
                     <a href="{{ admin_url('email-templates/' ~ template.getId()) }}" class="btn btn-outline btn-sm">Edit</a>
                     <a href="{{ admin_url('email-templates/' ~ template.getId() ~ '/preview') }}" target="_blank" class="btn btn-outline btn-sm">Preview</a>
                     <button onclick="testSend({{ template.getId() }})" class="btn btn-outline btn-sm">Test Send</button>

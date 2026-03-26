@@ -7,15 +7,15 @@
     <a href="{{ admin_url() }}">Dashboard</a> <svg class="breadcrumb-sep" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg> System / Translations
 </div>
 
-<div class="page-header" style="display: flex; align-items: center; justify-content: space-between;">
+<div class="page-header" class="flex items-center justify-between">
     <h1>Translation Manager</h1>
-    <div style="display: flex; gap: var(--sp-2);">
+    <div class="flex gap-2">
         <a href="{{ admin_url('system/translations/progress') }}" class="btn btn-outline btn-sm">Translation Progress</a>
     </div>
 </div>
 
 {# Locale & Group Selector #}
-<div class="card" style="margin-bottom: var(--sp-5);">
+<div class="card" class="mb-5">
     <div class="card-body">
         <form method="GET" action="{{ admin_url('system/translations') }}" style="display: flex; gap: var(--sp-3); align-items: flex-end; flex-wrap: wrap;">
             <div>
@@ -48,7 +48,7 @@
             </div>
             <div>
                 <label class="form-label">Search</label>
-                <div style="display: flex; gap: var(--sp-2);">
+                <div class="flex gap-2">
                     <input type="text" name="search" class="form-control" value="{{ search }}" placeholder="Search keys or values...">
                     <button type="submit" class="btn btn-outline btn-sm">Filter</button>
                 </div>
@@ -107,11 +107,11 @@
     <input type="hidden" name="locale" value="{{ selectedLocale }}">
     <input type="hidden" name="group" value="{{ selectedGroup }}">
 
-    <div class="card" style="margin-bottom: var(--sp-4);">
+    <div class="card" class="mb-4">
         <div class="card-header">
             <h3 style="margin:0; font-size:1rem;">{{ selectedGroup }} ({{ selectedLocale }}) — {{ translations|length }} keys</h3>
         </div>
-        <div class="card-body" style="padding: 0;">
+        <div class="card-body" class="p-0">
             {% if translations|length > 0 %}
             <div class="table-responsive">
                 <table class="data-table">
@@ -165,7 +165,7 @@
     </div>
 
     {% if translations|length > 0 %}
-    <div style="margin-bottom: var(--sp-5);">
+    <div class="mb-5">
         <button type="submit" class="btn btn-primary">Save Translations</button>
     </div>
     {% endif %}
@@ -179,11 +179,11 @@
             {{ csrf_field() | raw }}
             <input type="hidden" name="locale" value="{{ selectedLocale }}">
             <input type="hidden" name="group" value="{{ selectedGroup }}">
-            <div style="flex: 1;">
+            <div class="flex-1">
                 <label class="form-label">Key</label>
                 <input type="text" name="new_key" class="form-control" placeholder="e.g. welcome_message" required>
             </div>
-            <div style="flex: 1;">
+            <div class="flex-1">
                 <label class="form-label">Value</label>
                 <input type="text" name="new_value" class="form-control" placeholder="Translation value...">
             </div>
@@ -207,7 +207,7 @@
 {# Import Modal #}
 <div id="importModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; align-items: center; justify-content: center;">
     <div class="card" style="max-width: 450px; width: 100%;">
-        <div class="card-header" style="display: flex; align-items: center; justify-content: space-between;">
+        <div class="card-header" class="flex items-center justify-between">
             <h3 style="margin: 0; font-size: 1rem;">Import Translations</h3>
             <button type="button" onclick="document.getElementById('importModal').style.display='none'" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-secondary);">&times;</button>
         </div>
@@ -216,7 +216,7 @@
                 {{ csrf_field() | raw }}
                 <input type="hidden" name="locale" value="{{ selectedLocale }}">
 
-                <div style="margin-bottom: var(--sp-4);">
+                <div class="mb-4">
                     <label class="form-label">File (JSON or CSV)</label>
                     <input type="file" name="file" class="form-control" accept=".json,.csv" required>
                     <span style="font-size: 0.75rem; color: var(--text-secondary);">
@@ -225,7 +225,7 @@
                     </span>
                 </div>
 
-                <div style="margin-bottom: var(--sp-4);">
+                <div class="mb-4">
                     <label class="form-label">Import Mode</label>
                     <select name="mode" class="form-control">
                         <option value="merge">Merge (keep existing, add/update new)</option>

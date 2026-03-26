@@ -87,7 +87,7 @@
     <div class="card">
         <div class="card-header"><h3 style="margin:0; font-size:1rem;">Memory Usage</h3></div>
         <div class="card-body">
-            <div style="margin-bottom: var(--sp-3);">
+            <div class="mb-3">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
                     <span>Used</span>
                     <span id="memory-used-label">{{ memory.current }} / {{ memory.limit }} ({{ memory.percentage }}%)</span>
@@ -98,9 +98,9 @@
             </div>
             <table class="data-table">
                 <tbody>
-                    <tr><td style="font-weight:600;">Current Usage</td><td id="memory-current">{{ memory.current }}</td></tr>
-                    <tr><td style="font-weight:600;">Peak Usage</td><td>{{ memory.peak }}</td></tr>
-                    <tr><td style="font-weight:600;">Memory Limit</td><td>{{ memory.limit }}</td></tr>
+                    <tr><td class="font-semibold">Current Usage</td><td id="memory-current">{{ memory.current }}</td></tr>
+                    <tr><td class="font-semibold">Peak Usage</td><td>{{ memory.peak }}</td></tr>
+                    <tr><td class="font-semibold">Memory Limit</td><td>{{ memory.limit }}</td></tr>
                 </tbody>
             </table>
         </div>
@@ -109,7 +109,7 @@
     <div class="card">
         <div class="card-header"><h3 style="margin:0; font-size:1rem;">Disk Usage</h3></div>
         <div class="card-body">
-            <div style="margin-bottom: var(--sp-3);">
+            <div class="mb-3">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
                     <span>Used</span>
                     <span id="disk-used-label">{{ disk.used }} / {{ disk.total }} ({{ disk.percentage }}%)</span>
@@ -120,9 +120,9 @@
             </div>
             <table class="data-table">
                 <tbody>
-                    <tr><td style="font-weight:600;">Total Space</td><td>{{ disk.total }}</td></tr>
-                    <tr><td style="font-weight:600;">Used Space</td><td id="disk-used">{{ disk.used }}</td></tr>
-                    <tr><td style="font-weight:600;">Free Space</td><td id="disk-free">{{ disk.free }}</td></tr>
+                    <tr><td class="font-semibold">Total Space</td><td>{{ disk.total }}</td></tr>
+                    <tr><td class="font-semibold">Used Space</td><td id="disk-used">{{ disk.used }}</td></tr>
+                    <tr><td class="font-semibold">Free Space</td><td id="disk-free">{{ disk.free }}</td></tr>
                 </tbody>
             </table>
         </div>
@@ -130,7 +130,7 @@
 </div>
 
 {# PHP Configuration #}
-<div class="card" style="margin-bottom: var(--sp-5);">
+<div class="card" class="mb-5">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">PHP Configuration</h3></div>
     <div class="card-body">
         <table class="data-table">
@@ -148,15 +148,15 @@
 
 {# Database Stats #}
 {% if database.connected %}
-<div class="card" style="margin-bottom: var(--sp-5);">
+<div class="card" class="mb-5">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">Database</h3></div>
     <div class="card-body">
         <table class="data-table">
             <tbody>
                 <tr><td style="width:200px; font-weight:600;">Tables</td><td>{{ database.table_count }}</td></tr>
-                <tr><td style="font-weight:600;">Database Size</td><td>{{ database.size }}</td></tr>
+                <tr><td class="font-semibold">Database Size</td><td>{{ database.size }}</td></tr>
                 {% if database.slow_queries is not null %}
-                <tr><td style="font-weight:600;">Slow Queries</td><td>{{ database.slow_queries }}</td></tr>
+                <tr><td class="font-semibold">Slow Queries</td><td>{{ database.slow_queries }}</td></tr>
                 {% endif %}
             </tbody>
         </table>
@@ -165,7 +165,7 @@
 {% endif %}
 
 {# Request Stats #}
-<div class="card" style="margin-bottom: var(--sp-5);">
+<div class="card" class="mb-5">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">Request Statistics</h3></div>
     <div class="card-body">
         <div style="font-size: 1.5rem; font-weight: 700;" id="request-count">{{ requestCount }}</div>
@@ -175,13 +175,13 @@
 
 {# OPcache #}
 {% if opcache %}
-<div class="card" style="margin-bottom: var(--sp-5);">
+<div class="card" class="mb-5">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">OPcache</h3></div>
     <div class="card-body">
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--sp-4); margin-bottom: var(--sp-4);">
             <div>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                    <span style="font-weight: 600;">Hit Rate</span>
+                    <span class="font-semibold">Hit Rate</span>
                     <span>{{ opcache.hit_rate }}%</span>
                 </div>
                 <div style="background: var(--bg-subdued); border-radius: 4px; height: 24px; overflow: hidden;">
@@ -190,14 +190,14 @@
             </div>
             <div>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                    <span style="font-weight: 600;">Memory Usage</span>
+                    <span class="font-semibold">Memory Usage</span>
                     <span>{{ opcache.memory_percentage }}%</span>
                 </div>
                 <div style="background: var(--bg-subdued); border-radius: 4px; height: 24px; overflow: hidden;">
                     <div style="background: {% if opcache.memory_percentage > 90 %}var(--zui-error-600){% elseif opcache.memory_percentage > 70 %}var(--zui-warning-600){% else %}var(--zui-primary-500){% endif %}; height: 100%; width: {{ opcache.memory_percentage }}%;"></div>
                 </div>
             </div>
-            <div style="text-align: center;">
+            <div class="text-center">
                 <div style="font-size: 1.5rem; font-weight: 700;">{{ opcache.cached_scripts }}</div>
                 <div style="color: var(--text-secondary); font-size: 0.85rem;">Cached Scripts</div>
             </div>
@@ -205,8 +205,8 @@
         <table class="data-table">
             <tbody>
                 <tr><td style="width:200px; font-weight:600;">Memory Used</td><td>{{ opcache.memory_usage }} / {{ opcache.memory_total }}</td></tr>
-                <tr><td style="font-weight:600;">Cache Hits</td><td>{{ opcache.hits }}</td></tr>
-                <tr><td style="font-weight:600;">Cache Misses</td><td>{{ opcache.misses }}</td></tr>
+                <tr><td class="font-semibold">Cache Hits</td><td>{{ opcache.hits }}</td></tr>
+                <tr><td class="font-semibold">Cache Misses</td><td>{{ opcache.misses }}</td></tr>
             </tbody>
         </table>
     </div>
@@ -214,7 +214,7 @@
 {% endif %}
 
 {# Loaded Extensions #}
-<div class="card" style="margin-bottom: var(--sp-5);">
+<div class="card" class="mb-5">
     <div class="card-header"><h3 style="margin:0; font-size:1rem;">Loaded Extensions ({{ extensions|length }})</h3></div>
     <div class="card-body">
         <div style="display: flex; flex-wrap: wrap; gap: var(--sp-2);">

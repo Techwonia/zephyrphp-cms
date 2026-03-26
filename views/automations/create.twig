@@ -70,26 +70,26 @@
             <hr style="margin: var(--sp-4) 0;">
 
             {# --- Conditions --- #}
-            <h3 style="margin-bottom: var(--sp-3);">Conditions</h3>
-            <p class="text-secondary text-sm" style="margin-bottom: var(--sp-3);">
+            <h3 class="mb-3">Conditions</h3>
+            <p class="text-secondary text-sm" class="mb-3">
                 All conditions must match for the rule to apply (AND logic). Leave empty to match all entries.
             </p>
 
             <div id="conditionsContainer"></div>
-            <button type="button" class="btn btn-outline btn-sm" onclick="addCondition()" style="margin-bottom: var(--sp-4);">
+            <button type="button" class="btn btn-outline btn-sm" onclick="addCondition()" class="mb-4">
                 + Add Condition
             </button>
 
             <hr style="margin: var(--sp-4) 0;">
 
             {# --- Actions --- #}
-            <h3 style="margin-bottom: var(--sp-3);">Actions</h3>
-            <p class="text-secondary text-sm" style="margin-bottom: var(--sp-3);">
+            <h3 class="mb-3">Actions</h3>
+            <p class="text-secondary text-sm" class="mb-3">
                 Actions to perform on matching entries.
             </p>
 
             <div id="actionsContainer"></div>
-            <button type="button" class="btn btn-outline btn-sm" onclick="addAction()" style="margin-bottom: var(--sp-4);">
+            <button type="button" class="btn btn-outline btn-sm" onclick="addAction()" class="mb-4">
                 + Add Action
             </button>
 
@@ -130,7 +130,7 @@ function addCondition(field, operator, value) {
     row.className = 'condition-row';
     row.style.cssText = 'display: flex; gap: var(--sp-2); margin-bottom: var(--sp-2); align-items: center;';
 
-    var fieldInput = '<input type="text" name="condition_field[]" class="form-control" placeholder="Field name (e.g. created_at, status)" value="' + escapeAttr(field) + '" style="flex: 1;">';
+    var fieldInput = '<input type="text" name="condition_field[]" class="form-control" placeholder="Field name (e.g. created_at, status)" value="' + escapeAttr(field) + '" class="flex-1">';
 
     var opSelect = '<select name="condition_operator[]" class="form-control" style="flex: 0 0 150px;">';
     for (var key in operators) {
@@ -139,7 +139,7 @@ function addCondition(field, operator, value) {
     }
     opSelect += '</select>';
 
-    var valueInput = '<input type="text" name="condition_value[]" class="form-control" placeholder="Value (e.g. 365 days, published)" value="' + escapeAttr(value) + '" style="flex: 1;">';
+    var valueInput = '<input type="text" name="condition_value[]" class="form-control" placeholder="Value (e.g. 365 days, published)" value="' + escapeAttr(value) + '" class="flex-1">';
 
     var removeBtn = '<button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.remove();" style="flex: 0 0 auto;">X</button>';
 

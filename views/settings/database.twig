@@ -18,11 +18,11 @@
 </div>
 
 {% if status.connected %}
-<div class="alert alert-success" style="margin-bottom: var(--sp-4);">
+<div class="alert alert-success" class="mb-4">
     <strong>Status:</strong> {{ status.message }}
 </div>
 {% else %}
-<div class="alert alert-error" style="margin-bottom: var(--sp-4);">
+<div class="alert alert-error" class="mb-4">
     <strong>Status:</strong> {{ status.message }}
 </div>
 {% endif %}
@@ -32,7 +32,7 @@
         <form method="POST" action="{{ admin_url('settings/database') }}" id="db-settings-form">
             {{ csrf_field() | raw }}
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4);">
+            <div class="grid grid-2 gap-4">
 
                 {# Left Column #}
                 <div>
@@ -73,7 +73,7 @@
                         <label for="DB_DATABASE">Database Name</label>
                         <div style="display: flex; gap: 8px;">
                             <input type="text" id="DB_DATABASE" name="DB_DATABASE" class="form-control"
-                                   value="{{ settings.DB_DATABASE }}" placeholder="my_database" style="flex: 1;">
+                                   value="{{ settings.DB_DATABASE }}" placeholder="my_database" class="flex-1">
                             <button type="button" class="btn btn-outline" id="browse-db-btn" title="Browse databases from server">
                                 Browse
                             </button>

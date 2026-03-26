@@ -16,11 +16,11 @@
 </div>
 
 {% if flash('success') %}
-<div class="alert alert-success" style="margin-bottom: var(--sp-4);">{{ flash('success') }}</div>
+<div class="alert alert-success" class="mb-4">{{ flash('success') }}</div>
 {% endif %}
 {% if flash('errors') %}
 {% for error in flash('errors') %}
-<div class="alert alert-danger" style="margin-bottom: var(--sp-4);">{{ error }}</div>
+<div class="alert alert-danger" class="mb-4">{{ error }}</div>
 {% endfor %}
 {% endif %}
 
@@ -50,7 +50,7 @@
             {{ csrf_field() | raw }}
 
             {% for key, field in schema %}
-            <div class="form-group" style="margin-bottom: var(--sp-4);">
+            <div class="form-group" class="mb-4">
                 <label class="form-label" for="setting_{{ key }}">{{ field.label|default(key|title) }}</label>
 
                 {% if field.type|default('text') == 'textarea' %}
