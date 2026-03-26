@@ -310,6 +310,27 @@ img, svg { display: block; max-width: 100%; }
   color: var(--text);
 }
 
+/* Visit Site link */
+.topbar-visit-site {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 var(--sp-3);
+  height: 28px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font-sans);
+  color: var(--zui-gray-400);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  transition: color 120ms ease, background 120ms ease, border-color 120ms ease;
+}
+
+.topbar-visit-site:hover { color: #FFF; background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.1); text-decoration: none; }
+.topbar-visit-site svg { flex-shrink: 0; }
+
 /* Right section */
 .topbar-right {
   display: flex;
