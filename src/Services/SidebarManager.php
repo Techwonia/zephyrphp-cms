@@ -247,7 +247,7 @@ class SidebarManager
         ]);
 
         // ── Admin (users, roles, permissions, keys) ──
-        $this->addSection('admin', 'Admin', 30, 'shield', admin_url('users'));
+        $this->addSection('admin', 'Admin', 30, 'users', admin_url('users'));
         $this->addItem('admin', [
             'id' => 'users',
             'label' => 'Users',
