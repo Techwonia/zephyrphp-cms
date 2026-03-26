@@ -433,6 +433,11 @@ Route::group(['prefix' => '/' . admin_path(), 'middleware' => [\ZephyrPHP\Middle
     Route::get('/system/monitor', [SystemMonitorController::class, 'index']);
     Route::get('/system/monitor/stats', [SystemMonitorController::class, 'stats']);
 
+    // ZephyrUI Component Showcase
+    Route::get('/system/design-system', function () {
+        return view('cms::system/design-system');
+    });
+
     // Global Search
     Route::get('/search', [SearchController::class, 'search']);
 

@@ -483,6 +483,15 @@ class CmsServiceProvider
             'permission' => 'settings.view',
         ]);
 
+        $sidebar->addItem('system', [
+            'id' => 'system-design',
+            'label' => 'Design System',
+            'url' => admin_url('system/design-system'),
+            'icon' => 'palette',
+            'match' => 'exact:' . admin_url('system/design-system'),
+            'permission' => 'settings.view',
+        ]);
+
         // Register built-in dashboard widgets
         DashboardManager::getInstance()->registerBuiltInWidgets();
     }
