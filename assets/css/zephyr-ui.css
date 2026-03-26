@@ -79,33 +79,33 @@
   --border-focus:     var(--zui-primary-500);
   --ring-focus:       rgba(14, 165, 233, 0.2);
 
-  /* — Dark chrome (sidebar/topbar) — */
-  --chrome-bg:        var(--zui-gray-950);
-  --chrome-surface:   var(--zui-gray-900);
-  --chrome-hover:     rgba(255,255,255,0.06);
-  --chrome-active:    rgba(14, 165, 233, 0.12);
-  --chrome-text:      var(--zui-gray-400);
-  --chrome-text-active: var(--zui-primary-400);
-  --chrome-border:    rgba(255,255,255,0.06);
+  /* — Dark chrome (Fluent 2 inspired — black activity bar, dark sidebar) — */
+  --chrome-bg:        #000000;
+  --chrome-surface:   #1A1A2E;
+  --chrome-hover:     rgba(255,255,255,0.07);
+  --chrome-active:    rgba(14, 165, 233, 0.15);
+  --chrome-text:      rgba(255,255,255,0.55);
+  --chrome-text-active: #38BDF8;
+  --chrome-border:    rgba(255,255,255,0.05);
 
-  /* — Spacing (4px base grid) — */
+  /* — Spacing (4px base grid — Fluent 2) — */
   --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
   --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px;
   --sp-12: 48px; --sp-16: 64px;
 
-  /* — Radius — */
-  --radius-sm: 6px;
-  --radius: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 18px;
+  /* — Radius (Fluent 2: 4px default, 8px large) — */
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
   --radius-full: 9999px;
 
-  /* — Shadows (softer, more diffuse) — */
-  --shadow-xs:  0 1px 2px rgba(0,0,0,0.04);
-  --shadow-sm:  0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
-  --shadow:     0 4px 12px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.03);
-  --shadow-md:  0 8px 24px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.03);
-  --shadow-lg:  0 16px 40px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+  /* — Shadows (Fluent 2: key + ambient combination) — */
+  --shadow-xs:  0 0.5px 1px rgba(0,0,0,0.05), 0 0 0.5px rgba(0,0,0,0.04);
+  --shadow-sm:  0 1px 2px rgba(0,0,0,0.06), 0 0 1px rgba(0,0,0,0.04);
+  --shadow:     0 2px 4px rgba(0,0,0,0.06), 0 0 2px rgba(0,0,0,0.04);
+  --shadow-md:  0 4px 8px rgba(0,0,0,0.08), 0 0 2px rgba(0,0,0,0.04);
+  --shadow-lg:  0 8px 16px rgba(0,0,0,0.1), 0 0 4px rgba(0,0,0,0.05);
 
   /* — Typography — */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -149,8 +149,8 @@
   --duration-slow: 250ms;
 
   /* — Layout dimensions — */
-  --topbar-h: 52px;
-  --activity-w: 52px;
+  --topbar-h: 48px;
+  --activity-w: 48px;
   --sidebar-w: 240px;
   --content-max: 1200px;
 }
@@ -452,14 +452,14 @@ img, svg { display: block; max-width: 100%; }
   min-height: 100vh;
 }
 
-/* — Activity Bar — */
+/* — Activity Bar (pure black) — */
 .cms-activity-bar {
   position: fixed;
   left: 0;
   top: var(--topbar-h);
   bottom: 0;
   width: var(--activity-w);
-  background: var(--chrome-surface);
+  background: var(--chrome-bg);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -475,7 +475,7 @@ img, svg { display: block; max-width: 100%; }
 .ab-bottom { margin-top: auto; display: flex; flex-direction: column; gap: var(--sp-1); width: 100%; align-items: center; padding-bottom: var(--sp-2); }
 
 .ab-item {
-  width: 38px; height: 38px;
+  width: 36px; height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -491,7 +491,17 @@ img, svg { display: block; max-width: 100%; }
 
 .ab-item svg { width: 18px; height: 18px; stroke-width: 1.75; }
 .ab-item:hover { color: #FFF; background: var(--chrome-hover); text-decoration: none; }
-.ab-item.active { color: var(--chrome-text-active); background: var(--chrome-active); }
+.ab-item.active { color: var(--chrome-text-active); background: var(--chrome-active); position: relative; }
+.ab-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  background: var(--zui-primary-400);
+  border-radius: 0 3px 3px 0;
+}
 
 /* Tooltip */
 .ab-item::after {
@@ -632,7 +642,17 @@ img, svg { display: block; max-width: 100%; }
 .sidebar-nav-icon { display: flex; align-items: center; flex-shrink: 0; }
 .sidebar-nav-icon svg, .sidebar-nav-item svg { width: 16px; height: 16px; flex-shrink: 0; stroke-width: 1.75; }
 .sidebar-nav-item:hover { color: #FFF; background: var(--chrome-hover); text-decoration: none; }
-.sidebar-nav-item.active { color: var(--chrome-text-active); background: var(--chrome-active); font-weight: 500; }
+.sidebar-nav-item.active { color: var(--chrome-text-active); background: var(--chrome-active); font-weight: 500; position: relative; }
+.sidebar-nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  background: var(--zui-primary-400);
+  border-radius: 0 3px 3px 0;
+}
 
 .sidebar-nav-item .badge-count {
   margin-left: auto;
@@ -779,8 +799,8 @@ img, svg { display: block; max-width: 100%; }
   align-items: center;
   justify-content: center;
   gap: var(--sp-2);
-  height: 38px;
-  padding: 0 var(--sp-5);
+  height: 32px;
+  padding: 0 var(--sp-4);
   font-size: var(--text-sm);
   font-weight: 500;
   font-family: var(--font-sans);
@@ -841,15 +861,15 @@ img, svg { display: block; max-width: 100%; }
 .btn-soft:hover { background: var(--zui-primary-100); }
 
 /* Sizes */
-.btn-sm { height: 32px; padding: 0 var(--sp-3); font-size: var(--text-xs); border-radius: var(--radius-sm); }
-.btn-lg { height: 44px; padding: 0 var(--sp-6); font-size: var(--text-md); }
+.btn-sm { height: 28px; padding: 0 var(--sp-3); font-size: var(--text-xs); }
+.btn-lg { height: 40px; padding: 0 var(--sp-6); font-size: var(--text-md); }
 
 /* Icon button */
 .btn-icon {
-  width: 38px; height: 38px;
+  width: 32px; height: 32px;
   padding: 0;
 }
-.btn-icon.btn-sm { width: 32px; height: 32px; }
+.btn-icon.btn-sm { width: 28px; height: 28px; }
 
 /* ============================================================
    7. CARDS
@@ -967,8 +987,8 @@ img, svg { display: block; max-width: 100%; }
 
 .form-control {
   width: 100%;
-  height: 40px;
-  padding: 0 var(--sp-4);
+  height: 32px;
+  padding: 0 var(--sp-3);
   font-size: var(--text-base);
   font-family: var(--font-sans);
   color: var(--text-heading);
