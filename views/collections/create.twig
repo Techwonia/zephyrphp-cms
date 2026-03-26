@@ -1,7 +1,33 @@
 {% extends "@cms/layouts/cms.twig" %}
 
 {% block title %}Create Collection{% endblock %}
-{% block styles %}<link rel="stylesheet" href="/cms-assets/css/collections-create.css">{% endblock %}
+{% block styles %}
+<style nonce="{{ csp_nonce() }}">
+.preview-collection-name{display:flex;align-items:center;gap:var(--sp-3);margin-bottom:var(--sp-4);padding-bottom:var(--sp-4);border-bottom:1px solid var(--zui-gray-100)}
+.preview-collection-icon{width:36px;height:36px;border-radius:var(--radius);background:var(--zui-primary-50);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--zui-primary-500)}
+.preview-collection-icon svg{width:18px;height:18px}
+.preview-name-text{font-size:var(--text-base);font-weight:600;color:var(--text-heading);word-break:break-word}
+.preview-name-placeholder{color:var(--text-disabled);font-style:italic}
+.preview-meta{margin-bottom:var(--sp-4)}
+.preview-meta-row{display:flex;justify-content:space-between;align-items:center;padding:var(--sp-2) 0;font-size:var(--text-xs)}
+.preview-meta-label{color:var(--text-secondary)}
+.preview-meta-value{font-family:var(--font-mono);font-size:11px;color:var(--text-heading);background:var(--zui-gray-50);padding:2px 8px;border-radius:var(--radius-sm);border:1px solid var(--zui-gray-100)}
+.preview-section-label{font-size:10px;font-weight:600;color:var(--text-secondary);margin-bottom:var(--sp-2);text-transform:uppercase;letter-spacing:0.05em}
+.preview-features{display:flex;flex-wrap:wrap;gap:var(--sp-1);margin-bottom:var(--sp-4);min-height:24px}
+.preview-feature-badge{display:inline-flex;align-items:center;font-size:11px;padding:2px 8px;border-radius:var(--radius-full);font-weight:500}
+.preview-feature-badge.badge-api{background:rgba(37,99,235,0.08);color:#2563EB}
+.preview-feature-badge.badge-publish{background:rgba(22,163,74,0.08);color:#16A34A}
+.preview-feature-badge.badge-slug{background:rgba(217,119,6,0.08);color:#D97706}
+.preview-feature-badge.badge-seo{background:rgba(147,51,234,0.08);color:#9333EA}
+.preview-feature-badge.badge-i18n{background:rgba(14,165,233,0.08);color:#0EA5E9}
+.preview-no-features{font-size:var(--text-xs);color:var(--text-disabled);font-style:italic}
+.preview-fields{list-style:none;margin:0;padding:0}
+.preview-fields li{display:flex;align-items:center;gap:var(--sp-2);padding:3px 0;font-size:var(--text-xs)}
+.preview-fields li svg{width:12px;height:12px;color:var(--text-disabled);flex-shrink:0}
+.preview-field-name{font-family:var(--font-mono);font-size:11px;color:var(--text-heading)}
+.preview-field-type{margin-left:auto;font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:0.03em}
+</style>
+{% endblock %}
 
 {% block content %}
 
@@ -23,9 +49,9 @@
 <form method="POST" action="{{ admin_url('collections') }}" id="createForm">
     {{ csrf_field() | raw }}
 
-    <div class="create-layout">
+    <div class="form-layout-2col">
         {# ── Left: Form Panel ── #}
-        <div class="create-form-panel">
+        <div>
 
             {# Section: Basic Information #}
             <div class="form-section">
@@ -67,21 +93,21 @@
 
                 <div class="fg">
                     <label>Primary Key Type</label>
-                    <div class="pk-options">
-                        <label class="pk-option">
+                    <div class="radio-card-group">
+                        <label class="radio-card">
                             <input type="radio" name="primary_key_type" value="integer" checked>
-                            <div class="pk-option-card">
-                                <svg class="pk-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
-                                <span class="pk-name">Auto-increment</span>
-                                <span class="pk-desc">Sequential integer IDs (1, 2, 3...)</span>
+                            <div class="radio-card-body">
+                                <svg class="radio-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
+                                <span class="radio-card-title">Auto-increment</span>
+                                <span class="radio-card-desc">Sequential integer IDs (1, 2, 3...)</span>
                             </div>
                         </label>
-                        <label class="pk-option">
+                        <label class="radio-card">
                             <input type="radio" name="primary_key_type" value="uuid">
-                            <div class="pk-option-card">
-                                <svg class="pk-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                                <span class="pk-name">UUID</span>
-                                <span class="pk-desc">Universally unique identifiers (CHAR 36)</span>
+                            <div class="radio-card-body">
+                                <svg class="radio-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                                <span class="radio-card-title">UUID</span>
+                                <span class="radio-card-desc">Universally unique identifiers (CHAR 36)</span>
                             </div>
                         </label>
                     </div>
@@ -184,7 +210,7 @@
                 </div>
 
                 {# Submit #}
-                <div class="create-actions">
+                <div class="form-actions">
                     <button type="submit" class="btn btn-primary">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                         Create Collection
@@ -196,10 +222,10 @@
         </div>
 
         {# ── Right: Preview Panel ── #}
-        <div class="create-preview-wrapper">
+        <div class="preview-panel">
             <div class="preview-card">
-                <div class="preview-header">Preview</div>
-                <div class="preview-body">
+                <div class="preview-card-header">Preview</div>
+                <div class="preview-card-body">
 
                     <div class="preview-collection-name">
                         <div class="preview-collection-icon">

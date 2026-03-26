@@ -1190,6 +1190,239 @@ input[type="radio"] {
 }
 
 /* ============================================================
+   8b. FORM SECTIONS (card-wrapped form groups)
+   ============================================================ */
+
+.form-section {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-6);
+}
+
+.form-section-title {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--text-heading);
+  margin: 0 0 var(--sp-1) 0;
+}
+
+.form-section-desc {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin: 0 0 var(--sp-5) 0;
+  line-height: 1.5;
+}
+
+/* Compact form group (alias) */
+.fg { margin-bottom: var(--sp-5); }
+.fg:last-child { margin-bottom: 0; }
+.fg label {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-heading);
+  margin-bottom: var(--sp-1);
+}
+.fg label .required { color: var(--zui-error-500); margin-left: 2px; }
+.fg .form-hint code {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--bg-subdued);
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+.fg .form-error {
+  font-size: var(--text-xs);
+  color: var(--zui-error-600);
+  margin-top: var(--sp-1);
+}
+
+/* Form actions (submit row inside a form section) */
+.form-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding-top: var(--sp-5);
+  border-top: 1px solid var(--zui-gray-100);
+  margin-top: var(--sp-2);
+}
+
+/* Two-column form layout */
+.form-layout-2col {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: var(--sp-5);
+  align-items: start;
+}
+.form-layout-2col > :first-child {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+@media (max-width: 900px) {
+  .form-layout-2col { grid-template-columns: 1fr; }
+}
+
+/* ============================================================
+   8c. TOGGLE ROWS (settings-style feature toggles)
+   ============================================================ */
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) 0;
+  border-bottom: 1px solid var(--zui-gray-100);
+}
+.toggle-row:first-child { padding-top: 0; }
+.toggle-row:last-of-type { border-bottom: none; padding-bottom: 0; }
+
+.toggle-icon {
+  width: 34px; height: 34px;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.toggle-icon svg { width: 16px; height: 16px; }
+
+/* Toggle icon color variants */
+.toggle-icon.icon-api       { background: rgba(37, 99, 235, 0.08); color: #2563EB; }
+.toggle-icon.icon-publish   { background: rgba(22, 163, 74, 0.08); color: #16A34A; }
+.toggle-icon.icon-slug      { background: rgba(217, 119, 6, 0.08); color: #D97706; }
+.toggle-icon.icon-seo       { background: rgba(147, 51, 234, 0.08); color: #9333EA; }
+.toggle-icon.icon-i18n      { background: rgba(14, 165, 233, 0.08); color: #0EA5E9; }
+.toggle-icon.icon-hierarchy { background: rgba(120, 53, 15, 0.08); color: #78350F; }
+.toggle-icon.icon-primary   { background: var(--zui-primary-50); color: var(--zui-primary-600); }
+.toggle-icon.icon-success   { background: var(--zui-success-50); color: var(--zui-success-600); }
+.toggle-icon.icon-warning   { background: var(--zui-warning-50); color: var(--zui-warning-600); }
+.toggle-icon.icon-error     { background: var(--zui-error-50); color: var(--zui-error-600); }
+.toggle-icon.icon-info      { background: var(--zui-info-50); color: var(--zui-info-600); }
+
+.toggle-info { flex: 1; min-width: 0; }
+.toggle-name {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-heading);
+  line-height: 1.3;
+}
+.toggle-desc {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin-top: 1px;
+}
+
+/* Simple toggle switch (alternative to zui-toggle) */
+.toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.toggle input { display: none; }
+.toggle-track {
+  width: 36px; height: 20px;
+  background: var(--zui-gray-300);
+  border-radius: 10px;
+  transition: background 200ms ease;
+}
+.toggle input:checked + .toggle-track { background: var(--zui-primary-500); }
+.toggle-thumb {
+  position: absolute;
+  left: 2px; top: 50%;
+  transform: translateY(-50%);
+  width: 16px; height: 16px;
+  background: white;
+  border-radius: 50%;
+  transition: left 200ms ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+.toggle input:checked ~ .toggle-thumb { left: 18px; }
+
+/* ============================================================
+   8d. RADIO CARDS (selectable option cards)
+   ============================================================ */
+
+.radio-card-group {
+  display: flex;
+  gap: var(--sp-3);
+}
+
+.radio-card {
+  flex: 1;
+  position: relative;
+  cursor: pointer;
+}
+.radio-card input { position: absolute; opacity: 0; pointer-events: none; }
+.radio-card-body {
+  display: flex;
+  flex-direction: column;
+  padding: var(--sp-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+}
+.radio-card input:checked + .radio-card-body {
+  border-color: var(--zui-primary-400);
+  background: var(--zui-primary-50);
+  box-shadow: 0 0 0 1px var(--zui-primary-400);
+}
+.radio-card:hover .radio-card-body { border-color: var(--border-hover); }
+.radio-card-icon {
+  width: 24px; height: 24px;
+  color: var(--text-secondary);
+  margin-bottom: var(--sp-2);
+  transition: color 150ms ease;
+}
+.radio-card input:checked + .radio-card-body .radio-card-icon { color: var(--zui-primary-500); }
+.radio-card-title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-heading);
+  margin-bottom: 2px;
+}
+.radio-card-desc {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* ============================================================
+   8e. PREVIEW PANEL (sticky sidebar preview)
+   ============================================================ */
+
+.preview-panel {
+  position: sticky;
+  top: calc(var(--topbar-h) + var(--sp-4));
+  align-self: start;
+}
+
+.preview-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.preview-card-header {
+  padding: var(--sp-3) var(--sp-5);
+  background: var(--zui-gray-50);
+  border-bottom: 1px solid var(--zui-gray-100);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.preview-card-body { padding: var(--sp-5); }
+
+/* ============================================================
    9. TABLES
    ============================================================ */
 
