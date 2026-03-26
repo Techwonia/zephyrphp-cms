@@ -18,15 +18,15 @@
    2. DESIGN TOKENS (CSS Variables)
    ============================================================ */
 :root {
-  /* — Primary (Indigo/Violet) — Inspired by modern SaaS UIs — */
-  --zui-primary-50:  #F5F3FF;
-  --zui-primary-100: #EDE9FE;
-  --zui-primary-200: #DDD6FE;
-  --zui-primary-300: #C4B5FD;
-  --zui-primary-400: #A78BFA;
-  --zui-primary-500: #8B5CF6;
-  --zui-primary-600: #7C3AED;
-  --zui-primary-700: #6D28D9;
+  /* — Primary (Teal-Blue) — */
+  --zui-primary-50:  #F0F9FF;
+  --zui-primary-100: #E0F2FE;
+  --zui-primary-200: #BAE6FD;
+  --zui-primary-300: #7DD3FC;
+  --zui-primary-400: #38BDF8;
+  --zui-primary-500: #0EA5E9;
+  --zui-primary-600: #0284C7;
+  --zui-primary-700: #0369A1;
 
   /* — Neutral (Slate — cooler, more refined) — */
   --zui-gray-50:  #F8FAFC;
@@ -77,13 +77,13 @@
   --border:           var(--zui-gray-200);
   --border-hover:     var(--zui-gray-300);
   --border-focus:     var(--zui-primary-500);
-  --ring-focus:       rgba(139, 92, 246, 0.15);
+  --ring-focus:       rgba(14, 165, 233, 0.2);
 
   /* — Dark chrome (sidebar/topbar) — */
   --chrome-bg:        var(--zui-gray-950);
   --chrome-surface:   var(--zui-gray-900);
   --chrome-hover:     rgba(255,255,255,0.06);
-  --chrome-active:    rgba(139, 92, 246, 0.15);
+  --chrome-active:    rgba(14, 165, 233, 0.12);
   --chrome-text:      var(--zui-gray-400);
   --chrome-text-active: var(--zui-primary-400);
   --chrome-border:    rgba(255,255,255,0.06);
@@ -803,9 +803,9 @@ img, svg { display: block; max-width: 100%; }
   background: var(--zui-primary-500);
   color: #FFF;
   border-color: var(--zui-primary-500);
-  box-shadow: 0 1px 3px rgba(139, 92, 246, 0.3);
+  box-shadow: 0 1px 3px rgba(14, 165, 233, 0.3);
 }
-.btn-primary:hover { background: var(--zui-primary-600); border-color: var(--zui-primary-600); color: #FFF; box-shadow: 0 2px 6px rgba(139, 92, 246, 0.35); }
+.btn-primary:hover { background: var(--zui-primary-600); border-color: var(--zui-primary-600); color: #FFF; box-shadow: 0 2px 6px rgba(14, 165, 233, 0.35); }
 
 /* Secondary / Outline */
 .btn-outline {
