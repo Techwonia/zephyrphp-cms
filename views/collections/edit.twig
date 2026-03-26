@@ -208,7 +208,6 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
 
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">{% include '@cms/partials/sidebar-icon.twig' with {icon: 'file'} only %} Save General</button>
@@ -222,6 +221,7 @@
     <form id="main-settings-form-fields" method="POST" action="{{ admin_url('collections/' ~ collection.getSlug()) }}">
         {{ csrf_field() | raw }}
         <div class="form-section">
+            <div class="form-section-body">
 
                     {# System fields — collapsible #}
                     {% set systemFieldCount = 4 + (collection.hasSlug() ? 1 : 0) + (collection.isPublishable() ? 2 : 0) %}
@@ -418,7 +418,6 @@
                             Add Field
                         </button>
                     </div>
-                </div>
         </div>
     </form>
 </div>
@@ -428,6 +427,7 @@
     <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug()) }}">
         {{ csrf_field() | raw }}
         <div class="form-section">
+            <div class="form-section-body">
             <div class="form-group">
                 <label for="url_prefix">URL Prefix</label>
                 <input type="text" id="url_prefix" name="url_prefix" class="form-control"
@@ -460,6 +460,7 @@
 {# ===== ACCESS CONTROL TAB ===== #}
 <div class="tab-panel" data-tab-panel="permissions">
     <div class="form-section">
+            <div class="form-section-body">
         <p class="text-sm text-secondary mb-5">
             Override global entry permissions for this collection. When configured, only roles
             with explicitly granted actions can interact with entries. Leave unchecked to use global permissions.
@@ -533,6 +534,7 @@
 {# ===== WORKFLOW TAB ===== #}
 <div class="tab-panel" data-tab-panel="workflow">
     <div class="form-section">
+            <div class="form-section-body">
         <p class="text-sm text-secondary mb-5">
             Enable workflow to require entries to pass through approval stages before publishing.
             The entry's status field becomes the workflow stage name.
