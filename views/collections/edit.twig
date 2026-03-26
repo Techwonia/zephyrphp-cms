@@ -1,7 +1,14 @@
 {% extends "@cms/layouts/cms.twig" %}
 
 {% block title %}Edit {{ collection.getName() }}{% endblock %}
-{% block styles %}<link rel="stylesheet" href="/cms-assets/css/collections-edit.css">{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="/cms-assets/css/collections-edit.css">
+<style nonce="{{ csp_nonce() }}">
+/* Ensure tab panels work — debug override */
+.tab-panel { display: none !important; }
+.tab-panel.active { display: block !important; }
+</style>
+{% endblock %}
 
 {% block content %}
 
@@ -37,7 +44,7 @@
 </div>
 
 {# ===== GENERAL TAB ===== #}
-<div class="tab-panel active" data-tab-panel="general" style="display:block">
+<div class="tab-panel active" data-tab-panel="general">
     <form id="main-settings-form" method="POST" action="{{ admin_url('collections/' ~ collection.getSlug()) }}">
         {{ csrf_field() | raw }}
 
