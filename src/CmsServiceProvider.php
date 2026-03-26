@@ -159,7 +159,7 @@ class CmsServiceProvider
             // "+ New Collection" always shown as first item
             $sidebar->addItem('collections', [
                 'id' => 'collection-add',
-                'label' => '+ New Collection',
+                'label' => 'New Collection',
                 'url' => admin_url('collections/create'),
                 'icon' => 'plus',
                 'position' => 0,

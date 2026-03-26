@@ -153,19 +153,14 @@
 
         {# Sidebar Panel #}
         <aside class="cms-sidebar-panel" id="sidebarPanel">
-            {# Per-section headers — back arrow + title + close #}
+            {# Per-section headers #}
             {% for section in sidebar_sections %}
                 {% if section.id not in ['home', 'media', 'footer'] and section.items|length > 0 %}
                 <div class="sidebar-panel-header" data-section-header="{{ section.id }}">
-                    <button class="sidebar-panel-back sidebar-panel-close" aria-label="Close panel">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-                    </button>
                     <span class="sidebar-panel-title">{{ section.label ?? section.id|capitalize }}</span>
-                    <div class="sidebar-panel-actions">
-                        <button class="sidebar-panel-close" aria-label="Close panel">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                        </button>
-                    </div>
+                    <button class="sidebar-panel-close" aria-label="Close panel">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
                 </div>
                 {% endif %}
             {% endfor %}
