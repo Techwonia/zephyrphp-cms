@@ -122,8 +122,6 @@
                     {% include '@cms/partials/sidebar-icon.twig' with {icon: 'home'} only %}
                 </a>
 
-                <div class="ab-separator"></div>
-
                 {# Panel sections #}
                 {% for section in sidebar_sections %}
                     {% if section.id not in ['home', 'media', 'footer'] and section.items|length > 0 %}
@@ -140,8 +138,6 @@
                     {% endif %}
                 {% endfor %}
 
-                <div class="ab-separator"></div>
-
                 {# Media — direct link #}
                 <a href="{{ admin_url('media') }}" class="ab-item{% if current_path starts with admin_url('media') %} active{% endif %}" data-tooltip="Media">
                     {% include '@cms/partials/sidebar-icon.twig' with {icon: 'image'} only %}
@@ -151,10 +147,6 @@
                 {# Visit Site #}
                 <a href="/" class="ab-item" data-tooltip="Visit Site" target="_blank">
                     {% include '@cms/partials/sidebar-icon.twig' with {icon: 'globe'} only %}
-                </a>
-                {# Profile avatar #}
-                <a href="{{ admin_url('settings/profile') }}" class="ab-avatar" data-tooltip="Profile">
-                    {{ (auth().name[:1]|default('U'))|upper }}
                 </a>
             </div>
         </nav>
