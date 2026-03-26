@@ -189,7 +189,7 @@
                             {% set ss = collection.getSubmitSettings() ?? {} %}
                             <div class="submit-settings-panel">
                                 <h4>Public Submit Settings</h4>
-                                <div class="form-hint" style="margin-bottom:var(--sp-3);">
+                                <div class="form-hint" class="mb-3">
                                     Allow visitors to submit entries via <code>POST /collections/{{ collection.getSlug() }}/submit</code>
                                     or use <code>{{ '{{' }} render_collection_form('{{ collection.getSlug() }}') {{ '}}' }}</code> in Twig templates.
                                 </div>
@@ -214,9 +214,9 @@
                                     <div class="form-hint">Redirect after submission instead of showing success message.</div>
                                 </div>
 
-                                <div class="form-row-2" style="margin-bottom:var(--sp-3);">
+                                <div class="form-row-2" class="mb-3">
                                     <div class="feature-toggle">
-                                        <span class="feature-label" style="font-size:var(--text-sm);">Email Notification</span>
+                                        <span class="feature-label" class="text-sm">Email Notification</span>
                                         <label class="toggle-switch">
                                             <input type="checkbox" name="submit_email_notify" value="1"
                                                    {% if ss.email_notify ?? false %}checked{% endif %}>
@@ -224,7 +224,7 @@
                                         </label>
                                     </div>
                                     <div class="feature-toggle">
-                                        <span class="feature-label" style="font-size:var(--text-sm);">Honeypot (Bot Protection)</span>
+                                        <span class="feature-label" class="text-sm">Honeypot (Bot Protection)</span>
                                         <label class="toggle-switch">
                                             <input type="checkbox" name="submit_honeypot_enabled" value="1"
                                                    {% if ss.honeypot_enabled ?? false %}checked{% endif %}>
@@ -497,7 +497,7 @@
             <div class="section-card">
                 <div class="section-header">Access Control</div>
                 <div class="section-body">
-                    <div class="form-hint" style="margin-bottom:var(--sp-3);">
+                    <div class="form-hint" class="mb-3">
                         Override global entry permissions for this collection. When configured, only roles
                         with explicitly granted actions can interact with entries. Leave unchecked to use global permissions.
                         Admin role always has full access.
@@ -510,7 +510,7 @@
                         {% set collPerms = collection.getPermissions() ?? {} %}
                         {% set actions = ['view', 'create', 'edit', 'delete', 'publish'] %}
 
-                        <div class="feature-toggle" style="margin-bottom:var(--sp-4);">
+                        <div class="feature-toggle" class="mb-4">
                             <span class="feature-label">Enable per-collection permissions</span>
                             <label class="toggle-switch">
                                 <input type="checkbox" name="enable_custom_permissions" value="1"
@@ -555,7 +555,7 @@
                             {% endif %}
                         </div>
 
-                        <div style="margin-top:var(--sp-4);">
+                        <div class="mt-4">
                             <button type="submit" class="btn-primary-sm">Save Permissions</button>
                         </div>
                     </form>
@@ -568,7 +568,7 @@
             <div class="section-card">
                 <div class="section-header">Workflow</div>
                 <div class="section-body">
-                    <div class="form-hint" style="margin-bottom:var(--sp-3);">
+                    <div class="form-hint" class="mb-3">
                         Enable workflow to require entries to pass through approval stages before publishing.
                         The entry's status field becomes the workflow stage name.
                     </div>
@@ -577,7 +577,7 @@
                         {{ csrf_field() | raw }}
                         <input type="hidden" name="_save_workflow" value="1">
 
-                        <div class="feature-toggle" style="margin-bottom:var(--sp-4);">
+                        <div class="feature-toggle" class="mb-4">
                             <span class="feature-label">Enable Workflow</span>
                             <label class="toggle-switch">
                                 <input type="checkbox" name="workflow_enabled" value="1"
@@ -588,7 +588,7 @@
                         </div>
 
                         <div id="workflow-config" style="{% if not collection.isWorkflowEnabled() %}display:none;{% endif %}">
-                            <div class="form-group" style="margin-bottom:var(--sp-4);">
+                            <div class="form-group" class="mb-4">
                                 <label>Stages (comma-separated)</label>
                                 <input type="text" name="workflow_stages" class="form-control"
                                        value="{{ collection.getWorkflowStages()|join(', ') }}"
@@ -596,9 +596,9 @@
                                 <div class="form-hint">Minimum 2 stages. First stage is the entry default, last is the final published state.</div>
                             </div>
 
-                            <div style="margin-bottom:var(--sp-4);">
-                                <label style="display:block;font-size:var(--text-sm);font-weight:600;margin-bottom:var(--sp-2);">Reviewers per Stage</label>
-                                <div class="form-hint" style="margin-bottom:var(--sp-2);">
+                            <div class="mb-4">
+                                <label class="form-label mb-2">Reviewers per Stage</label>
+                                <div class="form-hint mb-2">
                                     Enter user IDs (comma-separated) who can advance/reject entries at each stage. Leave empty to allow any user.
                                 </div>
                                 {% for stage in collection.getWorkflowStages() %}

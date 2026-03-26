@@ -212,6 +212,7 @@
 .toggle-icon.icon-slug { background: rgba(185, 137, 0, 0.1); color: #B98900; }
 .toggle-icon.icon-seo { background: rgba(156, 39, 176, 0.1); color: #9C27B0; }
 .toggle-icon.icon-i18n { background: rgba(26, 123, 168, 0.1); color: #1A7BA8; }
+.toggle-icon.icon-hierarchy { background: rgba(121, 85, 72, 0.1); color: #795548; }
 .toggle-info { flex: 1; min-width: 0; }
 .toggle-name {
     font-size: var(--text-sm);

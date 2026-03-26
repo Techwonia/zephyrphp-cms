@@ -48,25 +48,25 @@
 
             <div class="collection-card-badges">
                 {% if collection.isApiEnabled() %}
-                <span class="feature-badge" style="background:var(--zui-info-50);color:var(--zui-info-600)">API</span>
+                <span class="badge badge-info">API</span>
                 {% endif %}
                 {% if collection.isPublishable() %}
-                <span class="feature-badge" style="background:var(--zui-success-50);color:var(--zui-success-600)">Publishable</span>
+                <span class="badge badge-success">Publishable</span>
                 {% endif %}
                 {% if collection.isSeoEnabled() is defined and collection.isSeoEnabled() %}
-                <span class="feature-badge" style="background:var(--zui-warning-50);color:var(--zui-warning-600)">SEO</span>
+                <span class="badge badge-warning">SEO</span>
                 {% endif %}
                 {% if collection.isTranslatable() is defined and collection.isTranslatable() %}
-                <span class="feature-badge" style="background:rgba(139,92,246,0.08);color:#7C3AED">Translatable</span>
+                <span class="badge badge-primary">Translatable</span>
                 {% endif %}
                 {% if collection.isSubmittable() is defined and collection.isSubmittable() %}
-                <span class="feature-badge" style="background:var(--zui-error-50);color:var(--zui-error-600)">Submittable</span>
+                <span class="badge badge-error">Submittable</span>
                 {% endif %}
             </div>
         </div>
 
         <div class="collection-card-footer">
-            <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="btn btn-sm btn-ghost" style="color:var(--zui-primary-600)">
+            <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="btn btn-sm btn-soft">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
                 Entries
             </a>
