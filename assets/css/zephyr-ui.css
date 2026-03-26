@@ -1214,6 +1214,21 @@ input[type="radio"] {
   line-height: 1.5;
 }
 
+/* Form section with separate header */
+.form-section .form-section-title:first-child {
+  margin: calc(-1 * var(--sp-6)) calc(-1 * var(--sp-6)) var(--sp-5);
+  padding: var(--sp-3) var(--sp-6);
+  background: var(--zui-gray-50);
+  border-bottom: 1px solid var(--zui-gray-100);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+}
+
+.form-section-body { /* no special styles — just a semantic wrapper */ }
+
 /* Compact form group (alias) */
 .fg { margin-bottom: var(--sp-5); }
 .fg:last-child { margin-bottom: 0; }

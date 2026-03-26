@@ -5,17 +5,25 @@
 
 {% block content %}
 
-{# ===== PAGE TOPBAR ===== #}
-<div class="edit-topbar">
-    <a href="{{ admin_url('collections') }}" class="back-link">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-        Collections
-    </a>
-    <div class="collection-title">{{ collection.getName() }}</div>
-    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="btn-view-entries">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-        View Entries ({{ entryCount }})
-    </a>
+<div class="breadcrumb">
+    <a href="{{ admin_url() }}">{% include '@cms/partials/sidebar-icon.twig' with {icon: 'home'} only %} Dashboard</a>
+    <span class="breadcrumb-sep">/</span>
+    <a href="{{ admin_url('collections') }}">Collections</a>
+    <span class="breadcrumb-sep">/</span>
+    <span class="breadcrumb-current">{{ collection.getName() }}</span>
+</div>
+
+<div class="page-header">
+    <div>
+        <h1>{{ collection.getName() }}</h1>
+        <p class="page-header-sub">Collection settings and field configuration</p>
+    </div>
+    <div class="page-header-actions">
+        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="btn btn-outline">
+            {% include '@cms/partials/sidebar-icon.twig' with {icon: 'file-text'} only %}
+            View Entries ({{ entryCount }})
+        </a>
+    </div>
 </div>
 
 {# ===== TWO-COLUMN LAYOUT ===== #}
@@ -36,9 +44,9 @@
 
             {# ===== GENERAL SECTION ===== #}
             <div id="section-general" class="edit-section">
-                <div class="section-card">
-                    <div class="section-header">General</div>
-                    <div class="section-body">
+                <div class="form-section">
+                    <div class="form-section-title">General</div>
+                    <div class="form-section-body">
                         <div class="form-group">
                             <label for="name">Collection Name</label>
                             <input type="text" id="name" name="name" class="form-control"
@@ -84,83 +92,40 @@
                         </div>
 
                         {# Feature toggles #}
-                        <div class="features-grid">
-                            <div class="feature-toggle">
-                                <div class="feature-info">
-                                    <span class="feature-label">REST API</span>
-                                </div>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" name="is_api_enabled" value="1"
-                                           {% if collection.isApiEnabled() %}checked{% endif %}>
-                                    <span class="toggle-slider"></span>
-                                </label>
-                            </div>
-
-                            <div class="feature-toggle">
-                                <div class="feature-info">
-                                    <span class="feature-label">Publishable</span>
-                                </div>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" name="is_publishable" value="1"
-                                           {% if collection.isPublishable() %}checked{% endif %}>
-                                    <span class="toggle-slider"></span>
-                                </label>
-                            </div>
-
-                            <div class="feature-toggle">
-                                <div class="feature-info">
-                                    <span class="feature-label">URL Slugs</span>
-                                </div>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" name="has_slug" value="1" id="has_slug_check"
-                                           {% if collection.hasSlug() %}checked{% endif %}>
-                                    <span class="toggle-slider"></span>
-                                </label>
-                            </div>
-
-                            <div class="feature-toggle">
-                                <div class="feature-info">
-                                    <span class="feature-label">SEO Meta Fields</span>
-                                </div>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" name="seo_enabled" value="1"
-                                           {% if collection.isSeoEnabled() %}checked{% endif %}>
-                                    <span class="toggle-slider"></span>
-                                </label>
-                            </div>
-
-                            <div class="feature-toggle">
-                                <div class="feature-info">
-                                    <span class="feature-label">Translatable</span>
-                                </div>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" name="is_translatable" value="1"
-                                           {% if collection.isTranslatable() %}checked{% endif %}>
-                                    <span class="toggle-slider"></span>
-                                </label>
-                            </div>
-
-                            <div class="feature-toggle">
-                                <div class="feature-info">
-                                    <span class="feature-label">Public Submit</span>
-                                </div>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" name="is_submittable" value="1" id="is_submittable_check"
-                                           {% if collection.isSubmittable() %}checked{% endif %}>
-                                    <span class="toggle-slider"></span>
-                                </label>
-                            </div>
-
-                            <div class="feature-toggle">
-                                <div class="feature-info">
-                                    <span class="feature-label">Hierarchy</span>
-                                </div>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" name="has_hierarchy" value="1" id="has_hierarchy_check"
-                                           {% if collection.hasHierarchy() %}checked{% endif %}>
-                                    <span class="toggle-slider"></span>
-                                </label>
-                            </div>
+                        <div class="toggle-row">
+                            <div class="toggle-icon icon-api">{% include '@cms/partials/sidebar-icon.twig' with {icon: 'zap'} only %}</div>
+                            <div class="toggle-info"><div class="toggle-name">REST API</div><div class="toggle-desc">Expose CRUD endpoints for this collection</div></div>
+                            <label class="toggle"><input type="checkbox" name="is_api_enabled" value="1" {% if collection.isApiEnabled() %}checked{% endif %}><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+                        </div>
+                        <div class="toggle-row">
+                            <div class="toggle-icon icon-publish">{% include '@cms/partials/sidebar-icon.twig' with {icon: 'file-text'} only %}</div>
+                            <div class="toggle-info"><div class="toggle-name">Publishable</div><div class="toggle-desc">Add draft/published status to entries</div></div>
+                            <label class="toggle"><input type="checkbox" name="is_publishable" value="1" {% if collection.isPublishable() %}checked{% endif %}><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+                        </div>
+                        <div class="toggle-row">
+                            <div class="toggle-icon icon-slug">{% include '@cms/partials/sidebar-icon.twig' with {icon: 'link'} only %}</div>
+                            <div class="toggle-info"><div class="toggle-name">URL Slugs</div><div class="toggle-desc">Auto-generate URL-friendly slugs</div></div>
+                            <label class="toggle"><input type="checkbox" name="has_slug" value="1" id="has_slug_check" {% if collection.hasSlug() %}checked{% endif %}><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+                        </div>
+                        <div class="toggle-row">
+                            <div class="toggle-icon icon-seo">{% include '@cms/partials/sidebar-icon.twig' with {icon: 'search'} only %}</div>
+                            <div class="toggle-info"><div class="toggle-name">SEO Meta Fields</div><div class="toggle-desc">Add meta title, description, and OG fields</div></div>
+                            <label class="toggle"><input type="checkbox" name="seo_enabled" value="1" {% if collection.isSeoEnabled() %}checked{% endif %}><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+                        </div>
+                        <div class="toggle-row">
+                            <div class="toggle-icon icon-i18n">{% include '@cms/partials/sidebar-icon.twig' with {icon: 'globe'} only %}</div>
+                            <div class="toggle-info"><div class="toggle-name">Translatable</div><div class="toggle-desc">Enable multi-language content support</div></div>
+                            <label class="toggle"><input type="checkbox" name="is_translatable" value="1" {% if collection.isTranslatable() %}checked{% endif %}><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+                        </div>
+                        <div class="toggle-row">
+                            <div class="toggle-icon icon-warning">{% include '@cms/partials/sidebar-icon.twig' with {icon: 'users'} only %}</div>
+                            <div class="toggle-info"><div class="toggle-name">Public Submit</div><div class="toggle-desc">Allow public form submissions to this collection</div></div>
+                            <label class="toggle"><input type="checkbox" name="is_submittable" value="1" id="is_submittable_check" {% if collection.isSubmittable() %}checked{% endif %}><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+                        </div>
+                        <div class="toggle-row">
+                            <div class="toggle-icon icon-hierarchy">{% include '@cms/partials/sidebar-icon.twig' with {icon: 'git-branch'} only %}</div>
+                            <div class="toggle-info"><div class="toggle-name">Hierarchy</div><div class="toggle-desc">Enable parent-child tree structure</div></div>
+                            <label class="toggle"><input type="checkbox" name="has_hierarchy" value="1" id="has_hierarchy_check" {% if collection.hasHierarchy() %}checked{% endif %}><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
                         </div>
 
                         {# Hierarchy max depth config #}
@@ -254,8 +219,8 @@
 
             {# ===== FIELDS SECTION ===== #}
             <div id="section-fields" class="edit-section">
-                <div class="section-card">
-                    <div class="section-header">Fields</div>
+                <div class="form-section">
+                    <div class="form-section-title">Fields</div>
 
                     {# System fields — collapsible #}
                     {% set systemFieldCount = 4 + (collection.hasSlug() ? 1 : 0) + (collection.isPublishable() ? 2 : 0) %}
@@ -457,9 +422,9 @@
 
             {# ===== API & ROUTING SECTION ===== #}
             <div id="section-routing" class="edit-section">
-                <div class="section-card">
-                    <div class="section-header">API & Routing</div>
-                    <div class="section-body">
+                <div class="form-section">
+                    <div class="form-section-title">API & Routing</div>
+                    <div class="form-section-body">
                         <div class="form-group">
                             <label for="url_prefix">URL Prefix</label>
                             <input type="text" id="url_prefix" name="url_prefix" class="form-control"
@@ -494,9 +459,9 @@
 
         {# ===== ACCESS CONTROL SECTION ===== #}
         <div id="section-permissions" class="edit-section">
-            <div class="section-card">
-                <div class="section-header">Access Control</div>
-                <div class="section-body">
+            <div class="form-section">
+                <div class="form-section-title">Access Control</div>
+                <div class="form-section-body">
                     <div class="form-hint" class="mb-3">
                         Override global entry permissions for this collection. When configured, only roles
                         with explicitly granted actions can interact with entries. Leave unchecked to use global permissions.
@@ -565,9 +530,9 @@
 
         {# ===== WORKFLOW SECTION ===== #}
         <div id="section-workflow" class="edit-section">
-            <div class="section-card">
-                <div class="section-header">Workflow</div>
-                <div class="section-body">
+            <div class="form-section">
+                <div class="form-section-title">Workflow</div>
+                <div class="form-section-body">
                     <div class="form-hint" class="mb-3">
                         Enable workflow to require entries to pass through approval stages before publishing.
                         The entry's status field becomes the workflow stage name.
