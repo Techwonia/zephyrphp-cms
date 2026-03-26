@@ -37,7 +37,7 @@
 </div>
 
 {# ===== GENERAL TAB ===== #}
-<div class="tab-panel active" data-tab-panel="general">
+<div class="tab-panel active" data-tab-panel="general" style="display:block">
     <form id="main-settings-form" method="POST" action="{{ admin_url('collections/' ~ collection.getSlug()) }}">
         {{ csrf_field() | raw }}
 
