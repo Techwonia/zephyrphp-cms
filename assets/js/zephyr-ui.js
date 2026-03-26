@@ -213,9 +213,25 @@
       });
     });
 
-    // Auto-detect current section from URL (only if sidebar not already open)
-    if (savedState !== 'open') {
-      var currentPath = window.location.pathname;
+    // Check if current page is a direct-link section (Home, Media)
+    // If so, close sidebar and only highlight the direct link icon
+    var currentPath = window.location.pathname;
+    var directLinks = activityBar.querySelectorAll('a.ab-item');
+    var isDirectLinkPage = false;
+    directLinks.forEach(function (link) {
+      var href = link.getAttribute('href');
+      if (href && href.length > 1 && currentPath.startsWith(href)) {
+        isDirectLinkPage = true;
+        // Close sidebar when on a direct-link page
+        setSidebarState('closed', '');
+        activityBar.querySelectorAll('.ab-item').forEach(function (i) { i.classList.remove('active'); });
+        panel.querySelectorAll('.sidebar-nav-list').forEach(function (l) { l.classList.remove('active'); });
+        link.classList.add('active');
+      }
+    });
+
+    // Auto-detect current section from URL (only if not on a direct-link page and sidebar not already open)
+    if (!isDirectLinkPage && savedState !== 'open') {
       var navItems = panel.querySelectorAll('.sidebar-nav-item');
       navItems.forEach(function (item) {
         var href = item.getAttribute('href');

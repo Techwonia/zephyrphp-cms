@@ -499,7 +499,7 @@ img, svg { display: block; max-width: 100%; }
   left: calc(100% + 8px);
   top: 50%;
   transform: translateY(-50%);
-  background: #1a1a2e;
+  background: var(--zui-gray-800);
   color: #FFF;
   font-size: 11px;
   font-weight: 500;
@@ -509,10 +509,11 @@ img, svg { display: block; max-width: 100%; }
   opacity: 0;
   pointer-events: none;
   transition: opacity 120ms ease;
-  z-index: 150;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  z-index: 500;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
 }
 
+/* Always show tooltip on hover — even when sidebar is open */
 .ab-item:hover::after { opacity: 1; }
 
 .ab-separator {
@@ -631,14 +632,15 @@ img, svg { display: block; max-width: 100%; }
 .sidebar-nav-list.active { display: block; }
 
 /* Instant nav list + header visibility via data-panel-section */
-[data-section-header] { display: none; }
+[data-section-header] { display: none !important; }
 
 [data-panel-section="collections"] [data-section-header="collections"],
 [data-panel-section="design"] [data-section-header="design"],
 [data-panel-section="admin"] [data-section-header="admin"],
 [data-panel-section="settings"] [data-section-header="settings"],
 [data-panel-section="system"] [data-section-header="system"],
-[data-panel-section="footer"] [data-section-header="footer"],
+[data-panel-section="footer"] [data-section-header="footer"] { display: flex !important; }
+
 [data-panel-section="collections"] [data-nav="collections"],
 [data-panel-section="design"] [data-nav="design"],
 [data-panel-section="admin"] [data-nav="admin"],
