@@ -117,65 +117,60 @@
         {# Activity Bar #}
         <nav class="cms-activity-bar" id="activityBar">
             <div class="ab-top">
+                {# Home — always first, direct link #}
+                <a href="{{ admin_url() }}" class="ab-item{% if current_path == admin_url() or current_path == admin_url() ~ '/' %} active{% endif %}" data-tooltip="Dashboard">
+                    {% include '@cms/partials/sidebar-icon.twig' with {icon: 'home'} only %}
+                </a>
+
+                <div class="ab-separator"></div>
+
+                {# Panel sections #}
                 {% for section in sidebar_sections %}
-                    {% if section.id != 'footer' %}
+                    {% if section.id not in ['home', 'media', 'footer'] and section.items|length > 0 %}
                         {% set section_icon = section.icon ?? section.items[0].icon ?? 'folder' %}
                         {% set section_active = false %}
                         {% for item in section.items %}
                             {% if cms_sidebar_active(current_path, item) %}{% set section_active = true %}{% endif %}
                         {% endfor %}
-
-                        {% if section.items|length <= 1 and section.default_url is defined and section.default_url %}
-                            {# Direct link sections (Home, Media) — no sidebar panel #}
-                            <a href="{{ section.default_url }}"
-                               class="ab-item{% if section_active %} active{% endif %}"
-                               data-tooltip="{{ section.label ?? section.items[0].label ?? section.id|capitalize }}">
-                                {% include '@cms/partials/sidebar-icon.twig' with {icon: section_icon} only %}
-                            </a>
-                        {% elseif section.items|length >= 1 %}
-                            {# Panel sections — click opens sidebar #}
-                            <button class="ab-item{% if section_active %} active{% endif %}"
-                                    data-section="{{ section.id }}"
-                                    data-tooltip="{{ section.label ?? section.id|capitalize }}">
-                                {% include '@cms/partials/sidebar-icon.twig' with {icon: section_icon} only %}
-                            </button>
-                        {% endif %}
-
-                        {% if section.id == 'home' %}
-                            <div class="ab-separator"></div>
-                        {% endif %}
+                        <button class="ab-item{% if section_active %} active{% endif %}"
+                                data-section="{{ section.id }}"
+                                data-tooltip="{{ section.label ?? section.id|capitalize }}">
+                            {% include '@cms/partials/sidebar-icon.twig' with {icon: section_icon} only %}
+                        </button>
                     {% endif %}
                 {% endfor %}
+
+                <div class="ab-separator"></div>
+
+                {# Media — direct link #}
+                <a href="{{ admin_url('media') }}" class="ab-item{% if current_path starts with admin_url('media') %} active{% endif %}" data-tooltip="Media">
+                    {% include '@cms/partials/sidebar-icon.twig' with {icon: 'image'} only %}
+                </a>
             </div>
             <div class="ab-bottom">
-                {% for section in sidebar_sections %}
-                    {% if section.id == 'footer' %}
-                        {% for item in section.items %}
-                        <a href="{{ item.url }}" class="ab-item" data-tooltip="{{ item.label }}">
-                            {% include '@cms/partials/sidebar-icon.twig' with {icon: item.icon} only %}
-                        </a>
-                        {% endfor %}
-                    {% endif %}
-                {% endfor %}
+                {# Visit Site #}
+                <a href="/" class="ab-item" data-tooltip="Visit Site" target="_blank">
+                    {% include '@cms/partials/sidebar-icon.twig' with {icon: 'globe'} only %}
+                </a>
             </div>
         </nav>
 
         {# Sidebar Panel #}
         <aside class="cms-sidebar-panel" id="sidebarPanel">
-            {# Per-section headers — CSS shows the matching one via [data-panel-section] #}
+            {# Per-section headers #}
             {% for section in sidebar_sections %}
-                {% if section.items|length > 1 and section.id != 'footer' %}
+                {% if section.id not in ['home', 'media', 'footer'] and section.items|length > 0 %}
                 <div class="sidebar-panel-header" data-section-header="{{ section.id }}">
-                    <span class="sidebar-panel-title">{{ section.label ?? section.id|upper }}</span>
+                    <span class="sidebar-panel-title">{{ section.label ?? section.id|capitalize }}</span>
                     <button class="sidebar-panel-close" aria-label="Close panel">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
                 </div>
                 {% endif %}
             {% endfor %}
             <nav class="sidebar-panel-nav">
                 {% for section in sidebar_sections %}
-                    {% if section.items|length > 1 and section.id != 'footer' %}
+                    {% if section.id not in ['home', 'media', 'footer'] and section.items|length > 0 %}
                     <ul class="sidebar-nav-list" data-nav="{{ section.id }}">
                         {% for item in section.items %}
                             {% if item.is_header is defined and item.is_header %}
