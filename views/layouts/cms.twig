@@ -65,6 +65,9 @@
             <div class="topbar-brand-icon">Z</div>
             <span>{{ config('app.name', 'ZephyrPHP') }}</span>
         </a>
+        <a href="/" class="topbar-icon-btn" target="_blank" title="Visit Site">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+        </a>
 
         <div class="topbar-search">
             <span class="topbar-search-icon">
@@ -115,25 +118,22 @@
         {% set sidebar_sections = cms_sidebar() %}
 
         {# Activity Bar #}
+        {% set top_sections = ['collections', 'design'] %}
+        {% set bottom_sections = ['admin', 'settings', 'system'] %}
         <nav class="cms-activity-bar" id="activityBar">
             <div class="ab-top">
-                {# Home — always first, direct link #}
+                {# Home — direct link #}
                 <a href="{{ admin_url() }}" class="ab-item{% if current_path == admin_url() or current_path == admin_url() ~ '/' %} active{% endif %}" data-tooltip="Dashboard">
                     {% include '@cms/partials/sidebar-icon.twig' with {icon: 'home'} only %}
                 </a>
 
-                {# Panel sections #}
+                {# Collections — panel #}
                 {% for section in sidebar_sections %}
-                    {% if section.id not in ['home', 'media', 'footer'] and section.items|length > 0 %}
-                        {% set section_icon = section.icon ?? section.items[0].icon ?? 'folder' %}
+                    {% if section.id == 'collections' and section.items|length > 0 %}
                         {% set section_active = false %}
-                        {% for item in section.items %}
-                            {% if cms_sidebar_active(current_path, item) %}{% set section_active = true %}{% endif %}
-                        {% endfor %}
-                        <button class="ab-item{% if section_active %} active{% endif %}"
-                                data-section="{{ section.id }}"
-                                data-tooltip="{{ section.label ?? section.id|capitalize }}">
-                            {% include '@cms/partials/sidebar-icon.twig' with {icon: section_icon} only %}
+                        {% for item in section.items %}{% if cms_sidebar_active(current_path, item) %}{% set section_active = true %}{% endif %}{% endfor %}
+                        <button class="ab-item{% if section_active %} active{% endif %}" data-section="collections" data-tooltip="Collections">
+                            {% include '@cms/partials/sidebar-icon.twig' with {icon: section.icon ?? 'database'} only %}
                         </button>
                     {% endif %}
                 {% endfor %}
@@ -142,12 +142,31 @@
                 <a href="{{ admin_url('media') }}" class="ab-item{% if current_path starts with admin_url('media') %} active{% endif %}" data-tooltip="Media">
                     {% include '@cms/partials/sidebar-icon.twig' with {icon: 'image'} only %}
                 </a>
+
+                {# Design — panel #}
+                {% for section in sidebar_sections %}
+                    {% if section.id == 'design' and section.items|length > 0 %}
+                        {% set section_active = false %}
+                        {% for item in section.items %}{% if cms_sidebar_active(current_path, item) %}{% set section_active = true %}{% endif %}{% endfor %}
+                        <button class="ab-item{% if section_active %} active{% endif %}" data-section="design" data-tooltip="Design">
+                            {% include '@cms/partials/sidebar-icon.twig' with {icon: section.icon ?? 'palette'} only %}
+                        </button>
+                    {% endif %}
+                {% endfor %}
             </div>
             <div class="ab-bottom">
-                {# Visit Site #}
-                <a href="/" class="ab-item" data-tooltip="Visit Site" target="_blank">
-                    {% include '@cms/partials/sidebar-icon.twig' with {icon: 'globe'} only %}
-                </a>
+                {# Admin, Settings, System — bottom panels #}
+                {% for sid in bottom_sections %}
+                    {% for section in sidebar_sections %}
+                        {% if section.id == sid and section.items|length > 0 %}
+                            {% set section_active = false %}
+                            {% for item in section.items %}{% if cms_sidebar_active(current_path, item) %}{% set section_active = true %}{% endif %}{% endfor %}
+                            <button class="ab-item{% if section_active %} active{% endif %}" data-section="{{ sid }}" data-tooltip="{{ section.label ?? sid|capitalize }}">
+                                {% include '@cms/partials/sidebar-icon.twig' with {icon: section.icon ?? 'settings'} only %}
+                            </button>
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
             </div>
         </nav>
 
