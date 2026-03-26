@@ -27,6 +27,7 @@
 </div>
 
 {# ===== TAB LAYOUT ===== #}
+<div data-tab-group="collection-edit">
 <div class="tab-nav" id="collectionTabs">
     <button class="tab-btn active" data-tab="general">General</button>
     <button class="tab-btn" data-tab="fields">Fields</button>
@@ -592,6 +593,7 @@
         </form>
     </div>
 </div>
+</div>{# close data-tab-group #}
 
 {# ===== FIELD MODAL ===== #}
 <div class="modal-overlay" id="field-modal">
@@ -866,29 +868,30 @@
     var collectionSlug = '{{ collection.getSlug() }}';
 
     // ========================================================================
-    // Tab Switching with URL Hash
+    // Tab URL Hash Sync
     // ========================================================================
-    var tabBtns = document.querySelectorAll('#collectionTabs .tab-btn');
-    var tabPanels = document.querySelectorAll('.tab-panel[data-tab-panel]');
+    var tabGroup = document.querySelector('[data-tab-group="collection-edit"]');
+    if (tabGroup) {
+        // Restore tab from URL hash on load
+        var hash = window.location.hash.replace('#', '');
+        if (hash) {
+            var targetPanel = tabGroup.querySelector('[data-tab-panel="' + hash + '"]');
+            var targetBtn = tabGroup.querySelector('[data-tab="' + hash + '"]');
+            if (targetPanel && targetBtn) {
+                tabGroup.querySelectorAll('[data-tab]').forEach(function(b) { b.classList.remove('active'); });
+                tabGroup.querySelectorAll('[data-tab-panel]').forEach(function(p) { p.classList.remove('active'); });
+                targetBtn.classList.add('active');
+                targetPanel.classList.add('active');
+            }
+        }
 
-    function switchTab(tabName) {
-        tabBtns.forEach(function(b) { b.classList.toggle('active', b.getAttribute('data-tab') === tabName); });
-        tabPanels.forEach(function(p) { p.classList.toggle('active', p.getAttribute('data-tab-panel') === tabName); });
-        history.replaceState(null, '', '#' + tabName);
-        window.scrollTo(0, 0);
-    }
-
-    tabBtns.forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            switchTab(this.getAttribute('data-tab'));
+        // Update hash on tab click
+        tabGroup.addEventListener('click', function(e) {
+            var btn = e.target.closest('[data-tab]');
+            if (btn) {
+                history.replaceState(null, '', '#' + btn.getAttribute('data-tab'));
+            }
         });
-    });
-
-    // Restore tab from URL hash on load
-    var hash = window.location.hash.replace('#', '');
-    if (hash && document.querySelector('[data-tab-panel="' + hash + '"]')) {
-        switchTab(hash);
     }
 
     // ========================================================================
