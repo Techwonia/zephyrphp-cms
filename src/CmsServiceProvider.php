@@ -345,7 +345,8 @@ class CmsServiceProvider
         ]);
 
         // System section
-        $sidebar->addSection('system', 'System', 35);
+        // System section already defined in registerDefaults() with icon='terminal', position=45
+        // Just add items to it — do NOT re-call addSection which would lose the icon
 
         $sidebar->addItem('system', [
             'id' => 'system-health',

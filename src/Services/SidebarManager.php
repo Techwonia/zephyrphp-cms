@@ -194,6 +194,8 @@ class SidebarManager
                 $sections[] = [
                     'id' => $id,
                     'label' => $section['label'],
+                    'icon' => $section['icon'] ?? '',
+                    'default_url' => $section['default_url'] ?? '',
                     'items' => $items,
                 ];
             }

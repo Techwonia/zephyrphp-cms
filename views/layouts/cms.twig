@@ -119,25 +119,28 @@
             <div class="ab-top">
                 {% for section in sidebar_sections %}
                     {% if section.id != 'footer' %}
-                        {% if section.items|length == 1 %}
-                            {% set item = section.items[0] %}
-                            <a href="{{ item.url }}"
-                               class="ab-item{% if cms_sidebar_active(current_path, item) %} active{% endif %}"
-                               data-tooltip="{{ item.label }}">
-                                {% include '@cms/partials/sidebar-icon.twig' with {icon: item.icon} only %}
+                        {% set section_icon = section.icon ?? section.items[0].icon ?? 'folder' %}
+                        {% set section_active = false %}
+                        {% for item in section.items %}
+                            {% if cms_sidebar_active(current_path, item) %}{% set section_active = true %}{% endif %}
+                        {% endfor %}
+
+                        {% if section.items|length <= 1 and section.default_url is defined and section.default_url %}
+                            {# Direct link sections (Home, Media) — no sidebar panel #}
+                            <a href="{{ section.default_url }}"
+                               class="ab-item{% if section_active %} active{% endif %}"
+                               data-tooltip="{{ section.label ?? section.items[0].label ?? section.id|capitalize }}">
+                                {% include '@cms/partials/sidebar-icon.twig' with {icon: section_icon} only %}
                             </a>
-                        {% elseif section.items|length > 1 %}
-                            {% set section_icon = section.icon ?? section.items[0].icon ?? 'folder' %}
-                            {% set section_active = false %}
-                            {% for item in section.items %}
-                                {% if cms_sidebar_active(current_path, item) %}{% set section_active = true %}{% endif %}
-                            {% endfor %}
+                        {% elseif section.items|length >= 1 %}
+                            {# Panel sections — click opens sidebar #}
                             <button class="ab-item{% if section_active %} active{% endif %}"
                                     data-section="{{ section.id }}"
                                     data-tooltip="{{ section.label ?? section.id|capitalize }}">
                                 {% include '@cms/partials/sidebar-icon.twig' with {icon: section_icon} only %}
                             </button>
                         {% endif %}
+
                         {% if section.id == 'home' %}
                             <div class="ab-separator"></div>
                         {% endif %}
