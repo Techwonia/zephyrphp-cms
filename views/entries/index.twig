@@ -69,6 +69,8 @@
 .ep-list-head {
     display: flex; align-items: center; padding: 0 var(--sp-3); height: 34px;
     background: var(--zui-gray-50); border-bottom: 1px solid var(--border); gap: var(--sp-3);
+    position: sticky; top: 0; z-index: 10;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 .ep-list-head .ep-col {
     font-size: 10px; font-weight: 600; text-transform: uppercase;
@@ -87,7 +89,7 @@
 .ep-row {
     display: flex; align-items: center; padding: 0 var(--sp-3); min-height: 42px;
     gap: var(--sp-3); border-bottom: 1px solid var(--zui-gray-100);
-    transition: background 80ms ease; position: relative;
+    transition: background 80ms ease; position: relative; cursor: pointer;
 }
 .ep-row:last-child { border-bottom: none; }
 .ep-row:hover { background: var(--zui-gray-50); }
@@ -133,13 +135,15 @@
 .ep-date { font-size: var(--text-sm); color: var(--text-secondary); visibility: hidden; }
 .ep-date.is-ready { visibility: visible; }
 
-/* Action buttons */
+/* Action buttons — hidden until row hover */
 .ep-action {
     display: inline-flex; align-items: center; justify-content: center;
     width: 28px; height: 28px; color: var(--text-secondary); background: none;
     border: none; border-radius: var(--radius-md); cursor: pointer;
     transition: color 100ms, background 100ms; text-decoration: none;
+    opacity: 0; transition: opacity 120ms, color 100ms, background 100ms;
 }
+.ep-row:hover .ep-action { opacity: 1; }
 .ep-action:hover { color: var(--text-heading); background: var(--zui-gray-100); }
 .ep-action svg { width: 14px; height: 14px; }
 
@@ -223,6 +227,10 @@
 
 /* ── Bulk field form ────────────────────────────── */
 .ep-bulk-field-form { padding: var(--sp-3); }
+
+/* ── Empty cell dash ─────────────────────────────── */
+.ep-field-val:empty::after,
+.ep-field-val:has(> :only-child:empty)::after { content: '—'; color: var(--zui-gray-300); }
 
 /* ── Responsive ─────────────────────────────────── */
 @media (max-width: 768px) {
@@ -515,7 +523,7 @@
         {% set _eDepth = depthMap[_eId]|default(0) %}
         {% set _eChildren = childCountMap[_eId]|default(0) %}
         {% set _eParent = entry.parent_id|default('') %}
-        <div class="ep-row" data-entry-id="{{ _eId }}" data-parent-id="{{ _eParent }}" data-depth="{{ _eDepth }}" data-children="{{ _eChildren }}">
+        <div class="ep-row" data-entry-id="{{ _eId }}" data-parent-id="{{ _eParent }}" data-depth="{{ _eDepth }}" data-children="{{ _eChildren }}" data-href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ _eId) }}">
             <div class="ep-col ep-col--cb">
                 <input type="checkbox" class="entry-checkbox ep-cb" value="{{ entry.id }}">
             </div>
@@ -557,8 +565,10 @@
                         <span class="text-secondary">#{{ _entryVal }}</span>
                     {% endif %}
                 {% else %}
-                    {% set _cellVal = entry[field.getSlug()]|default('')|striptags %}
-                    <span>{{ _cellVal|slice(0, 80) }}{% if _cellVal|length > 80 %}...{% endif %}</span>
+                    {% set _cellVal = entry[field.getSlug()]|default('')|striptags|trim %}
+                    {% if _cellVal %}
+                        <span>{{ _cellVal|slice(0, 80) }}{% if _cellVal|length > 80 %}...{% endif %}</span>
+                    {% endif %}
                 {% endif %}
             </div>
             {% endfor %}
@@ -850,6 +860,35 @@ document.addEventListener('DOMContentLoaded', function() {
     /* ── Confirm delete forms ──────────────────── */
     document.querySelectorAll('.confirm-delete').forEach(function(form) {
         form.addEventListener('submit', function(e) { if (!confirm(form.dataset.message || 'Are you sure?')) e.preventDefault(); });
+    });
+
+    /* ── Clickable rows ────────────────────────── */
+    document.querySelectorAll('.ep-row[data-href]').forEach(function(row) {
+        row.addEventListener('click', function(e) {
+            // Don't navigate if clicking checkbox, action button, dropdown, or link
+            if (e.target.closest('input, button, a, .dropdown, .dropdown-menu')) return;
+            window.location.href = row.dataset.href;
+        });
+    });
+
+    /* ── Keyboard navigation ───────────────────── */
+    var rows = document.querySelectorAll('.ep-row[data-href]');
+    var focusedIdx = -1;
+    function focusRow(idx) {
+        if (idx < 0 || idx >= rows.length) return;
+        rows.forEach(function(r) { r.style.outline = ''; });
+        focusedIdx = idx;
+        rows[idx].style.outline = '2px solid var(--zui-primary-400)';
+        rows[idx].style.outlineOffset = '-2px';
+        rows[idx].scrollIntoView({ block: 'nearest' });
+    }
+    document.addEventListener('keydown', function(e) {
+        if (e.target.closest('input, select, textarea, [contenteditable]')) return;
+        if (rows.length === 0) return;
+        if (e.key === 'ArrowDown' || e.key === 'j') { e.preventDefault(); focusRow(focusedIdx < rows.length - 1 ? focusedIdx + 1 : 0); }
+        else if (e.key === 'ArrowUp' || e.key === 'k') { e.preventDefault(); focusRow(focusedIdx > 0 ? focusedIdx - 1 : rows.length - 1); }
+        else if (e.key === 'Enter' && focusedIdx >= 0) { e.preventDefault(); window.location.href = rows[focusedIdx].dataset.href; }
+        else if (e.key === ' ' && focusedIdx >= 0) { e.preventDefault(); var cb = rows[focusedIdx].querySelector('.entry-checkbox'); if (cb) { cb.checked = !cb.checked; updateBulk(); } }
     });
 
     /* ── Relative time — render immediately, no flicker ── */
