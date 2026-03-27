@@ -203,7 +203,6 @@
     background: var(--bg-surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    overflow: hidden;
 }
 .ep-list-head {
     display: flex;
@@ -359,37 +358,9 @@
 .ep-sort-icon { transition: transform 150ms ease; }
 .ep-sort-icon--desc { transform: rotate(180deg); }
 
-/* ── Context Menu (dropdown) ────────────────────── */
-.ep-ctx-menu {
-    min-width: 180px;
-    padding: var(--sp-1);
-    border-radius: var(--radius-lg);
-    box-shadow: 0 4px 24px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
-    background: var(--bg-surface);
-    border: 1px solid var(--border);
-}
-.ep-ctx-item {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-2);
-    padding: 8px 12px;
-    font-size: var(--text-sm);
-    color: var(--text);
-    text-decoration: none;
-    border-radius: var(--radius-md);
-    transition: background 100ms;
-    cursor: pointer;
-    border: none;
-    background: none;
-    width: 100%;
-    text-align: left;
-}
-.ep-ctx-item:hover { background: var(--zui-gray-50); color: var(--text-heading); }
-.ep-ctx-item svg { width: 15px; height: 15px; color: var(--text-secondary); flex-shrink: 0; }
-.ep-ctx-item--danger { color: var(--zui-error-600); }
-.ep-ctx-item--danger:hover { background: var(--zui-error-50); color: var(--zui-error-700); }
-.ep-ctx-item--danger svg { color: var(--zui-error-400); }
-.ep-ctx-divider { height: 1px; background: var(--zui-gray-100); margin: 4px 8px; }
+/* ── Row action dropdown — prevent clipping ────── */
+.ep-row .dropdown { position: static; }
+.ep-row .dropdown-menu { position: absolute; z-index: 60; }
 
 /* ── Import Card ────────────────────────────────── */
 .ep-import-card {
@@ -513,7 +484,10 @@
     z-index: 100;
 }
 .ep-bulk.is-visible { display: flex; }
-.ep-bulk .btn { height: 28px; font-size: var(--text-xs); }
+.ep-bulk .btn { height: 28px; font-size: var(--text-xs); color: #fff; border-color: rgba(255,255,255,0.3); }
+.ep-bulk .btn:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.5); }
+.ep-bulk .btn-danger { background: var(--zui-error-600); border-color: var(--zui-error-600); }
+.ep-bulk .btn-danger:hover { background: var(--zui-error-500); }
 
 /* ── Filter row ─────────────────────────────────── */
 .ep-filter-row { display: flex; gap: var(--sp-2); margin-bottom: var(--sp-2); }
@@ -535,7 +509,7 @@
     display: none;
     z-index: 50;
 }
-.ep-col-toggle.is-open { display: block; }
+.ep-col-toggle.open { display: block; }
 .ep-col-toggle-title {
     font-size: 10px;
     font-weight: 600;
@@ -590,9 +564,6 @@
 
 /* ── Bulk field form ────────────────────────────── */
 .ep-bulk-field-form { padding: var(--sp-3); }
-
-/* ── Dropdown support (is-open) ─────────────────── */
-.dropdown-menu.is-open { display: block; }
 
 /* ── Responsive ─────────────────────────────────── */
 @media (max-width: 768px) {
@@ -716,8 +687,9 @@
 
             {# Column toggle button #}
             <div style="position:relative;">
-                <button type="button" class="btn btn-ghost btn-icon btn-sm" id="col-toggle-btn" title="Toggle columns" style="height:30px;width:30px;">
-                    {% include '@cms/partials/sidebar-icon.twig' with {icon: 'settings'} only %}
+                <button type="button" class="btn btn-outline btn-sm" id="col-toggle-btn" title="Toggle columns" style="height:30px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v18M3 12h18M3 6h18M3 18h18"/></svg>
+                    Columns
                 </button>
                 <div class="ep-col-toggle" id="col-toggle-dropdown">
                     <div class="ep-col-toggle-title">Toggle Columns</div>
@@ -972,23 +944,23 @@
                     <button class="ep-action" data-dropdown-trigger title="More actions">
                         <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="3" r="1" fill="currentColor"/><circle cx="8" cy="8" r="1" fill="currentColor"/><circle cx="8" cy="13" r="1" fill="currentColor"/></svg>
                     </button>
-                    <div class="dropdown-menu ep-ctx-menu" data-dropdown-menu style="right:0;left:auto;">
-                        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id) }}" class="ep-ctx-item">
-                            <svg viewBox="0 0 16 16" fill="none"><path d="M11.333 2a1.886 1.886 0 012.667 2.667L5.333 13.333 2 14l.667-3.333L11.333 2z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <div class="dropdown-menu" data-dropdown-menu>
+                        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id) }}" class="dropdown-item">
+                            {% include '@cms/partials/sidebar-icon.twig' with {icon: 'edit'} only %}
                             Edit
                         </a>
                         <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/duplicate') }}">
                             {{ csrf_field() | raw }}
-                            <button type="submit" class="ep-ctx-item" onclick="return confirm('Duplicate this entry?')">
-                                <svg viewBox="0 0 16 16" fill="none"><rect x="5" y="5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M11 5V3.5A1.5 1.5 0 009.5 2h-6A1.5 1.5 0 002 3.5v6A1.5 1.5 0 003.5 11H5" stroke="currentColor" stroke-width="1.2"/></svg>
+                            <button type="submit" class="dropdown-item" onclick="return confirm('Duplicate this entry?')">
+                                {% include '@cms/partials/sidebar-icon.twig' with {icon: 'file'} only %}
                                 Duplicate
                             </button>
                         </form>
-                        <div class="ep-ctx-divider"></div>
+                        <div class="dropdown-divider"></div>
                         <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/delete') }}" class="confirm-delete" data-message="Delete this entry?">
                             {{ csrf_field() | raw }}
-                            <button type="submit" class="ep-ctx-item ep-ctx-item--danger">
-                                <svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5.333 4V2.667A.667.667 0 016 2h4a.667.667 0 01.667.667V4m2 0v9.333a.667.667 0 01-.667.667H4a.667.667 0 01-.667-.667V4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <button type="submit" class="dropdown-item danger">
+                                {% include '@cms/partials/sidebar-icon.twig' with {icon: 'archive'} only %}
                                 Delete
                             </button>
                         </form>
@@ -1055,12 +1027,12 @@
             <input type="hidden" name="bulk_action" id="bulk-action-value" value="">
 
             {% if collection.isPublishable() %}
-            <button type="submit" class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,0.3);" onclick="document.getElementById('bulk-action-value').value='publish'; return confirm('Publish selected entries?')">Publish</button>
-            <button type="submit" class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,0.3);" onclick="document.getElementById('bulk-action-value').value='unpublish'; return confirm('Unpublish selected entries?')">Unpublish</button>
+            <button type="submit" class="btn btn-outline btn-sm" onclick="document.getElementById('bulk-action-value').value='publish'; return confirm('Publish selected entries?')">Publish</button>
+            <button type="submit" class="btn btn-outline btn-sm" onclick="document.getElementById('bulk-action-value').value='unpublish'; return confirm('Unpublish selected entries?')">Unpublish</button>
             {% endif %}
 
             <div class="dropdown" data-dropdown>
-                <button type="button" class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,0.3);" data-dropdown-trigger>
+                <button type="button" class="btn btn-outline btn-sm" data-dropdown-trigger>
                     Update Field
                     <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 6l2.5-2.5L7.5 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </button>
@@ -1133,19 +1105,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
         trigger.addEventListener('click', function(e) {
             e.stopPropagation();
-            document.querySelectorAll('[data-dropdown-menu].is-open').forEach(function(m) {
-                if (m !== menu) m.classList.remove('is-open');
+            document.querySelectorAll('[data-dropdown-menu].open').forEach(function(m) {
+                if (m !== menu) m.classList.remove('open');
             });
-            menu.classList.toggle('is-open');
+            menu.classList.toggle('open');
         });
     });
     document.addEventListener('click', function(e) {
         if (!e.target.closest('#col-toggle-btn') && !e.target.closest('#col-toggle-dropdown')) {
             var colDd = document.getElementById('col-toggle-dropdown');
-            if (colDd) colDd.classList.remove('is-open');
+            if (colDd) colDd.classList.remove('open');
         }
-        document.querySelectorAll('[data-dropdown-menu].is-open').forEach(function(m) {
-            m.classList.remove('is-open');
+        document.querySelectorAll('[data-dropdown-menu].open').forEach(function(m) {
+            m.classList.remove('open');
         });
     });
     document.querySelectorAll('[data-dropdown-menu]').forEach(function(m) {
@@ -1171,8 +1143,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (saveViewBtn && saveViewForm) {
         saveViewBtn.addEventListener('click', function() {
             saveViewForm.classList.toggle('hidden');
-            document.querySelectorAll('[data-dropdown-menu].is-open').forEach(function(m) {
-                m.classList.remove('is-open');
+            document.querySelectorAll('[data-dropdown-menu].open').forEach(function(m) {
+                m.classList.remove('open');
             });
         });
     }
@@ -1438,10 +1410,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         colToggleBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            document.querySelectorAll('[data-dropdown-menu].is-open').forEach(function(m) {
-                m.classList.remove('is-open');
+            document.querySelectorAll('[data-dropdown-menu].open').forEach(function(m) {
+                m.classList.remove('open');
             });
-            colToggleDropdown.classList.toggle('is-open');
+            colToggleDropdown.classList.toggle('open');
         });
 
         colToggleDropdown.addEventListener('click', function(e) {
