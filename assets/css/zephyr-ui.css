@@ -1438,6 +1438,73 @@ input[type="radio"] {
 .preview-card-body { padding: var(--sp-5); }
 
 /* ============================================================
+   8f. FIELD TYPE SELECTOR (grouped type grid for modals)
+   ============================================================ */
+
+.type-selector-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  max-height: 280px;
+  overflow-y: auto;
+  padding: var(--sp-3);
+  background: var(--zui-gray-50);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.type-group-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  margin-bottom: var(--sp-1);
+}
+
+.type-group-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.type-selector-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  color: var(--text);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease, box-shadow 120ms ease;
+}
+
+.type-selector-btn:hover { border-color: var(--border-hover); }
+.type-selector-btn.selected {
+  border-color: var(--zui-primary-400);
+  background: var(--zui-primary-50);
+  color: var(--zui-primary-700);
+  box-shadow: 0 0 0 1px var(--zui-primary-400);
+}
+
+.type-icon {
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  min-width: 18px;
+  text-align: center;
+}
+
+.type-selector-btn.selected .type-icon { color: var(--zui-primary-600); }
+.type-name { font-family: var(--font-sans); font-weight: 500; }
+
+/* ============================================================
    9. TABLES
    ============================================================ */
 

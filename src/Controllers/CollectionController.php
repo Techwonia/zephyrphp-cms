@@ -183,20 +183,32 @@ class CollectionController extends Controller
         $entryCount = EntryQuery::collection($collection->getSlug())->noCache()->count();
 
         $fieldTypes = [
+            // Text
             'text' => 'Text',
             'textarea' => 'Textarea',
             'richtext' => 'Rich Text',
+            'markdown' => 'Markdown',
+            'slug' => 'Slug',
+            'password' => 'Password',
+            // Number
             'number' => 'Number',
             'decimal' => 'Decimal',
             'boolean' => 'Boolean',
+            // Date & Time
             'date' => 'Date',
             'datetime' => 'Date & Time',
+            // Contact
             'email' => 'Email',
             'url' => 'URL',
+            'color' => 'Color',
+            // Choice
             'select' => 'Select / Dropdown',
+            'tags' => 'Tags',
+            // Media
             'image' => 'Image',
             'file' => 'File',
-            'slug' => 'Slug',
+            'media' => 'Media Library',
+            // Data
             'json' => 'JSON',
             'relation' => 'Relation',
         ];

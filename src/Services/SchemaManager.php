@@ -160,16 +160,17 @@ class SchemaManager
     public function getColumnType(Field $field): string
     {
         return match ($field->getType()) {
-            'text', 'email', 'slug', 'select' => Types::STRING,
-            'textarea' => Types::TEXT,
+            'text', 'email', 'slug', 'select', 'color', 'password' => Types::STRING,
+            'textarea', 'markdown' => Types::TEXT,
             'richtext' => Types::TEXT,
             'number' => Types::INTEGER,
             'decimal' => Types::DECIMAL,
             'boolean' => Types::BOOLEAN,
             'date' => Types::DATE_MUTABLE,
             'datetime' => Types::DATETIME_MUTABLE,
-            'image', 'file' => Types::INTEGER,
+            'image', 'file', 'media' => Types::INTEGER,
             'url' => Types::STRING,
+            'tags' => Types::TEXT,
             'relation' => Types::INTEGER,
             'json' => Types::JSON,
             default => Types::STRING,
@@ -185,9 +186,11 @@ class SchemaManager
         }
 
         return match ($field->getType()) {
-            'image', 'file' => $options,
+            'image', 'file', 'media' => $options,
             'url' => array_merge($options, ['length' => 500]),
             'text', 'email', 'slug', 'select' => array_merge($options, ['length' => 255]),
+            'password' => array_merge($options, ['length' => 255]),
+            'color' => array_merge($options, ['length' => 7]),
             'decimal' => array_merge($options, ['precision' => 10, 'scale' => 2]),
             default => $options,
         };

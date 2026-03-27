@@ -598,101 +598,83 @@
 </div>{# close data-tab-group #}
 
 {# ===== FIELD MODAL ===== #}
-<div class="modal-overlay" id="field-modal">
-    <div class="modal-dialog">
-        <div class="modal-header">
-            <h3 id="modal-title">Add New Field</h3>
-            <button type="button" class="modal-close" id="modal-close-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+<div class="zui-modal-overlay" id="field-modal">
+    <div class="zui-modal" style="max-width:640px">
+        <div class="zui-modal-header">
+            <h2 id="modal-title">Add New Field</h2>
+            <button type="button" class="sidebar-panel-close" id="modal-close-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
         </div>
         <form method="POST" id="field-form" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/fields') }}">
             {{ csrf_field() | raw }}
             <input type="hidden" name="_method" value="POST" id="field-form-method">
 
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="modal_field_name">Field Name *</label>
-                    <input type="text" id="modal_field_name" name="field_name" class="form-control"
-                           placeholder="e.g. Title" required>
+            <div class="zui-modal-body">
+                <div class="form-row mb-5">
+                    <div class="form-group">
+                        <label class="form-label">Field Name <span style="color:var(--zui-error-500)">*</span></label>
+                        <input type="text" id="modal_field_name" name="field_name" class="form-control"
+                               placeholder="e.g. Title" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">API Identifier</label>
+                        <input type="text" id="modal_field_slug" name="field_slug" class="form-control"
+                               placeholder="Auto-generated">
+                        <div class="form-hint">Database column name</div>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="modal_field_slug">API Identifier</label>
-                    <input type="text" id="modal_field_slug" name="field_slug" class="form-control"
-                           placeholder="Auto-generated from name">
-                    <div class="form-hint">Used as the database column name and API key.</div>
-                </div>
-
-                <div class="form-group">
-                    <label>Type</label>
+                <div class="form-group mb-5">
+                    <label class="form-label">Type</label>
                     <input type="hidden" name="field_type" id="modal_field_type" value="text">
+
+                    {# Grouped type selector #}
+                    {% set typeGroups = {
+                        'Text': {'text':'Text','textarea':'Textarea','richtext':'Rich Text','markdown':'Markdown','slug':'Slug','password':'Password'},
+                        'Number': {'number':'Number','decimal':'Decimal','boolean':'Toggle'},
+                        'Date': {'date':'Date','datetime':'Date & Time'},
+                        'Contact': {'email':'Email','url':'URL','color':'Color'},
+                        'Choice': {'select':'Dropdown','tags':'Tags'},
+                        'Media': {'image':'Image','file':'File','media':'Media Library'},
+                        'Data': {'json':'JSON','relation':'Relation'}
+                    } %}
+
+                    {% set typeIcons = {
+                        'text':'Aa','textarea':'Aa','richtext':'T','markdown':'M','slug':'/','password':'**',
+                        'number':'#','decimal':'#.0','boolean':'01',
+                        'date':'D','datetime':'DT',
+                        'email':'@','url':'://','color':'C',
+                        'select':'v','tags':'#',
+                        'image':'img','file':'F','media':'M',
+                        'json':'{}','relation':'Rel'
+                    } %}
+
                     <div class="type-selector-grid">
-                        {% for typeKey, typeLabel in fieldTypes %}
-                        <div class="type-selector-btn{% if typeKey == 'text' %} selected{% endif %}" data-type="{{ typeKey }}">
-                            <div class="type-icon fti-{{ typeKey }}">
-                                {% if typeKey == 'text' %}Aa
-                                {% elseif typeKey == 'textarea' %}&para;
-                                {% elseif typeKey == 'richtext' %}T
-                                {% elseif typeKey == 'number' %}#
-                                {% elseif typeKey == 'decimal' %}#.0
-                                {% elseif typeKey == 'boolean' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor"><rect x="1" y="4" width="14" height="8" rx="4"/><circle cx="11" cy="8" r="2.5" fill="white"/></svg>
-                                {% elseif typeKey == 'date' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="1.5"/><line x1="2" y1="7" x2="14" y2="7"/></svg>
-                                {% elseif typeKey == 'datetime' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><polyline points="8,4 8,8 11,10"/></svg>
-                                {% elseif typeKey == 'email' %}@
-                                {% elseif typeKey == 'url' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6.5 9.5a3.5 3.5 0 005-5l-1-1a3.5 3.5 0 00-5 0"/><path d="M9.5 6.5a3.5 3.5 0 00-5 5l1 1a3.5 3.5 0 005 0"/></svg>
-                                {% elseif typeKey == 'select' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="3" y1="4" x2="13" y2="4"/><line x1="3" y1="8" x2="13" y2="8"/><line x1="3" y1="12" x2="13" y2="12"/></svg>
-                                {% elseif typeKey == 'image' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="1.5"/><circle cx="5.5" cy="5.5" r="1.5"/><path d="M14 10l-3-3-7 7"/></svg>
-                                {% elseif typeKey == 'file' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 9.5V14a1 1 0 01-1 1H3a1 1 0 01-1-1V2a1 1 0 011-1h7l4 4v4.5z"/></svg>
-                                {% elseif typeKey == 'slug' %}/
-                                {% elseif typeKey == 'json' %}{}
-                                {% elseif typeKey == 'relation' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="4" cy="8" r="2.5"/><circle cx="12" cy="8" r="2.5"/><line x1="6.5" y1="8" x2="9.5" y2="8"/></svg>
-                                {% else %}?{% endif %}
+                        {% for groupName, types in typeGroups %}
+                        <div class="type-group">
+                            <div class="type-group-label">{{ groupName }}</div>
+                            <div class="type-group-items">
+                                {% for typeKey, typeLabel in types %}
+                                <button type="button" class="type-selector-btn{% if typeKey == 'text' %} selected{% endif %}" data-type="{{ typeKey }}">
+                                    <span class="type-icon">{{ typeIcons[typeKey] ?? '?' }}</span>
+                                    <span class="type-name">{{ typeLabel }}</span>
+                                </button>
+                                {% endfor %}
                             </div>
-                            <span class="type-name">{{ typeLabel }}</span>
                         </div>
                         {% endfor %}
                     </div>
                 </div>
 
                 {# Properties #}
-                <div class="modal-section-title">Properties</div>
-                <div class="properties-grid">
-                    <div class="property-toggle">
-                        <span class="prop-label">Required</span>
-                        <label class="toggle-switch">
-                            <input type="checkbox" name="field_required" value="1" id="modal_field_required">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    <div class="property-toggle">
-                        <span class="prop-label">Show in list</span>
-                        <label class="toggle-switch">
-                            <input type="checkbox" name="field_listable" value="1" id="modal_field_listable" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    <div class="property-toggle">
-                        <span class="prop-label">Searchable</span>
-                        <label class="toggle-switch">
-                            <input type="checkbox" name="field_searchable" value="1" id="modal_field_searchable">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    <div class="property-toggle">
-                        <span class="prop-label">Sortable</span>
-                        <label class="toggle-switch">
-                            <input type="checkbox" name="field_sortable" value="1" id="modal_field_sortable">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    <div class="property-toggle">
-                        <span class="prop-label">Unique</span>
-                        <label class="toggle-switch">
-                            <input type="checkbox" name="field_unique" value="1" id="modal_field_unique">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
+                <div class="form-label mb-3">Properties</div>
+                <div class="flex gap-4 flex-wrap mb-5">
+                    <div class="form-check-row"><input type="checkbox" name="field_required" value="1" id="modal_field_required"><label for="modal_field_required" class="text-sm">Required</label></div>
+                    <div class="form-check-row"><input type="checkbox" name="field_listable" value="1" id="modal_field_listable" checked><label for="modal_field_listable" class="text-sm">Show in list</label></div>
+                    <div class="form-check-row"><input type="checkbox" name="field_searchable" value="1" id="modal_field_searchable"><label for="modal_field_searchable" class="text-sm">Searchable</label></div>
+                    <div class="form-check-row"><input type="checkbox" name="field_sortable" value="1" id="modal_field_sortable"><label for="modal_field_sortable" class="text-sm">Sortable</label></div>
+                    <div class="form-check-row"><input type="checkbox" name="field_unique" value="1" id="modal_field_unique"><label for="modal_field_unique" class="text-sm">Unique</label></div>
                 </div>
 
                 {# Select options #}
@@ -848,9 +830,9 @@
                 {% endif %}
             </div>
 
-            <div class="modal-footer">
-                <button type="button" class="btn-secondary" id="modal-cancel-btn">Cancel</button>
-                <button type="submit" class="btn-primary-sm" id="modal-save-btn">Save Field</button>
+            <div class="zui-modal-footer">
+                <button type="button" class="btn btn-outline" id="modal-cancel-btn">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="modal-save-btn">Save Field</button>
             </div>
         </form>
     </div>
