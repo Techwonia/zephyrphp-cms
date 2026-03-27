@@ -628,40 +628,34 @@
                 <div class="form-group mb-5">
                     <label class="form-label">Type</label>
                     <input type="hidden" name="field_type" id="modal_field_type" value="text">
-
-                    {# Grouped type selector #}
-                    {% set typeGroups = {
-                        'Text': {'text':'Text','textarea':'Textarea','richtext':'Rich Text','markdown':'Markdown','slug':'Slug','password':'Password'},
-                        'Number': {'number':'Number','decimal':'Decimal','boolean':'Toggle'},
-                        'Date': {'date':'Date','datetime':'Date & Time'},
-                        'Contact': {'email':'Email','url':'URL','color':'Color'},
-                        'Choice': {'select':'Dropdown','tags':'Tags'},
-                        'Media': {'image':'Image','file':'File','media':'Media Library'},
-                        'Data': {'json':'JSON','relation':'Relation'}
-                    } %}
-
-                    {% set typeIcons = {
-                        'text':'Aa','textarea':'Aa','richtext':'T','markdown':'M','slug':'/','password':'**',
-                        'number':'#','decimal':'#.0','boolean':'01',
-                        'date':'D','datetime':'DT',
-                        'email':'@','url':'://','color':'C',
-                        'select':'v','tags':'#',
-                        'image':'img','file':'F','media':'M',
-                        'json':'{}','relation':'Rel'
-                    } %}
-
                     <div class="type-selector-grid">
-                        {% for groupName, types in typeGroups %}
-                        <div class="type-group">
-                            <div class="type-group-label">{{ groupName }}</div>
-                            <div class="type-group-items">
-                                {% for typeKey, typeLabel in types %}
-                                <button type="button" class="type-selector-btn{% if typeKey == 'text' %} selected{% endif %}" data-type="{{ typeKey }}">
-                                    <span class="type-icon">{{ typeIcons[typeKey] ?? '?' }}</span>
-                                    <span class="type-name">{{ typeLabel }}</span>
-                                </button>
-                                {% endfor %}
+                        {% for typeKey, typeLabel in fieldTypes %}
+                        <div class="type-selector-btn{% if typeKey == 'text' %} selected{% endif %}" data-type="{{ typeKey }}">
+                            <div class="type-icon fti-{{ typeKey }}">
+                                {% if typeKey == 'text' %}Aa
+                                {% elseif typeKey == 'textarea' %}&para;
+                                {% elseif typeKey == 'richtext' %}T
+                                {% elseif typeKey == 'markdown' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="10" rx="1.5"/><path d="M4 10V6l2 2.5L8 6v4"/><path d="M11 8.5l1.5 1.5L14 8.5"/></svg>
+                                {% elseif typeKey == 'slug' %}/
+                                {% elseif typeKey == 'password' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5 7V5a3 3 0 016 0v2"/></svg>
+                                {% elseif typeKey == 'number' %}#
+                                {% elseif typeKey == 'decimal' %}#.0
+                                {% elseif typeKey == 'boolean' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor"><rect x="1" y="4" width="14" height="8" rx="4"/><circle cx="11" cy="8" r="2.5" fill="white"/></svg>
+                                {% elseif typeKey == 'date' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="1.5"/><line x1="2" y1="7" x2="14" y2="7"/></svg>
+                                {% elseif typeKey == 'datetime' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><polyline points="8,4 8,8 11,10"/></svg>
+                                {% elseif typeKey == 'email' %}@
+                                {% elseif typeKey == 'url' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6.5 9.5a3.5 3.5 0 005-5l-1-1a3.5 3.5 0 00-5 0"/><path d="M9.5 6.5a3.5 3.5 0 00-5 5l1 1a3.5 3.5 0 005 0"/></svg>
+                                {% elseif typeKey == 'color' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>
+                                {% elseif typeKey == 'select' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="3" y1="4" x2="13" y2="4"/><line x1="3" y1="8" x2="13" y2="8"/><line x1="3" y1="12" x2="13" y2="12"/></svg>
+                                {% elseif typeKey == 'tags' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1.5 3.5h5l7 7-5 5-7-7z"/><circle cx="5" cy="6" r="1" fill="currentColor"/></svg>
+                                {% elseif typeKey == 'image' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="1.5"/><circle cx="5.5" cy="5.5" r="1.5"/><path d="M14 10l-3-3-7 7"/></svg>
+                                {% elseif typeKey == 'file' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 9.5V14a1 1 0 01-1 1H3a1 1 0 01-1-1V2a1 1 0 011-1h7l4 4v4.5z"/></svg>
+                                {% elseif typeKey == 'media' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="1.5"/><circle cx="5.5" cy="5.5" r="1.5"/><path d="M14 10l-3-3-4 4"/><path d="M10 14l3-3"/></svg>
+                                {% elseif typeKey == 'json' %}{}
+                                {% elseif typeKey == 'relation' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="4" cy="8" r="2.5"/><circle cx="12" cy="8" r="2.5"/><line x1="6.5" y1="8" x2="9.5" y2="8"/></svg>
+                                {% else %}?{% endif %}
                             </div>
+                            <span class="type-name">{{ typeLabel }}</span>
                         </div>
                         {% endfor %}
                     </div>
