@@ -251,6 +251,21 @@ class EntryController extends Controller
             }
         }
 
+        // Apply URL-based inline filters (filter_field[]=x&filter_value[]=y)
+        $urlFilterFields = (array) ($this->input('filter_field') ?? []);
+        $urlFilterValues = (array) ($this->input('filter_value') ?? []);
+        $activeFilters = [];
+        foreach ($urlFilterFields as $i => $ff) {
+            $fv = trim((string) ($urlFilterValues[$i] ?? ''));
+            $ff = trim((string) $ff);
+            if ($ff !== '' && $fv !== '') {
+                $activeFilters[$ff] = $fv;
+            }
+        }
+        if (!empty($activeFilters)) {
+            $options['filters'] = array_merge($options['filters'] ?? [], $activeFilters);
+        }
+
         $query = EntryQuery::collection($slug)->noCache();
         $query->orderBy($options['sort_by'], $options['sort_dir']);
 
@@ -346,6 +361,7 @@ class EntryController extends Controller
             'childCountMap' => $childCountMap,
             'currentParentId' => $currentParentId,
             'parentBreadcrumbs' => $parentBreadcrumbs,
+            'activeFilters' => $activeFilters,
         ]);
     }
 

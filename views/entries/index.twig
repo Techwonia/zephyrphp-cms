@@ -5,561 +5,220 @@
 {% block styles %}
 <style nonce="{{ csp_nonce() }}">
 /* ── Entries Page Shell ─────────────────────────── */
-.entries-page {
-    max-width: 1280px;
-    margin: 0 auto;
-    padding-bottom: 100px;
-}
+.entries-page { max-width: 1280px; margin: 0 auto; padding-bottom: 80px; }
 
 /* ── Page Header ────────────────────────────────── */
-.ep-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: var(--sp-4);
-    margin-bottom: var(--sp-5);
-}
-.ep-header-left h1 {
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: var(--text-heading);
-    margin: 0 0 2px;
-    letter-spacing: -0.02em;
-}
-.ep-header-sub {
-    font-size: var(--text-sm);
-    color: var(--text-secondary);
-    margin: 0;
-}
-.ep-header-actions {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-2);
-    flex-shrink: 0;
-}
+.ep-header { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); margin-bottom: var(--sp-3); }
+.ep-header-left h1 { font-size: 1.5rem; font-weight: 700; color: var(--text-heading); margin: 0; letter-spacing: -0.02em; }
+.ep-header-sub { font-size: var(--text-xs); color: var(--text-secondary); margin: 2px 0 0; }
+.ep-header-actions { display: flex; align-items: center; gap: var(--sp-2); flex-shrink: 0; }
 
 /* ── Tab Bar (views) ────────────────────────────── */
-.ep-tabs {
-    display: flex;
-    align-items: center;
-    gap: 0;
-    border-bottom: 1.5px solid var(--border);
-    margin-bottom: var(--sp-4);
-    position: relative;
-}
+.ep-tabs { display: flex; align-items: center; gap: 0; border-bottom: 1.5px solid var(--border); margin-bottom: var(--sp-3); }
 .ep-tab {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: var(--sp-2) var(--sp-3);
-    font-size: var(--text-sm);
-    font-weight: 500;
-    color: var(--text-secondary);
-    text-decoration: none;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -1.5px;
-    transition: color 150ms, border-color 150ms;
-    cursor: pointer;
-    background: none;
-    border-top: none;
-    border-left: none;
-    border-right: none;
-    white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px var(--sp-3); font-size: var(--text-sm); font-weight: 500;
+    color: var(--text-secondary); text-decoration: none;
+    border-bottom: 2px solid transparent; margin-bottom: -1.5px;
+    transition: color 150ms, border-color 150ms; cursor: pointer;
+    background: none; border-top: none; border-left: none; border-right: none; white-space: nowrap;
 }
 .ep-tab:hover { color: var(--text-heading); }
-.ep-tab.is-active {
-    color: var(--zui-primary-600);
-    border-bottom-color: var(--zui-primary-600);
-}
+.ep-tab.is-active { color: var(--zui-primary-600); border-bottom-color: var(--zui-primary-600); }
 .ep-tab .tab-count {
-    font-size: 11px;
-    font-weight: 600;
-    background: var(--zui-gray-100);
-    color: var(--text-secondary);
-    padding: 1px 7px;
-    border-radius: var(--radius-full);
-    line-height: 1.4;
+    font-size: 10px; font-weight: 600; background: var(--zui-gray-100); color: var(--text-secondary);
+    padding: 0 6px; border-radius: var(--radius-full); line-height: 1.6;
 }
-.ep-tab.is-active .tab-count {
-    background: var(--zui-primary-50);
-    color: var(--zui-primary-600);
-}
-.ep-tabs-right {
-    margin-left: auto;
-    display: flex;
-    align-items: center;
-    gap: var(--sp-2);
-    padding-bottom: var(--sp-2);
-}
+.ep-tab.is-active .tab-count { background: var(--zui-primary-50); color: var(--zui-primary-600); }
+.ep-tabs-right { margin-left: auto; display: flex; align-items: center; gap: var(--sp-2); padding-bottom: 6px; }
 
-/* ── Toolbar ────────────────────────────────────── */
-.ep-toolbar {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-3);
-    margin-bottom: var(--sp-3);
+/* ── Toolbar (Filter + Columns) ─────────────────── */
+.ep-toolbar { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-3); }
+.ep-toolbar-right { margin-left: auto; display: flex; align-items: center; gap: var(--sp-2); }
+
+/* ── Active filters chips ───────────────────────── */
+.ep-filter-chips { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.ep-filter-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 8px 3px 10px; background: var(--zui-primary-50); color: var(--zui-primary-700);
+    font-size: 12px; font-weight: 500; border-radius: var(--radius-full);
 }
-.ep-search {
-    position: relative;
-    flex: 1;
-    max-width: 360px;
+.ep-filter-chip-remove {
+    display: inline-flex; align-items: center; color: var(--zui-primary-400);
+    text-decoration: none; line-height: 1; margin-left: 2px;
 }
-.ep-search svg.search-icon {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-disabled);
-    pointer-events: none;
-    width: 15px;
-    height: 15px;
+.ep-filter-chip-remove:hover { color: var(--zui-primary-700); }
+
+/* ── Filter dropdown ────────────────────────────── */
+.ep-filter-panel {
+    position: absolute; top: calc(100% + 4px); right: 0; z-index: 60;
+    background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md); padding: var(--sp-3); min-width: 320px; display: none;
 }
-.ep-search .form-control {
-    padding-left: 36px;
-    padding-right: 32px;
-    height: 36px;
-    border-radius: var(--radius-md);
-    background: var(--bg-surface);
-    font-size: var(--text-sm);
-}
-.ep-search-clear {
-    position: absolute;
-    right: 8px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--text-secondary);
-    padding: 2px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.ep-search-clear:hover { color: var(--text); }
+.ep-filter-panel.open { display: block; }
+.ep-filter-row { display: flex; gap: var(--sp-2); margin-bottom: var(--sp-2); }
+.ep-filter-row select, .ep-filter-row input { font-size: var(--text-sm); height: 32px; }
 
 /* ── Hierarchy breadcrumb path ──────────────────── */
-.ep-hier-path {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: var(--text-sm);
-}
-.ep-hier-path a {
-    color: var(--zui-primary-600);
-    text-decoration: none;
-    font-weight: 600;
-}
+.ep-hier-path { display: flex; align-items: center; gap: 6px; font-size: var(--text-sm); }
+.ep-hier-path a { color: var(--zui-primary-600); text-decoration: none; font-weight: 600; }
 .ep-hier-path a:hover { text-decoration: underline; }
 
-/* ── Status Group Sections ──────────────────────── */
-.ep-group {
-    margin-bottom: var(--sp-2);
-}
-.ep-group-header {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-2);
-    padding: var(--sp-2) var(--sp-3);
-    cursor: pointer;
-    user-select: none;
-    border-radius: var(--radius-md);
-    transition: background 120ms;
-}
-.ep-group-header:hover { background: var(--zui-gray-50); }
-.ep-group-chevron {
-    width: 16px;
-    height: 16px;
-    color: var(--text-secondary);
-    transition: transform 150ms ease;
-    flex-shrink: 0;
-}
-.ep-group.is-collapsed .ep-group-chevron { transform: rotate(-90deg); }
-.ep-group.is-collapsed .ep-group-body { display: none; }
-.ep-group-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-}
-.ep-group-dot--published { background: var(--zui-success-500); }
-.ep-group-dot--draft { background: var(--zui-warning-500); }
-.ep-group-dot--scheduled { background: var(--zui-info-500); }
-.ep-group-dot--review { background: var(--zui-gray-400); }
-.ep-group-label {
-    font-size: var(--text-sm);
-    font-weight: 600;
-    color: var(--text-heading);
-}
-.ep-group-count {
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--text-secondary);
-}
-
-/* ── Entry List (table replacement) ─────────────── */
-.ep-list {
-    background: var(--bg-surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-}
+/* ── Entry List ─────────────────────────────────── */
+.ep-list { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); }
 .ep-list-head {
-    display: flex;
-    align-items: center;
-    padding: 0 var(--sp-3);
-    height: 40px;
-    background: var(--zui-gray-50);
-    border-bottom: 1px solid var(--border);
-    gap: var(--sp-3);
+    display: flex; align-items: center; padding: 0 var(--sp-3); height: 34px;
+    background: var(--zui-gray-50); border-bottom: 1px solid var(--border); gap: var(--sp-3);
 }
 .ep-list-head .ep-col {
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--text-secondary);
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--text-secondary);
 }
 
 /* Column layout */
-.ep-col--cb { width: 36px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.ep-col--cb { width: 32px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
 .ep-col--name { flex: 3; min-width: 0; }
 .ep-col--field { flex: 1.5; min-width: 0; }
-.ep-col--status { width: 120px; flex-shrink: 0; }
-.ep-col--date { width: 110px; flex-shrink: 0; }
-.ep-col--actions { width: 80px; flex-shrink: 0; display: flex; align-items: center; justify-content: flex-end; }
+.ep-col--status { width: 110px; flex-shrink: 0; }
+.ep-col--date { width: 100px; flex-shrink: 0; }
+.ep-col--actions { width: 72px; flex-shrink: 0; display: flex; align-items: center; justify-content: flex-end; }
 
 /* ── Entry Row ──────────────────────────────────── */
 .ep-row {
-    display: flex;
-    align-items: center;
-    padding: 0 var(--sp-3);
-    min-height: 52px;
-    gap: var(--sp-3);
-    border-bottom: 1px solid var(--zui-gray-100);
-    transition: background 100ms ease;
-    position: relative;
+    display: flex; align-items: center; padding: 0 var(--sp-3); min-height: 42px;
+    gap: var(--sp-3); border-bottom: 1px solid var(--zui-gray-100);
+    transition: background 80ms ease; position: relative;
 }
 .ep-row:last-child { border-bottom: none; }
 .ep-row:hover { background: var(--zui-gray-50); }
 .ep-row.is-selected { background: var(--zui-primary-50); }
 
+/* Row dropdown fix */
+.ep-row .dropdown { position: static; }
+.ep-row .dropdown-menu { position: absolute; z-index: 60; }
+
 /* Checkbox */
-.ep-cb {
-    width: 16px;
-    height: 16px;
-    accent-color: var(--zui-primary-500);
-    cursor: pointer;
-    border-radius: 4px;
-}
+.ep-cb { width: 15px; height: 15px; accent-color: var(--zui-primary-500); cursor: pointer; }
 
 /* Entry name link */
 .ep-entry-name {
-    font-weight: 500;
-    font-size: var(--text-sm);
-    color: var(--text-heading);
-    text-decoration: none;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    display: block;
+    font-weight: 500; font-size: var(--text-sm); color: var(--text-heading);
+    text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block;
 }
 .ep-entry-name:hover { color: var(--zui-primary-600); }
 
 /* Field value cell */
-.ep-field-val {
-    font-size: var(--text-sm);
-    color: var(--text);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
+.ep-field-val { font-size: var(--text-sm); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Image thumbnails */
-.ep-thumb {
-    width: 32px;
-    height: 32px;
-    border-radius: 6px;
-    object-fit: cover;
-    border: 1px solid var(--border);
-}
+.ep-thumb { width: 28px; height: 28px; border-radius: 5px; object-fit: cover; border: 1px solid var(--border); }
 
 /* Richtext preview */
 .ep-rt-preview { cursor: pointer; }
 .ep-rt-preview:hover { color: var(--zui-primary-600); }
 
 /* Boolean badges */
-.ep-bool-yes { background: var(--zui-success-50); color: var(--zui-success-600); font-size: 11px; font-weight: 600; padding: 2px 10px; border-radius: var(--radius-full); }
-.ep-bool-no { background: var(--zui-gray-100); color: var(--text-secondary); font-size: 11px; font-weight: 600; padding: 2px 10px; border-radius: var(--radius-full); }
+.ep-bool-yes { background: var(--zui-success-50); color: var(--zui-success-600); font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: var(--radius-full); }
+.ep-bool-no { background: var(--zui-gray-100); color: var(--text-secondary); font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: var(--radius-full); }
 
 /* Status badge */
-.ep-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    font-weight: 500;
-    padding: 3px 10px;
-    border-radius: var(--radius-full);
-}
+.ep-status { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: var(--radius-full); }
 .ep-status--published { background: var(--zui-success-50); color: var(--zui-success-700); }
 .ep-status--draft { background: var(--zui-warning-50); color: var(--zui-warning-700); }
 .ep-status--scheduled { background: var(--zui-info-50); color: var(--zui-info-600); }
 .ep-status--review { background: var(--zui-gray-100); color: var(--zui-gray-600); }
-.ep-status-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: currentColor;
-}
+.ep-status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
-/* Date cell */
-.ep-date {
-    font-size: var(--text-sm);
-    color: var(--text-secondary);
-}
+/* Date cell — hidden until JS converts */
+.ep-date { font-size: var(--text-sm); color: var(--text-secondary); visibility: hidden; }
+.ep-date.is-ready { visibility: visible; }
 
 /* Action buttons */
 .ep-action {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 30px;
-    height: 30px;
-    color: var(--text-secondary);
-    background: none;
-    border: none;
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: color 120ms, background 120ms;
-    text-decoration: none;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; color: var(--text-secondary); background: none;
+    border: none; border-radius: var(--radius-md); cursor: pointer;
+    transition: color 100ms, background 100ms; text-decoration: none;
 }
-.ep-action:hover {
-    color: var(--text-heading);
-    background: var(--zui-gray-100);
-}
-.ep-action svg { width: 15px; height: 15px; }
+.ep-action:hover { color: var(--text-heading); background: var(--zui-gray-100); }
+.ep-action svg { width: 14px; height: 14px; }
 
-/* ── Sort links ─────────────────────────────────── */
+/* Sort links */
 .ep-sort {
-    color: var(--text-secondary);
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    transition: color 100ms;
+    color: var(--text-secondary); text-decoration: none; display: inline-flex; align-items: center;
+    gap: 3px; font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.05em; transition: color 100ms;
 }
 .ep-sort:hover { color: var(--text-heading); }
 .ep-sort.is-active { color: var(--zui-primary-600); }
 .ep-sort-icon { transition: transform 150ms ease; }
 .ep-sort-icon--desc { transform: rotate(180deg); }
 
-/* ── Row action dropdown — prevent clipping ────── */
-.ep-row .dropdown { position: static; }
-.ep-row .dropdown-menu { position: absolute; z-index: 60; }
-
 /* ── Import Card ────────────────────────────────── */
-.ep-import-card {
-    background: var(--bg-surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: var(--sp-4);
-    margin-bottom: var(--sp-4);
-}
+.ep-import-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--sp-3); margin-bottom: var(--sp-3); }
 
 /* ── Save View Card ─────────────────────────────── */
-.ep-save-view-card {
-    background: var(--bg-surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: var(--sp-4);
-    margin-bottom: var(--sp-4);
-}
+.ep-save-view-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--sp-3); margin-bottom: var(--sp-3); }
 
 /* ── Active View Chip ───────────────────────────── */
 .ep-view-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 12px 4px 10px;
-    background: var(--zui-primary-50);
-    color: var(--zui-primary-700);
-    font-size: var(--text-xs);
-    font-weight: 500;
-    border-radius: var(--radius-full);
-    margin-bottom: var(--sp-3);
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 10px 3px 8px; background: var(--zui-primary-50); color: var(--zui-primary-700);
+    font-size: var(--text-xs); font-weight: 500; border-radius: var(--radius-full);
 }
-.ep-view-chip a {
-    color: var(--zui-primary-400);
-    text-decoration: none;
-    line-height: 1;
-}
+.ep-view-chip a { color: var(--zui-primary-400); text-decoration: none; line-height: 1; }
 .ep-view-chip a:hover { color: var(--zui-primary-700); }
 
 /* ── Empty State ────────────────────────────────── */
-.ep-empty {
-    text-align: center;
-    padding: var(--sp-12) var(--sp-6);
-    background: var(--bg-surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-}
-.ep-empty-icon {
-    width: 56px;
-    height: 56px;
-    background: var(--zui-gray-100);
-    border-radius: var(--radius-lg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto var(--sp-4);
-    color: var(--text-secondary);
-}
-.ep-empty-icon svg { width: 24px; height: 24px; }
+.ep-empty { text-align: center; padding: var(--sp-8) var(--sp-4); background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); }
+.ep-empty-icon { width: 48px; height: 48px; background: var(--zui-gray-100); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; margin: 0 auto var(--sp-3); color: var(--text-secondary); }
+.ep-empty-icon svg { width: 22px; height: 22px; }
 
 /* ── Pagination ─────────────────────────────────── */
-.ep-pagination {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: var(--sp-3) var(--sp-4);
-    border-top: 1px solid var(--border);
-    background: var(--zui-gray-50);
-    font-size: var(--text-sm);
-    color: var(--text-secondary);
-}
-.ep-pagination-controls {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-1);
-}
+.ep-pagination { display: flex; align-items: center; justify-content: space-between; padding: var(--sp-2) var(--sp-3); border-top: 1px solid var(--border); font-size: var(--text-xs); color: var(--text-secondary); }
+.ep-pagination-controls { display: flex; align-items: center; gap: 4px; }
 .ep-page-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 32px;
-    height: 32px;
-    padding: 0 8px;
-    font-size: var(--text-sm);
-    font-weight: 500;
-    color: var(--text);
-    background: var(--bg-surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    text-decoration: none;
-    cursor: pointer;
-    transition: all 120ms;
-    gap: 4px;
+    display: inline-flex; align-items: center; justify-content: center; min-width: 28px; height: 28px;
+    padding: 0 6px; font-size: var(--text-xs); font-weight: 500; color: var(--text);
+    background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md);
+    text-decoration: none; cursor: pointer; transition: all 100ms; gap: 3px;
 }
 .ep-page-btn:hover { border-color: var(--zui-primary-400); color: var(--zui-primary-600); }
-.ep-page-btn.is-current {
-    background: var(--zui-primary-500);
-    color: #fff;
-    border-color: var(--zui-primary-500);
-}
-.ep-page-btn.is-disabled {
-    opacity: 0.4;
-    pointer-events: none;
-}
+.ep-page-btn.is-current { background: var(--zui-primary-500); color: #fff; border-color: var(--zui-primary-500); }
+.ep-page-btn.is-disabled { opacity: 0.4; pointer-events: none; }
 
 /* ── Bulk Bar ───────────────────────────────────── */
 .ep-bulk {
-    position: fixed;
-    bottom: var(--sp-5);
-    left: 50%;
-    transform: translateX(-50%);
-    display: none;
-    align-items: center;
-    gap: var(--sp-3);
-    padding: var(--sp-3) var(--sp-5);
-    background: var(--zui-gray-900);
-    color: #fff;
-    font-size: var(--text-sm);
-    border-radius: var(--radius-xl);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.24);
-    z-index: 100;
+    position: fixed; bottom: var(--sp-4); left: 50%; transform: translateX(-50%);
+    display: none; align-items: center; gap: var(--sp-3); padding: var(--sp-2) var(--sp-4);
+    background: var(--zui-gray-900); color: #fff; font-size: var(--text-sm);
+    border-radius: var(--radius-xl); box-shadow: 0 8px 32px rgba(0,0,0,0.24); z-index: 100;
 }
 .ep-bulk.is-visible { display: flex; }
-.ep-bulk .btn { height: 28px; font-size: var(--text-xs); color: #fff; border-color: rgba(255,255,255,0.3); }
+.ep-bulk .btn { height: 26px; font-size: var(--text-xs); color: #fff; border-color: rgba(255,255,255,0.3); }
 .ep-bulk .btn:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.5); }
 .ep-bulk .btn-danger { background: var(--zui-error-600); border-color: var(--zui-error-600); }
 .ep-bulk .btn-danger:hover { background: var(--zui-error-500); }
-
-/* ── Filter row ─────────────────────────────────── */
-.ep-filter-row { display: flex; gap: var(--sp-2); margin-bottom: var(--sp-2); }
 
 /* ── Column hidden ──────────────────────────────── */
 .col-hidden { display: none !important; }
 
 /* ── Column toggle dropdown ─────────────────────── */
 .ep-col-toggle {
-    position: absolute;
-    top: calc(100% + 6px);
-    right: 0;
-    min-width: 200px;
-    padding: var(--sp-2);
-    background: var(--bg-surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-    display: none;
-    z-index: 50;
+    position: absolute; top: calc(100% + 4px); right: 0; min-width: 200px; padding: var(--sp-2);
+    background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md); display: none; z-index: 50;
 }
 .ep-col-toggle.open { display: block; }
-.ep-col-toggle-title {
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-secondary);
-    padding: var(--sp-1) var(--sp-2);
-    margin-bottom: var(--sp-1);
-}
-.ep-col-toggle label {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-2);
-    padding: 6px var(--sp-2);
-    font-size: var(--text-sm);
-    cursor: pointer;
-    border-radius: var(--radius-sm);
-}
+.ep-col-toggle-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); padding: var(--sp-1) var(--sp-2); }
+.ep-col-toggle label { display: flex; align-items: center; gap: var(--sp-2); padding: 4px var(--sp-2); font-size: var(--text-sm); cursor: pointer; border-radius: var(--radius-sm); }
 .ep-col-toggle label:hover { background: var(--bg-surface-hover); }
 
 /* ── Hierarchy ──────────────────────────────────── */
-.ep-hier-arrow {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 22px;
-    height: 22px;
-    border-radius: 4px;
-    color: var(--zui-primary-600);
-    font-weight: 700;
-    font-size: 16px;
-    flex-shrink: 0;
-    transition: background 0.1s;
-    text-decoration: none;
-}
+.ep-hier-arrow { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 4px; color: var(--zui-primary-600); font-weight: 700; font-size: 14px; flex-shrink: 0; text-decoration: none; }
 .ep-hier-arrow:hover { background: rgba(14,165,233,0.1); }
 .tree-indent { display: inline-flex; align-items: center; flex-shrink: 0; }
-.tree-toggle-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 2px;
-    margin-right: 4px;
-    color: var(--text-secondary);
-    font-size: 11px;
-    line-height: 1;
-    width: 18px;
-    text-align: center;
-    border-radius: 3px;
-}
+.tree-toggle-btn { background: none; border: none; cursor: pointer; padding: 2px; margin-right: 4px; color: var(--text-secondary); font-size: 11px; width: 16px; text-align: center; border-radius: 3px; }
 .tree-toggle-btn:hover { background: var(--bg-surface-hover); }
 
 /* ── Bulk field form ────────────────────────────── */
@@ -567,11 +226,10 @@
 
 /* ── Responsive ─────────────────────────────────── */
 @media (max-width: 768px) {
-    .ep-header { flex-direction: column; gap: var(--sp-3); }
+    .ep-header { flex-direction: column; gap: var(--sp-2); }
     .ep-header-actions { flex-wrap: wrap; }
     .ep-tabs { overflow-x: auto; }
-    .ep-col--field { display: none; }
-    .ep-col--date { display: none; }
+    .ep-col--field, .ep-col--date { display: none; }
 }
 </style>
 {% endblock %}
@@ -605,7 +263,6 @@
                     <span class="badge badge-error" style="margin-left:2px">{{ trashCount }}</span>
                 {% endif %}
             </a>
-
             <div class="dropdown" data-dropdown>
                 <button class="btn btn-outline btn-sm" data-dropdown-trigger>
                     Export
@@ -613,26 +270,19 @@
                 </button>
                 <div class="dropdown-menu" data-dropdown-menu>
                     <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/export?format=csv') }}" class="dropdown-item">
-                        {% include '@cms/partials/sidebar-icon.twig' with {icon: 'file'} only %}
-                        Export as CSV
+                        {% include '@cms/partials/sidebar-icon.twig' with {icon: 'file'} only %} Export as CSV
                     </a>
                     <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/export?format=json') }}" class="dropdown-item">
-                        {% include '@cms/partials/sidebar-icon.twig' with {icon: 'code'} only %}
-                        Export as JSON
+                        {% include '@cms/partials/sidebar-icon.twig' with {icon: 'code'} only %} Export as JSON
                     </a>
                 </div>
             </div>
-
             <button class="btn btn-outline btn-sm" id="toggle-import-btn">
-                {% include '@cms/partials/sidebar-icon.twig' with {icon: 'file'} only %}
-                Import
+                {% include '@cms/partials/sidebar-icon.twig' with {icon: 'file'} only %} Import
             </button>
-
             <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/create') }}" class="btn btn-primary btn-sm">
-                {% include '@cms/partials/sidebar-icon.twig' with {icon: 'plus'} only %}
-                New Entry
+                {% include '@cms/partials/sidebar-icon.twig' with {icon: 'plus'} only %} New Entry
             </a>
-
             <a href="{{ admin_url('collections/' ~ collection.getSlug()) }}" class="btn btn-ghost btn-icon btn-sm" title="Collection Settings">
                 {% include '@cms/partials/sidebar-icon.twig' with {icon: 'settings'} only %}
             </a>
@@ -650,7 +300,6 @@
                 </div>
                 <button type="submit" class="btn btn-primary btn-sm" style="align-self:flex-end;">Preview &amp; Map</button>
             </div>
-            <p class="form-hint mt-2">Upload your file to preview data and map columns before importing.</p>
         </form>
     </div>
 
@@ -658,10 +307,8 @@
     <div class="ep-tabs">
         <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}"
            class="ep-tab {% if activeViewSlug is not defined or not activeViewSlug %}is-active{% endif %}">
-            All
-            <span class="tab-count">{{ _totalCount }}</span>
+            All <span class="tab-count">{{ _totalCount }}</span>
         </a>
-
         {% if savedViews is defined and savedViews|length > 0 %}
             {% for sv in savedViews %}
                 <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?view=' ~ sv.getSlug()) }}"
@@ -672,22 +319,83 @@
             {% endfor %}
         {% endif %}
 
-        <button class="ep-tab" id="toggle-save-view-btn" type="button">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Save View
-        </button>
-
         <div class="ep-tabs-right">
             {% if collection.hasHierarchy() %}
-            <button type="button" class="btn btn-outline btn-sm" id="tree-toggle" style="height:30px;">
-                {% include '@cms/partials/sidebar-icon.twig' with {icon: 'layers'} only %}
-                Tree
+            <button type="button" class="btn btn-outline btn-sm" id="tree-toggle" style="height:28px;">
+                {% include '@cms/partials/sidebar-icon.twig' with {icon: 'layers'} only %} Tree
             </button>
             {% endif %}
 
-            {# Column toggle button #}
+            {# Filter button #}
             <div style="position:relative;">
-                <button type="button" class="btn btn-outline btn-sm" id="col-toggle-btn" title="Toggle columns" style="height:30px;">
+                <button type="button" class="btn btn-outline btn-sm" id="filter-toggle-btn" style="height:28px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+                    Filter
+                    {% if activeFilters is defined and activeFilters|length > 0 %}
+                        <span class="tab-count">{{ activeFilters|length }}</span>
+                    {% endif %}
+                </button>
+                <div class="ep-filter-panel" id="filter-panel">
+                    <div style="font-size:var(--text-xs);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-secondary);margin-bottom:var(--sp-2);">Filter entries</div>
+                    <form method="GET" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" id="filter-form">
+                        {# Preserve existing params #}
+                        {% if sortBy %}<input type="hidden" name="sort_by" value="{{ sortBy }}">{% endif %}
+                        {% if sortDir %}<input type="hidden" name="sort_dir" value="{{ sortDir }}">{% endif %}
+                        {% if activeViewSlug %}<input type="hidden" name="view" value="{{ activeViewSlug }}">{% endif %}
+
+                        <div id="filter-rows">
+                            {% if activeFilters is defined and activeFilters|length > 0 %}
+                                {% for fField, fValue in activeFilters %}
+                                <div class="ep-filter-row">
+                                    <select name="filter_field[]" class="form-control" style="flex:1;">
+                                        <option value="">-- Field --</option>
+                                        {% for field in listableFields %}
+                                            <option value="{{ field.getSlug() }}" {% if fField == field.getSlug() %}selected{% endif %}>{{ field.getName() }}</option>
+                                        {% endfor %}
+                                        {% if collection.isPublishable() %}
+                                            <option value="status" {% if fField == 'status' %}selected{% endif %}>Status</option>
+                                        {% endif %}
+                                    </select>
+                                    <input type="text" name="filter_value[]" class="form-control" placeholder="Value" value="{{ fValue }}" style="flex:1;">
+                                    <button type="button" class="btn btn-ghost btn-icon btn-sm ep-remove-filter" style="flex-shrink:0;width:28px;height:28px;" title="Remove">
+                                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M9 3L3 9M3 3l6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                                    </button>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                            <div class="ep-filter-row">
+                                <select name="filter_field[]" class="form-control" style="flex:1;">
+                                    <option value="">-- Field --</option>
+                                    {% for field in listableFields %}
+                                        <option value="{{ field.getSlug() }}">{{ field.getName() }}</option>
+                                    {% endfor %}
+                                    {% if collection.isPublishable() %}
+                                        <option value="status">Status</option>
+                                    {% endif %}
+                                </select>
+                                <input type="text" name="filter_value[]" class="form-control" placeholder="Value" style="flex:1;">
+                                <button type="button" class="btn btn-ghost btn-icon btn-sm ep-remove-filter" style="flex-shrink:0;width:28px;height:28px;" title="Remove">
+                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M9 3L3 9M3 3l6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                                </button>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="flex items-center gap-2" style="margin-top:var(--sp-2);">
+                            <button type="button" class="btn btn-ghost btn-sm" id="add-filter-row">+ Add</button>
+                            <div style="margin-left:auto;display:flex;gap:var(--sp-2);">
+                                {% if activeFilters is defined and activeFilters|length > 0 %}
+                                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="btn btn-ghost btn-sm" style="color:var(--zui-error-600);">Clear</a>
+                                {% endif %}
+                                <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {# Column toggle #}
+            <div style="position:relative;">
+                <button type="button" class="btn btn-outline btn-sm" id="col-toggle-btn" title="Toggle columns" style="height:28px;">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v18M3 12h18M3 6h18M3 18h18"/></svg>
                     Columns
                 </button>
@@ -720,93 +428,36 @@
         {% endfor %}
     {% endif %}
 
-    {# ── Save View Form (hidden) ────────────────────── #}
-    <div id="save-view-form" class="ep-save-view-card hidden">
-        <div class="flex items-center justify-between mb-3">
-            <span class="text-sm font-semibold text-heading">Save Current View</span>
-            <button type="button" class="btn btn-ghost btn-icon btn-sm" onclick="document.getElementById('save-view-form').classList.add('hidden')" title="Close">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-        </div>
-        <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/views') }}">
-            {{ csrf_field() | raw }}
-            <div class="flex gap-3" style="flex-wrap:wrap;">
-                <div class="form-group" style="flex:2;min-width:200px;">
-                    <label for="view_name" class="form-label">View Name <span style="color:var(--zui-error-600);">*</span></label>
-                    <input type="text" id="view_name" name="view_name" class="form-control" placeholder="e.g. Published Posts" required>
-                </div>
-                <div class="form-group" style="flex:1;min-width:140px;">
-                    <label for="view_sort_by" class="form-label">Sort By</label>
-                    <select name="view_sort_by" id="view_sort_by" class="form-control">
-                        <option value="">Default (ID)</option>
-                        {% for field in listableFields %}
-                            <option value="{{ field.getSlug() }}">{{ field.getName() }}</option>
-                        {% endfor %}
-                        <option value="created_at">Created At</option>
-                        {% if collection.isPublishable() %}
-                            <option value="status">Status</option>
-                        {% endif %}
-                    </select>
-                </div>
-                <div class="form-group" style="flex:1;min-width:140px;">
-                    <label for="view_sort_dir" class="form-label">Direction</label>
-                    <select name="view_sort_dir" id="view_sort_dir" class="form-control">
-                        <option value="DESC">Descending</option>
-                        <option value="ASC">Ascending</option>
-                    </select>
-                </div>
-            </div>
-            <div id="view-filters" class="mb-3">
-                <label class="form-label">Filters</label>
-                <div class="ep-filter-row">
-                    <select name="filter_field[]" class="form-control">
-                        <option value="">-- Field --</option>
-                        {% for field in listableFields %}
-                            <option value="{{ field.getSlug() }}">{{ field.getName() }}</option>
-                        {% endfor %}
-                        {% if collection.isPublishable() %}
-                            <option value="status">Status</option>
-                        {% endif %}
-                    </select>
-                    <input type="text" name="filter_value[]" class="form-control" placeholder="Value (exact match)">
-                </div>
-            </div>
-            <button type="button" class="btn btn-outline btn-sm mb-3" id="add-filter-btn">+ Add Filter</button>
-            <div class="flex items-center justify-between" style="padding-top:var(--sp-3);border-top:1px solid var(--zui-gray-100);">
-                <label class="flex items-center gap-2 text-sm" style="cursor:pointer;"><input type="checkbox" name="view_is_default" value="1"> Set as default view</label>
-                <button type="submit" class="btn btn-primary btn-sm">Save View</button>
-            </div>
-        </form>
-    </div>
-
-    {# ── Toolbar (search + hierarchy path) ──────────── #}
-    <div class="ep-toolbar">
-        {% if listableFields|length > 0 %}
-        <form method="GET" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="ep-search">
-            <svg class="search-icon" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.3"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-            <input type="text" name="search" class="form-control" placeholder="Search entries..." value="{{ search }}" autocomplete="off">
-            {% if search %}
-                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="ep-search-clear" title="Clear search">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M10.5 3.5L3.5 10.5M3.5 3.5l7 7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    {# ── Active filter chips ────────────────────────── #}
+    {% if activeFilters is defined and activeFilters|length > 0 %}
+    <div class="ep-filter-chips mb-3">
+        <span class="text-xs text-secondary" style="font-weight:500;">Filtered by:</span>
+        {% for fField, fValue in activeFilters %}
+            <span class="ep-filter-chip">
+                {{ fField }}: {{ fValue }}
+                {# Build URL removing this filter #}
+                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="ep-filter-chip-remove" title="Remove filter">
+                    <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M9 3L3 9M3 3l6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
                 </a>
-            {% endif %}
-        </form>
-        {% endif %}
-
-        {% if collection.hasHierarchy() and (parentBreadcrumbs is defined and parentBreadcrumbs|length > 0) %}
-        <div class="ep-hier-path">
-            <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?parent=') }}">{{ collection.getName() }}</a>
-            {% for bc in parentBreadcrumbs %}
-                <span class="text-secondary">&#8250;</span>
-                {% if not loop.last %}
-                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?parent=' ~ bc.id) }}">{{ bc.label }}</a>
-                {% else %}
-                    <span class="font-semibold text-heading">{{ bc.label }}</span>
-                {% endif %}
-            {% endfor %}
-        </div>
-        {% endif %}
+            </span>
+        {% endfor %}
     </div>
+    {% endif %}
+
+    {# ── Hierarchy breadcrumb path ──────────────────── #}
+    {% if collection.hasHierarchy() and (parentBreadcrumbs is defined and parentBreadcrumbs|length > 0) %}
+    <div class="ep-hier-path mb-3">
+        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?parent=') }}">{{ collection.getName() }}</a>
+        {% for bc in parentBreadcrumbs %}
+            <span class="text-secondary">&#8250;</span>
+            {% if not loop.last %}
+                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?parent=' ~ bc.id) }}">{{ bc.label }}</a>
+            {% else %}
+                <span class="font-semibold text-heading">{{ bc.label }}</span>
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
 
     {# ── Data List ──────────────────────────────────── #}
     {% if entries.data|length > 0 %}
@@ -821,14 +472,12 @@
             <div class="ep-col {% if loop.first %}ep-col--name{% else %}ep-col--field{% endif %}"
                  data-col="field-{{ field.getSlug() }}" data-col-name="{{ field.getName() }}" data-col-type="{{ field.getType() }}">
                 {% set _nextDir = 'ASC' %}
-                {% if sortBy == field.getSlug() and sortDir == 'ASC' %}
-                    {% set _nextDir = 'DESC' %}
-                {% endif %}
-                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?sort_by=' ~ field.getSlug() ~ '&sort_dir=' ~ _nextDir ~ '&search=' ~ search ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}"
+                {% if sortBy == field.getSlug() and sortDir == 'ASC' %}{% set _nextDir = 'DESC' %}{% endif %}
+                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?sort_by=' ~ field.getSlug() ~ '&sort_dir=' ~ _nextDir ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}"
                    class="ep-sort {% if sortBy == field.getSlug() %}is-active{% endif %}">
                     {{ field.getName() }}
                     {% if sortBy == field.getSlug() %}
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" class="ep-sort-icon {% if sortDir == 'DESC' %}ep-sort-icon--desc{% endif %}"><path d="M3 5l3-3 3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" class="ep-sort-icon {% if sortDir == 'DESC' %}ep-sort-icon--desc{% endif %}"><path d="M3 5l3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     {% endif %}
                 </a>
             </div>
@@ -836,28 +485,24 @@
             {% if collection.isPublishable() %}
             <div class="ep-col ep-col--status" data-col="col-status" data-col-name="Status">
                 {% set _nextDir = 'ASC' %}
-                {% if sortBy == 'status' and sortDir == 'ASC' %}
-                    {% set _nextDir = 'DESC' %}
-                {% endif %}
-                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?sort_by=status&sort_dir=' ~ _nextDir ~ '&search=' ~ search ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}"
+                {% if sortBy == 'status' and sortDir == 'ASC' %}{% set _nextDir = 'DESC' %}{% endif %}
+                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?sort_by=status&sort_dir=' ~ _nextDir ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}"
                    class="ep-sort {% if sortBy == 'status' %}is-active{% endif %}">
                     Status
                     {% if sortBy == 'status' %}
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" class="ep-sort-icon {% if sortDir == 'DESC' %}ep-sort-icon--desc{% endif %}"><path d="M3 5l3-3 3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" class="ep-sort-icon {% if sortDir == 'DESC' %}ep-sort-icon--desc{% endif %}"><path d="M3 5l3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     {% endif %}
                 </a>
             </div>
             {% endif %}
             <div class="ep-col ep-col--date" data-col="col-updated" data-col-name="Updated">
                 {% set _nextDir = 'ASC' %}
-                {% if sortBy == 'created_at' and sortDir == 'ASC' %}
-                    {% set _nextDir = 'DESC' %}
-                {% endif %}
-                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?sort_by=created_at&sort_dir=' ~ _nextDir ~ '&search=' ~ search ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}"
+                {% if sortBy == 'created_at' and sortDir == 'ASC' %}{% set _nextDir = 'DESC' %}{% endif %}
+                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?sort_by=created_at&sort_dir=' ~ _nextDir ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}"
                    class="ep-sort {% if sortBy == 'created_at' %}is-active{% endif %}">
                     Updated
                     {% if sortBy == 'created_at' %}
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" class="ep-sort-icon {% if sortDir == 'DESC' %}ep-sort-icon--desc{% endif %}"><path d="M3 5l3-3 3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" class="ep-sort-icon {% if sortDir == 'DESC' %}ep-sort-icon--desc{% endif %}"><path d="M3 5l3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     {% endif %}
                 </a>
             </div>
@@ -871,7 +516,6 @@
         {% set _eChildren = childCountMap[_eId]|default(0) %}
         {% set _eParent = entry.parent_id|default('') %}
         <div class="ep-row" data-entry-id="{{ _eId }}" data-parent-id="{{ _eParent }}" data-depth="{{ _eDepth }}" data-children="{{ _eChildren }}">
-
             <div class="ep-col ep-col--cb">
                 <input type="checkbox" class="entry-checkbox ep-cb" value="{{ entry.id }}">
             </div>
@@ -879,12 +523,11 @@
             {% for field in listableFields %}
             <div class="ep-col {% if loop.first %}ep-col--name{% else %}ep-col--field{% endif %} ep-field-val"
                  data-col="field-{{ field.getSlug() }}"
-                 {% if loop.first and collection.hasHierarchy() %}style="display:flex;align-items:center;gap:6px;"{% endif %}>
+                 {% if loop.first and collection.hasHierarchy() %}style="display:flex;align-items:center;gap:5px;"{% endif %}>
                 {% if loop.first and collection.hasHierarchy() and _eChildren > 0 %}
                     <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?parent=' ~ entry.id) }}" class="ep-hier-arrow" title="View {{ _eChildren }} children">&#8250;</a>
                 {% endif %}
                 {% if loop.first %}
-                    {# First field rendered as clickable entry name #}
                     {% set _nameVal = entry[field.getSlug()]|default('')|striptags %}
                     <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id) }}" class="ep-entry-name">
                         {{ _nameVal|slice(0, 80) }}{% if _nameVal|length > 80 %}...{% endif %}
@@ -897,10 +540,8 @@
                     {% set _totalImgCount = media_thumbs_count(_imgVal) %}
                     {% if _thumbs|length > 0 %}
                         <span class="flex items-center gap-1">
-                        {% for _t in _thumbs %}
-                            <img src="{{ _t }}" alt="" class="ep-thumb">
-                        {% endfor %}
-                        {% if _totalImgCount > 3 %}<span class="text-secondary text-xs" style="margin-left:4px;">+{{ _totalImgCount - 3 }}</span>{% endif %}
+                        {% for _t in _thumbs %}<img src="{{ _t }}" alt="" class="ep-thumb">{% endfor %}
+                        {% if _totalImgCount > 3 %}<span class="text-secondary text-xs">+{{ _totalImgCount - 3 }}</span>{% endif %}
                         </span>
                     {% endif %}
                 {% elseif field.getType() == 'richtext' and entry[field.getSlug()] %}
@@ -925,15 +566,12 @@
             {% if collection.isPublishable() %}
             <div class="ep-col ep-col--status" data-col="col-status">
                 {% set _st = entry.status|default('draft') %}
-                <span class="ep-status ep-status--{{ _st }}">
-                    <span class="ep-status-dot"></span>
-                    {{ _st|capitalize }}
-                </span>
+                <span class="ep-status ep-status--{{ _st }}"><span class="ep-status-dot"></span> {{ _st|capitalize }}</span>
             </div>
             {% endif %}
 
             <div class="ep-col ep-col--date" data-col="col-updated">
-                <span class="ep-date entries-relative-time" data-time="{{ entry.updated_at|default(entry.created_at|default('')) }}">{{ entry.updated_at|default(entry.created_at|default('')) }}</span>
+                <span class="ep-date entries-relative-time" data-time="{{ entry.updated_at|default(entry.created_at|default('')) }}"></span>
             </div>
 
             <div class="ep-col ep-col--actions">
@@ -946,28 +584,24 @@
                     </button>
                     <div class="dropdown-menu" data-dropdown-menu>
                         <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id) }}" class="dropdown-item">
-                            {% include '@cms/partials/sidebar-icon.twig' with {icon: 'edit'} only %}
-                            Edit
+                            {% include '@cms/partials/sidebar-icon.twig' with {icon: 'edit'} only %} Edit
                         </a>
                         <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/duplicate') }}">
                             {{ csrf_field() | raw }}
                             <button type="submit" class="dropdown-item" onclick="return confirm('Duplicate this entry?')">
-                                {% include '@cms/partials/sidebar-icon.twig' with {icon: 'file'} only %}
-                                Duplicate
+                                {% include '@cms/partials/sidebar-icon.twig' with {icon: 'file'} only %} Duplicate
                             </button>
                         </form>
                         <div class="dropdown-divider"></div>
                         <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/delete') }}" class="confirm-delete" data-message="Delete this entry?">
                             {{ csrf_field() | raw }}
                             <button type="submit" class="dropdown-item danger">
-                                {% include '@cms/partials/sidebar-icon.twig' with {icon: 'archive'} only %}
-                                Delete
+                                {% include '@cms/partials/sidebar-icon.twig' with {icon: 'archive'} only %} Delete
                             </button>
                         </form>
                     </div>
                 </div>
             </div>
-
         </div>
         {% endfor %}
 
@@ -977,41 +611,31 @@
             <span>
                 {% set _showTo = entries.current_page * entries.per_page %}
                 {% if _showTo > entries.total %}{% set _showTo = entries.total %}{% endif %}
-                Showing {{ ((entries.current_page - 1) * entries.per_page) + 1 }}&ndash;{{ _showTo }} of {{ entries.total }}
+                {{ ((entries.current_page - 1) * entries.per_page) + 1 }}&ndash;{{ _showTo }} of {{ entries.total }}
             </span>
             <div class="ep-pagination-controls">
                 {% if entries.current_page > 1 %}
-                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?page=' ~ (entries.current_page - 1) ~ '&search=' ~ search ~ '&sort_by=' ~ sortBy ~ '&sort_dir=' ~ sortDir ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}" class="ep-page-btn">
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.75 10.5L5.25 7l3.5-3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        Prev
+                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?page=' ~ (entries.current_page - 1) ~ '&sort_by=' ~ sortBy ~ '&sort_dir=' ~ sortDir ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}" class="ep-page-btn">
+                        <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M8.75 10.5L5.25 7l3.5-3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg> Prev
                     </a>
                 {% else %}
-                    <span class="ep-page-btn is-disabled">
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.75 10.5L5.25 7l3.5-3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        Prev
-                    </span>
+                    <span class="ep-page-btn is-disabled"><svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M8.75 10.5L5.25 7l3.5-3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg> Prev</span>
                 {% endif %}
-
                 {% for p in 1..entries.last_page %}
                     {% if p == entries.current_page %}
                         <span class="ep-page-btn is-current">{{ p }}</span>
                     {% elseif p == 1 or p == entries.last_page or (p >= entries.current_page - 2 and p <= entries.current_page + 2) %}
-                        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?page=' ~ p ~ '&search=' ~ search ~ '&sort_by=' ~ sortBy ~ '&sort_dir=' ~ sortDir ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}" class="ep-page-btn">{{ p }}</a>
+                        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?page=' ~ p ~ '&sort_by=' ~ sortBy ~ '&sort_dir=' ~ sortDir ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}" class="ep-page-btn">{{ p }}</a>
                     {% elseif p == 2 or p == entries.last_page - 1 %}
-                        <span class="text-secondary text-sm">...</span>
+                        <span class="text-secondary">...</span>
                     {% endif %}
                 {% endfor %}
-
                 {% if entries.current_page < entries.last_page %}
-                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?page=' ~ (entries.current_page + 1) ~ '&search=' ~ search ~ '&sort_by=' ~ sortBy ~ '&sort_dir=' ~ sortDir ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}" class="ep-page-btn">
-                        Next
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5.25 3.5L8.75 7l-3.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?page=' ~ (entries.current_page + 1) ~ '&sort_by=' ~ sortBy ~ '&sort_dir=' ~ sortDir ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}" class="ep-page-btn">
+                        Next <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M5.25 3.5L8.75 7l-3.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </a>
                 {% else %}
-                    <span class="ep-page-btn is-disabled">
-                        Next
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5.25 3.5L8.75 7l-3.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </span>
+                    <span class="ep-page-btn is-disabled">Next <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M5.25 3.5L8.75 7l-3.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
                 {% endif %}
             </div>
         </div>
@@ -1025,16 +649,13 @@
             {{ csrf_field() | raw }}
             <input type="hidden" name="selected_ids" id="bulk-ids" value="">
             <input type="hidden" name="bulk_action" id="bulk-action-value" value="">
-
             {% if collection.isPublishable() %}
             <button type="submit" class="btn btn-outline btn-sm" onclick="document.getElementById('bulk-action-value').value='publish'; return confirm('Publish selected entries?')">Publish</button>
             <button type="submit" class="btn btn-outline btn-sm" onclick="document.getElementById('bulk-action-value').value='unpublish'; return confirm('Unpublish selected entries?')">Unpublish</button>
             {% endif %}
-
             <div class="dropdown" data-dropdown>
                 <button type="button" class="btn btn-outline btn-sm" data-dropdown-trigger>
-                    Update Field
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 6l2.5-2.5L7.5 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Update Field <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 6l2.5-2.5L7.5 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </button>
                 <div class="dropdown-menu" data-dropdown-menu style="bottom:calc(100% + 4px);top:auto;right:0;left:auto;">
                     <div class="ep-bulk-field-form">
@@ -1055,27 +676,11 @@
                     </div>
                 </div>
             </div>
-
             <button type="submit" class="btn btn-danger btn-sm" onclick="document.getElementById('bulk-action-value').value='delete'; return confirm('Delete selected entries? This cannot be undone.')">Delete</button>
         </form>
     </div>
 
     {% else %}
-
-    {# ── Search (shown even when empty) ─────────────── #}
-    {% if listableFields|length > 0 %}
-    <div class="ep-toolbar">
-        <form method="GET" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="ep-search">
-            <svg class="search-icon" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.3"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-            <input type="text" name="search" class="form-control" placeholder="Search entries..." value="{{ search }}" autocomplete="off">
-            {% if search %}
-                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="ep-search-clear" title="Clear search">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M10.5 3.5L3.5 10.5M3.5 3.5l7 7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-                </a>
-            {% endif %}
-        </form>
-    </div>
-    {% endif %}
 
     {# ── Empty State ────────────────────────────────── #}
     <div class="ep-empty">
@@ -1083,10 +688,9 @@
             {% include '@cms/partials/sidebar-icon.twig' with {icon: 'file-text'} only %}
         </div>
         <h3 class="text-heading font-semibold mb-2">No entries yet</h3>
-        <p class="text-secondary text-sm mb-4">Get started by creating the first entry for this collection.</p>
-        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/create') }}" class="btn btn-primary">
-            {% include '@cms/partials/sidebar-icon.twig' with {icon: 'plus'} only %}
-            Create Entry
+        <p class="text-secondary text-sm mb-3">Get started by creating the first entry.</p>
+        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/create') }}" class="btn btn-primary btn-sm">
+            {% include '@cms/partials/sidebar-icon.twig' with {icon: 'plus'} only %} Create Entry
         </a>
     </div>
     {% endif %}
@@ -1102,12 +706,9 @@ document.addEventListener('DOMContentLoaded', function() {
         var trigger = dd.querySelector('[data-dropdown-trigger]');
         var menu = dd.querySelector('[data-dropdown-menu]');
         if (!trigger || !menu) return;
-
         trigger.addEventListener('click', function(e) {
             e.stopPropagation();
-            document.querySelectorAll('[data-dropdown-menu].open').forEach(function(m) {
-                if (m !== menu) m.classList.remove('open');
-            });
+            document.querySelectorAll('[data-dropdown-menu].open').forEach(function(m) { if (m !== menu) m.classList.remove('open'); });
             menu.classList.toggle('open');
         });
     });
@@ -1116,15 +717,15 @@ document.addEventListener('DOMContentLoaded', function() {
             var colDd = document.getElementById('col-toggle-dropdown');
             if (colDd) colDd.classList.remove('open');
         }
-        document.querySelectorAll('[data-dropdown-menu].open').forEach(function(m) {
-            m.classList.remove('open');
-        });
+        if (!e.target.closest('#filter-toggle-btn') && !e.target.closest('#filter-panel')) {
+            var fp = document.getElementById('filter-panel');
+            if (fp) fp.classList.remove('open');
+        }
+        document.querySelectorAll('[data-dropdown-menu].open').forEach(function(m) { m.classList.remove('open'); });
     });
     document.querySelectorAll('[data-dropdown-menu]').forEach(function(m) {
         m.addEventListener('click', function(e) {
-            if (!e.target.closest('a') && e.target.type !== 'submit') {
-                e.stopPropagation();
-            }
+            if (!e.target.closest('a') && e.target.type !== 'submit') e.stopPropagation();
         });
     });
 
@@ -1132,36 +733,50 @@ document.addEventListener('DOMContentLoaded', function() {
     var importBtn = document.getElementById('toggle-import-btn');
     var importForm = document.getElementById('import-form');
     if (importBtn && importForm) {
-        importBtn.addEventListener('click', function() {
-            importForm.classList.toggle('hidden');
-        });
+        importBtn.addEventListener('click', function() { importForm.classList.toggle('hidden'); });
     }
 
-    /* ── Save View toggle ──────────────────────── */
-    var saveViewBtn = document.getElementById('toggle-save-view-btn');
-    var saveViewForm = document.getElementById('save-view-form');
-    if (saveViewBtn && saveViewForm) {
-        saveViewBtn.addEventListener('click', function() {
-            saveViewForm.classList.toggle('hidden');
-            document.querySelectorAll('[data-dropdown-menu].open').forEach(function(m) {
-                m.classList.remove('open');
-            });
+    /* ── Filter panel toggle ───────────────────── */
+    var filterBtn = document.getElementById('filter-toggle-btn');
+    var filterPanel = document.getElementById('filter-panel');
+    if (filterBtn && filterPanel) {
+        filterBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            filterPanel.classList.toggle('open');
         });
+        filterPanel.addEventListener('click', function(e) { e.stopPropagation(); });
     }
 
     /* ── Add filter row ────────────────────────── */
-    var addFilterBtn = document.getElementById('add-filter-btn');
-    var viewFilters = document.getElementById('view-filters');
-    if (addFilterBtn && viewFilters) {
-        addFilterBtn.addEventListener('click', function() {
-            var firstRow = viewFilters.querySelector('.ep-filter-row');
-            if (firstRow) {
-                var clone = firstRow.cloneNode(true);
+    var addFilterRow = document.getElementById('add-filter-row');
+    var filterRows = document.getElementById('filter-rows');
+    if (addFilterRow && filterRows) {
+        addFilterRow.addEventListener('click', function() {
+            var first = filterRows.querySelector('.ep-filter-row');
+            if (first) {
+                var clone = first.cloneNode(true);
                 clone.querySelectorAll('input, select').forEach(function(el) { el.value = ''; });
-                viewFilters.appendChild(clone);
+                filterRows.appendChild(clone);
+                bindRemoveFilter(clone);
             }
         });
     }
+
+    /* ── Remove filter row ─────────────────────── */
+    function bindRemoveFilter(row) {
+        var btn = row.querySelector('.ep-remove-filter');
+        if (btn) {
+            btn.addEventListener('click', function() {
+                var rows = filterRows.querySelectorAll('.ep-filter-row');
+                if (rows.length > 1) {
+                    row.remove();
+                } else {
+                    row.querySelectorAll('input, select').forEach(function(el) { el.value = ''; });
+                }
+            });
+        }
+    }
+    document.querySelectorAll('.ep-filter-row').forEach(bindRemoveFilter);
 
     /* ── Bulk selection ────────────────────────── */
     var selectAll = document.getElementById('select-all');
@@ -1173,24 +788,12 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateBulk() {
         var selected = document.querySelectorAll('.entry-checkbox:checked');
         var ids = Array.from(selected).map(function(cb) { return cb.value; });
-        if (bulkBar) {
-            if (ids.length > 0) {
-                bulkBar.classList.add('is-visible');
-            } else {
-                bulkBar.classList.remove('is-visible');
-            }
-        }
+        if (bulkBar) { bulkBar.classList.toggle('is-visible', ids.length > 0); }
         if (bulkCount) bulkCount.textContent = ids.length;
         if (bulkIds) bulkIds.value = ids.join(',');
-
-        // Highlight selected rows
         document.querySelectorAll('.ep-row').forEach(function(row) {
             var cb = row.querySelector('.entry-checkbox');
-            if (cb && cb.checked) {
-                row.classList.add('is-selected');
-            } else {
-                row.classList.remove('is-selected');
-            }
+            row.classList.toggle('is-selected', cb && cb.checked);
         });
     }
 
@@ -1200,51 +803,32 @@ document.addEventListener('DOMContentLoaded', function() {
             updateBulk();
         });
     }
-    checkboxes.forEach(function(cb) {
-        cb.addEventListener('change', updateBulk);
-    });
+    checkboxes.forEach(function(cb) { cb.addEventListener('change', updateBulk); });
 
-    /* ── Bulk field update (value rendering) ───── */
+    /* ── Bulk field update ─────────────────────── */
     var bulkFieldSelect = document.getElementById('bulk-field-select');
     var bulkValueWrapper = document.getElementById('bulk-value-wrapper');
-
     function renderValueInput(type, options) {
         if (!bulkValueWrapper) return;
         var html = '';
         if (type === 'boolean') {
-            html = '<select name="bulk_value" id="bulk-value-input" class="form-control">' +
-                   '<option value="0">No</option><option value="1">Yes</option></select>';
+            html = '<select name="bulk_value" id="bulk-value-input" class="form-control"><option value="0">No</option><option value="1">Yes</option></select>';
         } else if (type === 'select' && options) {
-            var opts;
-            try { opts = typeof options === 'string' ? JSON.parse(options) : options; } catch(e) { opts = []; }
-            html = '<select name="bulk_value" id="bulk-value-input" class="form-control">';
-            html += '<option value="">-- Select --</option>';
-            if (Array.isArray(opts)) {
-                opts.forEach(function(o) {
-                    var val = typeof o === 'object' ? (o.value || '') : o;
-                    var label = typeof o === 'object' ? (o.label || o.value || '') : o;
-                    html += '<option value="' + val + '">' + label + '</option>';
-                });
-            }
+            var opts; try { opts = typeof options === 'string' ? JSON.parse(options) : options; } catch(e) { opts = []; }
+            html = '<select name="bulk_value" id="bulk-value-input" class="form-control"><option value="">-- Select --</option>';
+            if (Array.isArray(opts)) { opts.forEach(function(o) { var v = typeof o === 'object' ? (o.value||'') : o; var l = typeof o === 'object' ? (o.label||o.value||'') : o; html += '<option value="'+v+'">'+l+'</option>'; }); }
             html += '</select>';
         } else if (type === 'number') {
             html = '<input type="number" name="bulk_value" id="bulk-value-input" class="form-control" placeholder="New value" step="any">';
-        } else if (type === 'email') {
-            html = '<input type="email" name="bulk_value" id="bulk-value-input" class="form-control" placeholder="New value">';
-        } else if (type === 'url') {
-            html = '<input type="url" name="bulk_value" id="bulk-value-input" class="form-control" placeholder="New value">';
         } else {
-            html = '<input type="text" name="bulk_value" id="bulk-value-input" class="form-control" placeholder="New value">';
+            html = '<input type="'+type+'" name="bulk_value" id="bulk-value-input" class="form-control" placeholder="New value">';
         }
         bulkValueWrapper.innerHTML = html;
     }
-
     if (bulkFieldSelect) {
         bulkFieldSelect.addEventListener('change', function() {
-            var selected = this.options[this.selectedIndex];
-            var type = selected.getAttribute('data-type') || 'text';
-            var options = selected.getAttribute('data-options') || null;
-            renderValueInput(type, options);
+            var sel = this.options[this.selectedIndex];
+            renderValueInput(sel.getAttribute('data-type') || 'text', sel.getAttribute('data-options'));
         });
     }
 
@@ -1252,18 +836,12 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.ep-rt-preview').forEach(function(el) {
         el.addEventListener('click', function(e) {
             e.stopPropagation();
-            var content = el.dataset.content;
-            if (!content) return;
+            var content = el.dataset.content; if (!content) return;
             var overlay = document.createElement('div');
             overlay.className = 'zui-modal-overlay';
-            overlay.innerHTML = '<div class="zui-modal">'
-                + '<div class="zui-modal-header"><h3>Content Preview</h3><button class="btn btn-ghost btn-icon btn-sm" data-close>&times;</button></div>'
-                + '<div class="zui-modal-body">' + content + '</div>'
-                + '<div class="zui-modal-footer"><button class="btn btn-outline btn-sm" data-close>Close</button></div></div>';
+            overlay.innerHTML = '<div class="zui-modal"><div class="zui-modal-header"><h3>Content Preview</h3><button class="btn btn-ghost btn-icon btn-sm" data-close>&times;</button></div><div class="zui-modal-body">'+content+'</div><div class="zui-modal-footer"><button class="btn btn-outline btn-sm" data-close>Close</button></div></div>';
             document.body.appendChild(overlay);
-            overlay.querySelectorAll('[data-close]').forEach(function(btn) {
-                btn.addEventListener('click', function() { overlay.remove(); });
-            });
+            overlay.querySelectorAll('[data-close]').forEach(function(btn) { btn.addEventListener('click', function() { overlay.remove(); }); });
             overlay.addEventListener('click', function(ev) { if (ev.target === overlay) overlay.remove(); });
             document.addEventListener('keydown', function onEsc(ev) { if (ev.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', onEsc); } });
         });
@@ -1271,61 +849,37 @@ document.addEventListener('DOMContentLoaded', function() {
 
     /* ── Confirm delete forms ──────────────────── */
     document.querySelectorAll('.confirm-delete').forEach(function(form) {
-        form.addEventListener('submit', function(e) {
-            if (!confirm(form.dataset.message || 'Are you sure?')) {
-                e.preventDefault();
-            }
-        });
+        form.addEventListener('submit', function(e) { if (!confirm(form.dataset.message || 'Are you sure?')) e.preventDefault(); });
     });
 
-    /* ── Relative time conversion ──────────────── */
+    /* ── Relative time — render immediately, no flicker ── */
     function timeAgo(dateStr) {
         if (!dateStr) return '';
         var date = new Date(dateStr);
         if (isNaN(date.getTime())) return dateStr;
-        var now = new Date();
-        var seconds = Math.floor((now - date) / 1000);
+        var seconds = Math.floor((Date.now() - date.getTime()) / 1000);
         if (seconds < 0) seconds = 0;
-
         var intervals = [
-            { label: 'y', full: 'year', seconds: 31536000 },
-            { label: 'mo', full: 'month', seconds: 2592000 },
-            { label: 'w', full: 'week', seconds: 604800 },
-            { label: 'd', full: 'day', seconds: 86400 },
-            { label: 'h', full: 'hour', seconds: 3600 },
-            { label: 'm', full: 'minute', seconds: 60 }
+            { l: 'y', s: 31536000 }, { l: 'mo', s: 2592000 }, { l: 'w', s: 604800 },
+            { l: 'd', s: 86400, day: true }, { l: 'h', s: 3600 }, { l: 'm', s: 60 }
         ];
-
         for (var i = 0; i < intervals.length; i++) {
-            var count = Math.floor(seconds / intervals[i].seconds);
+            var count = Math.floor(seconds / intervals[i].s);
             if (count >= 1) {
-                if (intervals[i].full === 'day' && count === 1) return 'Yesterday';
-                return count + intervals[i].label + ' ago';
+                if (intervals[i].day && count === 1) return 'Yesterday';
+                return count + intervals[i].l + ' ago';
             }
         }
         return 'Just now';
     }
-
     document.querySelectorAll('.entries-relative-time').forEach(function(el) {
         var raw = el.getAttribute('data-time');
         if (raw) {
             var relative = timeAgo(raw);
-            if (relative) {
-                el.textContent = relative;
-                el.title = raw;
-            }
+            if (relative) { el.textContent = relative; el.title = raw; }
         }
+        el.classList.add('is-ready');
     });
-
-    /* ── Search submit on Enter ────────────────── */
-    var searchInput = document.querySelector('.ep-search .form-control');
-    if (searchInput) {
-        searchInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                this.closest('form').submit();
-            }
-        });
-    }
 
     /* ── Column Toggle System ──────────────────── */
     var colToggleBtn = document.getElementById('col-toggle-btn');
@@ -1337,41 +891,21 @@ document.addEventListener('DOMContentLoaded', function() {
     var toggleableCols = [];
     var listEl = document.getElementById('entries-list');
     if (listEl) {
-        var headerCols = listEl.querySelectorAll('.ep-list-head [data-col]');
-        headerCols.forEach(function(col) {
+        listEl.querySelectorAll('.ep-list-head [data-col]').forEach(function(col) {
             var colId = col.getAttribute('data-col');
             var colName = col.getAttribute('data-col-name');
-            if (colId && colName) {
-                toggleableCols.push({ id: colId, name: colName });
-            }
+            if (colId && colName) toggleableCols.push({ id: colId, name: colName });
         });
     }
 
-    function loadColState() {
-        var saved = null;
-        try { saved = JSON.parse(localStorage.getItem(storageKey)); } catch(e) {}
-        return saved;
-    }
-
-    function saveColState(state) {
-        try { localStorage.setItem(storageKey, JSON.stringify(state)); } catch(e) {}
-    }
+    function loadColState() { try { return JSON.parse(localStorage.getItem(storageKey)); } catch(e) { return null; } }
+    function saveColState(state) { try { localStorage.setItem(storageKey, JSON.stringify(state)); } catch(e) {} }
 
     function applyColVisibility(state) {
         if (!listEl || !state) return;
         toggleableCols.forEach(function(col) {
-            var isVisible = true;
-            if (col.id in state) {
-                isVisible = state[col.id];
-            }
-            var cells = listEl.querySelectorAll('[data-col="' + col.id + '"]');
-            cells.forEach(function(cell) {
-                if (isVisible) {
-                    cell.classList.remove('col-hidden');
-                } else {
-                    cell.classList.add('col-hidden');
-                }
-            });
+            var vis = !(col.id in state) || state[col.id];
+            listEl.querySelectorAll('[data-col="'+col.id+'"]').forEach(function(cell) { cell.classList.toggle('col-hidden', !vis); });
         });
     }
 
@@ -1379,135 +913,70 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!colToggleList) return;
         colToggleList.innerHTML = '';
         toggleableCols.forEach(function(col) {
-            var isVisible = true;
-            if (state && (col.id in state)) {
-                isVisible = state[col.id];
-            }
+            var vis = !state || !(col.id in state) || state[col.id];
             var label = document.createElement('label');
             var cb = document.createElement('input');
-            cb.type = 'checkbox';
-            cb.checked = isVisible;
-            cb.setAttribute('data-col-id', col.id);
+            cb.type = 'checkbox'; cb.checked = vis;
             cb.addEventListener('change', function() {
-                var currentState = loadColState() || {};
-                currentState[col.id] = cb.checked;
-                saveColState(currentState);
-                applyColVisibility(currentState);
+                var s = loadColState() || {}; s[col.id] = cb.checked; saveColState(s); applyColVisibility(s);
             });
-            var text = document.createTextNode(' ' + col.name);
             label.appendChild(cb);
-            label.appendChild(text);
+            label.appendChild(document.createTextNode(' ' + col.name));
             colToggleList.appendChild(label);
         });
     }
 
     if (colToggleBtn && colToggleDropdown && toggleableCols.length > 0) {
         var savedState = loadColState();
-        if (savedState) {
-            applyColVisibility(savedState);
-        }
+        if (savedState) applyColVisibility(savedState);
         buildColToggleList(savedState);
-
         colToggleBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            document.querySelectorAll('[data-dropdown-menu].open').forEach(function(m) {
-                m.classList.remove('open');
-            });
+            document.querySelectorAll('[data-dropdown-menu].open').forEach(function(m) { m.classList.remove('open'); });
             colToggleDropdown.classList.toggle('open');
         });
-
-        colToggleDropdown.addEventListener('click', function(e) {
-            e.stopPropagation();
-        });
+        colToggleDropdown.addEventListener('click', function(e) { e.stopPropagation(); });
     }
-
 });
 
 {% if collection.hasHierarchy() %}
-// ── Tree View Toggle ──
 (function() {
     var treeBtn = document.getElementById('tree-toggle');
     if (!treeBtn) return;
-
     var rows = document.querySelectorAll('#entries-list .ep-row');
-    var isTreeMode = true;
-    var collapsed = {};
+    var isTreeMode = true, collapsed = {};
 
     function applyTreeView() {
         rows.forEach(function(row) {
-            var depth = parseInt(row.dataset.depth || '0', 10);
-            var parentId = row.dataset.parentId;
-            var entryId = row.dataset.entryId;
-            var childCount = parseInt(row.dataset.children || '0', 10);
-            var firstFieldCell = row.querySelector('[data-col^="field-"]');
-            if (!firstFieldCell) return;
-
-            var old = firstFieldCell.querySelector('.tree-indent');
-            if (old) old.remove();
-
-            if (!isTreeMode) {
-                row.style.display = '';
-                return;
-            }
-
+            var depth = parseInt(row.dataset.depth||'0',10), parentId = row.dataset.parentId;
+            var entryId = row.dataset.entryId, childCount = parseInt(row.dataset.children||'0',10);
+            var fc = row.querySelector('[data-col^="field-"]'); if (!fc) return;
+            var old = fc.querySelector('.tree-indent'); if (old) old.remove();
+            if (!isTreeMode) { row.style.display = ''; return; }
             var hidden = false;
-            if (parentId) {
-                var checkId = parentId;
-                var seen = {};
-                while (checkId && !seen[checkId]) {
-                    seen[checkId] = true;
-                    if (collapsed[checkId]) { hidden = true; break; }
-                    var parentRow = document.querySelector('[data-entry-id="' + checkId + '"]');
-                    checkId = parentRow ? parentRow.dataset.parentId : '';
-                }
-            }
+            if (parentId) { var cid = parentId, seen = {}; while (cid && !seen[cid]) { seen[cid]=true; if(collapsed[cid]){hidden=true;break;} var pr=document.querySelector('[data-entry-id="'+cid+'"]'); cid=pr?pr.dataset.parentId:''; } }
             row.style.display = hidden ? 'none' : '';
-
             if (depth > 0 || childCount > 0) {
-                var indent = document.createElement('span');
-                indent.className = 'tree-indent';
-
-                if (depth > 0) {
-                    var spacer = document.createElement('span');
-                    spacer.style.cssText = 'display:inline-block;width:' + (depth * 24) + 'px;';
-                    indent.appendChild(spacer);
-                }
-
+                var indent = document.createElement('span'); indent.className = 'tree-indent';
+                if (depth > 0) { var sp = document.createElement('span'); sp.style.cssText='display:inline-block;width:'+(depth*20)+'px;'; indent.appendChild(sp); }
                 if (childCount > 0) {
-                    var toggle = document.createElement('button');
-                    toggle.type = 'button';
-                    toggle.className = 'tree-toggle-btn';
-                    toggle.textContent = collapsed[entryId] ? '\u25B6' : '\u25BC';
-                    toggle.dataset.entryId = entryId;
-                    toggle.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        collapsed[entryId] = !collapsed[entryId];
-                        this.textContent = collapsed[entryId] ? '\u25B6' : '\u25BC';
-                        applyTreeView();
-                    });
-                    indent.appendChild(toggle);
-                } else if (depth > 0) {
-                    var leaf = document.createElement('span');
-                    leaf.style.cssText = 'color:var(--border);margin-right:4px;font-size:12px;width:18px;text-align:center;display:inline-block;';
-                    leaf.textContent = '\u2514';
-                    indent.appendChild(leaf);
-                }
-
-                firstFieldCell.insertBefore(indent, firstFieldCell.firstChild);
+                    var tog = document.createElement('button'); tog.type='button'; tog.className='tree-toggle-btn';
+                    tog.textContent = collapsed[entryId]?'\u25B6':'\u25BC'; tog.dataset.entryId=entryId;
+                    tog.addEventListener('click',function(e){e.stopPropagation();collapsed[entryId]=!collapsed[entryId];this.textContent=collapsed[entryId]?'\u25B6':'\u25BC';applyTreeView();});
+                    indent.appendChild(tog);
+                } else if (depth > 0) { var lf=document.createElement('span'); lf.style.cssText='color:var(--border);margin-right:3px;font-size:11px;width:16px;text-align:center;display:inline-block;'; lf.textContent='\u2514'; indent.appendChild(lf); }
+                fc.insertBefore(indent, fc.firstChild);
             }
         });
     }
-
     treeBtn.addEventListener('click', function() {
-        isTreeMode = !isTreeMode;
-        collapsed = {};
+        isTreeMode = !isTreeMode; collapsed = {};
         treeBtn.textContent = isTreeMode ? 'Flat View' : 'Tree View';
         treeBtn.style.background = isTreeMode ? 'var(--zui-primary-500)' : '';
         treeBtn.style.color = isTreeMode ? '#fff' : '';
         treeBtn.style.borderColor = isTreeMode ? 'var(--zui-primary-500)' : '';
         applyTreeView();
     });
-
     treeBtn.textContent = 'Flat View';
     treeBtn.style.background = 'var(--zui-primary-500)';
     treeBtn.style.color = '#fff';
