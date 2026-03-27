@@ -1,63 +1,119 @@
 {% extends "@cms/layouts/cms.twig" %}
 
 {% block title %}{{ collection.getName() }} Entries{% endblock %}
-{% block styles %}<link rel="stylesheet" href="/cms-assets/css/entries-index.css">{% endblock %}
+{% block styles %}
+<style nonce="{{ csp_nonce() }}">
+.entries-page{padding-bottom:80px}
+.entries-toolbar{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);border-bottom:1px solid var(--zui-gray-100)}
+.entries-search{flex:1;position:relative}
+.entries-search input{width:100%;height:34px;padding:0 var(--sp-3) 0 36px;font-size:var(--text-sm);border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-surface);outline:none;font-family:var(--font-sans);transition:border-color 120ms ease}
+.entries-search input:focus{border-color:var(--border-focus);box-shadow:0 0 0 2px var(--ring-focus)}
+.entries-search svg{position:absolute;left:var(--sp-3);top:50%;transform:translateY(-50%);color:var(--text-disabled);pointer-events:none;width:16px;height:16px}
+.entries-search-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-secondary);padding:2px;border-radius:50%}
+.entries-search-clear:hover{color:var(--text)}
+.entries-views-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;font-size:var(--text-sm);color:var(--text-secondary);background:none;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;font-family:var(--font-sans);transition:border-color 120ms ease}
+.entries-views-btn:hover{border-color:var(--border-hover);color:var(--text)}
+.entries-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px 2px 10px;background:var(--zui-primary-50);color:var(--zui-primary-700);font-size:var(--text-xs);font-weight:500;border-radius:var(--radius-full);margin:var(--sp-2) 0 var(--sp-2) var(--sp-4)}
+.entries-chip button{background:none;border:none;cursor:pointer;color:var(--zui-primary-400);padding:0;line-height:1}
+.entries-chip button:hover{color:var(--zui-primary-700)}
+.entries-panel{margin:0 var(--sp-4);padding:var(--sp-4);background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:var(--sp-3)}
+.entries-panel__row{display:flex;align-items:flex-end;gap:var(--sp-3)}
+.entries-panel__field{flex:1}
+.entries-panel__hint{font-size:var(--text-xs);color:var(--text-secondary);margin-top:var(--sp-2)}
+.entries-label{display:block;font-size:var(--text-sm);font-weight:500;color:var(--text-heading);margin-bottom:var(--sp-1)}
+.entries-save-view{margin:0 var(--sp-4) var(--sp-3);padding:var(--sp-3);background:var(--zui-gray-50);border:1px solid var(--border);border-radius:var(--radius)}
+.entries-save-view__row{display:flex;gap:var(--sp-2);align-items:center}
+.hierarchy-breadcrumb{display:flex;align-items:center;gap:var(--sp-2);padding:var(--sp-2) var(--sp-4);font-size:var(--text-sm)}
+.hierarchy-breadcrumb a{color:var(--text-secondary);text-decoration:none}
+.hierarchy-breadcrumb a:hover{color:var(--zui-primary-600)}
+.entries-dropdown{position:relative;display:inline-flex}
+.entries-dropdown__menu{display:none;position:absolute;top:calc(100% + 4px);right:0;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-md);min-width:160px;padding:var(--sp-1) 0;z-index:50}
+.entries-dropdown__menu.open{display:block}
+.entries-dropdown__item{display:flex;align-items:center;gap:var(--sp-2);padding:var(--sp-2) var(--sp-3);font-size:var(--text-sm);color:var(--text);text-decoration:none;transition:background 120ms ease}
+.entries-dropdown__item:hover{background:var(--bg-surface-hover)}
+.entries-views-dropdown{position:absolute;top:calc(100% + 4px);right:0;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-md);min-width:200px;padding:var(--sp-1) 0;z-index:50;display:none}
+.entries-views-dropdown.open{display:block}
+.entries-views-dropdown a{display:block;padding:var(--sp-2) var(--sp-3);font-size:var(--text-sm);color:var(--text);text-decoration:none}
+.entries-views-dropdown a:hover{background:var(--bg-surface-hover)}
+.entries-views-dropdown a.active{color:var(--zui-primary-600);font-weight:500}
+.entries-views-dropdown button{display:block;width:100%;text-align:left;padding:var(--sp-2) var(--sp-3);font-size:var(--text-sm);color:var(--zui-primary-600);background:none;border:none;border-top:1px solid var(--border);cursor:pointer;font-family:var(--font-sans)}
+.entries-views-dropdown button:hover{background:var(--bg-surface-hover)}
+.entries-bulk-bar{position:fixed;bottom:var(--sp-4);left:50%;transform:translateX(-50%);display:none;align-items:center;gap:var(--sp-3);padding:var(--sp-3) var(--sp-5);background:var(--zui-gray-900);color:#FFF;font-size:var(--text-sm);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);z-index:100}
+.entries-bulk-bar.visible{display:flex}
+.entries-bulk-bar .btn{height:28px;font-size:var(--text-xs)}
+.col-toggle{position:relative}
+.col-toggle-menu{display:none;position:absolute;top:calc(100% + 4px);right:0;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-md);min-width:180px;padding:var(--sp-2);z-index:50}
+.col-toggle-menu.open{display:block}
+.col-toggle-menu label{display:flex;align-items:center;gap:var(--sp-2);padding:var(--sp-1) var(--sp-2);font-size:var(--text-sm);cursor:pointer;border-radius:var(--radius-sm)}
+.col-toggle-menu label:hover{background:var(--bg-surface-hover)}
+.entries-empty{text-align:center;padding:var(--sp-16) var(--sp-6)}
+.entries-empty svg{width:48px;height:48px;color:var(--text-disabled);margin:0 auto var(--sp-4)}
+.entries-empty h3{font-size:var(--text-lg);font-weight:600;color:var(--text-heading);margin-bottom:var(--sp-2)}
+.entries-empty p{color:var(--text-secondary);font-size:var(--text-sm);margin-bottom:var(--sp-5)}
+</style>
+{% endblock %}
 
 {% block content %}
 
-{# ── Header ────────────────────────────────────────── #}
-<div class="entries-page">
+<div class="breadcrumb">
+    <a href="{{ admin_url() }}">{% include '@cms/partials/sidebar-icon.twig' with {icon: 'home'} only %} Dashboard</a>
+    <span class="breadcrumb-sep">/</span>
+    <a href="{{ admin_url('collections') }}">Collections</a>
+    <span class="breadcrumb-sep">/</span>
+    <span class="breadcrumb-current">{{ collection.getName() }}</span>
+</div>
 
-    <div class="entries-header">
-        <div class="entries-header__left">
-            <a href="{{ admin_url('collections') }}" class="entries-back-link">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                <span>{{ collection.getName() }}</span>
-            </a>
-            {% set _totalCount = entries.total|default(entries.data|length) %}
-            <span class="entries-count">{{ _totalCount }} {{ _totalCount == 1 ? 'entry' : 'entries' }}</span>
-        </div>
-        <div class="entries-header__actions">
-            <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/trash') }}" class="entries-btn entries-btn--outline">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5.333 4V2.667a1.333 1.333 0 011.334-1.334h2.666a1.333 1.333 0 011.334 1.334V4m2 0v9.333a1.333 1.333 0 01-1.334 1.334H4.667a1.333 1.333 0 01-1.334-1.334V4h9.334z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                Trash
-                {% if trashCount is defined and trashCount > 0 %}
-                    <span class="entries-badge entries-badge--danger">{{ trashCount }}</span>
-                {% endif %}
-            </a>
+{% set _totalCount = entries.total|default(entries.data|length) %}
 
-            <div class="entries-dropdown" data-dropdown>
-                <button class="entries-btn entries-btn--outline" data-dropdown-trigger>
-                    Export
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 5l3 3 3-3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </button>
-                <div class="entries-dropdown__menu" data-dropdown-menu>
-                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/export?format=csv') }}" class="entries-dropdown__item">
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.167 1.167H3.5A1.167 1.167 0 002.333 2.333v9.334A1.167 1.167 0 003.5 12.833h7a1.167 1.167 0 001.167-1.166V4.667L8.167 1.167z" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        Export as CSV
-                    </a>
-                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/export?format=json') }}" class="entries-dropdown__item">
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.167 1.167H3.5A1.167 1.167 0 002.333 2.333v9.334A1.167 1.167 0 003.5 12.833h7a1.167 1.167 0 001.167-1.166V4.667L8.167 1.167z" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        Export as JSON
-                    </a>
-                </div>
-            </div>
-
-            <button class="entries-btn entries-btn--outline" id="toggle-import-btn">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M14 10v2.667A1.334 1.334 0 0112.667 14H3.333A1.334 1.334 0 012 12.667V10M4.667 6.667L8 10l3.333-3.333M8 10V2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                Import
-            </button>
-
-            <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/create') }}" class="entries-btn entries-btn--primary">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 3.333v9.334M3.333 8h9.334" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                New Entry
-            </a>
-
-            <a href="{{ admin_url('collections/' ~ collection.getSlug()) }}" class="entries-btn entries-btn--icon" title="Edit Collection Settings" style="padding:8px;margin-left:4px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-            </a>
-        </div>
+<div class="page-header">
+    <div>
+        <h1>{{ collection.getName() }}</h1>
+        <p class="page-header-sub">{{ _totalCount }} {{ _totalCount == 1 ? 'entry' : 'entries' }}</p>
     </div>
+    <div class="page-header-actions">
+        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/trash') }}" class="btn btn-outline btn-sm">
+            {% include '@cms/partials/sidebar-icon.twig' with {icon: 'archive'} only %}
+            Trash
+            {% if trashCount is defined and trashCount > 0 %}
+                <span class="badge badge-error" style="margin-left:2px">{{ trashCount }}</span>
+            {% endif %}
+        </a>
+
+        <div class="dropdown">
+            <button class="btn btn-outline btn-sm" data-dropdown-trigger>
+                Export
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div class="dropdown-menu" data-dropdown-menu>
+                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/export?format=csv') }}" class="dropdown-item">
+                    {% include '@cms/partials/sidebar-icon.twig' with {icon: 'file'} only %}
+                    Export as CSV
+                </a>
+                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/export?format=json') }}" class="dropdown-item">
+                    {% include '@cms/partials/sidebar-icon.twig' with {icon: 'code'} only %}
+                    Export as JSON
+                </a>
+            </div>
+        </div>
+
+        <button class="btn btn-outline btn-sm" id="toggle-import-btn">
+            {% include '@cms/partials/sidebar-icon.twig' with {icon: 'file'} only %}
+            Import
+        </button>
+
+        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/create') }}" class="btn btn-primary btn-sm">
+            {% include '@cms/partials/sidebar-icon.twig' with {icon: 'plus'} only %}
+            New Entry
+        </a>
+
+        <a href="{{ admin_url('collections/' ~ collection.getSlug()) }}" class="btn btn-ghost btn-icon btn-sm" title="Collection Settings">
+            {% include '@cms/partials/sidebar-icon.twig' with {icon: 'settings'} only %}
+        </a>
+    </div>
+</div>
+
+{# ── Entries page wrapper ── #}
+<div class="entries-page">
 
     {# ── Import Form (hidden) ──────────────────────── #}
     <div id="import-form" class="entries-panel" style="display: none;">
