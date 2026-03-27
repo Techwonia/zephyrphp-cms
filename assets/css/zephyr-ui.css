@@ -1716,7 +1716,7 @@ input[type="radio"] {
   color: var(--text-heading);
 }
 
-.zui-modal-body { padding: var(--sp-5); overflow-y: auto; }
+.zui-modal-body { padding: var(--sp-5); overflow-y: auto; flex: 1; min-height: 0; }
 .zui-modal-footer {
   padding: var(--sp-4) var(--sp-5);
   border-top: 1px solid var(--border);
