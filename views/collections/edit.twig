@@ -894,7 +894,6 @@
     {{ csrf_field() | raw }}
 </form>
 
-{% block scripts %}
 <script nonce="{{ csp_nonce() }}">
 (function() {
     'use strict';
@@ -1362,5 +1361,4 @@
 
 })();
 </script>
-{% endblock %}
 {% endblock %}
