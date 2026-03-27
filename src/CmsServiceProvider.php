@@ -1234,8 +1234,12 @@ class CmsServiceProvider
     {
         // Skip if tables were already confirmed for this schema version
         $flagPath = (defined('BASE_PATH') ? BASE_PATH : dirname(__DIR__, 3)) . '/storage/cms/.tables-installed';
-        if (file_exists($flagPath) && (int) @file_get_contents($flagPath) >= self::SCHEMA_VERSION) {
-            return;
+        if (file_exists($flagPath)) {
+            $flagValue = (int) @file_get_contents($flagPath);
+            // Ignore old-format timestamps (> 1000); only respect schema version integers
+            if ($flagValue <= 1000 && $flagValue >= self::SCHEMA_VERSION) {
+                return;
+            }
         }
 
         try {
