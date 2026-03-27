@@ -59,6 +59,9 @@ class CmsServiceProvider
 
     public function boot(): void
     {
+        // Publish CMS assets to public/ as symlink for static serving (bypasses PHP routing)
+        $this->publishAssets();
+
         $view = \ZephyrPHP\View\View::getInstance();
 
         // Register Twig namespace for CMS templates
@@ -494,6 +497,65 @@ class CmsServiceProvider
 
         // Register built-in dashboard widgets
         DashboardManager::getInstance()->registerBuiltInWidgets();
+    }
+
+    /**
+     * Publish CMS assets to public/cms-assets/ so the web server can serve them
+     * directly as static files, bypassing PHP routing entirely.
+     * Creates a symlink on first boot; subsequent boots are a no-op (fast check).
+     */
+    private function publishAssets(): void
+    {
+        $publicDir = defined('BASE_PATH') ? BASE_PATH . '/public' : getcwd() . '/public';
+        $linkPath = $publicDir . '/cms-assets';
+        $targetPath = dirname(__DIR__) . '/assets';
+
+        // Already published (symlink or directory exists)
+        if (file_exists($linkPath)) {
+            return;
+        }
+
+        if (!is_dir($publicDir) || !is_dir($targetPath)) {
+            return;
+        }
+
+        // Try symlink first (fastest), fall back to directory junction on Windows
+        $targetReal = realpath($targetPath);
+        if (!$targetReal) {
+            return;
+        }
+
+        // On Windows, use junction (no admin rights needed) via mklink /J
+        if (PHP_OS_FAMILY === 'Windows') {
+            $cmd = sprintf('mklink /J %s %s', escapeshellarg($linkPath), escapeshellarg($targetReal));
+            @exec($cmd, $output, $exitCode);
+            if ($exitCode !== 0) {
+                // Junction failed, try copying as last resort
+                $this->copyDirectory($targetReal, $linkPath);
+            }
+        } else {
+            // Unix: standard symlink
+            @symlink($targetReal, $linkPath);
+        }
+    }
+
+    private function copyDirectory(string $source, string $dest): void
+    {
+        if (!is_dir($dest)) {
+            @mkdir($dest, 0755, true);
+        }
+        $items = @scandir($source);
+        if (!$items) return;
+        foreach ($items as $item) {
+            if ($item === '.' || $item === '..') continue;
+            $s = $source . '/' . $item;
+            $d = $dest . '/' . $item;
+            if (is_dir($s)) {
+                $this->copyDirectory($s, $d);
+            } else {
+                @copy($s, $d);
+            }
+        }
     }
 
     private function registerTwigHelpers(\ZephyrPHP\View\View $view, ThemeManager $themeManager): void

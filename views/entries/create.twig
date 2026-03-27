@@ -1,6 +1,7 @@
 {% extends "@cms/layouts/cms.twig" %}
 
 {% block title %}New Entry — {{ collection.getName() }}{% endblock %}
+{% block editor_styles %}{% include '@cms/partials/editor-assets.twig' with {part: 'css'} only %}{% endblock %}
 {% block styles %}<link rel="stylesheet" href="/cms-assets/css/entries-create.css">{% endblock %}
 
 {% block content %}
@@ -432,6 +433,8 @@
     </div>
 </form>
 {% endblock %}
+
+{% block editor_scripts %}{% include '@cms/partials/editor-assets.twig' with {part: 'js'} only %}{% endblock %}
 
 {% block scripts %}
 
