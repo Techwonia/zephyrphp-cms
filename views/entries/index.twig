@@ -199,10 +199,10 @@
     border-radius: var(--radius-xl); box-shadow: 0 8px 32px rgba(0,0,0,0.24); z-index: 100;
 }
 .ep-bulk.is-visible { display: flex; }
-.ep-bulk .btn { height: 26px; font-size: var(--text-xs); color: #fff; border-color: rgba(255,255,255,0.3); }
-.ep-bulk .btn:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.5); }
-.ep-bulk .btn-danger { background: var(--zui-error-600); border-color: var(--zui-error-600); }
-.ep-bulk .btn-danger:hover { background: var(--zui-error-500); }
+.ep-bulk .btn.btn-outline { height: 26px; font-size: var(--text-xs); color: #fff !important; background: transparent !important; border-color: rgba(255,255,255,0.3) !important; box-shadow: none; }
+.ep-bulk .btn.btn-outline:hover { background: rgba(255,255,255,0.15) !important; border-color: rgba(255,255,255,0.5) !important; }
+.ep-bulk .btn.btn-danger { height: 26px; font-size: var(--text-xs); color: #fff !important; background: var(--zui-error-600) !important; border-color: var(--zui-error-600) !important; }
+.ep-bulk .btn.btn-danger:hover { background: var(--zui-error-500) !important; }
 
 /* ── Column hidden ──────────────────────────────── */
 .col-hidden { display: none !important; }
