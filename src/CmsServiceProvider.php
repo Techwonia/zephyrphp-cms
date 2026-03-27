@@ -19,6 +19,9 @@ use ZephyrPHP\Database\EntityManager;
 
 class CmsServiceProvider
 {
+    /** Bump this whenever ensureTablesExist() adds new tables or columns */
+    private const SCHEMA_VERSION = 2;
+
     public function register(Container $container): void
     {
         $container->singleton(SchemaManager::class, function () {
@@ -1229,9 +1232,9 @@ class CmsServiceProvider
 
     private function ensureTablesExist(): void
     {
-        // Skip if tables were already confirmed to exist (file flag)
+        // Skip if tables were already confirmed for this schema version
         $flagPath = (defined('BASE_PATH') ? BASE_PATH : dirname(__DIR__, 3)) . '/storage/cms/.tables-installed';
-        if (file_exists($flagPath)) {
+        if (file_exists($flagPath) && (int) @file_get_contents($flagPath) >= self::SCHEMA_VERSION) {
             return;
         }
 
@@ -1771,7 +1774,7 @@ class CmsServiceProvider
             if (!is_dir($flagDir)) {
                 @mkdir($flagDir, 0755, true);
             }
-            @file_put_contents($flagPath, (string) time(), LOCK_EX);
+            @file_put_contents($flagPath, (string) self::SCHEMA_VERSION, LOCK_EX);
 
         } catch (\Exception $e) {
             // Silently fail - tables will be created on next request or via CLI
