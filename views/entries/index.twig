@@ -196,9 +196,14 @@
     {# ── Save View Form (hidden) ───────────────────── #}
     <div id="save-view-form" class="card hidden mb-4">
         <div class="card-body">
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-sm font-semibold text-heading">Save Current View</span>
+                <button type="button" class="btn btn-ghost btn-icon btn-sm" onclick="document.getElementById('save-view-form').classList.add('hidden')" title="Close">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
             <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/views') }}">
                 {{ csrf_field() | raw }}
-                <h4 class="text-heading font-semibold mb-3">Save Current View</h4>
                 <div class="flex gap-3" style="flex-wrap:wrap;">
                     <div class="form-group" style="flex:2;min-width:200px;">
                         <label for="view_name" class="form-label">View Name <span style="color:var(--zui-error-600);">*</span></label>
@@ -430,13 +435,13 @@
                             <td data-col="col-status">
                                 {% set _st = entry.status|default('draft') %}
                                 {% if _st == 'published' %}
-                                    <span class="badge badge-success badge-dot">Published</span>
+                                    <span class="badge badge-success"><span class="badge-dot"></span> Published</span>
                                 {% elseif _st == 'scheduled' %}
-                                    <span class="badge badge-info badge-dot">Scheduled</span>
+                                    <span class="badge badge-info"><span class="badge-dot"></span> Scheduled</span>
                                 {% elseif _st == 'review' %}
-                                    <span class="badge badge-default badge-dot">Review</span>
+                                    <span class="badge badge-default"><span class="badge-dot"></span> Review</span>
                                 {% else %}
-                                    <span class="badge badge-warning badge-dot">Draft</span>
+                                    <span class="badge badge-warning"><span class="badge-dot"></span> Draft</span>
                                 {% endif %}
                             </td>
                             {% endif %}
