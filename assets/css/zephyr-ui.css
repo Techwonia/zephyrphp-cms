@@ -1691,7 +1691,7 @@ input[type="radio"] {
   width: 90%;
   max-width: 560px;
   max-height: 90vh;
-  overflow: hidden;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   animation: zui-modal-enter var(--duration-slow) var(--ease);

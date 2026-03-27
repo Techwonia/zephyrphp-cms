@@ -2,11 +2,43 @@
 
 {% block title %}Edit {{ collection.getName() }}{% endblock %}
 {% block styles %}
-<link rel="stylesheet" href="/cms-assets/css/collections-edit.css">
 <style nonce="{{ csp_nonce() }}">
-/* Ensure tab panels work — debug override */
-.tab-panel { display: none !important; }
-.tab-panel.active { display: block !important; }
+.tab-panel{display:none !important}.tab-panel.active{display:block !important}
+.system-fields-toggle{display:flex;align-items:center;gap:var(--sp-2);padding:var(--sp-3) var(--sp-4);background:var(--zui-gray-50);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;font-size:var(--text-sm);font-weight:500;color:var(--text-secondary);margin-bottom:var(--sp-3)}
+.system-fields-toggle .chevron{width:14px;height:14px;transition:transform 150ms ease}
+.system-fields-toggle.open .chevron{transform:rotate(90deg)}
+.system-fields-body{display:none;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:var(--sp-4);overflow:hidden}
+.system-fields-body.open{display:block}
+.system-field-row{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-2) var(--sp-4);border-bottom:1px solid var(--zui-gray-100);font-size:var(--text-sm)}
+.system-field-row:last-child{border-bottom:none}
+.sf-icon{width:24px;height:24px;display:flex;align-items:center;justify-content:center;background:var(--zui-gray-100);border-radius:var(--radius-sm);font-size:11px;font-weight:700;color:var(--text-secondary);flex-shrink:0}
+.sf-name{font-weight:600;color:var(--text-heading)}
+.sf-slug{font-family:var(--font-mono);font-size:11px;color:var(--text-secondary)}
+.sf-badges{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+.badge-type{background:var(--zui-gray-100);color:var(--text-secondary);font-size:10px;padding:1px 6px;border-radius:var(--radius-full)}
+.badge-system{background:var(--zui-info-50);color:var(--zui-info-600);font-size:10px;padding:1px 6px;border-radius:var(--radius-full)}
+.badge-required{background:var(--zui-error-50);color:var(--zui-error-600);font-size:10px;padding:1px 6px;border-radius:var(--radius-full)}
+.field-card{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:var(--sp-2);background:var(--bg-surface);transition:border-color 120ms ease}
+.field-card:hover{border-color:var(--border-hover)}
+.field-card .field-icon{width:28px;height:28px;display:flex;align-items:center;justify-content:center;background:var(--zui-primary-50);color:var(--zui-primary-600);border-radius:var(--radius-sm);font-size:11px;font-weight:700;flex-shrink:0}
+.field-card .field-info{flex:1;min-width:0}
+.field-card .field-name{font-weight:600;font-size:var(--text-sm);color:var(--text-heading)}
+.field-card .field-meta{display:flex;gap:var(--sp-2);flex-wrap:wrap;margin-top:2px}
+.field-card .field-actions{display:flex;gap:var(--sp-1)}
+.field-drag{cursor:grab;color:var(--text-disabled);display:flex;align-items:center}
+.add-field-bar{text-align:center;padding:var(--sp-3) 0}
+.btn-add-field{display:inline-flex;align-items:center;gap:var(--sp-2);padding:var(--sp-2) var(--sp-4);font-size:var(--text-sm);font-weight:500;color:var(--zui-primary-600);background:none;border:1px dashed var(--zui-primary-200);border-radius:var(--radius);cursor:pointer;transition:background 120ms ease,border-color 120ms ease;font-family:var(--font-sans)}
+.btn-add-field:hover{background:var(--zui-primary-50);border-color:var(--zui-primary-400)}
+.btn-add-field svg{width:14px;height:14px}
+.modal-section-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-secondary);margin:var(--sp-4) 0 var(--sp-2)}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4)}
+.perm-table{width:100%;border-collapse:collapse;font-size:var(--text-sm)}
+.perm-table th{text-align:left;padding:var(--sp-2) var(--sp-3);font-weight:500;color:var(--text-secondary);border-bottom:1px solid var(--border)}
+.perm-table td{padding:var(--sp-2) var(--sp-3);text-align:center;border-bottom:1px solid var(--zui-gray-100)}
+.perm-table td:first-child{text-align:left;font-weight:500;color:var(--text-heading)}
+.workflow-stage-row{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-2) 0}
+.stage-label{font-size:var(--text-sm);font-weight:500;color:var(--text-heading);min-width:80px}
+.save-bar{display:none}
 </style>
 {% endblock %}
 
