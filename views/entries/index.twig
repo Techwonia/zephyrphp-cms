@@ -1,145 +1,95 @@
 {% extends "@cms/layouts/cms.twig" %}
 
 {% block title %}{{ collection.getName() }} Entries{% endblock %}
+
 {% block styles %}
 <style nonce="{{ csp_nonce() }}">
-.entries-page{padding-bottom:80px}
-.entries-toolbar{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);border-bottom:1px solid var(--zui-gray-100)}
-.entries-search{flex:1;position:relative}
-.entries-search input{width:100%;height:34px;padding:0 var(--sp-3) 0 36px;font-size:var(--text-sm);border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-surface);outline:none;font-family:var(--font-sans);transition:border-color 120ms ease}
-.entries-search input:focus{border-color:var(--border-focus);box-shadow:0 0 0 2px var(--ring-focus)}
-.entries-search svg{position:absolute;left:var(--sp-3);top:50%;transform:translateY(-50%);color:var(--text-disabled);pointer-events:none;width:16px;height:16px}
-.entries-search-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-secondary);padding:2px;border-radius:50%}
-.entries-search-clear:hover{color:var(--text)}
-.entries-views-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;font-size:var(--text-sm);color:var(--text-secondary);background:none;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;font-family:var(--font-sans);transition:border-color 120ms ease}
-.entries-views-btn:hover{border-color:var(--border-hover);color:var(--text)}
-.entries-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px 2px 10px;background:var(--zui-primary-50);color:var(--zui-primary-700);font-size:var(--text-xs);font-weight:500;border-radius:var(--radius-full);margin:var(--sp-2) 0 var(--sp-2) var(--sp-4)}
-.entries-chip button{background:none;border:none;cursor:pointer;color:var(--zui-primary-400);padding:0;line-height:1}
-.entries-chip button:hover{color:var(--zui-primary-700)}
-.entries-panel{margin:0 var(--sp-4);padding:var(--sp-4);background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:var(--sp-3)}
-.entries-panel__row{display:flex;align-items:flex-end;gap:var(--sp-3)}
-.entries-panel__field{flex:1}
-.entries-panel__hint{font-size:var(--text-xs);color:var(--text-secondary);margin-top:var(--sp-2)}
-.entries-label{display:block;font-size:var(--text-sm);font-weight:500;color:var(--text-heading);margin-bottom:var(--sp-1)}
-.entries-save-view{margin:0 var(--sp-4) var(--sp-3);padding:var(--sp-3);background:var(--zui-gray-50);border:1px solid var(--border);border-radius:var(--radius)}
-.entries-save-view__row{display:flex;gap:var(--sp-2);align-items:center}
-.hierarchy-breadcrumb{display:flex;align-items:center;gap:var(--sp-2);padding:var(--sp-2) var(--sp-4);font-size:var(--text-sm)}
-.hierarchy-breadcrumb a{color:var(--text-secondary);text-decoration:none}
-.hierarchy-breadcrumb a:hover{color:var(--zui-primary-600)}
-.entries-dropdown{position:relative;display:inline-flex}
-.entries-dropdown__menu{display:none;position:absolute;top:calc(100% + 4px);right:0;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-md);min-width:160px;padding:var(--sp-1) 0;z-index:50}
-.entries-dropdown__menu.open{display:block}
-.entries-dropdown__item{display:flex;align-items:center;gap:var(--sp-2);padding:var(--sp-2) var(--sp-3);font-size:var(--text-sm);color:var(--text);text-decoration:none;transition:background 120ms ease}
-.entries-dropdown__item:hover{background:var(--bg-surface-hover)}
-.entries-views-dropdown{position:absolute;top:calc(100% + 4px);right:0;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-md);min-width:200px;padding:var(--sp-1) 0;z-index:50;display:none}
-.entries-views-dropdown.open{display:block}
-.entries-views-dropdown a{display:block;padding:var(--sp-2) var(--sp-3);font-size:var(--text-sm);color:var(--text);text-decoration:none}
-.entries-views-dropdown a:hover{background:var(--bg-surface-hover)}
-.entries-views-dropdown a.active{color:var(--zui-primary-600);font-weight:500}
-.entries-views-dropdown button{display:block;width:100%;text-align:left;padding:var(--sp-2) var(--sp-3);font-size:var(--text-sm);color:var(--zui-primary-600);background:none;border:none;border-top:1px solid var(--border);cursor:pointer;font-family:var(--font-sans)}
-.entries-views-dropdown button:hover{background:var(--bg-surface-hover)}
-.entries-bulk-bar{position:fixed;bottom:var(--sp-4);left:50%;transform:translateX(-50%);display:none;align-items:center;gap:var(--sp-3);padding:var(--sp-3) var(--sp-5);background:var(--zui-gray-900);color:#FFF;font-size:var(--text-sm);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);z-index:100}
-.entries-bulk-bar.visible{display:flex}
-.entries-bulk-bar .btn{height:28px;font-size:var(--text-xs)}
-.col-toggle{position:relative}
-.col-toggle-menu{display:none;position:absolute;top:calc(100% + 4px);right:0;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-md);min-width:180px;padding:var(--sp-2);z-index:50}
-.col-toggle-menu.open{display:block}
-.col-toggle-menu label{display:flex;align-items:center;gap:var(--sp-2);padding:var(--sp-1) var(--sp-2);font-size:var(--text-sm);cursor:pointer;border-radius:var(--radius-sm)}
-.col-toggle-menu label:hover{background:var(--bg-surface-hover)}
-.entries-empty{text-align:center;padding:var(--sp-16) var(--sp-6)}
-.entries-empty svg{width:48px;height:48px;color:var(--text-disabled);margin:0 auto var(--sp-4)}
-.entries-empty h3{font-size:var(--text-lg);font-weight:600;color:var(--text-heading);margin-bottom:var(--sp-2)}
-.entries-empty p{color:var(--text-secondary);font-size:var(--text-sm);margin-bottom:var(--sp-5)}
-.entries-card{background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
-.entries-toolbar{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);border-bottom:1px solid var(--zui-gray-100)}
-.entries-toolbar__right{display:flex;align-items:center;gap:var(--sp-2);margin-left:auto;flex-shrink:0}
-.entries-active-view{display:flex;align-items:center;gap:var(--sp-2);padding:0 var(--sp-4);margin-bottom:var(--sp-2)}
-.entries-text-muted{color:var(--text-secondary);font-size:var(--text-xs)}
-.entries-dropdown__divider{height:1px;background:var(--border);margin:var(--sp-1) 0}
-.entries-dropdown__item--active{color:var(--zui-primary-600);font-weight:500}
-.entries-dropdown__menu--right{right:0;left:auto}
-.entries-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;font-size:var(--text-sm);font-weight:500;font-family:var(--font-sans);border-radius:var(--radius);border:1px solid transparent;cursor:pointer;transition:all 120ms ease;white-space:nowrap;text-decoration:none;height:32px;line-height:1}
-.entries-btn--outline{background:var(--bg-surface);color:var(--text);border-color:var(--border)}
-.entries-btn--outline:hover{border-color:var(--border-hover);background:var(--bg-surface-hover)}
-.entries-btn--primary{background:var(--zui-primary-500);color:#FFF;border-color:var(--zui-primary-500)}
-.entries-btn--primary:hover{background:var(--zui-primary-600)}
-.entries-btn--sm{height:28px;padding:4px 10px;font-size:var(--text-xs)}
-.entries-btn--ghost{background:none;color:var(--text-secondary);border:none;padding:4px 8px}
-.entries-btn--ghost:hover{color:var(--text);background:var(--bg-surface-hover)}
-.entries-btn--danger-text{color:var(--zui-error-600)}
-.entries-btn--icon{padding:6px}
-.entries-badge{font-size:10px;font-weight:600;padding:1px 6px;border-radius:var(--radius-full);line-height:1.4}
-.entries-badge--danger{background:var(--zui-error-50);color:var(--zui-error-600)}
-.entries-checkbox-label{display:inline-flex;align-items:center;gap:var(--sp-2);font-size:var(--text-sm);cursor:pointer}
-.entries-panel__filters{margin:var(--sp-3) 0}
-.view-filter-row{display:flex;gap:var(--sp-2);margin-bottom:var(--sp-2)}
-.entries-panel__footer{display:flex;align-items:center;justify-content:space-between;margin-top:var(--sp-3);padding-top:var(--sp-3);border-top:1px solid var(--zui-gray-100)}
-.entries-table-wrap{overflow-x:auto}
-.entries-table{width:100%;border-collapse:collapse;font-size:var(--text-sm)}
-.entries-table thead th{padding:var(--sp-3) var(--sp-4);text-align:left;font-size:var(--text-xs);font-weight:500;color:var(--text-secondary);border-bottom:1px solid var(--border);white-space:nowrap;background:var(--bg-surface)}
-.entries-table tbody td{padding:var(--sp-3) var(--sp-4);border-bottom:1px solid var(--zui-gray-100);vertical-align:middle;color:var(--text)}
-.entries-table tbody tr{transition:background 120ms ease}
-.entries-table tbody tr:hover{background:var(--zui-gray-50)}
-.entries-table tbody tr:last-child td{border-bottom:none}
-.entries-table__sort{color:var(--text-secondary);text-decoration:none;display:inline-flex;align-items:center;gap:4px;font-size:var(--text-xs);font-weight:500}
-.entries-table__sort:hover{color:var(--text-heading)}
-.entries-table__sort--active{color:var(--zui-primary-600)}
-.entries-table__sort-icon{transition:transform 150ms ease}
-.entries-table__sort-icon--desc{transform:rotate(180deg)}
-.entries-col-checkbox{width:40px;text-align:center}
-.entries-col-actions{width:80px}
-.entries-col-status{width:120px}
-.entries-col-updated{width:100px}
-.entries-checkbox{width:16px;height:16px;accent-color:var(--zui-primary-500);cursor:pointer}
-.entries-table__row .entry-title-link{color:var(--text-heading);font-weight:500;text-decoration:none}
-.entries-table__row .entry-title-link:hover{color:var(--zui-primary-600)}
-.entries-table__row .entry-thumb{width:36px;height:36px;border-radius:var(--radius-sm);object-fit:cover;border:1px solid var(--border)}
-.entries-table__row .entry-thumb-more{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:var(--radius-sm);background:var(--zui-gray-100);color:var(--text-secondary);font-size:11px;font-weight:600}
-.entry-status{display:inline-flex;align-items:center;gap:6px;font-size:var(--text-xs);font-weight:500}
-.entry-status-dot{width:7px;height:7px;border-radius:50%}
-.entry-status-published .entry-status-dot{background:var(--zui-success-500)}
-.entry-status-published{color:var(--zui-success-600)}
-.entry-status-draft .entry-status-dot{background:var(--zui-warning-500)}
-.entry-status-draft{color:var(--zui-warning-600)}
-.entry-status-scheduled .entry-status-dot{background:var(--zui-info-500)}
-.entry-status-scheduled{color:var(--zui-info-600)}
-.entry-status-review .entry-status-dot{background:var(--zui-primary-500)}
-.entry-status-review{color:var(--zui-primary-600)}
-.entry-actions{display:flex;align-items:center;gap:2px}
-.entry-actions a,.entry-actions button{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;color:var(--text-secondary);background:none;border:none;border-radius:var(--radius-sm);cursor:pointer;transition:color 120ms ease,background 120ms ease;text-decoration:none}
-.entry-actions a:hover,.entry-actions button:hover{color:var(--text-heading);background:var(--zui-gray-100)}
-.entry-actions svg{width:16px;height:16px}
-.entry-more-menu{display:none;position:absolute;right:0;top:calc(100% + 4px);background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-md);min-width:160px;padding:var(--sp-1) 0;z-index:50}
-.entry-more-menu.open{display:block}
-.entry-more-menu a,.entry-more-menu button{display:flex;align-items:center;gap:var(--sp-2);padding:var(--sp-2) var(--sp-3);font-size:var(--text-sm);color:var(--text);text-decoration:none;width:100%;background:none;border:none;cursor:pointer;font-family:var(--font-sans);transition:background 120ms ease}
-.entry-more-menu a:hover,.entry-more-menu button:hover{background:var(--bg-surface-hover)}
-.entry-more-menu .danger{color:var(--zui-error-600)}
-.entry-more-menu .danger:hover{background:var(--zui-error-50)}
-.col-toggle-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;color:var(--text-secondary);background:none;border:none;border-radius:var(--radius-sm);cursor:pointer}
-.col-toggle-btn:hover{color:var(--text-heading);background:var(--zui-gray-100)}
-.col-toggle-btn svg{width:16px;height:16px}
-.entries-col-toggle-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;color:var(--text-secondary);background:none;border:none;border-radius:var(--radius-sm);cursor:pointer;position:relative}
-.entries-col-toggle-btn:hover{color:var(--text-heading);background:var(--zui-gray-100)}
-.entries-col-toggle-btn svg{width:15px;height:15px}
-.entries-col-toggle-dropdown{display:none;position:absolute;top:calc(100% + 4px);right:0;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-md);min-width:180px;padding:var(--sp-2);z-index:50}
-.entries-col-toggle-dropdown.open{display:block}
-.entries-col-toggle-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-secondary);padding:var(--sp-1) var(--sp-2);margin-bottom:var(--sp-1)}
-.entries-col-toggle-dropdown label{display:flex;align-items:center;gap:var(--sp-2);padding:var(--sp-1) var(--sp-2);font-size:var(--text-sm);cursor:pointer;border-radius:var(--radius-sm)}
-.entries-col-toggle-dropdown label:hover{background:var(--bg-surface-hover)}
-.entries-col-actions{width:60px;position:relative}
-.entries-table .tree-indent{display:inline-block;width:20px}
-.entries-table .tree-toggle{background:none;border:none;cursor:pointer;color:var(--text-secondary);padding:2px;margin-right:4px}
-.entries-table .tree-toggle:hover{color:var(--text)}
-.entries-search{flex:1;position:relative;min-width:200px}
-.entries-search__icon{position:absolute;left:var(--sp-3);top:50%;transform:translateY(-50%);color:var(--text-disabled);pointer-events:none}
-.entries-search__input{width:100%;height:34px;padding:0 var(--sp-8) 0 36px;font-size:var(--text-sm);border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-surface);outline:none;font-family:var(--font-sans);transition:border-color 120ms ease}
-.entries-search__input:focus{border-color:var(--border-focus);box-shadow:0 0 0 2px var(--ring-focus)}
-.entries-search__input::placeholder{color:var(--text-disabled)}
-.entries-search__clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-secondary);padding:2px;border-radius:50%;display:flex;align-items:center;justify-content:center}
-.entries-search__clear:hover{color:var(--text)}
-.entries-bool{font-size:var(--text-xs);font-weight:500;padding:2px 8px;border-radius:var(--radius-full)}
-.entries-bool--yes{background:var(--zui-success-50);color:var(--zui-success-600)}
-.entries-bool--no{background:var(--zui-gray-100);color:var(--text-secondary)}
+    /* Dropdown .is-open support (JS uses is-open, ZephyrUI uses open) */
+    .dropdown-menu.is-open { display: block; }
+
+    /* Search bar inside toolbar */
+    .entries-search-wrap { flex: 1; position: relative; min-width: 200px; }
+    .entries-search-wrap svg.search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-disabled); pointer-events: none; width: 16px; height: 16px; }
+    .entries-search-wrap .form-control { padding-left: 36px; padding-right: 32px; height: 34px; }
+    .entries-search-clear { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-secondary); padding: 2px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .entries-search-clear:hover { color: var(--text); }
+
+    /* Sort links in table headers */
+    .sort-link { color: var(--text-secondary); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-xs); font-weight: 500; }
+    .sort-link:hover { color: var(--text-heading); }
+    .sort-link--active { color: var(--zui-primary-600); }
+    .sort-icon { transition: transform 150ms ease; }
+    .sort-icon--desc { transform: rotate(180deg); }
+
+    /* Checkbox styling */
+    .entry-cb { width: 16px; height: 16px; accent-color: var(--zui-primary-500); cursor: pointer; }
+
+    /* Entry title link */
+    a.entry-title { color: var(--text-heading); font-weight: 500; text-decoration: none; }
+    a.entry-title:hover { color: var(--zui-primary-600); }
+
+    /* Image thumbnails */
+    .entry-thumb { width: 36px; height: 36px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border); display: inline-block; vertical-align: middle; }
+
+    /* Richtext preview (clickable) */
+    .rt-preview { cursor: pointer; }
+    .rt-preview:hover { color: var(--zui-primary-600); }
+
+    /* Boolean badges */
+    .bool-yes { background: var(--zui-success-50); color: var(--zui-success-600); font-size: var(--text-xs); font-weight: 500; padding: 2px 8px; border-radius: var(--radius-full); }
+    .bool-no { background: var(--zui-gray-100); color: var(--text-secondary); font-size: var(--text-xs); font-weight: 500; padding: 2px 8px; border-radius: var(--radius-full); }
+
+    /* Bulk bar */
+    #bulk-bar { position: fixed; bottom: var(--sp-4); left: 50%; transform: translateX(-50%); display: none; align-items: center; gap: var(--sp-3); padding: var(--sp-3) var(--sp-5); background: var(--zui-gray-900); color: #fff; font-size: var(--text-sm); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); z-index: 100; }
+    #bulk-bar.is-visible { display: flex; }
+    #bulk-bar .btn { height: 28px; font-size: var(--text-xs); }
+
+    /* Column hidden utility */
+    .col-hidden { display: none !important; }
+
+    /* Chip for active view */
+    .view-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px 2px 10px; background: var(--zui-primary-50); color: var(--zui-primary-700); font-size: var(--text-xs); font-weight: 500; border-radius: var(--radius-full); }
+    .view-chip a { color: var(--zui-primary-400); text-decoration: none; line-height: 1; }
+    .view-chip a:hover { color: var(--zui-primary-700); }
+
+    /* Save view filter rows */
+    .filter-row { display: flex; gap: var(--sp-2); margin-bottom: var(--sp-2); }
+
+    /* Hierarchy path */
+    .hier-path a { color: var(--zui-primary-600); text-decoration: none; font-weight: 600; }
+    .hier-path a:hover { text-decoration: underline; }
+
+    /* Hierarchy drill-down arrow */
+    .hier-arrow { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 4px; color: var(--zui-primary-600); font-weight: 700; font-size: 16px; flex-shrink: 0; transition: background 0.1s; text-decoration: none; }
+    .hier-arrow:hover { background: rgba(26,123,168,0.1); }
+
+    /* Tree view helpers */
+    .tree-indent { display: inline-flex; align-items: center; flex-shrink: 0; }
+    .tree-toggle-btn { background: none; border: none; cursor: pointer; padding: 2px; margin-right: 4px; color: var(--text-secondary); font-size: 11px; line-height: 1; width: 18px; text-align: center; border-radius: 3px; }
+    .tree-toggle-btn:hover { background: var(--bg-surface-hover); }
+
+    /* Action buttons in table */
+    .action-icon { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; color: var(--text-secondary); background: none; border: none; border-radius: var(--radius-sm); cursor: pointer; transition: color 120ms ease, background 120ms ease; text-decoration: none; }
+    .action-icon:hover { color: var(--text-heading); background: var(--zui-gray-100); }
+    .action-icon svg { width: 16px; height: 16px; }
+
+    /* Ensure the page has bottom padding for bulk bar */
+    .entries-page-wrap { padding-bottom: 80px; }
+
+    /* Bulk field form inside dropdown */
+    .bulk-field-form { padding: var(--sp-3); }
+
+    /* Dropdown item danger variant */
+    .dropdown-item--danger { color: var(--zui-error-600) !important; }
+    .dropdown-item--danger:hover { background: var(--zui-error-50) !important; }
+
+    /* Dropdown item active variant */
+    .dropdown-item--active { color: var(--zui-primary-600); font-weight: 500; }
+
+    /* Column toggle title */
+    .col-toggle-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); padding: var(--sp-1) var(--sp-2); margin-bottom: var(--sp-1); }
+    #col-toggle-list label { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-1) var(--sp-2); font-size: var(--text-sm); cursor: pointer; border-radius: var(--radius-sm); }
+    #col-toggle-list label:hover { background: var(--bg-surface-hover); }
 </style>
 {% endblock %}
 
@@ -169,7 +119,7 @@
             {% endif %}
         </a>
 
-        <div class="dropdown">
+        <div class="dropdown" data-dropdown>
             <button class="btn btn-outline btn-sm" data-dropdown-trigger>
                 Export
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
@@ -203,38 +153,40 @@
 </div>
 
 {# ── Entries page wrapper ── #}
-<div class="entries-page">
+<div class="entries-page-wrap">
 
     {# ── Import Form (hidden) ──────────────────────── #}
-    <div id="import-form" class="entries-panel" style="display: none;">
-        <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/import/preview') }}" enctype="multipart/form-data">
-            {{ csrf_field() | raw }}
-            <div class="entries-panel__row">
-                <div class="entries-panel__field">
-                    <label for="import_file" class="entries-label">Import File (CSV or JSON)</label>
-                    <input type="file" id="import_file" name="import_file" class="form-control" accept=".csv,.json" required>
+    <div id="import-form" class="card hidden mb-4">
+        <div class="card-body">
+            <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/import/preview') }}" enctype="multipart/form-data">
+                {{ csrf_field() | raw }}
+                <div class="flex items-center gap-3">
+                    <div class="form-group" style="flex:1;margin-bottom:0;">
+                        <label for="import_file" class="form-label">Import File (CSV or JSON)</label>
+                        <input type="file" id="import_file" name="import_file" class="form-control" accept=".csv,.json" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm" style="align-self:flex-end;">Preview &amp; Map</button>
                 </div>
-                <button type="submit" class="btn btn-primary btn-sm">Preview &amp; Map</button>
-            </div>
-            <p class="entries-panel__hint">Upload your file to preview data and map columns before importing.</p>
-        </form>
+                <p class="form-hint mt-2">Upload your file to preview data and map columns before importing.</p>
+            </form>
+        </div>
     </div>
 
     {# ── Active View Chip ──────────────────────────── #}
     {% if activeViewSlug is defined and activeViewSlug %}
         {% for sv in savedViews %}
             {% if sv.getSlug() == activeViewSlug %}
-            <div class="entries-active-view">
-                <div class="entries-chip">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1.167 5.25h11.666M1.167 8.75h11.666M5.25 1.167v11.666M8.75 1.167v11.666" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>
+            <div class="flex items-center gap-2 mb-3">
+                <div class="view-chip">
+                    {% include '@cms/partials/sidebar-icon.twig' with {icon: 'grid'} only %}
                     <span>{{ sv.getName() }}</span>
-                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="entries-chip__close" title="Clear view">
+                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" title="Clear view">
                         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M9 3L3 9M3 3l6 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
                     </a>
                 </div>
                 <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/views/' ~ sv.getId() ~ '/delete') }}" style="display:inline;">
                     {{ csrf_field() | raw }}
-                    <button type="submit" class="entries-btn entries-btn--ghost entries-btn--sm entries-btn--danger-text" onclick="return confirm('Delete this saved view?')">Delete View</button>
+                    <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--zui-error-600);" onclick="return confirm('Delete this saved view?')">Delete View</button>
                 </form>
             </div>
             {% endif %}
@@ -242,70 +194,72 @@
     {% endif %}
 
     {# ── Save View Form (hidden) ───────────────────── #}
-    <div id="save-view-form" class="entries-panel" style="display: none;">
-        <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/views') }}">
-            {{ csrf_field() | raw }}
-            <h4 class="entries-panel__title">Save Current View</h4>
-            <div class="entries-panel__grid">
-                <div class="entries-panel__field entries-panel__field--grow">
-                    <label for="view_name" class="entries-label">View Name <span class="entries-text-required">*</span></label>
-                    <input type="text" id="view_name" name="view_name" class="form-control" placeholder="e.g. Published Posts" required>
+    <div id="save-view-form" class="card hidden mb-4">
+        <div class="card-body">
+            <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/views') }}">
+                {{ csrf_field() | raw }}
+                <h4 class="text-heading font-semibold mb-3">Save Current View</h4>
+                <div class="flex gap-3" style="flex-wrap:wrap;">
+                    <div class="form-group" style="flex:2;min-width:200px;">
+                        <label for="view_name" class="form-label">View Name <span style="color:var(--zui-error-600);">*</span></label>
+                        <input type="text" id="view_name" name="view_name" class="form-control" placeholder="e.g. Published Posts" required>
+                    </div>
+                    <div class="form-group" style="flex:1;min-width:140px;">
+                        <label for="view_sort_by" class="form-label">Sort By</label>
+                        <select name="view_sort_by" id="view_sort_by" class="form-control">
+                            <option value="">Default (ID)</option>
+                            {% for field in listableFields %}
+                                <option value="{{ field.getSlug() }}">{{ field.getName() }}</option>
+                            {% endfor %}
+                            <option value="created_at">Created At</option>
+                            {% if collection.isPublishable() %}
+                                <option value="status">Status</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex:1;min-width:140px;">
+                        <label for="view_sort_dir" class="form-label">Direction</label>
+                        <select name="view_sort_dir" id="view_sort_dir" class="form-control">
+                            <option value="DESC">Descending</option>
+                            <option value="ASC">Ascending</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="entries-panel__field">
-                    <label for="view_sort_by" class="entries-label">Sort By</label>
-                    <select name="view_sort_by" id="view_sort_by" class="form-control">
-                        <option value="">Default (ID)</option>
-                        {% for field in listableFields %}
-                            <option value="{{ field.getSlug() }}">{{ field.getName() }}</option>
-                        {% endfor %}
-                        <option value="created_at">Created At</option>
-                        {% if collection.isPublishable() %}
-                            <option value="status">Status</option>
-                        {% endif %}
-                    </select>
+                <div id="view-filters" class="mb-3">
+                    <label class="form-label">Filters</label>
+                    <div class="filter-row">
+                        <select name="filter_field[]" class="form-control">
+                            <option value="">-- Field --</option>
+                            {% for field in listableFields %}
+                                <option value="{{ field.getSlug() }}">{{ field.getName() }}</option>
+                            {% endfor %}
+                            {% if collection.isPublishable() %}
+                                <option value="status">Status</option>
+                            {% endif %}
+                        </select>
+                        <input type="text" name="filter_value[]" class="form-control" placeholder="Value (exact match)">
+                    </div>
                 </div>
-                <div class="entries-panel__field">
-                    <label for="view_sort_dir" class="entries-label">Direction</label>
-                    <select name="view_sort_dir" id="view_sort_dir" class="form-control">
-                        <option value="DESC">Descending</option>
-                        <option value="ASC">Ascending</option>
-                    </select>
+                <button type="button" class="btn btn-outline btn-sm mb-3" id="add-filter-btn">+ Add Filter</button>
+                <div class="flex items-center justify-between" style="padding-top:var(--sp-3);border-top:1px solid var(--zui-gray-100);">
+                    <label class="flex items-center gap-2 text-sm" style="cursor:pointer;"><input type="checkbox" name="view_is_default" value="1"> Set as default view</label>
+                    <button type="submit" class="btn btn-primary btn-sm">Save View</button>
                 </div>
-            </div>
-            <div id="view-filters" class="entries-panel__filters">
-                <label class="entries-label">Filters</label>
-                <div class="view-filter-row">
-                    <select name="filter_field[]" class="form-control">
-                        <option value="">-- Field --</option>
-                        {% for field in listableFields %}
-                            <option value="{{ field.getSlug() }}">{{ field.getName() }}</option>
-                        {% endfor %}
-                        {% if collection.isPublishable() %}
-                            <option value="status">Status</option>
-                        {% endif %}
-                    </select>
-                    <input type="text" name="filter_value[]" class="form-control" placeholder="Value (exact match)">
-                </div>
-            </div>
-            <button type="button" class="entries-btn entries-btn--outline entries-btn--sm" id="add-filter-btn">+ Add Filter</button>
-            <div class="entries-panel__footer">
-                <label class="entries-checkbox-label"><input type="checkbox" name="view_is_default" value="1"> Set as default view</label>
-                <button type="submit" class="entries-btn entries-btn--primary entries-btn--sm">Save View</button>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
 
     {# ── Data Table ────────────────────────────────── #}
     {% if entries.data|length > 0 %}
-    <div class="entries-card">
-        {# ── Toolbar (inside card, seamless) ───────── #}
-        <div class="entries-toolbar">
+    <div class="card">
+        {# ── Toolbar (inside card) ───────────────────── #}
+        <div class="card-header flex items-center gap-3">
             {% if listableFields|length > 0 %}
-            <form method="GET" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="entries-search">
-                <svg class="entries-search__icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.3"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-                <input type="text" name="search" class="entries-search__input" placeholder="Search entries..." value="{{ search }}" autocomplete="off">
+            <form method="GET" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="entries-search-wrap">
+                <svg class="search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.3"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                <input type="text" name="search" class="form-control" placeholder="Search entries..." value="{{ search }}" autocomplete="off">
                 {% if search %}
-                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="entries-search__clear" title="Clear search">
+                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="entries-search-clear" title="Clear search">
                         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M10.5 3.5L3.5 10.5M3.5 3.5l7 7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
                     </a>
                 {% endif %}
@@ -313,45 +267,52 @@
             {% endif %}
 
             {% if collection.hasHierarchy() and (parentBreadcrumbs is defined and parentBreadcrumbs|length > 0) %}
-            <div class="entries-hierarchy-path" style="display:flex;align-items:center;gap:6px;padding:8px 0;font-size:0.8125rem;">
-                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?parent=') }}" style="color:var(--color-primary,#1A7BA8);text-decoration:none;font-weight:600;">{{ collection.getName() }}</a>
+            <div class="hier-path flex items-center gap-2 text-sm">
+                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?parent=') }}">{{ collection.getName() }}</a>
                 {% for bc in parentBreadcrumbs %}
-                    <span style="color:var(--text-disabled,#ccc);">›</span>
+                    <span class="text-secondary">&#8250;</span>
                     {% if not loop.last %}
-                        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?parent=' ~ bc.id) }}" style="color:var(--color-primary,#1A7BA8);text-decoration:none;">{{ bc.label }}</a>
+                        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?parent=' ~ bc.id) }}">{{ bc.label }}</a>
                     {% else %}
-                        <span style="font-weight:600;color:var(--text,#303030);">{{ bc.label }}</span>
+                        <span class="font-semibold text-heading">{{ bc.label }}</span>
                     {% endif %}
                 {% endfor %}
             </div>
             {% endif %}
 
-            <div class="entries-toolbar__right">
+            <div class="flex items-center gap-2" style="margin-left:auto;flex-shrink:0;">
+                {% if collection.hasHierarchy() %}
+                <button type="button" class="btn btn-outline btn-sm" id="tree-toggle">
+                    {% include '@cms/partials/sidebar-icon.twig' with {icon: 'layers'} only %}
+                    Tree
+                </button>
+                {% endif %}
+
                 {# Saved Views Dropdown #}
-                <div class="entries-dropdown" data-dropdown>
-                    <button class="entries-btn entries-btn--outline entries-btn--sm" data-dropdown-trigger>
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1.167 5.25h11.666M1.167 8.75h11.666M5.25 1.167v11.666M8.75 1.167v11.666" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>
+                <div class="dropdown" data-dropdown>
+                    <button class="btn btn-outline btn-sm" data-dropdown-trigger>
+                        {% include '@cms/partials/sidebar-icon.twig' with {icon: 'grid'} only %}
                         Views
                         <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 4l2.5 2.5L7.5 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
-                    <div class="entries-dropdown__menu entries-dropdown__menu--right" data-dropdown-menu>
+                    <div class="dropdown-menu" data-dropdown-menu>
                         <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}"
-                           class="entries-dropdown__item {% if activeViewSlug is empty %}entries-dropdown__item--active{% endif %}">
+                           class="dropdown-item {% if activeViewSlug is empty %}dropdown-item--active{% endif %}">
                             All Entries
                         </a>
                         {% if savedViews is defined and savedViews|length > 0 %}
-                            <div class="entries-dropdown__divider"></div>
+                            <div class="dropdown-divider"></div>
                             {% for sv in savedViews %}
                                 <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?view=' ~ sv.getSlug()) }}"
-                                   class="entries-dropdown__item {% if activeViewSlug == sv.getSlug() %}entries-dropdown__item--active{% endif %}">
-                                    {{ sv.getName() }}{% if sv.isDefault() %} <span class="entries-text-muted">(default)</span>{% endif %}
-                                    <span class="entries-text-muted" style="margin-left:auto; font-size: 0.75rem;">{{ sv.getFilters()|length }} filter{{ sv.getFilters()|length != 1 ? 's' : '' }}</span>
+                                   class="dropdown-item {% if activeViewSlug == sv.getSlug() %}dropdown-item--active{% endif %}">
+                                    {{ sv.getName() }}{% if sv.isDefault() %} <span class="text-secondary text-xs">(default)</span>{% endif %}
+                                    <span class="text-secondary text-xs" style="margin-left:auto;">{{ sv.getFilters()|length }} filter{{ sv.getFilters()|length != 1 ? 's' : '' }}</span>
                                 </a>
                             {% endfor %}
                         {% endif %}
-                        <div class="entries-dropdown__divider"></div>
-                        <button class="entries-dropdown__item" id="toggle-save-view-btn" type="button">
-                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2.333v9.334M2.333 7h9.334" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                        <div class="dropdown-divider"></div>
+                        <button class="dropdown-item" id="toggle-save-view-btn" type="button">
+                            {% include '@cms/partials/sidebar-icon.twig' with {icon: 'plus'} only %}
                             Save Current View
                         </button>
                     </div>
@@ -360,161 +321,168 @@
         </div>
 
         {# ── Table ─────────────────────────────────── #}
-        <div class="entries-table-wrap">
-            <table class="entries-table" id="entries-table">
-                <thead>
-                    <tr>
-                        <th class="entries-col-checkbox"><input type="checkbox" id="select-all" class="entries-checkbox"></th>
-                        {% for field in listableFields %}
-                        <th class="entries-col-field" data-col="field-{{ field.getSlug() }}" data-col-name="{{ field.getName() }}" data-col-type="{{ field.getType() }}">
-                            {% set _nextDir = 'ASC' %}
-                            {% if sortBy == field.getSlug() and sortDir == 'ASC' %}
-                                {% set _nextDir = 'DESC' %}
-                            {% endif %}
-                            <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?sort_by=' ~ field.getSlug() ~ '&sort_dir=' ~ _nextDir ~ '&search=' ~ search ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}"
-                               class="entries-table__sort {% if sortBy == field.getSlug() %}entries-table__sort--active{% endif %}">
-                                {{ field.getName() }}
-                                {% if sortBy == field.getSlug() %}
-                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" class="entries-table__sort-icon {% if sortDir == 'DESC' %}entries-table__sort-icon--desc{% endif %}"><path d="M3 5l3-3 3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div class="card-body-flush">
+            <div class="data-table-wrap">
+                <table class="data-table" id="entries-table">
+                    <thead>
+                        <tr>
+                            <th style="width:40px;text-align:center;"><input type="checkbox" id="select-all" class="entry-cb"></th>
+                            {% for field in listableFields %}
+                            <th data-col="field-{{ field.getSlug() }}" data-col-name="{{ field.getName() }}" data-col-type="{{ field.getType() }}">
+                                {% set _nextDir = 'ASC' %}
+                                {% if sortBy == field.getSlug() and sortDir == 'ASC' %}
+                                    {% set _nextDir = 'DESC' %}
                                 {% endif %}
-                            </a>
-                        </th>
-                        {% endfor %}
-                        {% if collection.isPublishable() %}
-                        <th class="entries-col-status" data-col="col-status" data-col-name="Status">
-                            {% set _nextDir = 'ASC' %}
-                            {% if sortBy == 'status' and sortDir == 'ASC' %}
-                                {% set _nextDir = 'DESC' %}
-                            {% endif %}
-                            <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?sort_by=status&sort_dir=' ~ _nextDir ~ '&search=' ~ search ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}"
-                               class="entries-table__sort {% if sortBy == 'status' %}entries-table__sort--active{% endif %}">
-                                Status
-                                {% if sortBy == 'status' %}
-                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" class="entries-table__sort-icon {% if sortDir == 'DESC' %}entries-table__sort-icon--desc{% endif %}"><path d="M3 5l3-3 3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                {% endif %}
-                            </a>
-                        </th>
-                        {% endif %}
-                        <th class="entries-col-updated" data-col="col-updated" data-col-name="Updated">
-                            {% set _nextDir = 'ASC' %}
-                            {% if sortBy == 'created_at' and sortDir == 'ASC' %}
-                                {% set _nextDir = 'DESC' %}
-                            {% endif %}
-                            <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?sort_by=created_at&sort_dir=' ~ _nextDir ~ '&search=' ~ search ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}"
-                               class="entries-table__sort {% if sortBy == 'created_at' %}entries-table__sort--active{% endif %}">
-                                Updated
-                                {% if sortBy == 'created_at' %}
-                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" class="entries-table__sort-icon {% if sortDir == 'DESC' %}entries-table__sort-icon--desc{% endif %}"><path d="M3 5l3-3 3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                {% endif %}
-                            </a>
-                        </th>
-                        <th class="entries-col-actions">
-                            <button type="button" class="entries-col-toggle-btn" id="col-toggle-btn" title="Toggle columns">
-                                <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 9.625a2.125 2.125 0 100-4.25 2.125 2.125 0 000 4.25z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12.135 9.625a1.05 1.05 0 00.21 1.158l.038.038a1.274 1.274 0 11-1.802 1.8l-.038-.037a1.05 1.05 0 00-1.158-.21 1.05 1.05 0 00-.637.961v.108a1.274 1.274 0 01-2.548 0v-.057a1.05 1.05 0 00-.688-.962 1.05 1.05 0 00-1.158.21l-.038.039a1.274 1.274 0 11-1.8-1.802l.037-.038a1.05 1.05 0 00.21-1.158 1.05 1.05 0 00-.961-.637h-.108a1.274 1.274 0 010-2.548h.057a1.05 1.05 0 00.962-.688 1.05 1.05 0 00-.21-1.158l-.039-.038a1.274 1.274 0 111.802-1.8l.038.037a1.05 1.05 0 001.158.21h.05a1.05 1.05 0 00.638-.961V1.83a1.274 1.274 0 012.548 0v.057a1.05 1.05 0 00.637.962 1.05 1.05 0 001.158-.21l.038-.039a1.274 1.274 0 111.8 1.802l-.037.038a1.05 1.05 0 00-.21 1.158v.05a1.05 1.05 0 00.961.638h.108a1.274 1.274 0 010 2.548h-.057a1.05 1.05 0 00-.962.637z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            </button>
-                            <div class="entries-col-toggle-dropdown" id="col-toggle-dropdown">
-                                <div class="entries-col-toggle-title">Toggle Columns</div>
-                                <div id="col-toggle-list"></div>
-                            </div>
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for entry in entries.data %}
-                    {% set _eId = entry.id %}
-                    {% set _eDepth = depthMap[_eId]|default(0) %}
-                    {% set _eChildren = childCountMap[_eId]|default(0) %}
-                    {% set _eParent = entry.parent_id|default('') %}
-                    <tr class="entries-table__row" data-entry-id="{{ _eId }}" data-parent-id="{{ _eParent }}" data-depth="{{ _eDepth }}" data-children="{{ _eChildren }}">
-                        <td class="entries-col-checkbox"><input type="checkbox" class="entry-checkbox entries-checkbox" value="{{ entry.id }}"></td>
-                        {% for field in listableFields %}
-                        <td class="entries-col-field" data-col="field-{{ field.getSlug() }}"{% if loop.first and collection.hasHierarchy() %} style="display:flex;align-items:center;gap:6px;"{% endif %}>
-                            {% if loop.first and collection.hasHierarchy() and _eChildren > 0 %}
-                                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?parent=' ~ entry.id) }}" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:4px;color:var(--color-primary,#1A7BA8);font-weight:700;font-size:16px;flex-shrink:0;transition:background 0.1s;" title="View {{ _eChildren }} children" onmouseover="this.style.background='rgba(26,123,168,0.1)'" onmouseout="this.style.background=''">›</a>
-                            {% endif %}
-                            {% if field.getType() == 'boolean' %}
-                                <span class="entries-bool entries-bool--{{ entry[field.getSlug()] ? 'yes' : 'no' }}">{{ entry[field.getSlug()] ? 'Yes' : 'No' }}</span>
-                            {% elseif (field.getType() == 'image' or field.getType() == 'file') and entry[field.getSlug()] %}
-                                {% set _imgVal = entry[field.getSlug()] %}
-                                {% set _thumbs = media_thumbs(_imgVal, 3) %}
-                                {% set _totalCount = media_thumbs_count(_imgVal) %}
-                                {% if _thumbs|length > 0 %}
-                                    <span class="entries-thumb-group">
-                                    {% for _t in _thumbs %}
-                                        <img src="{{ _t }}" alt="" style="width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid #e3e3e3;display:inline-block;vertical-align:middle;">
-                                    {% endfor %}
-                                    {% if _totalCount > 3 %}<span class="entries-text-muted" style="font-size:11px;margin-left:4px;">+{{ _totalCount - 3 }}</span>{% endif %}
-                                    </span>
-                                {% endif %}
-                            {% elseif field.getType() == 'richtext' and entry[field.getSlug()] %}
-                                {% set _rtVal = entry[field.getSlug()]|striptags %}
-                                <span class="entries-richtext-preview" data-content="{{ entry[field.getSlug()]|e('html_attr') }}" title="Click to preview">{{ _rtVal|slice(0, 60) }}{% if _rtVal|length > 60 %}...{% endif %}</span>
-                            {% elseif field.getType() == 'relation' and entry[field.getSlug()] %}
-                                {% set _fKey = field.getSlug() %}
-                                {% set _relLabels = relationLabels[_fKey]|default({}) %}
-                                {% set _entryVal = entry[_fKey] %}
-                                {% if _entryVal in (_relLabels|keys) %}
-                                    <span class="entries-truncate">{{ _relLabels[_entryVal] }}</span>
-                                {% else %}
-                                    <span class="entries-truncate entries-text-muted">#{{ _entryVal }}</span>
-                                {% endif %}
-                            {% else %}
-                                {% set _cellVal = entry[field.getSlug()]|default('')|striptags %}
-                                <span class="entries-truncate">{{ _cellVal|slice(0, 80) }}{% if _cellVal|length > 80 %}...{% endif %}</span>
-                            {% endif %}
-                        </td>
-                        {% endfor %}
-                        {% if collection.isPublishable() %}
-                        <td class="entries-col-status" data-col="col-status">
-                            {% set _st = entry.status|default('draft') %}
-                            <span class="entries-status entries-status--{{ _st }}">
-                                <span class="entries-status__dot"></span>
-                                {{ _st|capitalize }}
-                            </span>
-                        </td>
-                        {% endif %}
-                        <td class="entries-col-updated" data-col="col-updated">
-                            <span class="entries-relative-time" data-time="{{ entry.updated_at|default(entry.created_at|default('')) }}">{{ entry.updated_at|default(entry.created_at|default('')) }}</span>
-                        </td>
-                        <td class="entries-col-actions">
-                            <div class="entries-actions-inner">
-                                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id) }}" class="entries-icon-btn" title="Edit">
-                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M11.333 2a1.886 1.886 0 012.667 2.667L5.333 13.333 2 14l.667-3.333L11.333 2z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?sort_by=' ~ field.getSlug() ~ '&sort_dir=' ~ _nextDir ~ '&search=' ~ search ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}"
+                                   class="sort-link {% if sortBy == field.getSlug() %}sort-link--active{% endif %}">
+                                    {{ field.getName() }}
+                                    {% if sortBy == field.getSlug() %}
+                                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" class="sort-icon {% if sortDir == 'DESC' %}sort-icon--desc{% endif %}"><path d="M3 5l3-3 3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    {% endif %}
                                 </a>
-                                <div class="entries-dropdown entries-dropdown--right" data-dropdown>
-                                    <button class="entries-icon-btn" data-dropdown-trigger title="More actions">
-                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="3" r="1" fill="currentColor"/><circle cx="8" cy="8" r="1" fill="currentColor"/><circle cx="8" cy="13" r="1" fill="currentColor"/></svg>
-                                    </button>
-                                    <div class="entries-dropdown__menu entries-dropdown__menu--right entries-dropdown__menu--compact" data-dropdown-menu>
-                                        <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/duplicate') }}">
-                                            {{ csrf_field() | raw }}
-                                            <button type="submit" class="entries-dropdown__item" onclick="return confirm('Duplicate this entry?')">
-                                                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="4.667" y="4.667" width="8.167" height="8.167" rx="1" stroke="currentColor" stroke-width="1"/><path d="M9.333 4.667V2.333A1.167 1.167 0 008.167 1.167H2.333A1.167 1.167 0 001.167 2.333v5.834A1.167 1.167 0 002.333 9.333h2.334" stroke="currentColor" stroke-width="1"/></svg>
-                                                Duplicate
-                                            </button>
-                                        </form>
-                                        <div class="entries-dropdown__divider"></div>
-                                        <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/delete') }}" class="confirm-delete" data-message="Delete this entry?">
-                                            {{ csrf_field() | raw }}
-                                            <button type="submit" class="entries-dropdown__item entries-dropdown__item--danger">
-                                                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1.75 3.5h10.5M4.667 3.5V2.333a1.167 1.167 0 011.166-1.166h2.334a1.167 1.167 0 011.166 1.166V3.5m1.75 0v8.167a1.167 1.167 0 01-1.166 1.166H4.083a1.167 1.167 0 01-1.166-1.166V3.5h8.166z" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                                Delete
-                                            </button>
-                                        </form>
+                            </th>
+                            {% endfor %}
+                            {% if collection.isPublishable() %}
+                            <th style="width:120px;" data-col="col-status" data-col-name="Status">
+                                {% set _nextDir = 'ASC' %}
+                                {% if sortBy == 'status' and sortDir == 'ASC' %}
+                                    {% set _nextDir = 'DESC' %}
+                                {% endif %}
+                                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?sort_by=status&sort_dir=' ~ _nextDir ~ '&search=' ~ search ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}"
+                                   class="sort-link {% if sortBy == 'status' %}sort-link--active{% endif %}">
+                                    Status
+                                    {% if sortBy == 'status' %}
+                                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" class="sort-icon {% if sortDir == 'DESC' %}sort-icon--desc{% endif %}"><path d="M3 5l3-3 3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    {% endif %}
+                                </a>
+                            </th>
+                            {% endif %}
+                            <th style="width:100px;" data-col="col-updated" data-col-name="Updated">
+                                {% set _nextDir = 'ASC' %}
+                                {% if sortBy == 'created_at' and sortDir == 'ASC' %}
+                                    {% set _nextDir = 'DESC' %}
+                                {% endif %}
+                                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?sort_by=created_at&sort_dir=' ~ _nextDir ~ '&search=' ~ search ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}"
+                                   class="sort-link {% if sortBy == 'created_at' %}sort-link--active{% endif %}">
+                                    Updated
+                                    {% if sortBy == 'created_at' %}
+                                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" class="sort-icon {% if sortDir == 'DESC' %}sort-icon--desc{% endif %}"><path d="M3 5l3-3 3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    {% endif %}
+                                </a>
+                            </th>
+                            <th style="width:60px;position:relative;">
+                                <button type="button" class="btn btn-ghost btn-icon btn-sm" id="col-toggle-btn" title="Toggle columns">
+                                    {% include '@cms/partials/sidebar-icon.twig' with {icon: 'settings'} only %}
+                                </button>
+                                <div class="dropdown-menu" id="col-toggle-dropdown" style="position:absolute;top:calc(100% + 4px);right:0;min-width:180px;padding:var(--sp-2);">
+                                    <div class="col-toggle-title">Toggle Columns</div>
+                                    <div id="col-toggle-list"></div>
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in entries.data %}
+                        {% set _eId = entry.id %}
+                        {% set _eDepth = depthMap[_eId]|default(0) %}
+                        {% set _eChildren = childCountMap[_eId]|default(0) %}
+                        {% set _eParent = entry.parent_id|default('') %}
+                        <tr data-entry-id="{{ _eId }}" data-parent-id="{{ _eParent }}" data-depth="{{ _eDepth }}" data-children="{{ _eChildren }}">
+                            <td style="width:40px;text-align:center;"><input type="checkbox" class="entry-checkbox entry-cb" value="{{ entry.id }}"></td>
+                            {% for field in listableFields %}
+                            <td data-col="field-{{ field.getSlug() }}"{% if loop.first and collection.hasHierarchy() %} style="display:flex;align-items:center;gap:6px;"{% endif %}>
+                                {% if loop.first and collection.hasHierarchy() and _eChildren > 0 %}
+                                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?parent=' ~ entry.id) }}" class="hier-arrow" title="View {{ _eChildren }} children">&#8250;</a>
+                                {% endif %}
+                                {% if field.getType() == 'boolean' %}
+                                    <span class="bool-{{ entry[field.getSlug()] ? 'yes' : 'no' }}">{{ entry[field.getSlug()] ? 'Yes' : 'No' }}</span>
+                                {% elseif (field.getType() == 'image' or field.getType() == 'file') and entry[field.getSlug()] %}
+                                    {% set _imgVal = entry[field.getSlug()] %}
+                                    {% set _thumbs = media_thumbs(_imgVal, 3) %}
+                                    {% set _totalImgCount = media_thumbs_count(_imgVal) %}
+                                    {% if _thumbs|length > 0 %}
+                                        <span class="flex items-center gap-1">
+                                        {% for _t in _thumbs %}
+                                            <img src="{{ _t }}" alt="" class="entry-thumb">
+                                        {% endfor %}
+                                        {% if _totalImgCount > 3 %}<span class="text-secondary text-xs" style="margin-left:4px;">+{{ _totalImgCount - 3 }}</span>{% endif %}
+                                        </span>
+                                    {% endif %}
+                                {% elseif field.getType() == 'richtext' and entry[field.getSlug()] %}
+                                    {% set _rtVal = entry[field.getSlug()]|striptags %}
+                                    <span class="rt-preview" data-content="{{ entry[field.getSlug()]|e('html_attr') }}" title="Click to preview">{{ _rtVal|slice(0, 60) }}{% if _rtVal|length > 60 %}...{% endif %}</span>
+                                {% elseif field.getType() == 'relation' and entry[field.getSlug()] %}
+                                    {% set _fKey = field.getSlug() %}
+                                    {% set _relLabels = relationLabels[_fKey]|default({}) %}
+                                    {% set _entryVal = entry[_fKey] %}
+                                    {% if _entryVal in (_relLabels|keys) %}
+                                        <span>{{ _relLabels[_entryVal] }}</span>
+                                    {% else %}
+                                        <span class="text-secondary">#{{ _entryVal }}</span>
+                                    {% endif %}
+                                {% else %}
+                                    {% set _cellVal = entry[field.getSlug()]|default('')|striptags %}
+                                    <span>{{ _cellVal|slice(0, 80) }}{% if _cellVal|length > 80 %}...{% endif %}</span>
+                                {% endif %}
+                            </td>
+                            {% endfor %}
+                            {% if collection.isPublishable() %}
+                            <td data-col="col-status">
+                                {% set _st = entry.status|default('draft') %}
+                                {% if _st == 'published' %}
+                                    <span class="badge badge-success badge-dot">Published</span>
+                                {% elseif _st == 'scheduled' %}
+                                    <span class="badge badge-info badge-dot">Scheduled</span>
+                                {% elseif _st == 'review' %}
+                                    <span class="badge badge-default badge-dot">Review</span>
+                                {% else %}
+                                    <span class="badge badge-warning badge-dot">Draft</span>
+                                {% endif %}
+                            </td>
+                            {% endif %}
+                            <td data-col="col-updated">
+                                <span class="entries-relative-time text-sm text-secondary" data-time="{{ entry.updated_at|default(entry.created_at|default('')) }}">{{ entry.updated_at|default(entry.created_at|default('')) }}</span>
+                            </td>
+                            <td style="position:relative;">
+                                <div class="flex items-center gap-1">
+                                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id) }}" class="action-icon" title="Edit">
+                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M11.333 2a1.886 1.886 0 012.667 2.667L5.333 13.333 2 14l.667-3.333L11.333 2z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    </a>
+                                    <div class="dropdown" data-dropdown>
+                                        <button class="action-icon" data-dropdown-trigger title="More actions">
+                                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="3" r="1" fill="currentColor"/><circle cx="8" cy="8" r="1" fill="currentColor"/><circle cx="8" cy="13" r="1" fill="currentColor"/></svg>
+                                        </button>
+                                        <div class="dropdown-menu" data-dropdown-menu style="right:0;left:auto;">
+                                            <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/duplicate') }}">
+                                                {{ csrf_field() | raw }}
+                                                <button type="submit" class="dropdown-item" onclick="return confirm('Duplicate this entry?')">
+                                                    {% include '@cms/partials/sidebar-icon.twig' with {icon: 'file'} only %}
+                                                    Duplicate
+                                                </button>
+                                            </form>
+                                            <div class="dropdown-divider"></div>
+                                            <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/delete') }}" class="confirm-delete" data-message="Delete this entry?">
+                                                {{ csrf_field() | raw }}
+                                                <button type="submit" class="dropdown-item dropdown-item--danger">
+                                                    {% include '@cms/partials/sidebar-icon.twig' with {icon: 'archive'} only %}
+                                                    Delete
+                                                </button>
+                                            </form>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         {# ── Pagination ────────────────────────────── #}
         {% if entries.last_page > 1 %}
-        <div class="entries-pagination">
-            <span class="entries-pagination__info">
+        <div class="pagination">
+            <span class="pagination-info">
                 {% set _showTo = entries.current_page * entries.per_page %}
                 {% set _showToFinal = _showTo %}
                 {% if _showTo > entries.total %}
@@ -522,14 +490,14 @@
                 {% endif %}
                 Showing {{ ((entries.current_page - 1) * entries.per_page) + 1 }}&ndash;{{ _showToFinal }} of {{ entries.total }}
             </span>
-            <div class="entries-pagination__controls">
+            <div class="pagination-controls">
                 {% if entries.current_page > 1 %}
-                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?page=' ~ (entries.current_page - 1) ~ '&search=' ~ search ~ '&sort_by=' ~ sortBy ~ '&sort_dir=' ~ sortDir ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}" class="entries-pagination__btn">
+                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?page=' ~ (entries.current_page - 1) ~ '&search=' ~ search ~ '&sort_by=' ~ sortBy ~ '&sort_dir=' ~ sortDir ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}" class="pagination-btn">
                         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.75 10.5L5.25 7l3.5-3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         Prev
                     </a>
                 {% else %}
-                    <span class="entries-pagination__btn entries-pagination__btn--disabled">
+                    <span class="pagination-btn" style="opacity:0.4;pointer-events:none;">
                         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.75 10.5L5.25 7l3.5-3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         Prev
                     </span>
@@ -537,21 +505,21 @@
 
                 {% for p in 1..entries.last_page %}
                     {% if p == entries.current_page %}
-                        <span class="entries-pagination__page entries-pagination__page--active">{{ p }}</span>
+                        <span class="pagination-btn" style="background:var(--zui-primary-500);color:#fff;border-color:var(--zui-primary-500);">{{ p }}</span>
                     {% elseif p == 1 or p == entries.last_page or (p >= entries.current_page - 2 and p <= entries.current_page + 2) %}
-                        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?page=' ~ p ~ '&search=' ~ search ~ '&sort_by=' ~ sortBy ~ '&sort_dir=' ~ sortDir ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}" class="entries-pagination__page">{{ p }}</a>
+                        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?page=' ~ p ~ '&search=' ~ search ~ '&sort_by=' ~ sortBy ~ '&sort_dir=' ~ sortDir ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}" class="pagination-btn">{{ p }}</a>
                     {% elseif p == 2 or p == entries.last_page - 1 %}
-                        <span class="entries-pagination__ellipsis">...</span>
+                        <span class="text-secondary text-sm">...</span>
                     {% endif %}
                 {% endfor %}
 
                 {% if entries.current_page < entries.last_page %}
-                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?page=' ~ (entries.current_page + 1) ~ '&search=' ~ search ~ '&sort_by=' ~ sortBy ~ '&sort_dir=' ~ sortDir ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}" class="entries-pagination__btn">
+                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?page=' ~ (entries.current_page + 1) ~ '&search=' ~ search ~ '&sort_by=' ~ sortBy ~ '&sort_dir=' ~ sortDir ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}" class="pagination-btn">
                         Next
                         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5.25 3.5L8.75 7l-3.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </a>
                 {% else %}
-                    <span class="entries-pagination__btn entries-pagination__btn--disabled">
+                    <span class="pagination-btn" style="opacity:0.4;pointer-events:none;">
                         Next
                         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5.25 3.5L8.75 7l-3.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </span>
@@ -562,74 +530,74 @@
     </div>
 
     {# ── Bulk Actions (floating bar) ───────────────── #}
-    <div id="bulk-bar" class="entries-bulk-bar">
-        <div class="entries-bulk-bar__inner">
-            <span class="entries-bulk-bar__count"><strong id="bulk-count">0</strong> selected</span>
-            <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/bulk') }}" class="entries-bulk-bar__form">
-                {{ csrf_field() | raw }}
-                <input type="hidden" name="selected_ids" id="bulk-ids" value="">
-                <input type="hidden" name="bulk_action" id="bulk-action-value" value="">
+    <div id="bulk-bar">
+        <span><strong id="bulk-count">0</strong> selected</span>
+        <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/bulk') }}" class="flex items-center gap-2">
+            {{ csrf_field() | raw }}
+            <input type="hidden" name="selected_ids" id="bulk-ids" value="">
+            <input type="hidden" name="bulk_action" id="bulk-action-value" value="">
 
-                {% if collection.isPublishable() %}
-                <button type="submit" class="entries-btn entries-btn--sm entries-btn--outline" onclick="document.getElementById('bulk-action-value').value='publish'; return confirm('Publish selected entries?')">Publish</button>
-                <button type="submit" class="entries-btn entries-btn--sm entries-btn--outline" onclick="document.getElementById('bulk-action-value').value='unpublish'; return confirm('Unpublish selected entries?')">Unpublish</button>
-                {% endif %}
+            {% if collection.isPublishable() %}
+            <button type="submit" class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,0.3);" onclick="document.getElementById('bulk-action-value').value='publish'; return confirm('Publish selected entries?')">Publish</button>
+            <button type="submit" class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,0.3);" onclick="document.getElementById('bulk-action-value').value='unpublish'; return confirm('Unpublish selected entries?')">Unpublish</button>
+            {% endif %}
 
-                <div class="entries-dropdown entries-dropdown--up" data-dropdown>
-                    <button type="button" class="entries-btn entries-btn--sm entries-btn--outline" data-dropdown-trigger>
-                        Update Field
-                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 6l2.5-2.5L7.5 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </button>
-                    <div class="entries-dropdown__menu entries-dropdown__menu--up" data-dropdown-menu>
-                        <div class="entries-bulk-field-form" style="padding: var(--sp-3);">
-                            <label class="entries-label">Field</label>
-                            <select name="bulk_field" id="bulk-field-select" class="form-control" style="margin-bottom: 8px;">
-                                <option value="">-- Select Field --</option>
-                                {% for field in fields %}
-                                    {% if field.getType() in ['text', 'number', 'select', 'boolean', 'email', 'url'] %}
-                                    <option value="{{ field.getSlug() }}" data-type="{{ field.getType() }}" {% if field.getType() == 'select' and field.getOptions() %}data-options="{{ field.getOptions()|json_encode }}"{% endif %}>{{ field.getName() }}</option>
-                                    {% endif %}
-                                {% endfor %}
-                            </select>
-                            <label class="entries-label">Value</label>
-                            <span id="bulk-value-wrapper">
-                                <input type="text" name="bulk_value" id="bulk-value-input" class="form-control" placeholder="New value">
-                            </span>
-                            <button type="submit" class="entries-btn entries-btn--primary entries-btn--sm" style="margin-top: 8px; width: 100%;" onclick="document.getElementById('bulk-action-value').value='update_field'; return confirm('Update field for selected entries?')">Apply</button>
-                        </div>
+            <div class="dropdown" data-dropdown>
+                <button type="button" class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,0.3);" data-dropdown-trigger>
+                    Update Field
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 6l2.5-2.5L7.5 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="dropdown-menu" data-dropdown-menu style="bottom:calc(100% + 4px);top:auto;right:0;left:auto;">
+                    <div class="bulk-field-form">
+                        <label class="form-label">Field</label>
+                        <select name="bulk_field" id="bulk-field-select" class="form-control" style="margin-bottom:8px;">
+                            <option value="">-- Select Field --</option>
+                            {% for field in fields %}
+                                {% if field.getType() in ['text', 'number', 'select', 'boolean', 'email', 'url'] %}
+                                <option value="{{ field.getSlug() }}" data-type="{{ field.getType() }}" {% if field.getType() == 'select' and field.getOptions() %}data-options="{{ field.getOptions()|json_encode }}"{% endif %}>{{ field.getName() }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                        <label class="form-label">Value</label>
+                        <span id="bulk-value-wrapper">
+                            <input type="text" name="bulk_value" id="bulk-value-input" class="form-control" placeholder="New value">
+                        </span>
+                        <button type="submit" class="btn btn-primary btn-sm" style="margin-top:8px;width:100%;" onclick="document.getElementById('bulk-action-value').value='update_field'; return confirm('Update field for selected entries?')">Apply</button>
                     </div>
                 </div>
+            </div>
 
-                <button type="submit" class="entries-btn entries-btn--sm entries-btn--danger" onclick="document.getElementById('bulk-action-value').value='delete'; return confirm('Delete selected entries? This cannot be undone.')">Delete</button>
-            </form>
-        </div>
+            <button type="submit" class="btn btn-danger btn-sm" onclick="document.getElementById('bulk-action-value').value='delete'; return confirm('Delete selected entries? This cannot be undone.')">Delete</button>
+        </form>
     </div>
 
     {% else %}
-    {# ── Toolbar (shown even when empty, for search) ── #}
+    {# ── Search toolbar (shown even when empty) ────── #}
     {% if listableFields|length > 0 %}
-    <div class="entries-toolbar entries-toolbar--standalone">
-        <form method="GET" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="entries-search">
-            <svg class="entries-search__icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.3"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-            <input type="text" name="search" class="entries-search__input" placeholder="Search entries..." value="{{ search }}" autocomplete="off">
-            {% if search %}
-                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="entries-search__clear" title="Clear search">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M10.5 3.5L3.5 10.5M3.5 3.5l7 7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-                </a>
-            {% endif %}
-        </form>
+    <div class="card mb-4">
+        <div class="card-header">
+            <form method="GET" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="entries-search-wrap">
+                <svg class="search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.3"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                <input type="text" name="search" class="form-control" placeholder="Search entries..." value="{{ search }}" autocomplete="off">
+                {% if search %}
+                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="entries-search-clear" title="Clear search">
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M10.5 3.5L3.5 10.5M3.5 3.5l7 7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                    </a>
+                {% endif %}
+            </form>
+        </div>
     </div>
     {% endif %}
 
     {# ── Empty State ───────────────────────────────── #}
-    <div class="entries-empty">
-        <div class="entries-empty__icon">
-            <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><rect x="8" y="6" width="32" height="36" rx="4" stroke="currentColor" stroke-width="2"/><path d="M16 18h16M16 24h16M16 30h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <div class="empty-state">
+        <div class="empty-state-icon">
+            {% include '@cms/partials/sidebar-icon.twig' with {icon: 'file-text'} only %}
         </div>
-        <h3 class="entries-empty__title">No entries yet</h3>
-        <p class="entries-empty__text">Get started by creating the first entry for this collection.</p>
-        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/create') }}" class="entries-btn entries-btn--primary">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 3.333v9.334M3.333 8h9.334" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <h3 class="text-heading font-semibold mb-2">No entries yet</h3>
+        <p class="text-secondary text-sm mb-4">Get started by creating the first entry for this collection.</p>
+        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/create') }}" class="btn btn-primary">
+            {% include '@cms/partials/sidebar-icon.twig' with {icon: 'plus'} only %}
             Create Entry
         </a>
     </div>
@@ -637,15 +605,8 @@
 
 </div>
 
-{# ── Richtext Preview Modal (reusable container) ── #}
+{# ── Richtext Preview Modal ── #}
 
-{# ══════════════════════════════════════════════════════ #}
-{#  Styles                                                #}
-{# ══════════════════════════════════════════════════════ #}
-
-{% endblock %}
-
-{% block scripts %}
 <script nonce="{{ csp_nonce() }}">
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -686,7 +647,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var importForm = document.getElementById('import-form');
     if (importBtn && importForm) {
         importBtn.addEventListener('click', function() {
-            importForm.style.display = importForm.style.display === 'none' ? 'block' : 'none';
+            importForm.classList.toggle('hidden');
         });
     }
 
@@ -695,7 +656,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var saveViewForm = document.getElementById('save-view-form');
     if (saveViewBtn && saveViewForm) {
         saveViewBtn.addEventListener('click', function() {
-            saveViewForm.style.display = saveViewForm.style.display === 'none' ? 'block' : 'none';
+            saveViewForm.classList.toggle('hidden');
             document.querySelectorAll('[data-dropdown-menu].is-open').forEach(function(m) {
                 m.classList.remove('is-open');
             });
@@ -707,7 +668,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var viewFilters = document.getElementById('view-filters');
     if (addFilterBtn && viewFilters) {
         addFilterBtn.addEventListener('click', function() {
-            var firstRow = viewFilters.querySelector('.view-filter-row');
+            var firstRow = viewFilters.querySelector('.filter-row');
             if (firstRow) {
                 var clone = firstRow.cloneNode(true);
                 clone.querySelectorAll('input, select').forEach(function(el) { el.value = ''; });
@@ -792,20 +753,23 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /* ── Richtext content preview modal ────────── */
-    document.querySelectorAll('.entries-richtext-preview').forEach(function(el) {
+    document.querySelectorAll('.rt-preview').forEach(function(el) {
         el.addEventListener('click', function(e) {
             e.stopPropagation();
             var content = el.dataset.content;
             if (!content) return;
-            var modal = document.createElement('div');
-            modal.className = 'entries-content-modal';
-            modal.innerHTML = '<div class="entries-content-modal-box">'
-                + '<div class="entries-content-modal-header"><h3>Content Preview</h3><button class="entries-content-modal-close">&times;</button></div>'
-                + '<div class="entries-content-modal-body">' + content + '</div></div>';
-            document.body.appendChild(modal);
-            modal.querySelector('.entries-content-modal-close').addEventListener('click', function() { modal.remove(); });
-            modal.addEventListener('click', function(ev) { if (ev.target === modal) modal.remove(); });
-            document.addEventListener('keydown', function onEsc(ev) { if (ev.key === 'Escape') { modal.remove(); document.removeEventListener('keydown', onEsc); } });
+            var overlay = document.createElement('div');
+            overlay.className = 'zui-modal-overlay';
+            overlay.innerHTML = '<div class="zui-modal">'
+                + '<div class="zui-modal-header"><h3>Content Preview</h3><button class="btn btn-ghost btn-icon btn-sm" data-close>&times;</button></div>'
+                + '<div class="zui-modal-body">' + content + '</div>'
+                + '<div class="zui-modal-footer"><button class="btn btn-outline btn-sm" data-close>Close</button></div></div>';
+            document.body.appendChild(overlay);
+            overlay.querySelectorAll('[data-close]').forEach(function(btn) {
+                btn.addEventListener('click', function() { overlay.remove(); });
+            });
+            overlay.addEventListener('click', function(ev) { if (ev.target === overlay) overlay.remove(); });
+            document.addEventListener('keydown', function onEsc(ev) { if (ev.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', onEsc); } });
         });
     });
 
@@ -858,7 +822,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     /* ── Search submit on Enter ────────────────── */
-    var searchInput = document.querySelector('.entries-search__input');
+    var searchInput = document.querySelector('.entries-search-wrap .form-control');
     if (searchInput) {
         searchInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
@@ -910,9 +874,9 @@ document.addEventListener('DOMContentLoaded', function() {
             var cells = table.querySelectorAll('[data-col="' + col.id + '"]');
             cells.forEach(function(cell) {
                 if (isVisible) {
-                    cell.classList.remove('entries-col-hidden');
+                    cell.classList.remove('col-hidden');
                 } else {
-                    cell.classList.add('entries-col-hidden');
+                    cell.classList.add('col-hidden');
                 }
             });
         });
@@ -928,7 +892,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 isVisible = state[col.id];
             }
             var label = document.createElement('label');
-            label.className = 'entries-col-toggle-item';
             var cb = document.createElement('input');
             cb.type = 'checkbox';
             cb.checked = isVisible;
@@ -939,7 +902,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 saveColState(currentState);
                 applyColVisibility(currentState);
             });
-            var text = document.createTextNode(col.name);
+            var text = document.createTextNode(' ' + col.name);
             label.appendChild(cb);
             label.appendChild(text);
             colToggleList.appendChild(label);
@@ -976,9 +939,9 @@ document.addEventListener('DOMContentLoaded', function() {
     var treeBtn = document.getElementById('tree-toggle');
     if (!treeBtn) return;
 
-    var rows = document.querySelectorAll('.entries-table__row');
-    var isTreeMode = true; // Start in tree mode for hierarchy collections
-    var collapsed = {}; // Track collapsed parent IDs
+    var rows = document.querySelectorAll('#entries-table tbody tr');
+    var isTreeMode = true;
+    var collapsed = {};
 
     function applyTreeView() {
         rows.forEach(function(row) {
@@ -986,7 +949,7 @@ document.addEventListener('DOMContentLoaded', function() {
             var parentId = row.dataset.parentId;
             var entryId = row.dataset.entryId;
             var childCount = parseInt(row.dataset.children || '0', 10);
-            var firstFieldCell = row.querySelector('.entries-col-field');
+            var firstFieldCell = row.querySelector('[data-col^="field-"]');
             if (!firstFieldCell) return;
 
             // Remove existing tree elements
@@ -1006,7 +969,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 while (checkId && !seen[checkId]) {
                     seen[checkId] = true;
                     if (collapsed[checkId]) { hidden = true; break; }
-                    // Find parent's parent
                     var parentRow = document.querySelector('[data-entry-id="' + checkId + '"]');
                     checkId = parentRow ? parentRow.dataset.parentId : '';
                 }
@@ -1017,7 +979,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (depth > 0 || childCount > 0) {
                 var indent = document.createElement('span');
                 indent.className = 'tree-indent';
-                indent.style.cssText = 'display:inline-flex;align-items:center;flex-shrink:0;';
 
                 // Spacing
                 if (depth > 0) {
@@ -1031,22 +992,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     var toggle = document.createElement('button');
                     toggle.type = 'button';
                     toggle.className = 'tree-toggle-btn';
-                    toggle.style.cssText = 'background:none;border:none;cursor:pointer;padding:2px;margin-right:4px;color:var(--text-secondary,#616161);font-size:11px;line-height:1;width:18px;text-align:center;border-radius:3px;';
-                    toggle.textContent = collapsed[entryId] ? '▶' : '▼';
+                    toggle.textContent = collapsed[entryId] ? '\u25B6' : '\u25BC';
                     toggle.dataset.entryId = entryId;
                     toggle.addEventListener('click', function(e) {
                         e.stopPropagation();
                         collapsed[entryId] = !collapsed[entryId];
-                        this.textContent = collapsed[entryId] ? '▶' : '▼';
+                        this.textContent = collapsed[entryId] ? '\u25B6' : '\u25BC';
                         applyTreeView();
                     });
-                    toggle.addEventListener('mouseenter', function() { this.style.background = 'var(--bg-surface-hover,#f5f5f5)'; });
-                    toggle.addEventListener('mouseleave', function() { this.style.background = 'none'; });
                     indent.appendChild(toggle);
                 } else if (depth > 0) {
                     var leaf = document.createElement('span');
-                    leaf.style.cssText = 'color:var(--border,#ddd);margin-right:4px;font-size:12px;width:18px;text-align:center;display:inline-block;';
-                    leaf.textContent = '└';
+                    leaf.style.cssText = 'color:var(--border);margin-right:4px;font-size:12px;width:18px;text-align:center;display:inline-block;';
+                    leaf.textContent = '\u2514';
                     indent.appendChild(leaf);
                 }
 
@@ -1058,20 +1016,21 @@ document.addEventListener('DOMContentLoaded', function() {
     treeBtn.addEventListener('click', function() {
         isTreeMode = !isTreeMode;
         collapsed = {};
-        treeBtn.innerHTML = isTreeMode
-            ? '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1h12v2H1zM1 5h12v2H1zM1 9h12v2H1z" fill="currentColor" opacity="0.6"/></svg> Flat View'
-            : '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 2h3v3H2zM7 2h3v3H7zM7 7h3v3H7z" fill="currentColor" opacity="0.6"/><path d="M5 3.5h2M5 8.5h2M10 5.5v2" stroke="currentColor" stroke-width="1"/></svg> Tree View';
-        treeBtn.style.background = isTreeMode ? 'var(--color-primary,#1A7BA8)' : '';
+        treeBtn.textContent = isTreeMode ? 'Flat View' : 'Tree View';
+        treeBtn.style.background = isTreeMode ? 'var(--zui-primary-500)' : '';
         treeBtn.style.color = isTreeMode ? '#fff' : '';
+        treeBtn.style.borderColor = isTreeMode ? 'var(--zui-primary-500)' : '';
         applyTreeView();
     });
 
     // Auto-apply tree mode on load
-    treeBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1h12v2H1zM1 5h12v2H1zM1 9h12v2H1z" fill="currentColor" opacity="0.6"/></svg> Flat View';
-    treeBtn.style.background = 'var(--color-primary,#1A7BA8)';
+    treeBtn.textContent = 'Flat View';
+    treeBtn.style.background = 'var(--zui-primary-500)';
     treeBtn.style.color = '#fff';
+    treeBtn.style.borderColor = 'var(--zui-primary-500)';
     applyTreeView();
 })();
 {% endif %}
 </script>
+
 {% endblock %}
