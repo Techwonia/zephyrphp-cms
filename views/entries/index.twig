@@ -4,255 +4,232 @@
 
 {% block styles %}
 <style nonce="{{ csp_nonce() }}">
-/* ── Page ───────────────────────────────────────── */
-.ep { max-width: 1320px; margin: 0 auto; padding-bottom: 80px; }
+/* ── Entries Page Shell ─────────────────────────── */
+.entries-page { max-width: 1280px; margin: 0 auto; padding-bottom: 80px; }
 
-/* ── Breadcrumb (light) ─────────────────────────── */
-.ep-crumb { margin-bottom: var(--sp-4); }
+/* ── Page Header ────────────────────────────────── */
+.ep-header { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); margin-bottom: var(--sp-3); }
+.ep-header-left h1 { font-size: 1.5rem; font-weight: 700; color: var(--text-heading); margin: 0; letter-spacing: -0.02em; }
+.ep-header-sub { font-size: var(--text-xs); color: var(--text-secondary); margin: 2px 0 0; }
+.ep-header-actions { display: flex; align-items: center; gap: var(--sp-2); flex-shrink: 0; }
 
-/* ── Title row ──────────────────────────────────── */
-.ep-title-row { display: flex; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-4); }
-.ep-title-icon {
-    width: 36px; height: 36px; border-radius: var(--radius-lg);
-    background: var(--zui-primary-50); color: var(--zui-primary-600);
-    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-}
-.ep-title-icon svg { width: 18px; height: 18px; }
-.ep-title { font-size: 1.25rem; font-weight: 700; color: var(--text-heading); margin: 0; }
-.ep-title-actions { margin-left: auto; display: flex; align-items: center; gap: var(--sp-2); }
-
-/* ── Toolbar: View selector + Column/Filter/Sort ── */
-.ep-bar {
-    display: flex; align-items: center; gap: var(--sp-1);
-    padding: var(--sp-2) 0; margin-bottom: var(--sp-2);
-    border-bottom: 1px solid var(--zui-gray-100);
-}
-.ep-bar-item {
+/* ── Tab Bar (views) ────────────────────────────── */
+.ep-tabs { display: flex; align-items: center; gap: 0; border-bottom: 1.5px solid var(--border); margin-bottom: var(--sp-3); }
+.ep-tab {
     display: inline-flex; align-items: center; gap: 5px;
-    padding: 5px 12px; font-size: 13px; font-weight: 500; color: var(--text-secondary);
-    background: none; border: 1px solid transparent; border-radius: var(--radius-md);
-    cursor: pointer; text-decoration: none; transition: all 100ms; white-space: nowrap;
+    padding: 6px var(--sp-3); font-size: var(--text-sm); font-weight: 500;
+    color: var(--text-secondary); text-decoration: none;
+    border-bottom: 2px solid transparent; margin-bottom: -1.5px;
+    transition: color 150ms, border-color 150ms; cursor: pointer;
+    background: none; border-top: none; border-left: none; border-right: none; white-space: nowrap;
 }
-.ep-bar-item:hover { color: var(--text-heading); background: var(--zui-gray-50); }
-.ep-bar-item.is-active { color: var(--zui-primary-600); background: var(--zui-primary-50); border-color: var(--zui-primary-200); }
-.ep-bar-item svg { width: 14px; height: 14px; }
-.ep-bar-count {
-    font-size: 10px; font-weight: 700; min-width: 18px; height: 18px; line-height: 18px;
-    text-align: center; background: var(--zui-gray-200); color: var(--text-secondary);
-    border-radius: 50%; display: inline-block;
+.ep-tab:hover { color: var(--text-heading); }
+.ep-tab.is-active { color: var(--zui-primary-600); border-bottom-color: var(--zui-primary-600); }
+.ep-tab .tab-count {
+    font-size: 10px; font-weight: 600; background: var(--zui-gray-100); color: var(--text-secondary);
+    padding: 0 6px; border-radius: var(--radius-full); line-height: 1.6;
 }
-.ep-bar-item.is-active .ep-bar-count { background: var(--zui-primary-100); color: var(--zui-primary-700); }
-.ep-bar-sep { width: 1px; height: 20px; background: var(--zui-gray-200); margin: 0 var(--sp-2); flex-shrink: 0; }
-.ep-bar-right { margin-left: auto; display: flex; align-items: center; gap: var(--sp-1); }
+.ep-tab.is-active .tab-count { background: var(--zui-primary-50); color: var(--zui-primary-600); }
+.ep-tabs-right { margin-left: auto; display: flex; align-items: center; gap: var(--sp-2); padding-bottom: 6px; }
 
-/* ── Active filter chips ────────────────────────── */
-.ep-chips { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; padding: var(--sp-2) 0; }
-.ep-chip {
-    display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px 2px 10px;
-    background: var(--zui-gray-100); color: var(--text); font-size: 12px; font-weight: 500;
-    border-radius: var(--radius-full);
-}
-.ep-chip b { font-weight: 600; color: var(--text-heading); }
-.ep-chip-x { display: inline-flex; padding: 2px; color: var(--text-secondary); cursor: pointer; text-decoration: none; border-radius: 50%; }
-.ep-chip-x:hover { color: var(--text-heading); background: var(--zui-gray-200); }
+/* ── Toolbar (Filter + Columns) ─────────────────── */
+.ep-toolbar { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-3); }
+.ep-toolbar-right { margin-left: auto; display: flex; align-items: center; gap: var(--sp-2); }
 
-/* ── Filter panel ───────────────────────────────── */
+/* ── Active filters chips ───────────────────────── */
+.ep-filter-chips { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.ep-filter-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 8px 3px 10px; background: var(--zui-primary-50); color: var(--zui-primary-700);
+    font-size: 12px; font-weight: 500; border-radius: var(--radius-full);
+}
+.ep-filter-chip-remove {
+    display: inline-flex; align-items: center; color: var(--zui-primary-400);
+    text-decoration: none; line-height: 1; margin-left: 2px;
+}
+.ep-filter-chip-remove:hover { color: var(--zui-primary-700); }
+
+/* ── Filter dropdown ────────────────────────────── */
 .ep-filter-panel {
     position: absolute; top: calc(100% + 4px); right: 0; z-index: 60;
     background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md); padding: var(--sp-3); min-width: 340px; display: none;
+    box-shadow: var(--shadow-md); padding: var(--sp-3); min-width: 320px; display: none;
 }
 .ep-filter-panel.open { display: block; }
-.ep-filter-row { display: flex; gap: var(--sp-2); margin-bottom: var(--sp-2); align-items: center; }
-.ep-filter-row select, .ep-filter-row input { font-size: 13px; height: 32px; }
+.ep-filter-row { display: flex; gap: var(--sp-2); margin-bottom: var(--sp-2); }
+.ep-filter-row select, .ep-filter-row input { font-size: var(--text-sm); height: 32px; }
 
-/* ── Sort panel ─────────────────────────────────── */
-.ep-sort-panel {
-    position: absolute; top: calc(100% + 4px); right: 0; z-index: 60;
-    background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md); padding: var(--sp-2); min-width: 200px; display: none;
-}
-.ep-sort-panel.open { display: block; }
+/* ── Hierarchy breadcrumb path ──────────────────── */
+.ep-hier-path { display: flex; align-items: center; gap: 6px; font-size: var(--text-sm); }
+.ep-hier-path a { color: var(--zui-primary-600); text-decoration: none; font-weight: 600; }
+.ep-hier-path a:hover { text-decoration: underline; }
 
-/* ── Table ──────────────────────────────────────── */
-.ep-table-wrap {
-    background: var(--bg-surface); border: 1px solid var(--zui-gray-200);
-    border-radius: var(--radius-lg);
+/* ── Entry List ─────────────────────────────────── */
+.ep-list { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); }
+.ep-list-head {
+    display: flex; align-items: center; padding: 0 var(--sp-3); height: 34px;
+    background: var(--zui-gray-50); border-bottom: 1px solid var(--border); gap: var(--sp-3);
 }
-.ep-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-.ep-table th {
-    padding: 10px 14px; font-size: 13px; font-weight: 600; color: var(--text-heading);
-    text-align: left; border-bottom: 1px solid var(--zui-gray-200);
-    background: var(--bg-surface); position: relative; cursor: pointer;
-    user-select: none; white-space: nowrap;
+.ep-list-head .ep-col {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--text-secondary);
 }
-.ep-table th:hover { background: var(--zui-gray-50); }
-.ep-table th:first-child { width: 44px; cursor: default; }
-.ep-table th:first-child:hover { background: var(--bg-surface); }
-.ep-table th:last-child { width: 50px; cursor: default; }
-.ep-table th:last-child:hover { background: var(--bg-surface); }
-.ep-th-sort {
-    display: inline-flex; align-items: center; gap: 4px;
-    color: inherit; text-decoration: none; font: inherit;
-}
-.ep-th-sort svg { width: 12px; height: 12px; color: var(--text-secondary); }
-.ep-th-sort.is-active svg { color: var(--zui-primary-600); }
-.ep-sort-icon--desc { transform: rotate(180deg); }
 
-/* Column header context menu */
-.ep-col-menu {
-    position: absolute; top: 100%; left: 0; z-index: 70;
-    background: var(--bg-surface); border: 1px solid var(--border);
-    border-radius: var(--radius-lg); box-shadow: var(--shadow-md);
-    padding: var(--sp-1) 0; min-width: 180px; display: none;
-}
-.ep-col-menu.open { display: block; }
-.ep-col-menu-item {
-    display: flex; align-items: center; gap: var(--sp-2); padding: 7px 14px;
-    font-size: 13px; color: var(--text); text-decoration: none;
-    cursor: pointer; border: none; background: none; width: 100%; text-align: left;
-    transition: background 80ms;
-}
-.ep-col-menu-item:hover { background: var(--zui-gray-50); }
-.ep-col-menu-item svg { width: 14px; height: 14px; color: var(--text-secondary); flex-shrink: 0; }
-.ep-col-menu-item.danger { color: var(--zui-error-600); }
-.ep-col-menu-item.danger svg { color: var(--zui-error-400); }
-.ep-col-menu-divider { height: 1px; background: var(--zui-gray-100); margin: 4px 0; }
+/* Column layout */
+.ep-col--cb { width: 32px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.ep-col--name { flex: 3; min-width: 0; }
+.ep-col--field { flex: 1.5; min-width: 0; }
+.ep-col--status { width: 110px; flex-shrink: 0; }
+.ep-col--date { width: 100px; flex-shrink: 0; }
+.ep-col--actions { width: 72px; flex-shrink: 0; display: flex; align-items: center; justify-content: flex-end; }
 
-/* ── Table rows ─────────────────────────────────── */
-.ep-table td {
-    padding: 0 14px; height: 48px; font-size: 13px; color: var(--text);
-    border-bottom: 1px solid var(--zui-gray-100); vertical-align: middle;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    position: relative;
+/* ── Entry Row ──────────────────────────────────── */
+.ep-row {
+    display: flex; align-items: center; padding: 0 var(--sp-3); min-height: 42px;
+    gap: var(--sp-3); border-bottom: 1px solid var(--zui-gray-100);
+    transition: background 80ms ease; position: relative;
 }
-.ep-table tr:last-child td { border-bottom: none; }
-.ep-table tbody tr { transition: background 60ms; }
-.ep-table tbody tr:hover { background: var(--zui-gray-50); }
-.ep-table tbody tr.is-selected { background: var(--zui-primary-50); }
+.ep-row:last-child { border-bottom: none; }
+.ep-row:hover { background: var(--zui-gray-50); }
+.ep-row.is-selected { background: var(--zui-primary-50); }
 
-/* Checkbox column */
-.ep-table td:first-child, .ep-table th:first-child { text-align: center; padding: 0 8px; }
-.ep-cb { width: 16px; height: 16px; accent-color: var(--zui-primary-500); cursor: pointer; }
+/* Row dropdown fix */
+.ep-row .dropdown { position: static; }
+.ep-row .dropdown-menu { position: absolute; z-index: 60; }
 
-/* Entry name */
-.ep-name {
-    font-weight: 500; color: var(--text-heading); text-decoration: none;
-    display: inline-flex; align-items: center; gap: 8px;
+/* Checkbox */
+.ep-cb { width: 15px; height: 15px; accent-color: var(--zui-primary-500); cursor: pointer; }
+
+/* Entry name link */
+.ep-entry-name {
+    font-weight: 500; font-size: var(--text-sm); color: var(--text-heading);
+    text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block;
 }
-.ep-name:hover { color: var(--zui-primary-600); }
+.ep-entry-name:hover { color: var(--zui-primary-600); }
 
-/* Open button (hover reveal) */
-.ep-open-btn {
-    display: none; align-items: center; gap: 4px; padding: 2px 10px;
-    font-size: 12px; font-weight: 500; color: var(--zui-primary-600);
-    background: var(--zui-primary-50); border: 1px solid var(--zui-primary-200);
-    border-radius: var(--radius-md); text-decoration: none; white-space: nowrap;
-}
-.ep-open-btn svg { width: 12px; height: 12px; }
-.ep-table tbody tr:hover .ep-open-btn { display: inline-flex; }
+/* Field value cell */
+.ep-field-val { font-size: var(--text-sm); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Image thumbnails */
-.ep-thumb { width: 28px; height: 28px; border-radius: 6px; object-fit: cover; border: 1px solid var(--zui-gray-200); }
+.ep-thumb { width: 28px; height: 28px; border-radius: 5px; object-fit: cover; border: 1px solid var(--border); }
 
 /* Richtext preview */
 .ep-rt-preview { cursor: pointer; }
 .ep-rt-preview:hover { color: var(--zui-primary-600); }
 
 /* Boolean badges */
-.ep-bool-yes { background: var(--zui-success-50); color: var(--zui-success-700); font-size: 11px; font-weight: 600; padding: 2px 10px; border-radius: var(--radius-full); }
-.ep-bool-no { background: var(--zui-gray-100); color: var(--text-secondary); font-size: 11px; font-weight: 600; padding: 2px 10px; border-radius: var(--radius-full); }
+.ep-bool-yes { background: var(--zui-success-50); color: var(--zui-success-600); font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: var(--radius-full); }
+.ep-bool-no { background: var(--zui-gray-100); color: var(--text-secondary); font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: var(--radius-full); }
 
-/* Date cell — hidden until JS renders */
-.ep-date { font-size: 13px; color: var(--text-secondary); visibility: hidden; }
+/* Status badge */
+.ep-status { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: var(--radius-full); }
+.ep-status--published { background: var(--zui-success-50); color: var(--zui-success-700); }
+.ep-status--draft { background: var(--zui-warning-50); color: var(--zui-warning-700); }
+.ep-status--scheduled { background: var(--zui-info-50); color: var(--zui-info-600); }
+.ep-status--review { background: var(--zui-gray-100); color: var(--zui-gray-600); }
+.ep-status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+/* Date cell — hidden until JS converts */
+.ep-date { font-size: var(--text-sm); color: var(--text-secondary); visibility: hidden; }
 .ep-date.is-ready { visibility: visible; }
 
-/* Actions column */
-.ep-actions-cell { text-align: right !important; }
+/* Action buttons */
 .ep-action {
     display: inline-flex; align-items: center; justify-content: center;
     width: 28px; height: 28px; color: var(--text-secondary); background: none;
     border: none; border-radius: var(--radius-md); cursor: pointer;
-    text-decoration: none; opacity: 0; transition: opacity 80ms, color 80ms, background 80ms;
+    transition: color 100ms, background 100ms; text-decoration: none;
 }
-.ep-table tbody tr:hover .ep-action { opacity: 1; }
 .ep-action:hover { color: var(--text-heading); background: var(--zui-gray-100); }
 .ep-action svg { width: 14px; height: 14px; }
 
-/* Row dropdown fix */
-.ep-actions-cell .dropdown { position: static; }
-.ep-actions-cell .dropdown-menu { position: absolute; z-index: 60; right: 14px; left: auto; }
-
-/* ── Column toggle panel ────────────────────────── */
-.ep-col-panel {
-    position: absolute; top: calc(100% + 4px); right: 0; z-index: 60;
-    background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md); padding: var(--sp-2); min-width: 200px; display: none;
+/* Sort links */
+.ep-sort {
+    color: var(--text-secondary); text-decoration: none; display: inline-flex; align-items: center;
+    gap: 3px; font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.05em; transition: color 100ms;
 }
-.ep-col-panel.open { display: block; }
-.ep-col-panel-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); padding: var(--sp-1) var(--sp-2); }
-.ep-col-panel label { display: flex; align-items: center; gap: var(--sp-2); padding: 4px var(--sp-2); font-size: 13px; cursor: pointer; border-radius: var(--radius-sm); }
-.ep-col-panel label:hover { background: var(--bg-surface-hover); }
+.ep-sort:hover { color: var(--text-heading); }
+.ep-sort.is-active { color: var(--zui-primary-600); }
+.ep-sort-icon { transition: transform 150ms ease; }
+.ep-sort-icon--desc { transform: rotate(180deg); }
 
 /* ── Import Card ────────────────────────────────── */
 .ep-import-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--sp-3); margin-bottom: var(--sp-3); }
 
+/* ── Save View Card ─────────────────────────────── */
+.ep-save-view-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--sp-3); margin-bottom: var(--sp-3); }
+
+/* ── Active View Chip ───────────────────────────── */
+.ep-view-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 10px 3px 8px; background: var(--zui-primary-50); color: var(--zui-primary-700);
+    font-size: var(--text-xs); font-weight: 500; border-radius: var(--radius-full);
+}
+.ep-view-chip a { color: var(--zui-primary-400); text-decoration: none; line-height: 1; }
+.ep-view-chip a:hover { color: var(--zui-primary-700); }
+
 /* ── Empty State ────────────────────────────────── */
-.ep-empty { text-align: center; padding: var(--sp-10) var(--sp-4); background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); }
+.ep-empty { text-align: center; padding: var(--sp-8) var(--sp-4); background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); }
 .ep-empty-icon { width: 48px; height: 48px; background: var(--zui-gray-100); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; margin: 0 auto var(--sp-3); color: var(--text-secondary); }
 .ep-empty-icon svg { width: 22px; height: 22px; }
 
 /* ── Pagination ─────────────────────────────────── */
-.ep-pagination { display: flex; align-items: center; justify-content: space-between; padding: var(--sp-2) var(--sp-3); border-top: 1px solid var(--zui-gray-200); font-size: 12px; color: var(--text-secondary); }
-.ep-pagination-ctrls { display: flex; align-items: center; gap: 3px; }
-.ep-pg {
+.ep-pagination { display: flex; align-items: center; justify-content: space-between; padding: var(--sp-2) var(--sp-3); border-top: 1px solid var(--border); font-size: var(--text-xs); color: var(--text-secondary); }
+.ep-pagination-controls { display: flex; align-items: center; gap: 4px; }
+.ep-page-btn {
     display: inline-flex; align-items: center; justify-content: center; min-width: 28px; height: 28px;
-    padding: 0 6px; font-size: 12px; font-weight: 500; color: var(--text);
+    padding: 0 6px; font-size: var(--text-xs); font-weight: 500; color: var(--text);
     background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md);
     text-decoration: none; cursor: pointer; transition: all 100ms; gap: 3px;
 }
-.ep-pg:hover { border-color: var(--zui-primary-400); color: var(--zui-primary-600); }
-.ep-pg.is-current { background: var(--zui-primary-500); color: #fff; border-color: var(--zui-primary-500); }
-.ep-pg.is-disabled { opacity: 0.35; pointer-events: none; }
+.ep-page-btn:hover { border-color: var(--zui-primary-400); color: var(--zui-primary-600); }
+.ep-page-btn.is-current { background: var(--zui-primary-500); color: #fff; border-color: var(--zui-primary-500); }
+.ep-page-btn.is-disabled { opacity: 0.4; pointer-events: none; }
 
 /* ── Bulk Bar ───────────────────────────────────── */
 .ep-bulk {
     position: fixed; bottom: var(--sp-4); left: 50%; transform: translateX(-50%);
-    display: none; align-items: center; gap: var(--sp-3); padding: 10px 20px;
-    background: var(--zui-gray-900); color: #fff; font-size: 13px;
+    display: none; align-items: center; gap: var(--sp-3); padding: var(--sp-2) var(--sp-4);
+    background: var(--zui-gray-900); color: #fff; font-size: var(--text-sm);
     border-radius: var(--radius-xl); box-shadow: 0 8px 32px rgba(0,0,0,0.24); z-index: 100;
 }
 .ep-bulk.is-visible { display: flex; }
-.ep-bulk .btn { height: 28px; font-size: 12px; color: #fff; border-color: rgba(255,255,255,0.3); }
+.ep-bulk .btn { height: 26px; font-size: var(--text-xs); color: #fff; border-color: rgba(255,255,255,0.3); }
 .ep-bulk .btn:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.5); }
 .ep-bulk .btn-danger { background: var(--zui-error-600); border-color: var(--zui-error-600); }
+.ep-bulk .btn-danger:hover { background: var(--zui-error-500); }
 
 /* ── Column hidden ──────────────────────────────── */
 .col-hidden { display: none !important; }
+
+/* ── Column toggle dropdown ─────────────────────── */
+.ep-col-toggle {
+    position: absolute; top: calc(100% + 4px); right: 0; min-width: 200px; padding: var(--sp-2);
+    background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md); display: none; z-index: 50;
+}
+.ep-col-toggle.open { display: block; }
+.ep-col-toggle-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); padding: var(--sp-1) var(--sp-2); }
+.ep-col-toggle label { display: flex; align-items: center; gap: var(--sp-2); padding: 4px var(--sp-2); font-size: var(--text-sm); cursor: pointer; border-radius: var(--radius-sm); }
+.ep-col-toggle label:hover { background: var(--bg-surface-hover); }
 
 /* ── Hierarchy ──────────────────────────────────── */
 .ep-hier-arrow { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 4px; color: var(--zui-primary-600); font-weight: 700; font-size: 14px; flex-shrink: 0; text-decoration: none; }
 .ep-hier-arrow:hover { background: rgba(14,165,233,0.1); }
 .tree-indent { display: inline-flex; align-items: center; flex-shrink: 0; }
-.tree-toggle-btn { background: none; border: none; cursor: pointer; padding: 2px; margin-right: 3px; color: var(--text-secondary); font-size: 11px; width: 16px; text-align: center; border-radius: 3px; }
+.tree-toggle-btn { background: none; border: none; cursor: pointer; padding: 2px; margin-right: 4px; color: var(--text-secondary); font-size: 11px; width: 16px; text-align: center; border-radius: 3px; }
 .tree-toggle-btn:hover { background: var(--bg-surface-hover); }
-
-/* ── View chip ──────────────────────────────────── */
-.ep-view-chip {
-    display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px 3px 6px;
-    background: var(--zui-primary-50); color: var(--zui-primary-700); font-size: 12px;
-    font-weight: 500; border-radius: var(--radius-full);
-}
-.ep-view-chip a { color: var(--zui-primary-400); text-decoration: none; line-height: 1; }
-.ep-view-chip a:hover { color: var(--zui-primary-700); }
 
 /* ── Bulk field form ────────────────────────────── */
 .ep-bulk-field-form { padding: var(--sp-3); }
 
 /* ── Responsive ─────────────────────────────────── */
 @media (max-width: 768px) {
-    .ep-title-row { flex-wrap: wrap; }
-    .ep-bar { overflow-x: auto; }
+    .ep-header { flex-direction: column; gap: var(--sp-2); }
+    .ep-header-actions { flex-wrap: wrap; }
+    .ep-tabs { overflow-x: auto; }
+    .ep-col--field, .ep-col--date { display: none; }
 }
 </style>
 {% endblock %}
@@ -262,7 +239,7 @@
 {% set _totalCount = entries.total|default(entries.data|length) %}
 
 {# ── Breadcrumb ─────────────────────────────────── #}
-<div class="breadcrumb ep-crumb">
+<div class="breadcrumb">
     <a href="{{ admin_url() }}">{% include '@cms/partials/sidebar-icon.twig' with {icon: 'home'} only %} Dashboard</a>
     <span class="breadcrumb-sep">/</span>
     <a href="{{ admin_url('collections') }}">Collections</a>
@@ -270,36 +247,43 @@
     <span class="breadcrumb-current">{{ collection.getName() }}</span>
 </div>
 
-<div class="ep">
+<div class="entries-page">
 
-    {# ── Title Row ──────────────────────────────────── #}
-    <div class="ep-title-row">
-        <div class="ep-title-icon">
-            {% include '@cms/partials/sidebar-icon.twig' with {icon: 'layers'} only %}
+    {# ── Page Header ────────────────────────────────── #}
+    <div class="ep-header">
+        <div class="ep-header-left">
+            <h1>{{ collection.getName() }}</h1>
+            <p class="ep-header-sub">{{ _totalCount }} {{ _totalCount == 1 ? 'entry' : 'entries' }}</p>
         </div>
-        <h1 class="ep-title">{{ collection.getName() }}</h1>
-
-        <div class="ep-title-actions">
+        <div class="ep-header-actions">
             <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/trash') }}" class="btn btn-outline btn-sm">
-                {% include '@cms/partials/sidebar-icon.twig' with {icon: 'archive'} only %} Trash
+                {% include '@cms/partials/sidebar-icon.twig' with {icon: 'archive'} only %}
+                Trash
                 {% if trashCount is defined and trashCount > 0 %}
                     <span class="badge badge-error" style="margin-left:2px">{{ trashCount }}</span>
                 {% endif %}
             </a>
             <div class="dropdown" data-dropdown>
                 <button class="btn btn-outline btn-sm" data-dropdown-trigger>
-                    Export <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
+                    Export
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
                 </button>
                 <div class="dropdown-menu" data-dropdown-menu>
-                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/export?format=csv') }}" class="dropdown-item">{% include '@cms/partials/sidebar-icon.twig' with {icon: 'file'} only %} CSV</a>
-                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/export?format=json') }}" class="dropdown-item">{% include '@cms/partials/sidebar-icon.twig' with {icon: 'code'} only %} JSON</a>
+                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/export?format=csv') }}" class="dropdown-item">
+                        {% include '@cms/partials/sidebar-icon.twig' with {icon: 'file'} only %} Export as CSV
+                    </a>
+                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/export?format=json') }}" class="dropdown-item">
+                        {% include '@cms/partials/sidebar-icon.twig' with {icon: 'code'} only %} Export as JSON
+                    </a>
                 </div>
             </div>
-            <button class="btn btn-outline btn-sm" id="toggle-import-btn">{% include '@cms/partials/sidebar-icon.twig' with {icon: 'file'} only %} Import</button>
+            <button class="btn btn-outline btn-sm" id="toggle-import-btn">
+                {% include '@cms/partials/sidebar-icon.twig' with {icon: 'file'} only %} Import
+            </button>
             <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/create') }}" class="btn btn-primary btn-sm">
                 {% include '@cms/partials/sidebar-icon.twig' with {icon: 'plus'} only %} New Entry
             </a>
-            <a href="{{ admin_url('collections/' ~ collection.getSlug()) }}" class="btn btn-ghost btn-icon btn-sm" title="Settings">
+            <a href="{{ admin_url('collections/' ~ collection.getSlug()) }}" class="btn btn-ghost btn-icon btn-sm" title="Collection Settings">
                 {% include '@cms/partials/sidebar-icon.twig' with {icon: 'settings'} only %}
             </a>
         </div>
@@ -319,138 +303,111 @@
         </form>
     </div>
 
-    {# ── Toolbar Bar ────────────────────────────────── #}
-    <div class="ep-bar">
-        {# View tabs #}
+    {# ── Tab Bar (Saved Views) ──────────────────────── #}
+    <div class="ep-tabs">
         <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}"
-           class="ep-bar-item {% if activeViewSlug is not defined or not activeViewSlug %}is-active{% endif %}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-            Default
+           class="ep-tab {% if activeViewSlug is not defined or not activeViewSlug %}is-active{% endif %}">
+            All <span class="tab-count">{{ _totalCount }}</span>
         </a>
         {% if savedViews is defined and savedViews|length > 0 %}
             {% for sv in savedViews %}
                 <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?view=' ~ sv.getSlug()) }}"
-                   class="ep-bar-item {% if activeViewSlug is defined and activeViewSlug == sv.getSlug() %}is-active{% endif %}">
+                   class="ep-tab {% if activeViewSlug is defined and activeViewSlug == sv.getSlug() %}is-active{% endif %}">
                     {{ sv.getName() }}
+                    {% if sv.isDefault() %}<span class="tab-count">default</span>{% endif %}
                 </a>
             {% endfor %}
         {% endif %}
 
-        <div class="ep-bar-sep"></div>
-
-        {# Column toggle #}
-        <div style="position:relative;" class="ep-bar-right">
-            <button type="button" class="ep-bar-item" id="col-toggle-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/></svg>
-                Column
-                <span class="ep-bar-count" id="col-count">{{ listableFields|length }}</span>
+        <div class="ep-tabs-right">
+            {% if collection.hasHierarchy() %}
+            <button type="button" class="btn btn-outline btn-sm" id="tree-toggle" style="height:28px;">
+                {% include '@cms/partials/sidebar-icon.twig' with {icon: 'layers'} only %} Tree
             </button>
-            <div class="ep-col-panel" id="col-toggle-dropdown">
-                <div class="ep-col-panel-title">Toggle Columns</div>
-                <div id="col-toggle-list"></div>
-            </div>
-        </div>
+            {% endif %}
 
-        {# Filter #}
-        <div style="position:relative;">
-            <button type="button" class="ep-bar-item {% if activeFilters is defined and activeFilters|length > 0 %}is-active{% endif %}" id="filter-toggle-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
-                Filter
-                {% if activeFilters is defined and activeFilters|length > 0 %}
-                    <span class="ep-bar-count">{{ activeFilters|length }}</span>
-                {% endif %}
-            </button>
-            <div class="ep-filter-panel" id="filter-panel">
-                <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-secondary);margin-bottom:var(--sp-2);">Filter entries</div>
-                <form method="GET" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" id="filter-form">
-                    {% if sortBy %}<input type="hidden" name="sort_by" value="{{ sortBy }}">{% endif %}
-                    {% if sortDir %}<input type="hidden" name="sort_dir" value="{{ sortDir }}">{% endif %}
-                    {% if activeViewSlug %}<input type="hidden" name="view" value="{{ activeViewSlug }}">{% endif %}
-                    <div id="filter-rows">
-                        {% if activeFilters is defined and activeFilters|length > 0 %}
-                            {% for fField, fValue in activeFilters %}
+            {# Filter button #}
+            <div style="position:relative;">
+                <button type="button" class="btn btn-outline btn-sm" id="filter-toggle-btn" style="height:28px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+                    Filter
+                    {% if activeFilters is defined and activeFilters|length > 0 %}
+                        <span class="tab-count">{{ activeFilters|length }}</span>
+                    {% endif %}
+                </button>
+                <div class="ep-filter-panel" id="filter-panel">
+                    <div style="font-size:var(--text-xs);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-secondary);margin-bottom:var(--sp-2);">Filter entries</div>
+                    <form method="GET" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" id="filter-form">
+                        {# Preserve existing params #}
+                        {% if sortBy %}<input type="hidden" name="sort_by" value="{{ sortBy }}">{% endif %}
+                        {% if sortDir %}<input type="hidden" name="sort_dir" value="{{ sortDir }}">{% endif %}
+                        {% if activeViewSlug %}<input type="hidden" name="view" value="{{ activeViewSlug }}">{% endif %}
+
+                        <div id="filter-rows">
+                            {% if activeFilters is defined and activeFilters|length > 0 %}
+                                {% for fField, fValue in activeFilters %}
+                                <div class="ep-filter-row">
+                                    <select name="filter_field[]" class="form-control" style="flex:1;">
+                                        <option value="">-- Field --</option>
+                                        {% for field in listableFields %}
+                                            <option value="{{ field.getSlug() }}" {% if fField == field.getSlug() %}selected{% endif %}>{{ field.getName() }}</option>
+                                        {% endfor %}
+                                        {% if collection.isPublishable() %}
+                                            <option value="status" {% if fField == 'status' %}selected{% endif %}>Status</option>
+                                        {% endif %}
+                                    </select>
+                                    <input type="text" name="filter_value[]" class="form-control" placeholder="Value" value="{{ fValue }}" style="flex:1;">
+                                    <button type="button" class="btn btn-ghost btn-icon btn-sm ep-remove-filter" style="flex-shrink:0;width:28px;height:28px;" title="Remove">
+                                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M9 3L3 9M3 3l6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                                    </button>
+                                </div>
+                                {% endfor %}
+                            {% else %}
                             <div class="ep-filter-row">
                                 <select name="filter_field[]" class="form-control" style="flex:1;">
                                     <option value="">-- Field --</option>
-                                    {% for field in listableFields %}<option value="{{ field.getSlug() }}" {% if fField == field.getSlug() %}selected{% endif %}>{{ field.getName() }}</option>{% endfor %}
-                                    {% if collection.isPublishable() %}<option value="status" {% if fField == 'status' %}selected{% endif %}>Status</option>{% endif %}
+                                    {% for field in listableFields %}
+                                        <option value="{{ field.getSlug() }}">{{ field.getName() }}</option>
+                                    {% endfor %}
+                                    {% if collection.isPublishable() %}
+                                        <option value="status">Status</option>
+                                    {% endif %}
                                 </select>
-                                <input type="text" name="filter_value[]" class="form-control" placeholder="Value" value="{{ fValue }}" style="flex:1;">
-                                <button type="button" class="btn btn-ghost btn-icon btn-sm ep-remove-filter" style="width:28px;height:28px;" title="Remove">
+                                <input type="text" name="filter_value[]" class="form-control" placeholder="Value" style="flex:1;">
+                                <button type="button" class="btn btn-ghost btn-icon btn-sm ep-remove-filter" style="flex-shrink:0;width:28px;height:28px;" title="Remove">
                                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M9 3L3 9M3 3l6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
                                 </button>
                             </div>
-                            {% endfor %}
-                        {% else %}
-                        <div class="ep-filter-row">
-                            <select name="filter_field[]" class="form-control" style="flex:1;">
-                                <option value="">-- Field --</option>
-                                {% for field in listableFields %}<option value="{{ field.getSlug() }}">{{ field.getName() }}</option>{% endfor %}
-                                {% if collection.isPublishable() %}<option value="status">Status</option>{% endif %}
-                            </select>
-                            <input type="text" name="filter_value[]" class="form-control" placeholder="Value" style="flex:1;">
-                            <button type="button" class="btn btn-ghost btn-icon btn-sm ep-remove-filter" style="width:28px;height:28px;" title="Remove">
-                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M9 3L3 9M3 3l6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-                            </button>
-                        </div>
-                        {% endif %}
-                    </div>
-                    <div class="flex items-center gap-2" style="margin-top:var(--sp-2);">
-                        <button type="button" class="btn btn-ghost btn-sm" id="add-filter-row">+ Add</button>
-                        <div style="margin-left:auto;display:flex;gap:var(--sp-2);">
-                            {% if activeFilters is defined and activeFilters|length > 0 %}
-                            <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="btn btn-ghost btn-sm" style="color:var(--zui-error-600);">Clear all</a>
                             {% endif %}
-                            <button type="submit" class="btn btn-primary btn-sm">Apply</button>
                         </div>
-                    </div>
-                </form>
+                        <div class="flex items-center gap-2" style="margin-top:var(--sp-2);">
+                            <button type="button" class="btn btn-ghost btn-sm" id="add-filter-row">+ Add</button>
+                            <div style="margin-left:auto;display:flex;gap:var(--sp-2);">
+                                {% if activeFilters is defined and activeFilters|length > 0 %}
+                                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="btn btn-ghost btn-sm" style="color:var(--zui-error-600);">Clear</a>
+                                {% endif %}
+                                <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {# Column toggle #}
+            <div style="position:relative;">
+                <button type="button" class="btn btn-outline btn-sm" id="col-toggle-btn" title="Toggle columns" style="height:28px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v18M3 12h18M3 6h18M3 18h18"/></svg>
+                    Columns
+                </button>
+                <div class="ep-col-toggle" id="col-toggle-dropdown">
+                    <div class="ep-col-toggle-title">Toggle Columns</div>
+                    <div id="col-toggle-list"></div>
+                </div>
             </div>
         </div>
-
-        {# Sort #}
-        <div style="position:relative;">
-            <button type="button" class="ep-bar-item {% if sortBy and sortBy != 'id' %}is-active{% endif %}" id="sort-toggle-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 5h10M11 9h7M11 13h4M3 17l4 4 4-4M7 3v18"/></svg>
-                Sort
-            </button>
-            <div class="ep-sort-panel" id="sort-panel">
-                {% for field in listableFields %}
-                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?sort_by=' ~ field.getSlug() ~ '&sort_dir=ASC' ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}"
-                   class="ep-col-menu-item {% if sortBy == field.getSlug() %}is-active{% endif %}">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
-                    {{ field.getName() }} {{ sortBy == field.getSlug() ? (sortDir == 'ASC' ? '↑' : '↓') : '' }}
-                </a>
-                {% endfor %}
-                {% if collection.isPublishable() %}
-                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?sort_by=status&sort_dir=ASC' ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}"
-                   class="ep-col-menu-item {% if sortBy == 'status' %}is-active{% endif %}">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
-                    Status {{ sortBy == 'status' ? (sortDir == 'ASC' ? '↑' : '↓') : '' }}
-                </a>
-                {% endif %}
-                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?sort_by=created_at&sort_dir=DESC' ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}"
-                   class="ep-col-menu-item {% if sortBy == 'created_at' %}is-active{% endif %}">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
-                    Updated {{ sortBy == 'created_at' ? (sortDir == 'ASC' ? '↑' : '↓') : '' }}
-                </a>
-                <div class="ep-col-menu-divider"></div>
-                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries' ~ (activeViewSlug ? '?view=' ~ activeViewSlug : '')) }}" class="ep-col-menu-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                    Reset sort
-                </a>
-            </div>
-        </div>
-
-        {% if collection.hasHierarchy() %}
-        <button type="button" class="ep-bar-item" id="tree-toggle">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v6m0 4v6m-6-8h12M6 8V4h12v4M6 16v4h12v-4"/></svg>
-            Tree
-        </button>
-        {% endif %}
     </div>
 
-    {# ── Active View Chip ───────────────────────────── #}
+    {# ── Active View Chip + Delete ──────────────────── #}
     {% if activeViewSlug is defined and activeViewSlug %}
         {% for sv in savedViews %}
             {% if sv.getSlug() == activeViewSlug %}
@@ -458,13 +415,13 @@
                 <div class="ep-view-chip">
                     {% include '@cms/partials/sidebar-icon.twig' with {icon: 'grid'} only %}
                     <span>{{ sv.getName() }}</span>
-                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" title="Clear">
+                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" title="Clear view">
                         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M9 3L3 9M3 3l6 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
                     </a>
                 </div>
                 <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/views/' ~ sv.getId() ~ '/delete') }}" style="display:inline;">
                     {{ csrf_field() | raw }}
-                    <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--zui-error-600);" onclick="return confirm('Delete this saved view?')">Delete</button>
+                    <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--zui-error-600);" onclick="return confirm('Delete this saved view?')">Delete View</button>
                 </form>
             </div>
             {% endif %}
@@ -473,11 +430,13 @@
 
     {# ── Active filter chips ────────────────────────── #}
     {% if activeFilters is defined and activeFilters|length > 0 %}
-    <div class="ep-chips">
+    <div class="ep-filter-chips mb-3">
+        <span class="text-xs text-secondary" style="font-weight:500;">Filtered by:</span>
         {% for fField, fValue in activeFilters %}
-            <span class="ep-chip">
-                <b>{{ fField }}</b> = {{ fValue }}
-                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="ep-chip-x" title="Clear filters">
+            <span class="ep-filter-chip">
+                {{ fField }}: {{ fValue }}
+                {# Build URL removing this filter #}
+                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="ep-filter-chip-remove" title="Remove filter">
                     <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M9 3L3 9M3 3l6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
                 </a>
             </span>
@@ -485,14 +444,14 @@
     </div>
     {% endif %}
 
-    {# ── Hierarchy breadcrumb ───────────────────────── #}
+    {# ── Hierarchy breadcrumb path ──────────────────── #}
     {% if collection.hasHierarchy() and (parentBreadcrumbs is defined and parentBreadcrumbs|length > 0) %}
-    <div class="flex items-center gap-2 mb-3" style="font-size:13px;">
-        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?parent=') }}" style="color:var(--zui-primary-600);text-decoration:none;font-weight:600;">{{ collection.getName() }}</a>
+    <div class="ep-hier-path mb-3">
+        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?parent=') }}">{{ collection.getName() }}</a>
         {% for bc in parentBreadcrumbs %}
-            <span class="text-secondary">›</span>
+            <span class="text-secondary">&#8250;</span>
             {% if not loop.last %}
-                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?parent=' ~ bc.id) }}" style="color:var(--zui-primary-600);text-decoration:none;font-weight:600;">{{ bc.label }}</a>
+                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?parent=' ~ bc.id) }}">{{ bc.label }}</a>
             {% else %}
                 <span class="font-semibold text-heading">{{ bc.label }}</span>
             {% endif %}
@@ -500,136 +459,151 @@
     </div>
     {% endif %}
 
-    {# ── Data Table ─────────────────────────────────── #}
+    {# ── Data List ──────────────────────────────────── #}
     {% if entries.data|length > 0 %}
-    <div class="ep-table-wrap" id="entries-list">
-        <table class="ep-table">
-            <thead>
-                <tr>
-                    <th><input type="checkbox" id="select-all" class="ep-cb"></th>
-                    {% for field in listableFields %}
-                    <th data-col="field-{{ field.getSlug() }}" data-col-name="{{ field.getName() }}" data-col-type="{{ field.getType() }}" data-col-slug="{{ field.getSlug() }}">
-                        <span class="ep-th-sort {% if sortBy == field.getSlug() %}is-active{% endif %}">
-                            {{ field.getName() }}
-                            {% if sortBy == field.getSlug() %}
-                                <svg viewBox="0 0 12 12" fill="none" class="{% if sortDir == 'DESC' %}ep-sort-icon--desc{% endif %}"><path d="M3 5l3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            {% endif %}
-                        </span>
-                    </th>
-                    {% endfor %}
-                    {% if collection.isPublishable() %}
-                    <th data-col="col-status" data-col-name="Status" data-col-slug="status">
-                        <span class="ep-th-sort {% if sortBy == 'status' %}is-active{% endif %}">
-                            Status
-                            {% if sortBy == 'status' %}
-                                <svg viewBox="0 0 12 12" fill="none" class="{% if sortDir == 'DESC' %}ep-sort-icon--desc{% endif %}"><path d="M3 5l3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            {% endif %}
-                        </span>
-                    </th>
+    <div class="ep-list" id="entries-list">
+
+        {# ── List Header ────────────────────────────── #}
+        <div class="ep-list-head">
+            <div class="ep-col ep-col--cb">
+                <input type="checkbox" id="select-all" class="ep-cb">
+            </div>
+            {% for field in listableFields %}
+            <div class="ep-col {% if loop.first %}ep-col--name{% else %}ep-col--field{% endif %}"
+                 data-col="field-{{ field.getSlug() }}" data-col-name="{{ field.getName() }}" data-col-type="{{ field.getType() }}">
+                {% set _nextDir = 'ASC' %}
+                {% if sortBy == field.getSlug() and sortDir == 'ASC' %}{% set _nextDir = 'DESC' %}{% endif %}
+                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?sort_by=' ~ field.getSlug() ~ '&sort_dir=' ~ _nextDir ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}"
+                   class="ep-sort {% if sortBy == field.getSlug() %}is-active{% endif %}">
+                    {{ field.getName() }}
+                    {% if sortBy == field.getSlug() %}
+                        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" class="ep-sort-icon {% if sortDir == 'DESC' %}ep-sort-icon--desc{% endif %}"><path d="M3 5l3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     {% endif %}
-                    <th data-col="col-updated" data-col-name="Updated" data-col-slug="created_at">
-                        <span class="ep-th-sort {% if sortBy == 'created_at' %}is-active{% endif %}">
-                            Updated
-                            {% if sortBy == 'created_at' %}
-                                <svg viewBox="0 0 12 12" fill="none" class="{% if sortDir == 'DESC' %}ep-sort-icon--desc{% endif %}"><path d="M3 5l3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            {% endif %}
-                        </span>
-                    </th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for entry in entries.data %}
-                {% set _eId = entry.id %}
-                {% set _eDepth = depthMap[_eId]|default(0) %}
-                {% set _eChildren = childCountMap[_eId]|default(0) %}
-                {% set _eParent = entry.parent_id|default('') %}
-                <tr data-entry-id="{{ _eId }}" data-parent-id="{{ _eParent }}" data-depth="{{ _eDepth }}" data-children="{{ _eChildren }}">
-                    <td><input type="checkbox" class="entry-checkbox ep-cb" value="{{ entry.id }}"></td>
-
-                    {% for field in listableFields %}
-                    <td data-col="field-{{ field.getSlug() }}">
-                        {% if loop.first %}
-                            {% if collection.hasHierarchy() and _eChildren > 0 %}
-                                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?parent=' ~ entry.id) }}" class="ep-hier-arrow" title="View {{ _eChildren }} children">›</a>
-                            {% endif %}
-                            {% set _nameVal = entry[field.getSlug()]|default('')|striptags %}
-                            <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id) }}" class="ep-name">
-                                {{ _nameVal|slice(0, 80) }}{% if _nameVal|length > 80 %}…{% endif %}
-                            </a>
-                            <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id) }}" class="ep-open-btn">
-                                <svg viewBox="0 0 16 16" fill="none"><path d="M6 3h7v7M13 3L6.5 9.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                Open
-                            </a>
-                        {% elseif field.getType() == 'boolean' %}
-                            <span class="ep-bool-{{ entry[field.getSlug()] ? 'yes' : 'no' }}">{{ entry[field.getSlug()] ? 'Yes' : 'No' }}</span>
-                        {% elseif (field.getType() == 'image' or field.getType() == 'file') and entry[field.getSlug()] %}
-                            {% set _imgVal = entry[field.getSlug()] %}
-                            {% set _thumbs = media_thumbs(_imgVal, 3) %}
-                            {% set _totalImgCount = media_thumbs_count(_imgVal) %}
-                            {% if _thumbs|length > 0 %}
-                                <span class="flex items-center gap-1">
-                                {% for _t in _thumbs %}<img src="{{ _t }}" alt="" class="ep-thumb">{% endfor %}
-                                {% if _totalImgCount > 3 %}<span class="text-secondary text-xs">+{{ _totalImgCount - 3 }}</span>{% endif %}
-                                </span>
-                            {% endif %}
-                        {% elseif field.getType() == 'richtext' and entry[field.getSlug()] %}
-                            {% set _rtVal = entry[field.getSlug()]|striptags %}
-                            <span class="ep-rt-preview" data-content="{{ entry[field.getSlug()]|e('html_attr') }}">{{ _rtVal|slice(0, 60) }}{% if _rtVal|length > 60 %}…{% endif %}</span>
-                        {% elseif field.getType() == 'relation' and entry[field.getSlug()] %}
-                            {% set _fKey = field.getSlug() %}
-                            {% set _relLabels = relationLabels[_fKey]|default({}) %}
-                            {% set _entryVal = entry[_fKey] %}
-                            {% if _entryVal in (_relLabels|keys) %}<span>{{ _relLabels[_entryVal] }}</span>{% else %}<span class="text-secondary">#{{ _entryVal }}</span>{% endif %}
-                        {% else %}
-                            {% set _cellVal = entry[field.getSlug()]|default('')|striptags %}
-                            {{ _cellVal|slice(0, 80) }}{% if _cellVal|length > 80 %}…{% endif %}
-                        {% endif %}
-                    </td>
-                    {% endfor %}
-
-                    {% if collection.isPublishable() %}
-                    <td data-col="col-status">
-                        {% set _st = entry.status|default('draft') %}
-                        <span class="badge badge-{{ _st == 'published' ? 'success' : (_st == 'scheduled' ? 'info' : (_st == 'review' ? 'default' : 'warning')) }}">
-                            <span class="badge-dot"></span> {{ _st|capitalize }}
-                        </span>
-                    </td>
+                </a>
+            </div>
+            {% endfor %}
+            {% if collection.isPublishable() %}
+            <div class="ep-col ep-col--status" data-col="col-status" data-col-name="Status">
+                {% set _nextDir = 'ASC' %}
+                {% if sortBy == 'status' and sortDir == 'ASC' %}{% set _nextDir = 'DESC' %}{% endif %}
+                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?sort_by=status&sort_dir=' ~ _nextDir ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}"
+                   class="ep-sort {% if sortBy == 'status' %}is-active{% endif %}">
+                    Status
+                    {% if sortBy == 'status' %}
+                        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" class="ep-sort-icon {% if sortDir == 'DESC' %}ep-sort-icon--desc{% endif %}"><path d="M3 5l3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     {% endif %}
+                </a>
+            </div>
+            {% endif %}
+            <div class="ep-col ep-col--date" data-col="col-updated" data-col-name="Updated">
+                {% set _nextDir = 'ASC' %}
+                {% if sortBy == 'created_at' and sortDir == 'ASC' %}{% set _nextDir = 'DESC' %}{% endif %}
+                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?sort_by=created_at&sort_dir=' ~ _nextDir ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}"
+                   class="ep-sort {% if sortBy == 'created_at' %}is-active{% endif %}">
+                    Updated
+                    {% if sortBy == 'created_at' %}
+                        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" class="ep-sort-icon {% if sortDir == 'DESC' %}ep-sort-icon--desc{% endif %}"><path d="M3 5l3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    {% endif %}
+                </a>
+            </div>
+            <div class="ep-col ep-col--actions"></div>
+        </div>
 
-                    <td data-col="col-updated">
-                        <span class="ep-date entries-relative-time" data-time="{{ entry.updated_at|default(entry.created_at|default('')) }}"></span>
-                    </td>
+        {# ── Entry Rows ─────────────────────────────── #}
+        {% for entry in entries.data %}
+        {% set _eId = entry.id %}
+        {% set _eDepth = depthMap[_eId]|default(0) %}
+        {% set _eChildren = childCountMap[_eId]|default(0) %}
+        {% set _eParent = entry.parent_id|default('') %}
+        <div class="ep-row" data-entry-id="{{ _eId }}" data-parent-id="{{ _eParent }}" data-depth="{{ _eDepth }}" data-children="{{ _eChildren }}">
+            <div class="ep-col ep-col--cb">
+                <input type="checkbox" class="entry-checkbox ep-cb" value="{{ entry.id }}">
+            </div>
 
-                    <td class="ep-actions-cell">
-                        <div class="dropdown" data-dropdown>
-                            <button class="ep-action" data-dropdown-trigger title="Actions">
-                                <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="3" r="1" fill="currentColor"/><circle cx="8" cy="8" r="1" fill="currentColor"/><circle cx="8" cy="13" r="1" fill="currentColor"/></svg>
+            {% for field in listableFields %}
+            <div class="ep-col {% if loop.first %}ep-col--name{% else %}ep-col--field{% endif %} ep-field-val"
+                 data-col="field-{{ field.getSlug() }}"
+                 {% if loop.first and collection.hasHierarchy() %}style="display:flex;align-items:center;gap:5px;"{% endif %}>
+                {% if loop.first and collection.hasHierarchy() and _eChildren > 0 %}
+                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?parent=' ~ entry.id) }}" class="ep-hier-arrow" title="View {{ _eChildren }} children">&#8250;</a>
+                {% endif %}
+                {% if loop.first %}
+                    {% set _nameVal = entry[field.getSlug()]|default('')|striptags %}
+                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id) }}" class="ep-entry-name">
+                        {{ _nameVal|slice(0, 80) }}{% if _nameVal|length > 80 %}...{% endif %}
+                    </a>
+                {% elseif field.getType() == 'boolean' %}
+                    <span class="ep-bool-{{ entry[field.getSlug()] ? 'yes' : 'no' }}">{{ entry[field.getSlug()] ? 'Yes' : 'No' }}</span>
+                {% elseif (field.getType() == 'image' or field.getType() == 'file') and entry[field.getSlug()] %}
+                    {% set _imgVal = entry[field.getSlug()] %}
+                    {% set _thumbs = media_thumbs(_imgVal, 3) %}
+                    {% set _totalImgCount = media_thumbs_count(_imgVal) %}
+                    {% if _thumbs|length > 0 %}
+                        <span class="flex items-center gap-1">
+                        {% for _t in _thumbs %}<img src="{{ _t }}" alt="" class="ep-thumb">{% endfor %}
+                        {% if _totalImgCount > 3 %}<span class="text-secondary text-xs">+{{ _totalImgCount - 3 }}</span>{% endif %}
+                        </span>
+                    {% endif %}
+                {% elseif field.getType() == 'richtext' and entry[field.getSlug()] %}
+                    {% set _rtVal = entry[field.getSlug()]|striptags %}
+                    <span class="ep-rt-preview" data-content="{{ entry[field.getSlug()]|e('html_attr') }}" title="Click to preview">{{ _rtVal|slice(0, 60) }}{% if _rtVal|length > 60 %}...{% endif %}</span>
+                {% elseif field.getType() == 'relation' and entry[field.getSlug()] %}
+                    {% set _fKey = field.getSlug() %}
+                    {% set _relLabels = relationLabels[_fKey]|default({}) %}
+                    {% set _entryVal = entry[_fKey] %}
+                    {% if _entryVal in (_relLabels|keys) %}
+                        <span>{{ _relLabels[_entryVal] }}</span>
+                    {% else %}
+                        <span class="text-secondary">#{{ _entryVal }}</span>
+                    {% endif %}
+                {% else %}
+                    {% set _cellVal = entry[field.getSlug()]|default('')|striptags %}
+                    <span>{{ _cellVal|slice(0, 80) }}{% if _cellVal|length > 80 %}...{% endif %}</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            {% if collection.isPublishable() %}
+            <div class="ep-col ep-col--status" data-col="col-status">
+                {% set _st = entry.status|default('draft') %}
+                <span class="ep-status ep-status--{{ _st }}"><span class="ep-status-dot"></span> {{ _st|capitalize }}</span>
+            </div>
+            {% endif %}
+
+            <div class="ep-col ep-col--date" data-col="col-updated">
+                <span class="ep-date entries-relative-time" data-time="{{ entry.updated_at|default(entry.created_at|default('')) }}"></span>
+            </div>
+
+            <div class="ep-col ep-col--actions">
+                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id) }}" class="ep-action" title="Edit">
+                    <svg viewBox="0 0 16 16" fill="none"><path d="M11.333 2a1.886 1.886 0 012.667 2.667L5.333 13.333 2 14l.667-3.333L11.333 2z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </a>
+                <div class="dropdown" data-dropdown>
+                    <button class="ep-action" data-dropdown-trigger title="More actions">
+                        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="3" r="1" fill="currentColor"/><circle cx="8" cy="8" r="1" fill="currentColor"/><circle cx="8" cy="13" r="1" fill="currentColor"/></svg>
+                    </button>
+                    <div class="dropdown-menu" data-dropdown-menu>
+                        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id) }}" class="dropdown-item">
+                            {% include '@cms/partials/sidebar-icon.twig' with {icon: 'edit'} only %} Edit
+                        </a>
+                        <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/duplicate') }}">
+                            {{ csrf_field() | raw }}
+                            <button type="submit" class="dropdown-item" onclick="return confirm('Duplicate this entry?')">
+                                {% include '@cms/partials/sidebar-icon.twig' with {icon: 'file'} only %} Duplicate
                             </button>
-                            <div class="dropdown-menu" data-dropdown-menu>
-                                <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id) }}" class="dropdown-item">
-                                    {% include '@cms/partials/sidebar-icon.twig' with {icon: 'edit'} only %} Edit
-                                </a>
-                                <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/duplicate') }}">
-                                    {{ csrf_field() | raw }}
-                                    <button type="submit" class="dropdown-item" onclick="return confirm('Duplicate this entry?')">
-                                        {% include '@cms/partials/sidebar-icon.twig' with {icon: 'file'} only %} Duplicate
-                                    </button>
-                                </form>
-                                <div class="dropdown-divider"></div>
-                                <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/delete') }}" class="confirm-delete" data-message="Delete this entry?">
-                                    {{ csrf_field() | raw }}
-                                    <button type="submit" class="dropdown-item danger">
-                                        {% include '@cms/partials/sidebar-icon.twig' with {icon: 'archive'} only %} Delete
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                        </form>
+                        <div class="dropdown-divider"></div>
+                        <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/' ~ entry.id ~ '/delete') }}" class="confirm-delete" data-message="Delete this entry?">
+                            {{ csrf_field() | raw }}
+                            <button type="submit" class="dropdown-item danger">
+                                {% include '@cms/partials/sidebar-icon.twig' with {icon: 'archive'} only %} Delete
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
 
         {# ── Pagination ─────────────────────────────── #}
         {% if entries.last_page > 1 %}
@@ -637,34 +611,38 @@
             <span>
                 {% set _showTo = entries.current_page * entries.per_page %}
                 {% if _showTo > entries.total %}{% set _showTo = entries.total %}{% endif %}
-                {{ ((entries.current_page - 1) * entries.per_page) + 1 }}–{{ _showTo }} of {{ entries.total }}
+                {{ ((entries.current_page - 1) * entries.per_page) + 1 }}&ndash;{{ _showTo }} of {{ entries.total }}
             </span>
-            <div class="ep-pagination-ctrls">
+            <div class="ep-pagination-controls">
                 {% if entries.current_page > 1 %}
-                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?page=' ~ (entries.current_page - 1) ~ '&sort_by=' ~ sortBy ~ '&sort_dir=' ~ sortDir ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}" class="ep-pg">‹ Prev</a>
+                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?page=' ~ (entries.current_page - 1) ~ '&sort_by=' ~ sortBy ~ '&sort_dir=' ~ sortDir ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}" class="ep-page-btn">
+                        <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M8.75 10.5L5.25 7l3.5-3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg> Prev
+                    </a>
                 {% else %}
-                    <span class="ep-pg is-disabled">‹ Prev</span>
+                    <span class="ep-page-btn is-disabled"><svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M8.75 10.5L5.25 7l3.5-3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg> Prev</span>
                 {% endif %}
                 {% for p in 1..entries.last_page %}
                     {% if p == entries.current_page %}
-                        <span class="ep-pg is-current">{{ p }}</span>
+                        <span class="ep-page-btn is-current">{{ p }}</span>
                     {% elseif p == 1 or p == entries.last_page or (p >= entries.current_page - 2 and p <= entries.current_page + 2) %}
-                        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?page=' ~ p ~ '&sort_by=' ~ sortBy ~ '&sort_dir=' ~ sortDir ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}" class="ep-pg">{{ p }}</a>
+                        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?page=' ~ p ~ '&sort_by=' ~ sortBy ~ '&sort_dir=' ~ sortDir ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}" class="ep-page-btn">{{ p }}</a>
                     {% elseif p == 2 or p == entries.last_page - 1 %}
-                        <span class="text-secondary">…</span>
+                        <span class="text-secondary">...</span>
                     {% endif %}
                 {% endfor %}
                 {% if entries.current_page < entries.last_page %}
-                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?page=' ~ (entries.current_page + 1) ~ '&sort_by=' ~ sortBy ~ '&sort_dir=' ~ sortDir ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}" class="ep-pg">Next ›</a>
+                    <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries?page=' ~ (entries.current_page + 1) ~ '&sort_by=' ~ sortBy ~ '&sort_dir=' ~ sortDir ~ (activeViewSlug ? '&view=' ~ activeViewSlug : '')) }}" class="ep-page-btn">
+                        Next <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M5.25 3.5L8.75 7l-3.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </a>
                 {% else %}
-                    <span class="ep-pg is-disabled">Next ›</span>
+                    <span class="ep-page-btn is-disabled">Next <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M5.25 3.5L8.75 7l-3.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
                 {% endif %}
             </div>
         </div>
         {% endif %}
     </div>
 
-    {# ── Bulk Bar ───────────────────────────────────── #}
+    {# ── Bulk Actions Bar ───────────────────────────── #}
     <div class="ep-bulk" id="bulk-bar">
         <span><strong id="bulk-count">0</strong> selected</span>
         <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/bulk') }}" class="flex items-center gap-2">
@@ -672,34 +650,48 @@
             <input type="hidden" name="selected_ids" id="bulk-ids" value="">
             <input type="hidden" name="bulk_action" id="bulk-action-value" value="">
             {% if collection.isPublishable() %}
-            <button type="submit" class="btn btn-outline btn-sm" onclick="document.getElementById('bulk-action-value').value='publish'; return confirm('Publish selected?')">Publish</button>
-            <button type="submit" class="btn btn-outline btn-sm" onclick="document.getElementById('bulk-action-value').value='unpublish'; return confirm('Unpublish selected?')">Unpublish</button>
+            <button type="submit" class="btn btn-outline btn-sm" onclick="document.getElementById('bulk-action-value').value='publish'; return confirm('Publish selected entries?')">Publish</button>
+            <button type="submit" class="btn btn-outline btn-sm" onclick="document.getElementById('bulk-action-value').value='unpublish'; return confirm('Unpublish selected entries?')">Unpublish</button>
             {% endif %}
             <div class="dropdown" data-dropdown>
-                <button type="button" class="btn btn-outline btn-sm" data-dropdown-trigger>Update Field <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 6l2.5-2.5L7.5 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></button>
-                <div class="dropdown-menu" data-dropdown-menu style="bottom:calc(100% + 4px);top:auto;">
+                <button type="button" class="btn btn-outline btn-sm" data-dropdown-trigger>
+                    Update Field <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 6l2.5-2.5L7.5 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="dropdown-menu" data-dropdown-menu style="bottom:calc(100% + 4px);top:auto;right:0;left:auto;">
                     <div class="ep-bulk-field-form">
                         <label class="form-label">Field</label>
                         <select name="bulk_field" id="bulk-field-select" class="form-control" style="margin-bottom:8px;">
-                            <option value="">-- Select --</option>
-                            {% for field in fields %}{% if field.getType() in ['text','number','select','boolean','email','url'] %}<option value="{{ field.getSlug() }}" data-type="{{ field.getType() }}" {% if field.getType() == 'select' and field.getOptions() %}data-options="{{ field.getOptions()|json_encode }}"{% endif %}>{{ field.getName() }}</option>{% endif %}{% endfor %}
+                            <option value="">-- Select Field --</option>
+                            {% for field in fields %}
+                                {% if field.getType() in ['text', 'number', 'select', 'boolean', 'email', 'url'] %}
+                                <option value="{{ field.getSlug() }}" data-type="{{ field.getType() }}" {% if field.getType() == 'select' and field.getOptions() %}data-options="{{ field.getOptions()|json_encode }}"{% endif %}>{{ field.getName() }}</option>
+                                {% endif %}
+                            {% endfor %}
                         </select>
                         <label class="form-label">Value</label>
-                        <span id="bulk-value-wrapper"><input type="text" name="bulk_value" id="bulk-value-input" class="form-control" placeholder="New value"></span>
-                        <button type="submit" class="btn btn-primary btn-sm" style="margin-top:8px;width:100%;" onclick="document.getElementById('bulk-action-value').value='update_field'; return confirm('Update field?')">Apply</button>
+                        <span id="bulk-value-wrapper">
+                            <input type="text" name="bulk_value" id="bulk-value-input" class="form-control" placeholder="New value">
+                        </span>
+                        <button type="submit" class="btn btn-primary btn-sm" style="margin-top:8px;width:100%;" onclick="document.getElementById('bulk-action-value').value='update_field'; return confirm('Update field for selected entries?')">Apply</button>
                     </div>
                 </div>
             </div>
-            <button type="submit" class="btn btn-danger btn-sm" onclick="document.getElementById('bulk-action-value').value='delete'; return confirm('Delete selected?')">Delete</button>
+            <button type="submit" class="btn btn-danger btn-sm" onclick="document.getElementById('bulk-action-value').value='delete'; return confirm('Delete selected entries? This cannot be undone.')">Delete</button>
         </form>
     </div>
 
     {% else %}
+
+    {# ── Empty State ────────────────────────────────── #}
     <div class="ep-empty">
-        <div class="ep-empty-icon">{% include '@cms/partials/sidebar-icon.twig' with {icon: 'file-text'} only %}</div>
+        <div class="ep-empty-icon">
+            {% include '@cms/partials/sidebar-icon.twig' with {icon: 'file-text'} only %}
+        </div>
         <h3 class="text-heading font-semibold mb-2">No entries yet</h3>
-        <p class="text-secondary text-sm mb-3">Create the first entry for this collection.</p>
-        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/create') }}" class="btn btn-primary btn-sm">{% include '@cms/partials/sidebar-icon.twig' with {icon: 'plus'} only %} Create Entry</a>
+        <p class="text-secondary text-sm mb-3">Get started by creating the first entry.</p>
+        <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries/create') }}" class="btn btn-primary btn-sm">
+            {% include '@cms/partials/sidebar-icon.twig' with {icon: 'plus'} only %} Create Entry
+        </a>
     </div>
     {% endif %}
 
@@ -708,8 +700,6 @@
 {# ── JavaScript ─────────────────────────────────── #}
 <script nonce="{{ csp_nonce() }}">
 document.addEventListener('DOMContentLoaded', function() {
-    var collSlug = '{{ collection.getSlug()|e("js") }}';
-    var baseUrl = '{{ admin_url("collections/" ~ collection.getSlug() ~ "/entries")|e("js") }}';
 
     /* ── Dropdown system ───────────────────────── */
     document.querySelectorAll('[data-dropdown]').forEach(function(dd) {
@@ -722,62 +712,69 @@ document.addEventListener('DOMContentLoaded', function() {
             menu.classList.toggle('open');
         });
     });
-    document.addEventListener('click', function() {
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('#col-toggle-btn') && !e.target.closest('#col-toggle-dropdown')) {
+            var colDd = document.getElementById('col-toggle-dropdown');
+            if (colDd) colDd.classList.remove('open');
+        }
+        if (!e.target.closest('#filter-toggle-btn') && !e.target.closest('#filter-panel')) {
+            var fp = document.getElementById('filter-panel');
+            if (fp) fp.classList.remove('open');
+        }
         document.querySelectorAll('[data-dropdown-menu].open').forEach(function(m) { m.classList.remove('open'); });
-        document.querySelectorAll('.ep-col-panel.open, .ep-filter-panel.open, .ep-sort-panel.open').forEach(function(p) { p.classList.remove('open'); });
     });
-
-    /* ── Panel toggles ─────────────────────────── */
-    function panelToggle(btnId, panelId) {
-        var btn = document.getElementById(btnId);
-        var panel = document.getElementById(panelId);
-        if (!btn || !panel) return;
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            // Close other panels
-            document.querySelectorAll('.ep-col-panel.open, .ep-filter-panel.open, .ep-sort-panel.open').forEach(function(p) { if (p !== panel) p.classList.remove('open'); });
-            panel.classList.toggle('open');
+    document.querySelectorAll('[data-dropdown-menu]').forEach(function(m) {
+        m.addEventListener('click', function(e) {
+            if (!e.target.closest('a') && e.target.type !== 'submit') e.stopPropagation();
         });
-        panel.addEventListener('click', function(e) { e.stopPropagation(); });
-    }
-    panelToggle('col-toggle-btn', 'col-toggle-dropdown');
-    panelToggle('filter-toggle-btn', 'filter-panel');
-    panelToggle('sort-toggle-btn', 'sort-panel');
+    });
 
     /* ── Import toggle ─────────────────────────── */
     var importBtn = document.getElementById('toggle-import-btn');
     var importForm = document.getElementById('import-form');
-    if (importBtn && importForm) importBtn.addEventListener('click', function() { importForm.classList.toggle('hidden'); });
+    if (importBtn && importForm) {
+        importBtn.addEventListener('click', function() { importForm.classList.toggle('hidden'); });
+    }
 
-    /* ── Column header click → sort ────────────── */
-    document.querySelectorAll('.ep-table th[data-col-slug]').forEach(function(th) {
-        th.addEventListener('click', function(e) {
-            if (e.target.closest('.ep-col-menu') || e.target.closest('input')) return;
-            var slug = th.dataset.colSlug;
-            var currentSort = '{{ sortBy|e("js") }}';
-            var currentDir = '{{ sortDir|e("js") }}';
-            var newDir = (slug === currentSort && currentDir === 'ASC') ? 'DESC' : 'ASC';
-            var url = baseUrl + '?sort_by=' + slug + '&sort_dir=' + newDir;
-            {% if activeViewSlug %}url += '&view={{ activeViewSlug|e("js") }}';{% endif %}
-            window.location.href = url;
+    /* ── Filter panel toggle ───────────────────── */
+    var filterBtn = document.getElementById('filter-toggle-btn');
+    var filterPanel = document.getElementById('filter-panel');
+    if (filterBtn && filterPanel) {
+        filterBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            filterPanel.classList.toggle('open');
         });
-    });
+        filterPanel.addEventListener('click', function(e) { e.stopPropagation(); });
+    }
 
-    /* ── Filter rows ───────────────────────────── */
+    /* ── Add filter row ────────────────────────── */
     var addFilterRow = document.getElementById('add-filter-row');
     var filterRows = document.getElementById('filter-rows');
     if (addFilterRow && filterRows) {
         addFilterRow.addEventListener('click', function() {
             var first = filterRows.querySelector('.ep-filter-row');
-            if (first) { var clone = first.cloneNode(true); clone.querySelectorAll('input,select').forEach(function(el){el.value='';}); filterRows.appendChild(clone); bindRemoveFilter(clone); }
+            if (first) {
+                var clone = first.cloneNode(true);
+                clone.querySelectorAll('input, select').forEach(function(el) { el.value = ''; });
+                filterRows.appendChild(clone);
+                bindRemoveFilter(clone);
+            }
         });
     }
+
+    /* ── Remove filter row ─────────────────────── */
     function bindRemoveFilter(row) {
         var btn = row.querySelector('.ep-remove-filter');
-        if (btn) btn.addEventListener('click', function() {
-            var rows = filterRows.querySelectorAll('.ep-filter-row');
-            if (rows.length > 1) row.remove(); else row.querySelectorAll('input,select').forEach(function(el){el.value='';});
-        });
+        if (btn) {
+            btn.addEventListener('click', function() {
+                var rows = filterRows.querySelectorAll('.ep-filter-row');
+                if (rows.length > 1) {
+                    row.remove();
+                } else {
+                    row.querySelectorAll('input, select').forEach(function(el) { el.value = ''; });
+                }
+            });
+        }
     }
     document.querySelectorAll('.ep-filter-row').forEach(bindRemoveFilter);
 
@@ -787,132 +784,204 @@ document.addEventListener('DOMContentLoaded', function() {
     var bulkBar = document.getElementById('bulk-bar');
     var bulkCount = document.getElementById('bulk-count');
     var bulkIds = document.getElementById('bulk-ids');
+
     function updateBulk() {
         var selected = document.querySelectorAll('.entry-checkbox:checked');
-        var ids = Array.from(selected).map(function(cb){return cb.value;});
-        if (bulkBar) bulkBar.classList.toggle('is-visible', ids.length > 0);
+        var ids = Array.from(selected).map(function(cb) { return cb.value; });
+        if (bulkBar) { bulkBar.classList.toggle('is-visible', ids.length > 0); }
         if (bulkCount) bulkCount.textContent = ids.length;
         if (bulkIds) bulkIds.value = ids.join(',');
-        document.querySelectorAll('.ep-table tbody tr').forEach(function(row) {
+        document.querySelectorAll('.ep-row').forEach(function(row) {
             var cb = row.querySelector('.entry-checkbox');
             row.classList.toggle('is-selected', cb && cb.checked);
         });
     }
-    if (selectAll) selectAll.addEventListener('change', function() { checkboxes.forEach(function(cb){cb.checked=selectAll.checked;}); updateBulk(); });
+
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            checkboxes.forEach(function(cb) { cb.checked = selectAll.checked; });
+            updateBulk();
+        });
+    }
     checkboxes.forEach(function(cb) { cb.addEventListener('change', updateBulk); });
 
     /* ── Bulk field update ─────────────────────── */
     var bulkFieldSelect = document.getElementById('bulk-field-select');
     var bulkValueWrapper = document.getElementById('bulk-value-wrapper');
     function renderValueInput(type, options) {
-        if (!bulkValueWrapper) return; var html = '';
-        if (type==='boolean') html='<select name="bulk_value" class="form-control"><option value="0">No</option><option value="1">Yes</option></select>';
-        else if (type==='select'&&options){var opts;try{opts=typeof options==='string'?JSON.parse(options):options;}catch(e){opts=[];}html='<select name="bulk_value" class="form-control"><option value="">--</option>';if(Array.isArray(opts))opts.forEach(function(o){var v=typeof o==='object'?(o.value||''):o;var l=typeof o==='object'?(o.label||o.value||''):o;html+='<option value="'+v+'">'+l+'</option>';});html+='</select>';}
-        else html='<input type="'+(type==='number'?'number':type==='email'?'email':type==='url'?'url':'text')+'" name="bulk_value" class="form-control" placeholder="Value"'+(type==='number'?' step="any"':'')+'>';
+        if (!bulkValueWrapper) return;
+        var html = '';
+        if (type === 'boolean') {
+            html = '<select name="bulk_value" id="bulk-value-input" class="form-control"><option value="0">No</option><option value="1">Yes</option></select>';
+        } else if (type === 'select' && options) {
+            var opts; try { opts = typeof options === 'string' ? JSON.parse(options) : options; } catch(e) { opts = []; }
+            html = '<select name="bulk_value" id="bulk-value-input" class="form-control"><option value="">-- Select --</option>';
+            if (Array.isArray(opts)) { opts.forEach(function(o) { var v = typeof o === 'object' ? (o.value||'') : o; var l = typeof o === 'object' ? (o.label||o.value||'') : o; html += '<option value="'+v+'">'+l+'</option>'; }); }
+            html += '</select>';
+        } else if (type === 'number') {
+            html = '<input type="number" name="bulk_value" id="bulk-value-input" class="form-control" placeholder="New value" step="any">';
+        } else {
+            html = '<input type="'+type+'" name="bulk_value" id="bulk-value-input" class="form-control" placeholder="New value">';
+        }
         bulkValueWrapper.innerHTML = html;
     }
-    if (bulkFieldSelect) bulkFieldSelect.addEventListener('change', function() { var s=this.options[this.selectedIndex]; renderValueInput(s.getAttribute('data-type')||'text',s.getAttribute('data-options')); });
+    if (bulkFieldSelect) {
+        bulkFieldSelect.addEventListener('change', function() {
+            var sel = this.options[this.selectedIndex];
+            renderValueInput(sel.getAttribute('data-type') || 'text', sel.getAttribute('data-options'));
+        });
+    }
 
-    /* ── Richtext preview modal ────────────────── */
+    /* ── Richtext content preview modal ────────── */
     document.querySelectorAll('.ep-rt-preview').forEach(function(el) {
         el.addEventListener('click', function(e) {
-            e.stopPropagation(); var c=el.dataset.content; if(!c) return;
-            var o=document.createElement('div'); o.className='zui-modal-overlay';
-            o.innerHTML='<div class="zui-modal"><div class="zui-modal-header"><h3>Preview</h3><button class="btn btn-ghost btn-icon btn-sm" data-close>×</button></div><div class="zui-modal-body">'+c+'</div><div class="zui-modal-footer"><button class="btn btn-outline btn-sm" data-close>Close</button></div></div>';
-            document.body.appendChild(o);
-            o.querySelectorAll('[data-close]').forEach(function(b){b.addEventListener('click',function(){o.remove();});});
-            o.addEventListener('click',function(ev){if(ev.target===o)o.remove();});
+            e.stopPropagation();
+            var content = el.dataset.content; if (!content) return;
+            var overlay = document.createElement('div');
+            overlay.className = 'zui-modal-overlay';
+            overlay.innerHTML = '<div class="zui-modal"><div class="zui-modal-header"><h3>Content Preview</h3><button class="btn btn-ghost btn-icon btn-sm" data-close>&times;</button></div><div class="zui-modal-body">'+content+'</div><div class="zui-modal-footer"><button class="btn btn-outline btn-sm" data-close>Close</button></div></div>';
+            document.body.appendChild(overlay);
+            overlay.querySelectorAll('[data-close]').forEach(function(btn) { btn.addEventListener('click', function() { overlay.remove(); }); });
+            overlay.addEventListener('click', function(ev) { if (ev.target === overlay) overlay.remove(); });
+            document.addEventListener('keydown', function onEsc(ev) { if (ev.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', onEsc); } });
         });
     });
 
-    /* ── Confirm delete ────────────────────────── */
-    document.querySelectorAll('.confirm-delete').forEach(function(f) { f.addEventListener('submit', function(e) { if(!confirm(f.dataset.message||'Are you sure?')) e.preventDefault(); }); });
+    /* ── Confirm delete forms ──────────────────── */
+    document.querySelectorAll('.confirm-delete').forEach(function(form) {
+        form.addEventListener('submit', function(e) { if (!confirm(form.dataset.message || 'Are you sure?')) e.preventDefault(); });
+    });
 
-    /* ── Relative time ─────────────────────────── */
-    function timeAgo(d) {
-        if(!d) return ''; var dt=new Date(d); if(isNaN(dt.getTime())) return d;
-        var s=Math.max(0,Math.floor((Date.now()-dt.getTime())/1000));
-        var i=[{l:'y',s:31536000},{l:'mo',s:2592000},{l:'w',s:604800},{l:'d',s:86400,dy:1},{l:'h',s:3600},{l:'m',s:60}];
-        for(var j=0;j<i.length;j++){var c=Math.floor(s/i[j].s);if(c>=1){if(i[j].dy&&c===1)return'Yesterday';return c+i[j].l+' ago';}}
+    /* ── Relative time — render immediately, no flicker ── */
+    function timeAgo(dateStr) {
+        if (!dateStr) return '';
+        var date = new Date(dateStr);
+        if (isNaN(date.getTime())) return dateStr;
+        var seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+        if (seconds < 0) seconds = 0;
+        var intervals = [
+            { l: 'y', s: 31536000 }, { l: 'mo', s: 2592000 }, { l: 'w', s: 604800 },
+            { l: 'd', s: 86400, day: true }, { l: 'h', s: 3600 }, { l: 'm', s: 60 }
+        ];
+        for (var i = 0; i < intervals.length; i++) {
+            var count = Math.floor(seconds / intervals[i].s);
+            if (count >= 1) {
+                if (intervals[i].day && count === 1) return 'Yesterday';
+                return count + intervals[i].l + ' ago';
+            }
+        }
         return 'Just now';
     }
     document.querySelectorAll('.entries-relative-time').forEach(function(el) {
-        var raw=el.getAttribute('data-time'); if(raw){var r=timeAgo(raw);if(r){el.textContent=r;el.title=raw;}} el.classList.add('is-ready');
+        var raw = el.getAttribute('data-time');
+        if (raw) {
+            var relative = timeAgo(raw);
+            if (relative) { el.textContent = relative; el.title = raw; }
+        }
+        el.classList.add('is-ready');
     });
 
-    /* ── Column Toggle ─────────────────────────── */
+    /* ── Column Toggle System ──────────────────── */
+    var colToggleBtn = document.getElementById('col-toggle-btn');
+    var colToggleDropdown = document.getElementById('col-toggle-dropdown');
     var colToggleList = document.getElementById('col-toggle-list');
-    var storageKey = 'entries-cols-' + collSlug;
+    var collectionSlug = '{{ collection.getSlug()|e("js") }}';
+    var storageKey = 'entries-cols-' + collectionSlug;
+
     var toggleableCols = [];
     var listEl = document.getElementById('entries-list');
     if (listEl) {
-        listEl.querySelectorAll('thead th[data-col]').forEach(function(th) {
-            var id=th.getAttribute('data-col'), name=th.getAttribute('data-col-name');
-            if(id&&name) toggleableCols.push({id:id,name:name});
+        listEl.querySelectorAll('.ep-list-head [data-col]').forEach(function(col) {
+            var colId = col.getAttribute('data-col');
+            var colName = col.getAttribute('data-col-name');
+            if (colId && colName) toggleableCols.push({ id: colId, name: colName });
         });
     }
-    function loadColState(){try{return JSON.parse(localStorage.getItem(storageKey));}catch(e){return null;}}
-    function saveColState(s){try{localStorage.setItem(storageKey,JSON.stringify(s));}catch(e){}}
-    function applyColVis(s) {
-        if(!listEl||!s) return;
-        var visCount = 0;
-        toggleableCols.forEach(function(c){
-            var vis=!(c.id in s)||s[c.id];
-            if(vis) visCount++;
-            listEl.querySelectorAll('[data-col="'+c.id+'"]').forEach(function(cell){cell.classList.toggle('col-hidden',!vis);});
-        });
-        var countEl = document.getElementById('col-count');
-        if (countEl) countEl.textContent = visCount;
-    }
-    function buildColList(s) {
-        if(!colToggleList) return; colToggleList.innerHTML='';
-        toggleableCols.forEach(function(c){
-            var vis=!s||!(c.id in s)||s[c.id];
-            var l=document.createElement('label'); var cb=document.createElement('input');
-            cb.type='checkbox'; cb.checked=vis;
-            cb.addEventListener('change',function(){var st=loadColState()||{};st[c.id]=cb.checked;saveColState(st);applyColVis(st);});
-            l.appendChild(cb); l.appendChild(document.createTextNode(' '+c.name)); colToggleList.appendChild(l);
+
+    function loadColState() { try { return JSON.parse(localStorage.getItem(storageKey)); } catch(e) { return null; } }
+    function saveColState(state) { try { localStorage.setItem(storageKey, JSON.stringify(state)); } catch(e) {} }
+
+    function applyColVisibility(state) {
+        if (!listEl || !state) return;
+        toggleableCols.forEach(function(col) {
+            var vis = !(col.id in state) || state[col.id];
+            listEl.querySelectorAll('[data-col="'+col.id+'"]').forEach(function(cell) { cell.classList.toggle('col-hidden', !vis); });
         });
     }
-    if (toggleableCols.length > 0) {
-        var saved = loadColState();
-        if (saved) applyColVis(saved);
-        buildColList(saved);
+
+    function buildColToggleList(state) {
+        if (!colToggleList) return;
+        colToggleList.innerHTML = '';
+        toggleableCols.forEach(function(col) {
+            var vis = !state || !(col.id in state) || state[col.id];
+            var label = document.createElement('label');
+            var cb = document.createElement('input');
+            cb.type = 'checkbox'; cb.checked = vis;
+            cb.addEventListener('change', function() {
+                var s = loadColState() || {}; s[col.id] = cb.checked; saveColState(s); applyColVisibility(s);
+            });
+            label.appendChild(cb);
+            label.appendChild(document.createTextNode(' ' + col.name));
+            colToggleList.appendChild(label);
+        });
+    }
+
+    if (colToggleBtn && colToggleDropdown && toggleableCols.length > 0) {
+        var savedState = loadColState();
+        if (savedState) applyColVisibility(savedState);
+        buildColToggleList(savedState);
+        colToggleBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            document.querySelectorAll('[data-dropdown-menu].open').forEach(function(m) { m.classList.remove('open'); });
+            colToggleDropdown.classList.toggle('open');
+        });
+        colToggleDropdown.addEventListener('click', function(e) { e.stopPropagation(); });
     }
 });
 
 {% if collection.hasHierarchy() %}
 (function() {
-    var treeBtn = document.getElementById('tree-toggle'); if (!treeBtn) return;
-    var rows = document.querySelectorAll('.ep-table tbody tr');
+    var treeBtn = document.getElementById('tree-toggle');
+    if (!treeBtn) return;
+    var rows = document.querySelectorAll('#entries-list .ep-row');
     var isTreeMode = true, collapsed = {};
-    function applyTree() {
+
+    function applyTreeView() {
         rows.forEach(function(row) {
-            var depth=parseInt(row.dataset.depth||'0',10), pid=row.dataset.parentId, eid=row.dataset.entryId, cc=parseInt(row.dataset.children||'0',10);
-            var fc=row.querySelector('[data-col^="field-"]'); if(!fc) return;
-            var old=fc.querySelector('.tree-indent'); if(old) old.remove();
-            if(!isTreeMode){row.style.display='';return;}
-            var hidden=false;
-            if(pid){var cid=pid,seen={};while(cid&&!seen[cid]){seen[cid]=true;if(collapsed[cid]){hidden=true;break;}var pr=document.querySelector('[data-entry-id="'+cid+'"]');cid=pr?pr.dataset.parentId:'';}}
-            row.style.display=hidden?'none':'';
-            if(depth>0||cc>0){
-                var indent=document.createElement('span');indent.className='tree-indent';
-                if(depth>0){var sp=document.createElement('span');sp.style.cssText='display:inline-block;width:'+(depth*20)+'px;';indent.appendChild(sp);}
-                if(cc>0){var tog=document.createElement('button');tog.type='button';tog.className='tree-toggle-btn';tog.textContent=collapsed[eid]?'▶':'▼';tog.addEventListener('click',function(e){e.stopPropagation();collapsed[eid]=!collapsed[eid];this.textContent=collapsed[eid]?'▶':'▼';applyTree();});indent.appendChild(tog);}
-                else if(depth>0){var lf=document.createElement('span');lf.style.cssText='color:var(--border);margin-right:3px;font-size:11px;width:16px;text-align:center;display:inline-block;';lf.textContent='└';indent.appendChild(lf);}
-                fc.insertBefore(indent,fc.firstChild);
+            var depth = parseInt(row.dataset.depth||'0',10), parentId = row.dataset.parentId;
+            var entryId = row.dataset.entryId, childCount = parseInt(row.dataset.children||'0',10);
+            var fc = row.querySelector('[data-col^="field-"]'); if (!fc) return;
+            var old = fc.querySelector('.tree-indent'); if (old) old.remove();
+            if (!isTreeMode) { row.style.display = ''; return; }
+            var hidden = false;
+            if (parentId) { var cid = parentId, seen = {}; while (cid && !seen[cid]) { seen[cid]=true; if(collapsed[cid]){hidden=true;break;} var pr=document.querySelector('[data-entry-id="'+cid+'"]'); cid=pr?pr.dataset.parentId:''; } }
+            row.style.display = hidden ? 'none' : '';
+            if (depth > 0 || childCount > 0) {
+                var indent = document.createElement('span'); indent.className = 'tree-indent';
+                if (depth > 0) { var sp = document.createElement('span'); sp.style.cssText='display:inline-block;width:'+(depth*20)+'px;'; indent.appendChild(sp); }
+                if (childCount > 0) {
+                    var tog = document.createElement('button'); tog.type='button'; tog.className='tree-toggle-btn';
+                    tog.textContent = collapsed[entryId]?'\u25B6':'\u25BC'; tog.dataset.entryId=entryId;
+                    tog.addEventListener('click',function(e){e.stopPropagation();collapsed[entryId]=!collapsed[entryId];this.textContent=collapsed[entryId]?'\u25B6':'\u25BC';applyTreeView();});
+                    indent.appendChild(tog);
+                } else if (depth > 0) { var lf=document.createElement('span'); lf.style.cssText='color:var(--border);margin-right:3px;font-size:11px;width:16px;text-align:center;display:inline-block;'; lf.textContent='\u2514'; indent.appendChild(lf); }
+                fc.insertBefore(indent, fc.firstChild);
             }
         });
     }
     treeBtn.addEventListener('click', function() {
-        isTreeMode=!isTreeMode;collapsed={};
-        this.style.background=isTreeMode?'var(--zui-primary-500)':'';
-        this.style.color=isTreeMode?'#fff':'';
-        this.style.borderColor=isTreeMode?'var(--zui-primary-500)':'';
-        applyTree();
+        isTreeMode = !isTreeMode; collapsed = {};
+        treeBtn.textContent = isTreeMode ? 'Flat View' : 'Tree View';
+        treeBtn.style.background = isTreeMode ? 'var(--zui-primary-500)' : '';
+        treeBtn.style.color = isTreeMode ? '#fff' : '';
+        treeBtn.style.borderColor = isTreeMode ? 'var(--zui-primary-500)' : '';
+        applyTreeView();
     });
-    treeBtn.style.background='var(--zui-primary-500)';treeBtn.style.color='#fff';treeBtn.style.borderColor='var(--zui-primary-500)';
-    applyTree();
+    treeBtn.textContent = 'Flat View';
+    treeBtn.style.background = 'var(--zui-primary-500)';
+    treeBtn.style.color = '#fff';
+    treeBtn.style.borderColor = 'var(--zui-primary-500)';
+    applyTreeView();
 })();
 {% endif %}
 </script>
