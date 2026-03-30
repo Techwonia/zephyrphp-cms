@@ -93,7 +93,9 @@ class LanguageController extends Controller
             foreach ($all as $l) {
                 $maxSort = max($maxSort, $l->getSortOrder());
             }
-        } catch (\Exception $e) {}
+        } catch (\Exception $e) {
+            error_log('LanguageController: failed to get max sort order: ' . $e->getMessage());
+        }
 
         $language = new Language();
         $language->setCode($code);

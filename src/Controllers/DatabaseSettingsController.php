@@ -8,6 +8,7 @@ use ZephyrPHP\Core\Controllers\Controller;
 use ZephyrPHP\Auth\Auth;
 use Doctrine\DBAL\DriverManager;
 use ZephyrPHP\Cms\Traits\CmsAccessTrait;
+use ZephyrPHP\Cms\Services\EnvFileManager;
 use ZephyrPHP\Cms\Services\PermissionService;
 
 class DatabaseSettingsController extends Controller
@@ -61,7 +62,7 @@ class DatabaseSettingsController extends Controller
             return;
         }
 
-        $envPath = $this->getEnvPath();
+        $envPath = EnvFileManager::getEnvPath();
         if (!$envPath || !is_writable($envPath)) {
             $this->flash('errors', ['env' => '.env file not found or not writable.']);
             $this->back();
@@ -71,14 +72,7 @@ class DatabaseSettingsController extends Controller
         // Create backup
         copy($envPath, $envPath . '.backup');
 
-        // Update .env file
-        $this->updateEnvFile($envPath, $settings);
-
-        // Update $_ENV so the app picks up changes immediately
-        foreach ($settings as $key => $value) {
-            $_ENV[$key] = $value;
-            putenv("{$key}={$value}");
-        }
+        EnvFileManager::updateAndApply($settings);
 
         $this->flash('success', 'Database settings updated successfully. Backup saved as .env.backup');
         $this->redirect(admin_url('settings/database'));
@@ -186,49 +180,4 @@ class DatabaseSettingsController extends Controller
         return $errors;
     }
 
-    private function getEnvPath(): ?string
-    {
-        $basePath = defined('BASE_PATH') ? BASE_PATH : getcwd();
-        $envPath = $basePath . '/.env';
-
-        if (file_exists($envPath)) {
-            return $envPath;
-        }
-
-        // Try parent directory
-        $parentEnv = dirname($basePath) . '/.env';
-        if (file_exists($parentEnv)) {
-            return $parentEnv;
-        }
-
-        return null;
-    }
-
-    private function updateEnvFile(string $envPath, array $settings): void
-    {
-        $content = file_get_contents($envPath);
-
-        foreach ($settings as $key => $value) {
-            $escaped = $this->escapeEnvValue($value);
-
-            if (preg_match("/^{$key}=/m", $content)) {
-                $content = preg_replace("/^{$key}=.*/m", "{$key}={$escaped}", $content);
-            } else {
-                $content = rtrim($content) . "\n{$key}={$escaped}\n";
-            }
-        }
-
-        file_put_contents($envPath, $content);
-    }
-
-    private function escapeEnvValue(string $value): string
-    {
-        if ($value === '') {
-            return '';
-        }
-        if (preg_match('/[\s#"\'\\\\]/', $value)) {
-            return '"' . addslashes($value) . '"';
-        }
-        return $value;
-    }
 }

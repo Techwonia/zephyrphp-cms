@@ -7,6 +7,7 @@ namespace ZephyrPHP\Cms\Controllers;
 use ZephyrPHP\Core\Controllers\Controller;
 use ZephyrPHP\Auth\Auth;
 use ZephyrPHP\Cms\Traits\CmsAccessTrait;
+use ZephyrPHP\Cms\Services\EnvFileManager;
 use ZephyrPHP\Cms\Services\PermissionService;
 
 class SystemSettingsController extends Controller
@@ -97,66 +98,14 @@ class SystemSettingsController extends Controller
             'USE_ISOLATION_HEADERS' => $this->input('USE_ISOLATION_HEADERS', 'false'),
         ];
 
-        $envPath = $this->getEnvPath();
-        if (!$envPath || !is_writable($envPath)) {
+        if (!EnvFileManager::updateAndApply($settings)) {
             $this->flash('errors', ['env' => '.env file not found or not writable.']);
             $this->back();
             return;
-        }
-
-        $this->updateEnvFile($envPath, $settings);
-
-        foreach ($settings as $key => $value) {
-            $_ENV[$key] = $value;
-            putenv("{$key}={$value}");
         }
 
         $this->flash('success', 'System settings updated successfully.');
         $this->redirect(admin_url('settings/system'));
     }
 
-    private function getEnvPath(): ?string
-    {
-        $basePath = defined('BASE_PATH') ? BASE_PATH : getcwd();
-        $envPath = $basePath . '/.env';
-
-        if (file_exists($envPath)) {
-            return $envPath;
-        }
-
-        $parentEnv = dirname($basePath) . '/.env';
-        if (file_exists($parentEnv)) {
-            return $parentEnv;
-        }
-
-        return null;
-    }
-
-    private function updateEnvFile(string $envPath, array $settings): void
-    {
-        $content = file_get_contents($envPath);
-
-        foreach ($settings as $key => $value) {
-            $escaped = $this->escapeEnvValue($value);
-
-            if (preg_match("/^{$key}=/m", $content)) {
-                $content = preg_replace("/^{$key}=.*/m", "{$key}={$escaped}", $content);
-            } else {
-                $content = rtrim($content) . "\n{$key}={$escaped}\n";
-            }
-        }
-
-        file_put_contents($envPath, $content);
-    }
-
-    private function escapeEnvValue(string $value): string
-    {
-        if ($value === '') {
-            return '';
-        }
-        if (preg_match('/[\s#"\'\\\\]/', $value)) {
-            return '"' . addslashes($value) . '"';
-        }
-        return $value;
-    }
 }

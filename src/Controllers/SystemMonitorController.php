@@ -84,9 +84,9 @@ class SystemMonitorController extends Controller
         $percentage = $limitBytes > 0 ? round(($current / $limitBytes) * 100, 1) : 0;
 
         return [
-            'current' => $this->formatBytes($current),
+            'current' => format_bytes($current),
             'current_bytes' => $current,
-            'peak' => $this->formatBytes($peak),
+            'peak' => format_bytes($peak),
             'peak_bytes' => $peak,
             'limit' => $limitRaw,
             'limit_bytes' => $limitBytes,
@@ -102,11 +102,11 @@ class SystemMonitorController extends Controller
         $percentage = $total > 0 ? round(($used / $total) * 100, 1) : 0;
 
         return [
-            'total' => $this->formatBytes($total),
+            'total' => format_bytes($total),
             'total_bytes' => $total,
-            'free' => $this->formatBytes($free),
+            'free' => format_bytes($free),
             'free_bytes' => $free,
-            'used' => $this->formatBytes($used),
+            'used' => format_bytes($used),
             'used_bytes' => $used,
             'percentage' => $percentage,
         ];
@@ -174,7 +174,7 @@ class SystemMonitorController extends Controller
                 );
                 if ($result && $result['size']) {
                     $dbSizeBytes = (int) $result['size'];
-                    $dbSize = $this->formatBytes($dbSizeBytes);
+                    $dbSize = format_bytes($dbSizeBytes);
                 }
             } catch (\Throwable $e) {
                 // Not MySQL or permission issue
@@ -253,8 +253,8 @@ class SystemMonitorController extends Controller
         return [
             'enabled' => true,
             'hit_rate' => $hitRate,
-            'memory_usage' => $this->formatBytes((int) $usedMemory),
-            'memory_total' => $this->formatBytes((int) $totalMemory),
+            'memory_usage' => format_bytes((int) $usedMemory),
+            'memory_total' => format_bytes((int) $totalMemory),
             'memory_percentage' => $memoryPercentage,
             'cached_scripts' => $stats['num_cached_scripts'] ?? 0,
             'hits' => $hits,
@@ -280,20 +280,6 @@ class SystemMonitorController extends Controller
         }
 
         return $count;
-    }
-
-    private function formatBytes(int $bytes): string
-    {
-        if ($bytes <= 0) {
-            return '0 B';
-        }
-        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
-        $i = 0;
-        while ($bytes >= 1024 && $i < count($units) - 1) {
-            $bytes /= 1024;
-            $i++;
-        }
-        return round($bytes, 2) . ' ' . $units[$i];
     }
 
     private function parseBytes(string $value): int

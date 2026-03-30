@@ -126,7 +126,7 @@ class LogViewerController extends Controller
         foreach ($logFiles as $file) {
             $files[] = [
                 'name' => basename($file),
-                'size' => $this->formatBytes(filesize($file)),
+                'size' => format_bytes(filesize($file)),
                 'modified' => date('Y-m-d H:i:s', filemtime($file)),
                 'lines' => $this->countLines($file),
             ];
@@ -214,14 +214,4 @@ class LogViewerController extends Controller
         return $count;
     }
 
-    private function formatBytes(int $bytes): string
-    {
-        $units = ['B', 'KB', 'MB', 'GB'];
-        $i = 0;
-        while ($bytes >= 1024 && $i < count($units) - 1) {
-            $bytes /= 1024;
-            $i++;
-        }
-        return round($bytes, 2) . ' ' . $units[$i];
-    }
 }

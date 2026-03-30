@@ -7,6 +7,22 @@ use ZephyrPHP\Cms\Services\EntryQuery;
 use ZephyrPHP\Cms\Services\TranslationService;
 use ZephyrPHP\Cache\CacheManager;
 
+if (!function_exists('format_bytes')) {
+    /**
+     * Format bytes into human-readable string (KB, MB, GB).
+     */
+    function format_bytes(int $bytes): string
+    {
+        $units = ['B', 'KB', 'MB', 'GB'];
+        $i = 0;
+        while ($bytes >= 1024 && $i < count($units) - 1) {
+            $bytes /= 1024;
+            $i++;
+        }
+        return round($bytes, 2) . ' ' . $units[$i];
+    }
+}
+
 if (!function_exists('admin_url')) {
     /**
      * Generate a URL to the admin panel.

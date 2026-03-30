@@ -123,7 +123,7 @@ class BackupController extends Controller
             $backups[] = [
                 'name' => $name,
                 'type' => $type,
-                'size' => $this->formatBytes(filesize($file)),
+                'size' => format_bytes(filesize($file)),
                 'created' => date('Y-m-d H:i:s', filemtime($file)),
             ];
         }
@@ -261,14 +261,4 @@ class BackupController extends Controller
         }
     }
 
-    private function formatBytes(int $bytes): string
-    {
-        $units = ['B', 'KB', 'MB', 'GB'];
-        $i = 0;
-        while ($bytes >= 1024 && $i < count($units) - 1) {
-            $bytes /= 1024;
-            $i++;
-        }
-        return round($bytes, 2) . ' ' . $units[$i];
-    }
 }

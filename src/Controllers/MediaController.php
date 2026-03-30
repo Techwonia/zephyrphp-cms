@@ -443,7 +443,9 @@ class MediaController extends Controller
         try {
             $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
             $rawData = $conn->fetchAssociative('SELECT * FROM cms_media WHERE id = ?', [$id]);
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+            error_log('MediaController: raw media query failed: ' . $e->getMessage());
+        }
 
         if (!$rawData) {
             $media = Media::find($id);

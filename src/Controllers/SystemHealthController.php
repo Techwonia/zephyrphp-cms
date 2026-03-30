@@ -35,15 +35,15 @@ class SystemHealthController extends Controller
 
         // Memory
         $memory = [
-            'current' => $this->formatBytes(memory_get_usage(true)),
-            'peak' => $this->formatBytes(memory_get_peak_usage(true)),
+            'current' => format_bytes(memory_get_usage(true)),
+            'peak' => format_bytes(memory_get_peak_usage(true)),
             'limit' => ini_get('memory_limit'),
         ];
 
         // Disk space
         $disk = [
-            'total' => $this->formatBytes((int) @disk_total_space($basePath)),
-            'free' => $this->formatBytes((int) @disk_free_space($basePath)),
+            'total' => format_bytes((int) @disk_total_space($basePath)),
+            'free' => format_bytes((int) @disk_free_space($basePath)),
             'used_percent' => $this->getDiskUsedPercent($basePath),
         ];
 
@@ -133,7 +133,7 @@ class SystemHealthController extends Controller
                     [$dbName]
                 );
                 if ($result && $result['size']) {
-                    $dbSize = $this->formatBytes((int) $result['size']);
+                    $dbSize = format_bytes((int) $result['size']);
                 }
             } catch (\Throwable $e) {
                 // Not MySQL or permission issue
@@ -155,20 +155,6 @@ class SystemHealthController extends Controller
         }
     }
 
-    private function formatBytes(int $bytes): string
-    {
-        if ($bytes <= 0) {
-            return '0 B';
-        }
-        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
-        $i = 0;
-        while ($bytes >= 1024 && $i < count($units) - 1) {
-            $bytes /= 1024;
-            $i++;
-        }
-        return round($bytes, 2) . ' ' . $units[$i];
-    }
-
     private function getDirectorySize(string $path): string
     {
         if (!is_dir($path)) {
@@ -186,7 +172,7 @@ class SystemHealthController extends Controller
             }
         }
 
-        return $this->formatBytes($size);
+        return format_bytes($size);
     }
 
     private function getDiskUsedPercent(string $path): int

@@ -114,7 +114,7 @@ class FileManagerController extends Controller
             'filename' => basename($file),
             'content' => $content,
             'extension' => $ext,
-            'size' => $this->formatBytes(filesize($realFile)),
+            'size' => format_bytes(filesize($realFile)),
             'modified' => date('Y-m-d H:i:s', filemtime($realFile)),
             'writable' => is_writable($realFile),
             'user' => Auth::user(),
@@ -195,7 +195,7 @@ class FileManagerController extends Controller
             $items[] = [
                 'name' => $entry,
                 'is_dir' => $isDir,
-                'size' => $isDir ? '' : $this->formatBytes(filesize($fullPath)),
+                'size' => $isDir ? '' : format_bytes(filesize($fullPath)),
                 'modified' => date('Y-m-d H:i:s', filemtime($fullPath)),
                 'editable' => !$isDir && in_array($ext, self::EDITABLE_EXTENSIONS, true),
                 'extension' => $ext,
@@ -243,14 +243,4 @@ class FileManagerController extends Controller
         return trim($path, '/');
     }
 
-    private function formatBytes(int $bytes): string
-    {
-        $units = ['B', 'KB', 'MB', 'GB'];
-        $i = 0;
-        while ($bytes >= 1024 && $i < count($units) - 1) {
-            $bytes /= 1024;
-            $i++;
-        }
-        return round($bytes, 2) . ' ' . $units[$i];
-    }
 }

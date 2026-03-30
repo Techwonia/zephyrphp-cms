@@ -41,7 +41,7 @@ class CacheController extends Controller
                 'name' => 'Config Cache',
                 'key' => 'config',
                 'path' => $basePath . '/storage/cache/config.php',
-                'size' => file_exists($basePath . '/storage/cache/config.php') ? $this->formatBytes(filesize($basePath . '/storage/cache/config.php')) : '0 B',
+                'size' => file_exists($basePath . '/storage/cache/config.php') ? format_bytes(filesize($basePath . '/storage/cache/config.php')) : '0 B',
                 'files' => file_exists($basePath . '/storage/cache/config.php') ? 1 : 0,
                 'description' => 'Cached configuration (single file)',
                 'cached' => Config::isCached(),
@@ -135,7 +135,7 @@ class CacheController extends Controller
             }
         }
 
-        return $this->formatBytes($size);
+        return format_bytes($size);
     }
 
     private function countFiles(string $path): int
@@ -158,14 +158,4 @@ class CacheController extends Controller
         return $count;
     }
 
-    private function formatBytes(int $bytes): string
-    {
-        $units = ['B', 'KB', 'MB', 'GB'];
-        $i = 0;
-        while ($bytes >= 1024 && $i < count($units) - 1) {
-            $bytes /= 1024;
-            $i++;
-        }
-        return round($bytes, 2) . ' ' . $units[$i];
-    }
 }

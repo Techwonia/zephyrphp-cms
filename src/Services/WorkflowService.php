@@ -287,7 +287,9 @@ class WorkflowService
                     } elseif (isset($columns['name'])) {
                         $qb->addSelect('name');
                     }
-                } catch (\Exception $e) {}
+                } catch (\Exception $e) {
+                    error_log('WorkflowService: failed to detect title/name column: ' . $e->getMessage());
+                }
 
                 $entries = $qb->executeQuery()->fetchAllAssociative();
 

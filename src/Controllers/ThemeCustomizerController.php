@@ -330,7 +330,9 @@ class ThemeCustomizerController extends Controller
                     'name' => $col->getName(),
                 ];
             }
-        } catch (\Exception $e) {}
+        } catch (\Exception $e) {
+            error_log('ThemeCustomizer: failed to load collections: ' . $e->getMessage());
+        }
 
         echo json_encode(['collections' => $collections]);
     }
@@ -356,7 +358,9 @@ class ThemeCustomizerController extends Controller
                 echo json_encode(['fields' => $fields]);
                 return;
             }
-        } catch (\Exception $e) {}
+        } catch (\Exception $e) {
+            error_log('ThemeCustomizer: failed to load collection fields: ' . $e->getMessage());
+        }
 
         echo json_encode(['fields' => []]);
     }

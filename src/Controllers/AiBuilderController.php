@@ -7,6 +7,7 @@ namespace ZephyrPHP\Cms\Controllers;
 use ZephyrPHP\Core\Controllers\Controller;
 use ZephyrPHP\Ai\AiBuilder;
 use ZephyrPHP\Ai\AiProviderManager;
+use ZephyrPHP\Cms\Services\EnvFileManager;
 use ZephyrPHP\Cms\Services\PermissionService;
 
 class AiBuilderController extends Controller
@@ -349,21 +350,13 @@ class AiBuilderController extends Controller
             return;
         }
 
-        // Find .env file
-        $envPath = $this->findEnvPath();
-        if (!$envPath) {
-            $this->flash('errors', ['Could not locate .env file.']);
+        if (!EnvFileManager::update($settings)) {
+            $this->flash('errors', ['Could not locate .env file or file is not writable.']);
             $this->redirect(admin_url('ai-builder/settings'));
             return;
         }
 
-        try {
-            $this->updateEnvFile($envPath, $settings);
-            $this->flash('success', 'AI settings updated successfully.');
-        } catch (\Throwable $e) {
-            $this->flash('errors', ['Failed to update settings: ' . $e->getMessage()]);
-        }
-
+        $this->flash('success', 'AI settings updated successfully.');
         $this->redirect(admin_url('ai-builder/settings'));
     }
 
@@ -540,51 +533,4 @@ class AiBuilderController extends Controller
         return $content;
     }
 
-    private function findEnvPath(): ?string
-    {
-        // Check common locations
-        $candidates = [
-            defined('BASE_PATH') ? BASE_PATH . '/.env' : null,
-            dirname(__DIR__, 4) . '/.env',
-            getcwd() . '/.env',
-        ];
-
-        foreach ($candidates as $path) {
-            if ($path && file_exists($path) && is_writable($path)) {
-                return $path;
-            }
-        }
-
-        return null;
-    }
-
-    private function updateEnvFile(string $envPath, array $settings): void
-    {
-        $content = file_get_contents($envPath);
-        if ($content === false) {
-            throw new \RuntimeException('Could not read .env file.');
-        }
-
-        foreach ($settings as $key => $value) {
-            $escaped = $this->escapeEnvValue($value);
-            if (preg_match("/^{$key}=/m", $content)) {
-                $content = preg_replace("/^{$key}=.*/m", "{$key}={$escaped}", $content);
-            } else {
-                $content = rtrim($content) . "\n{$key}={$escaped}\n";
-            }
-        }
-
-        file_put_contents($envPath, $content);
-    }
-
-    private function escapeEnvValue(string $value): string
-    {
-        if ($value === '') {
-            return '';
-        }
-        if (preg_match('/[\s#"\'\\\\]/', $value)) {
-            return '"' . addslashes($value) . '"';
-        }
-        return $value;
-    }
 }
