@@ -6,6 +6,7 @@ namespace ZephyrPHP\Cms\Services;
 
 use ZephyrPHP\Cms\Models\Collection;
 use ZephyrPHP\Cms\Services\EntryQuery;
+use ZephyrPHP\Cms\Services\SchemaManager;
 use ZephyrPHP\Database\Connection;
 
 class AnalyticsService
@@ -133,6 +134,7 @@ class AnalyticsService
 
             $unions = [];
             foreach ($publishableTables as $table) {
+                $table = SchemaManager::validateIdentifier($table, 'table');
                 $unions[] = "SELECT status, COUNT(*) AS cnt FROM `{$table}` WHERE status IN ('draft', 'scheduled') GROUP BY status";
             }
 
@@ -209,7 +211,8 @@ class AnalyticsService
             if (!empty($collections)) {
                 $unions = [];
                 foreach ($collections as $collection) {
-                    $unions[] = "SELECT DATE(created_at) AS day, COUNT(*) AS cnt FROM `{$collection->getTableName()}` WHERE created_at >= ? GROUP BY day";
+                    $safeTable = SchemaManager::validateIdentifier($collection->getTableName(), 'table');
+                    $unions[] = "SELECT DATE(created_at) AS day, COUNT(*) AS cnt FROM `{$safeTable}` WHERE created_at >= ? GROUP BY day";
                 }
 
                 $sql = implode(' UNION ALL ', $unions);

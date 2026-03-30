@@ -11,6 +11,7 @@ use ZephyrPHP\Cms\Models\Media;
 use ZephyrPHP\Cms\Services\ImageService;
 use ZephyrPHP\Cms\Services\FileValidator;
 use ZephyrPHP\Cms\Services\PermissionService;
+use ZephyrPHP\Cms\Services\SchemaManager;
 
 class MediaController extends Controller
 {
@@ -1065,11 +1066,12 @@ class MediaController extends Controller
                 $conditions = [];
                 $params = [];
                 foreach ($textCols as $i => $colName) {
-                    $conditions[] = $colName . ' LIKE ?';
+                    $conditions[] = '`' . SchemaManager::validateIdentifier($colName, 'column') . '` LIKE ?';
                     $params[] = '%' . $path . '%';
                 }
 
-                $sql = 'SELECT id FROM ' . $tableName . ' WHERE ' . implode(' OR ', $conditions) . ' LIMIT 20';
+                $safeTable = SchemaManager::validateIdentifier($tableName, 'table');
+                $sql = 'SELECT id FROM `' . $safeTable . '` WHERE ' . implode(' OR ', $conditions) . ' LIMIT 20';
                 $rows = $conn->fetchAllAssociative($sql, $params);
 
                 foreach ($rows as $row) {
