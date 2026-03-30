@@ -1727,6 +1727,61 @@ class EntryQuery
         cms_invalidate_cache($this->collectionSlug);
     }
 
+    /**
+     * Soft-delete or hard-delete multiple entries by IDs in a single query.
+     * Much faster than calling delete() in a loop.
+     *
+     *   EntryQuery::collection('blog')->deleteMany([1, 2, 3]);
+     */
+    public function deleteMany(array $ids): int
+    {
+        $this->boot();
+        if (!$this->tableName || empty($ids)) {
+            return 0;
+        }
+
+        $count = $this->hasSoftDeleteColumn()
+            ? $this->schema->softDeleteMany($this->tableName, $ids)
+            : $this->schema->deleteMany($this->tableName, $ids);
+
+        cms_invalidate_cache($this->collectionSlug);
+        return $count;
+    }
+
+    /**
+     * Force-delete multiple entries by IDs in a single query.
+     *
+     *   EntryQuery::collection('blog')->forceDeleteMany([1, 2, 3]);
+     */
+    public function forceDeleteMany(array $ids): int
+    {
+        $this->boot();
+        if (!$this->tableName || empty($ids)) {
+            return 0;
+        }
+
+        $count = $this->schema->deleteMany($this->tableName, $ids);
+        cms_invalidate_cache($this->collectionSlug);
+        return $count;
+    }
+
+    /**
+     * Update a single field on multiple entries in a single query.
+     *
+     *   EntryQuery::collection('blog')->updateFieldMany([1, 2, 3], 'status', 'published');
+     */
+    public function updateFieldMany(array $ids, string $field, mixed $value): int
+    {
+        $this->boot();
+        if (!$this->tableName || empty($ids)) {
+            return 0;
+        }
+
+        $count = $this->schema->updateFieldMany($this->tableName, $ids, $field, $value);
+        cms_invalidate_cache($this->collectionSlug);
+        return $count;
+    }
+
     // ========================================================================
     // ATOMIC COUNTER OPERATIONS
     // ========================================================================
