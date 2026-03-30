@@ -53,7 +53,7 @@ class CollectionController extends Controller
 
         $stats = [];
         foreach ($collections as $collection) {
-            $stats[$collection->getSlug()] = EntryQuery::collection($collection->getSlug())->noCache()->count();
+            $stats[$collection->getSlug()] = EntryQuery::collection($collection->getSlug())->count();
         }
 
         return $this->render('cms::collections/index', [

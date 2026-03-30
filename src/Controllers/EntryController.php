@@ -996,11 +996,11 @@ class EntryController extends Controller
         $this->requireCollectionPermission('delete', $collection);
 
         $trashed = EntryQuery::collection($slug)->onlyTrashed()->noCache()->get();
-        $count = 0;
+        $ids = array_column($trashed, 'id');
+        $count = count($ids);
 
-        foreach ($trashed as $entry) {
-            EntryQuery::collection($slug)->forceDelete($entry['id']);
-            $count++;
+        if (!empty($ids)) {
+            EntryQuery::collection($slug)->forceDeleteMany($ids);
         }
 
         ActivityLogger::log('emptied_trash', 'entry', null, "{$count} entries", ['collection' => $slug, 'count' => $count]);
