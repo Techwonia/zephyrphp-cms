@@ -322,60 +322,70 @@ class AutomationService
 
     private static function actionUnpublish(string $collectionSlug, array $entries): void
     {
+        $ids = array_filter(array_column($entries, 'id'));
+        if (empty($ids)) return;
+
+        try {
+            EntryQuery::collection($collectionSlug)->updateFieldMany($ids, 'status', 'draft');
+        } catch (\Throwable $e) {
+            error_log("Automation unpublish failed: " . $e->getMessage());
+            return;
+        }
+
         foreach ($entries as $entry) {
             $id = $entry['id'] ?? null;
             if ($id === null) continue;
-
-            try {
-                EntryQuery::collection($collectionSlug)->update($id, ['status' => 'draft']);
-                ActivityLogger::log('unpublished', 'entry', (string) $id, $entry['title'] ?? $entry['name'] ?? "#{$id}", [
-                    'collection' => $collectionSlug,
-                    'source' => 'automation',
-                ]);
-            } catch (\Throwable $e) {
-                error_log("Automation unpublish entry #{$id} failed: " . $e->getMessage());
-            }
+            ActivityLogger::log('unpublished', 'entry', (string) $id, $entry['title'] ?? $entry['name'] ?? "#{$id}", [
+                'collection' => $collectionSlug,
+                'source' => 'automation',
+            ]);
         }
     }
 
     private static function actionPublish(string $collectionSlug, array $entries): void
     {
+        $ids = array_filter(array_column($entries, 'id'));
+        if (empty($ids)) return;
+
         $now = (new \DateTime())->format('Y-m-d H:i:s');
+
+        try {
+            EntryQuery::collection($collectionSlug)->updateFieldMany($ids, 'status', 'published');
+            EntryQuery::collection($collectionSlug)->updateFieldMany($ids, 'published_at', $now);
+        } catch (\Throwable $e) {
+            error_log("Automation publish failed: " . $e->getMessage());
+            return;
+        }
 
         foreach ($entries as $entry) {
             $id = $entry['id'] ?? null;
             if ($id === null) continue;
-
-            try {
-                EntryQuery::collection($collectionSlug)->update($id, [
-                    'status' => 'published',
-                    'published_at' => $now,
-                ]);
-                ActivityLogger::log('published', 'entry', (string) $id, $entry['title'] ?? $entry['name'] ?? "#{$id}", [
-                    'collection' => $collectionSlug,
-                    'source' => 'automation',
-                ]);
-            } catch (\Throwable $e) {
-                error_log("Automation publish entry #{$id} failed: " . $e->getMessage());
-            }
+            ActivityLogger::log('published', 'entry', (string) $id, $entry['title'] ?? $entry['name'] ?? "#{$id}", [
+                'collection' => $collectionSlug,
+                'source' => 'automation',
+            ]);
         }
     }
 
     private static function actionDelete(string $collectionSlug, array $entries): void
     {
+        $ids = array_filter(array_column($entries, 'id'));
+        if (empty($ids)) return;
+
+        try {
+            EntryQuery::collection($collectionSlug)->deleteMany($ids);
+        } catch (\Throwable $e) {
+            error_log("Automation delete failed: " . $e->getMessage());
+            return;
+        }
+
         foreach ($entries as $entry) {
             $id = $entry['id'] ?? null;
             if ($id === null) continue;
-
-            try {
-                EntryQuery::collection($collectionSlug)->delete($id);
-                ActivityLogger::log('deleted', 'entry', (string) $id, $entry['title'] ?? $entry['name'] ?? "#{$id}", [
-                    'collection' => $collectionSlug,
-                    'source' => 'automation',
-                ]);
-            } catch (\Throwable $e) {
-                error_log("Automation delete entry #{$id} failed: " . $e->getMessage());
-            }
+            ActivityLogger::log('deleted', 'entry', (string) $id, $entry['title'] ?? $entry['name'] ?? "#{$id}", [
+                'collection' => $collectionSlug,
+                'source' => 'automation',
+            ]);
         }
     }
 
@@ -386,20 +396,24 @@ class AutomationService
             return;
         }
 
+        $ids = array_filter(array_column($entries, 'id'));
+        if (empty($ids)) return;
+
+        try {
+            EntryQuery::collection($collectionSlug)->updateFieldMany($ids, $field, $value);
+        } catch (\Throwable $e) {
+            error_log("Automation update_field failed: " . $e->getMessage());
+            return;
+        }
+
         foreach ($entries as $entry) {
             $id = $entry['id'] ?? null;
             if ($id === null) continue;
-
-            try {
-                EntryQuery::collection($collectionSlug)->update($id, [$field => $value]);
-                ActivityLogger::log('updated', 'entry', (string) $id, $entry['title'] ?? $entry['name'] ?? "#{$id}", [
-                    'collection' => $collectionSlug,
-                    'source' => 'automation',
-                    'field' => $field,
-                ]);
-            } catch (\Throwable $e) {
-                error_log("Automation update_field entry #{$id} failed: " . $e->getMessage());
-            }
+            ActivityLogger::log('updated', 'entry', (string) $id, $entry['title'] ?? $entry['name'] ?? "#{$id}", [
+                'collection' => $collectionSlug,
+                'source' => 'automation',
+                'field' => $field,
+            ]);
         }
     }
 
