@@ -871,6 +871,69 @@ class SchemaManager
     }
 
     /**
+     * Soft-delete multiple entries by IDs in a single query.
+     */
+    public function softDeleteMany(string $tableName, array $ids): int
+    {
+        $tableName = $this->safeTable($tableName);
+        if (empty($ids)) {
+            return 0;
+        }
+
+        $now = (new \DateTime())->format('Y-m-d H:i:s');
+        $qb = $this->connection->createQueryBuilder();
+        $qb->update($tableName)
+            ->set('`deleted_at`', ':now')
+            ->where('`id` IN (:ids)')
+            ->setParameter('now', $now)
+            ->setParameter('ids', $ids, \Doctrine\DBAL\ArrayParameterType::STRING);
+
+        return $qb->executeStatement();
+    }
+
+    /**
+     * Hard-delete multiple entries by IDs in a single query.
+     */
+    public function deleteMany(string $tableName, array $ids): int
+    {
+        $tableName = $this->safeTable($tableName);
+        if (empty($ids)) {
+            return 0;
+        }
+
+        $qb = $this->connection->createQueryBuilder();
+        $qb->delete($tableName)
+            ->where('`id` IN (:ids)')
+            ->setParameter('ids', $ids, \Doctrine\DBAL\ArrayParameterType::STRING);
+
+        return $qb->executeStatement();
+    }
+
+    /**
+     * Update a single field on multiple entries by IDs in a single query.
+     */
+    public function updateFieldMany(string $tableName, array $ids, string $column, mixed $value): int
+    {
+        $tableName = $this->safeTable($tableName);
+        $column = $this->safeColumn($column);
+        if (empty($ids)) {
+            return 0;
+        }
+
+        $now = (new \DateTime())->format('Y-m-d H:i:s');
+        $qb = $this->connection->createQueryBuilder();
+        $qb->update($tableName)
+            ->set("`{$column}`", ':val')
+            ->set('`updated_at`', ':now')
+            ->where('`id` IN (:ids)')
+            ->setParameter('val', $value)
+            ->setParameter('now', $now)
+            ->setParameter('ids', $ids, \Doctrine\DBAL\ArrayParameterType::STRING);
+
+        return $qb->executeStatement();
+    }
+
+    /**
      * Add `deleted_at` column to an existing collection table if it does not exist.
      */
     public function ensureDeletedAtColumn(string $tableName): void
