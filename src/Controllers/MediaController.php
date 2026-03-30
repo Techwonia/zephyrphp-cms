@@ -144,12 +144,23 @@ class MediaController extends Controller
                 $params
             );
 
-            $media = [];
-            foreach ($rows as $row) {
-                $item = Media::find((int) $row['id']);
-                if ($item) {
-                    $media[] = $item;
+            $ids = array_column($rows, 'id');
+            if (!empty($ids)) {
+                // Batch load all Media objects in one query (IN clause) instead of N+1 finds
+                $media = Media::findBy(['id' => $ids]);
+                // Re-sort to preserve ORDER BY createdAt DESC from the ID query
+                $mediaMap = [];
+                foreach ($media as $m) {
+                    $mediaMap[$m->getId()] = $m;
                 }
+                $media = [];
+                foreach ($ids as $id) {
+                    if (isset($mediaMap[$id])) {
+                        $media[] = $mediaMap[$id];
+                    }
+                }
+            } else {
+                $media = [];
             }
         } catch (\Throwable $e) {
             error_log('Media index error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
