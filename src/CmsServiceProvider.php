@@ -1773,15 +1773,31 @@ class CmsServiceProvider
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
             }
 
-            // All tables verified — write installed flag so we skip this on future requests
-            $flagDir = dirname($flagPath);
-            if (!is_dir($flagDir)) {
-                @mkdir($flagDir, 0755, true);
+            // Verify critical tables actually exist before writing flag
+            $criticalTables = [
+                'cms_themes', 'cms_collections', 'cms_fields', 'cms_media',
+                'cms_api_keys', 'cms_revisions', 'cms_role_permissions',
+                'cms_activity_log', 'cms_notifications', 'cms_saved_views',
+            ];
+            $allExist = true;
+            foreach ($criticalTables as $ct) {
+                if (!$sm->tablesExist([$ct])) {
+                    $allExist = false;
+                    error_log("[ZephyrPHP CMS] Table '{$ct}' still missing after ensureTablesExist()");
+                }
             }
-            @file_put_contents($flagPath, (string) self::SCHEMA_VERSION, LOCK_EX);
 
-        } catch (\Exception $e) {
-            // Silently fail - tables will be created on next request or via CLI
+            if ($allExist) {
+                $flagDir = dirname($flagPath);
+                if (!is_dir($flagDir)) {
+                    @mkdir($flagDir, 0755, true);
+                }
+                @file_put_contents($flagPath, (string) self::SCHEMA_VERSION, LOCK_EX);
+            }
+
+        } catch (\Throwable $e) {
+            // Log the error so it's not invisible — tables will be retried on next request
+            error_log("[ZephyrPHP CMS] ensureTablesExist failed: " . $e->getMessage());
         }
     }
 
