@@ -23,7 +23,7 @@ class MailService
     {
         $this->transport = $_ENV['MAIL_TRANSPORT'] ?? 'php_mail';
         $this->fromEmail = $_ENV['MAIL_FROM_ADDRESS'] ?? 'noreply@' . ($_SERVER['SERVER_NAME'] ?? 'localhost');
-        $this->fromName = $_ENV['MAIL_FROM_NAME'] ?? $_ENV['APP_NAME'] ?? 'CMS';
+        $this->fromName = $_ENV['MAIL_FROM_NAME'] ?? $_ENV['APP_NAME'] ?? 'ZephyrPHP';
         $this->smtpHost = $_ENV['SMTP_HOST'] ?? 'localhost';
         $this->smtpPort = (int) ($_ENV['SMTP_PORT'] ?? 587);
         $this->smtpUsername = $_ENV['SMTP_USERNAME'] ?? '';
@@ -297,7 +297,7 @@ class MailService
     private function renderTwigString(string $template, array $variables): string
     {
         // Add common variables
-        $variables['app_name'] = $_ENV['APP_NAME'] ?? 'CMS';
+        $variables['app_name'] = $_ENV['APP_NAME'] ?? 'ZephyrPHP';
         $variables['admin_url'] = rtrim($_ENV['APP_URL'] ?? '', '/') . admin_url();
 
         try {

@@ -1527,7 +1527,7 @@ class EntryQuery
     public function dump(): static
     {
         // Block in production to prevent information disclosure
-        $env = $_ENV['APP_ENV'] ?? $_SERVER['APP_ENV'] ?? 'production';
+        $env = $_ENV['ENV'] ?? $_ENV['APP_ENV'] ?? 'dev';
         if ($env === 'production') {
             return $this;
         }
@@ -1581,7 +1581,7 @@ class EntryQuery
      */
     public function dd(): void
     {
-        $env = $_ENV['APP_ENV'] ?? $_SERVER['APP_ENV'] ?? 'production';
+        $env = $_ENV['ENV'] ?? $_ENV['APP_ENV'] ?? 'dev';
         if ($env === 'production') {
             return;
         }

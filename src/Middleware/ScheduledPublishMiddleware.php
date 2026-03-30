@@ -80,6 +80,14 @@ class ScheduledPublishMiddleware
                     ->executeQuery()
                     ->fetchAllAssociative();
 
+                // Batch-load full entries before the loop to avoid N+1 queries
+                $entryIds = array_column($entries, 'id');
+                $fullEntries = EntryQuery::collection($collection->getSlug())->noCache()->whereIn('id', $entryIds)->get();
+                $fullEntryMap = [];
+                foreach ($fullEntries as $fe) {
+                    $fullEntryMap[$fe['id']] = $fe;
+                }
+
                 foreach ($entries as $entry) {
                     $conn->update($tableName, [
                         'status' => 'published',
@@ -88,7 +96,7 @@ class ScheduledPublishMiddleware
 
                     // Notify admins
                     try {
-                        $full = EntryQuery::collection($collection->getSlug())->noCache()->find($entry['id']);
+                        $full = $fullEntryMap[$entry['id']] ?? null;
                         $entryTitle = $full['title'] ?? $full['name'] ?? "#{$entry['id']}";
                         NotificationService::notifyAdmins(
                             'scheduled_published',

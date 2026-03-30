@@ -785,14 +785,12 @@ class MediaController extends Controller
 
         // Check if folder has files in DB
         $prefix = 'storage/cms/uploads/' . $sanitized . '/';
-        $allMedia = Media::findBy([], []);
-        $hasFiles = false;
-        foreach ($allMedia as $m) {
-            if (str_starts_with($m->getPath(), $prefix)) {
-                $hasFiles = true;
-                break;
-            }
-        }
+        $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
+        $count = (int) $conn->fetchOne(
+            "SELECT COUNT(*) FROM cms_media WHERE path LIKE ?",
+            [$prefix . '%']
+        );
+        $hasFiles = $count > 0;
 
         if ($hasFiles) {
             $this->flash('errors', ['folder' => 'Cannot delete folder — it contains files. Move or delete them first.']);
@@ -873,13 +871,11 @@ class MediaController extends Controller
     private function bulkDelete(array $ids): void
     {
         $deleted = 0;
-        foreach ($ids as $id) {
-            $media = Media::find($id);
-            if ($media) {
-                $this->deleteMediaFile($media);
-                $media->delete();
-                $deleted++;
-            }
+        $mediaItems = Media::findBy(['id' => $ids]);
+        foreach ($mediaItems as $media) {
+            $this->deleteMediaFile($media);
+            $media->delete();
+            $deleted++;
         }
         $this->flash('success', $deleted . ' file(s) deleted.');
     }
@@ -908,10 +904,8 @@ class MediaController extends Controller
         $moved = 0;
         $publicPath = $this->getPublicPath();
 
-        foreach ($ids as $id) {
-            $media = Media::find($id);
-            if (!$media) continue;
-
+        $mediaItems = Media::findBy(['id' => $ids]);
+        foreach ($mediaItems as $media) {
             $oldAbsPath = $publicPath . '/' . $media->getPath();
             $newAbsPath = $targetDir . '/' . $media->getFilename();
 

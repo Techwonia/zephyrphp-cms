@@ -191,7 +191,7 @@ class AnalyticsMiddleware
     private function getAppSecret(): string
     {
         // Use APP_KEY or a fallback for the daily salt
-        return $_ENV['APP_KEY'] ?? $_ENV['APP_SECRET'] ?? 'zephyr-analytics-salt';
+        return $_ENV['APP_KEY'] ?? $_ENV['APP_SECRET'] ?? hash('sha256', defined('BASE_PATH') ? BASE_PATH : __DIR__);
     }
 
     private function sanitizePath(string $path): string
