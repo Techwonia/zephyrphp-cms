@@ -6,6 +6,7 @@ namespace ZephyrPHP\Cms\Controllers;
 
 use ZephyrPHP\Core\Controllers\Controller;
 use ZephyrPHP\Auth\Auth;
+use ZephyrPHP\Cms\Traits\CmsAccessTrait;
 use ZephyrPHP\Cms\Services\PermissionService;
 use ZephyrPHP\Cms\Services\PluginManager;
 use ZephyrPHP\Cms\Services\HookManager;
@@ -24,24 +25,14 @@ use ZephyrPHP\Cms\Services\HookManager;
  */
 class PluginController extends Controller
 {
+    use CmsAccessTrait;
+
     private PluginManager $pluginManager;
 
     public function __construct()
     {
         parent::__construct();
         $this->pluginManager = PluginManager::getInstance();
-    }
-
-    private function requirePermission(string $permission): void
-    {
-        if (!Auth::check()) {
-            $this->redirect(login_url());
-            return;
-        }
-        if (!PermissionService::can($permission)) {
-            $this->flash('errors', ['You do not have permission to perform this action.']);
-            $this->redirect(admin_url());
-        }
     }
 
     /**

@@ -6,6 +6,7 @@ namespace ZephyrPHP\Cms\Controllers;
 
 use ZephyrPHP\Core\Controllers\Controller;
 use ZephyrPHP\Auth\Auth;
+use ZephyrPHP\Cms\Traits\CmsAccessTrait;
 use ZephyrPHP\Cms\Models\Theme;
 use ZephyrPHP\Cms\Models\Collection;
 use ZephyrPHP\Cms\Services\ThemeManager;
@@ -16,6 +17,8 @@ use ZephyrPHP\Cms\Services\ActivityLogger;
 
 class ThemeController extends Controller
 {
+    use CmsAccessTrait;
+
     private ThemeManager $themeManager;
     private SectionManager $sectionManager;
 
@@ -24,28 +27,6 @@ class ThemeController extends Controller
         parent::__construct();
         $this->themeManager = new ThemeManager();
         $this->sectionManager = new SectionManager($this->themeManager);
-    }
-
-    private function requireCmsAccess(): void
-    {
-        if (!Auth::check()) {
-            $this->redirect(login_url());
-            return;
-        }
-        if (!PermissionService::can('cms.access')) {
-            Auth::logout();
-            $this->flash('errors', ['auth' => 'Access denied. You do not have CMS access.']);
-            $this->redirect(login_url());
-        }
-    }
-
-    private function requirePermission(string $permission): void
-    {
-        $this->requireCmsAccess();
-        if (!PermissionService::can($permission)) {
-            $this->flash('errors', ['auth' => 'You do not have permission to perform this action.']);
-            $this->redirect(admin_url());
-        }
     }
 
     public function index(): string

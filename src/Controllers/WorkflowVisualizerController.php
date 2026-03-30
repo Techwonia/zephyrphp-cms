@@ -6,6 +6,7 @@ namespace ZephyrPHP\Cms\Controllers;
 
 use ZephyrPHP\Core\Controllers\Controller;
 use ZephyrPHP\Auth\Auth;
+use ZephyrPHP\Cms\Traits\CmsAccessTrait;
 use ZephyrPHP\Cms\Models\Collection;
 use ZephyrPHP\Cms\Models\WorkflowTransition;
 use ZephyrPHP\Cms\Services\PermissionService;
@@ -14,6 +15,8 @@ use ZephyrPHP\Cms\Services\WorkflowService;
 
 class WorkflowVisualizerController extends Controller
 {
+    use CmsAccessTrait;
+
     private const STAGE_COLORS = [
         'draft'     => 'gray',
         'review'    => 'yellow',
@@ -25,18 +28,6 @@ class WorkflowVisualizerController extends Controller
     private const AVAILABLE_COLORS = [
         'gray', 'yellow', 'blue', 'green', 'red', 'purple', 'orange', 'teal', 'pink', 'indigo',
     ];
-
-    private function requirePermission(string $permission): void
-    {
-        if (!Auth::check()) {
-            $this->redirect(login_url());
-            return;
-        }
-        if (!PermissionService::can($permission)) {
-            $this->flash('errors', ['You do not have permission to perform this action.']);
-            $this->redirect(admin_url());
-        }
-    }
 
     public function index(): string
     {

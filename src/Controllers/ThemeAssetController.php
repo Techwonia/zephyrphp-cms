@@ -6,36 +6,21 @@ namespace ZephyrPHP\Cms\Controllers;
 
 use ZephyrPHP\Core\Controllers\Controller;
 use ZephyrPHP\Auth\Auth;
+use ZephyrPHP\Cms\Traits\CmsAccessTrait;
 use ZephyrPHP\Cms\Models\Theme;
 use ZephyrPHP\Cms\Services\ThemeManager;
 use ZephyrPHP\Cms\Services\PermissionService;
 
 class ThemeAssetController extends Controller
 {
+    use CmsAccessTrait;
+
     private ThemeManager $themeManager;
 
     public function __construct()
     {
         parent::__construct();
         $this->themeManager = new ThemeManager();
-    }
-
-    private function requirePermission(string $permission): void
-    {
-        if (!Auth::check()) {
-            $this->redirect(login_url());
-            return;
-        }
-        if (!PermissionService::can('cms.access')) {
-            Auth::logout();
-            $this->flash('errors', ['auth' => 'Access denied.']);
-            $this->redirect(login_url());
-            return;
-        }
-        if (!PermissionService::can($permission)) {
-            $this->flash('errors', ['auth' => 'You do not have permission to perform this action.']);
-            $this->redirect(admin_url());
-        }
     }
 
     /**

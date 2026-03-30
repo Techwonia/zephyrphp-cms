@@ -6,25 +6,16 @@ namespace ZephyrPHP\Cms\Controllers;
 
 use ZephyrPHP\Core\Controllers\Controller;
 use ZephyrPHP\Auth\Auth;
+use ZephyrPHP\Cms\Traits\CmsAccessTrait;
 use ZephyrPHP\Cms\Services\PermissionService;
 
 class QueueMonitorController extends Controller
 {
-    private function requirePermission(): void
-    {
-        if (!Auth::check()) {
-            $this->redirect(login_url());
-            return;
-        }
-        if (!PermissionService::can('settings.edit')) {
-            $this->flash('errors', ['You do not have permission to perform this action.']);
-            $this->redirect(admin_url());
-        }
-    }
+    use CmsAccessTrait;
 
     public function index(): string
     {
-        $this->requirePermission();
+        $this->requirePermission('settings.edit');
         $this->ensureTable();
 
         $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
@@ -93,7 +84,7 @@ class QueueMonitorController extends Controller
 
     public function retry(string $id): void
     {
-        $this->requirePermission();
+        $this->requirePermission('settings.edit');
         $this->ensureTable();
 
         $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
@@ -122,7 +113,7 @@ class QueueMonitorController extends Controller
 
     public function retryAll(): void
     {
-        $this->requirePermission();
+        $this->requirePermission('settings.edit');
         $this->ensureTable();
 
         $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
@@ -136,7 +127,7 @@ class QueueMonitorController extends Controller
 
     public function delete(string $id): void
     {
-        $this->requirePermission();
+        $this->requirePermission('settings.edit');
         $this->ensureTable();
 
         $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
@@ -154,7 +145,7 @@ class QueueMonitorController extends Controller
 
     public function purge(): void
     {
-        $this->requirePermission();
+        $this->requirePermission('settings.edit');
         $this->ensureTable();
 
         $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();

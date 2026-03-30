@@ -7,6 +7,7 @@ namespace ZephyrPHP\Cms\Controllers;
 use ZephyrPHP\Core\Controllers\Controller;
 use ZephyrPHP\Auth\Auth;
 use ZephyrPHP\Security\Csrf;
+use ZephyrPHP\Cms\Traits\CmsAccessTrait;
 use ZephyrPHP\Cms\Models\Media;
 use ZephyrPHP\Cms\Services\ImageService;
 use ZephyrPHP\Cms\Services\FileValidator;
@@ -15,27 +16,7 @@ use ZephyrPHP\Cms\Services\SchemaManager;
 
 class MediaController extends Controller
 {
-    private function requireCmsAccess(): void
-    {
-        if (!Auth::check()) {
-            $this->redirect(login_url());
-            return;
-        }
-        if (!PermissionService::can('cms.access')) {
-            Auth::logout();
-            $this->flash('errors', ['auth' => 'Access denied. You do not have CMS access.']);
-            $this->redirect(login_url());
-        }
-    }
-
-    private function requirePermission(string $permission): void
-    {
-        $this->requireCmsAccess();
-        if (!PermissionService::can($permission)) {
-            $this->flash('errors', ['auth' => 'You do not have permission to perform this action.']);
-            $this->redirect(admin_url());
-        }
-    }
+    use CmsAccessTrait;
 
     /**
      * Ensure the `tags` column exists on the cms_media table.

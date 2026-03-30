@@ -6,6 +6,7 @@ namespace ZephyrPHP\Cms\Controllers;
 
 use ZephyrPHP\Core\Controllers\Controller;
 use ZephyrPHP\Auth\Auth;
+use ZephyrPHP\Cms\Traits\CmsAccessTrait;
 use ZephyrPHP\Cms\Models\AutomationRule;
 use ZephyrPHP\Cms\Models\Collection;
 use ZephyrPHP\Cms\Services\AutomationService;
@@ -14,17 +15,7 @@ use ZephyrPHP\Cms\Services\ActivityLogger;
 
 class AutomationController extends Controller
 {
-    private function requirePermission(string $permission): void
-    {
-        if (!Auth::check()) {
-            $this->redirect(login_url());
-            return;
-        }
-        if (!PermissionService::can($permission)) {
-            $this->flash('errors', ['You do not have permission to perform this action.']);
-            $this->redirect(admin_url());
-        }
-    }
+    use CmsAccessTrait;
 
     public function index(): string
     {

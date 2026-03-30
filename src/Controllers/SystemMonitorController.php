@@ -6,25 +6,16 @@ namespace ZephyrPHP\Cms\Controllers;
 
 use ZephyrPHP\Core\Controllers\Controller;
 use ZephyrPHP\Auth\Auth;
+use ZephyrPHP\Cms\Traits\CmsAccessTrait;
 use ZephyrPHP\Cms\Services\PermissionService;
 
 class SystemMonitorController extends Controller
 {
-    private function requirePermission(): void
-    {
-        if (!Auth::check()) {
-            $this->redirect(login_url());
-            return;
-        }
-        if (!PermissionService::can('settings.view')) {
-            $this->flash('errors', ['You do not have permission to perform this action.']);
-            $this->redirect(admin_url());
-        }
-    }
+    use CmsAccessTrait;
 
     public function index(): string
     {
-        $this->requirePermission();
+        $this->requirePermission('settings.view');
 
         $basePath = defined('BASE_PATH') ? BASE_PATH : getcwd();
 
@@ -55,7 +46,7 @@ class SystemMonitorController extends Controller
 
     public function stats(): string
     {
-        $this->requirePermission();
+        $this->requirePermission('settings.view');
 
         $basePath = defined('BASE_PATH') ? BASE_PATH : getcwd();
 

@@ -12,21 +12,11 @@ use ZephyrPHP\Cms\Services\SchemaManager;
 use ZephyrPHP\Cms\Services\EntryQuery;
 use ZephyrPHP\Cms\Services\PermissionService;
 use ZephyrPHP\Cms\Services\DashboardManager;
+use ZephyrPHP\Cms\Traits\CmsAccessTrait;
 
 class CmsController extends Controller
 {
-    private function requireCmsAccess(): void
-    {
-        if (!Auth::check()) {
-            $this->redirect(login_url());
-            return;
-        }
-        if (!PermissionService::can('cms.access')) {
-            Auth::logout();
-            $this->flash('errors', ['auth' => 'Access denied. You do not have CMS access.']);
-            $this->redirect(login_url());
-        }
-    }
+    use CmsAccessTrait;
 
     public function dashboard(): string
     {

@@ -6,33 +6,24 @@ namespace ZephyrPHP\Cms\Controllers;
 
 use ZephyrPHP\Core\Controllers\Controller;
 use ZephyrPHP\Auth\Auth;
+use ZephyrPHP\Cms\Traits\CmsAccessTrait;
 use ZephyrPHP\Cms\Services\PermissionService;
 
 class AnalyticsDashboardController extends Controller
 {
+    use CmsAccessTrait;
+
     /**
      * Allowed range values (whitelist for input validation).
      */
     private const VALID_RANGES = ['today', '7d', '30d', '90d'];
-
-    private function requirePermission(): void
-    {
-        if (!Auth::check()) {
-            $this->redirect(login_url());
-            return;
-        }
-        if (!PermissionService::can('analytics.view')) {
-            $this->flash('errors', ['You do not have permission to view analytics.']);
-            $this->redirect(admin_url());
-        }
-    }
 
     /**
      * Render the analytics dashboard page.
      */
     public function index(): string
     {
-        $this->requirePermission();
+        $this->requirePermission('analytics.view');
 
         $range = $this->sanitizeRange($this->query('range', '7d'));
 
@@ -57,7 +48,7 @@ class AnalyticsDashboardController extends Controller
      */
     public function data(): string
     {
-        $this->requirePermission();
+        $this->requirePermission('analytics.view');
 
         $range = $this->sanitizeRange($this->query('range', '7d'));
 

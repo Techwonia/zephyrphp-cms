@@ -6,25 +6,16 @@ namespace ZephyrPHP\Cms\Controllers;
 
 use ZephyrPHP\Core\Controllers\Controller;
 use ZephyrPHP\Auth\Auth;
+use ZephyrPHP\Cms\Traits\CmsAccessTrait;
 use ZephyrPHP\Cms\Services\PermissionService;
 
 class ApiAnalyticsController extends Controller
 {
-    private function requirePermission(): void
-    {
-        if (!Auth::check()) {
-            $this->redirect(login_url());
-            return;
-        }
-        if (!PermissionService::can('api-keys.manage')) {
-            $this->flash('errors', ['You do not have permission to perform this action.']);
-            $this->redirect(admin_url());
-        }
-    }
+    use CmsAccessTrait;
 
     public function index(): string
     {
-        $this->requirePermission();
+        $this->requirePermission('api-keys.manage');
 
         try {
             $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();

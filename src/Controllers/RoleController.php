@@ -7,31 +7,12 @@ namespace ZephyrPHP\Cms\Controllers;
 use ZephyrPHP\Core\Controllers\Controller;
 use ZephyrPHP\Auth\Auth;
 use ZephyrPHP\Config\Config;
+use ZephyrPHP\Cms\Traits\CmsAccessTrait;
 use ZephyrPHP\Cms\Services\PermissionService;
 
 class RoleController extends Controller
 {
-    private function requireCmsAccess(): void
-    {
-        if (!Auth::check()) {
-            $this->redirect(login_url());
-            return;
-        }
-        if (!PermissionService::can('cms.access')) {
-            Auth::logout();
-            $this->flash('errors', ['auth' => 'Access denied. You do not have CMS access.']);
-            $this->redirect(login_url());
-        }
-    }
-
-    private function requirePermission(string $permission): void
-    {
-        $this->requireCmsAccess();
-        if (!PermissionService::can($permission)) {
-            $this->flash('errors', ['auth' => 'You do not have permission to perform this action.']);
-            $this->redirect(admin_url());
-        }
-    }
+    use CmsAccessTrait;
 
     private function detectUserModel(): ?string
     {

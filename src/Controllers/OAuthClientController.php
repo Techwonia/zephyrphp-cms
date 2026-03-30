@@ -6,6 +6,7 @@ namespace ZephyrPHP\Cms\Controllers;
 
 use ZephyrPHP\Core\Controllers\Controller;
 use ZephyrPHP\Auth\Auth;
+use ZephyrPHP\Cms\Traits\CmsAccessTrait;
 use ZephyrPHP\OAuth\OAuthClient;
 use ZephyrPHP\OAuth\OAuthManager;
 use ZephyrPHP\Cms\Services\PermissionService;
@@ -15,21 +16,11 @@ use ZephyrPHP\Cms\Services\PermissionService;
  */
 class OAuthClientController extends Controller
 {
+    use CmsAccessTrait;
+
     public function __construct()
     {
         parent::__construct();
-    }
-
-    private function requirePermission(string $permission): void
-    {
-        if (!Auth::check()) {
-            $this->redirect(login_url());
-            return;
-        }
-        if (!PermissionService::can($permission)) {
-            $this->flash('errors', ['You do not have permission to perform this action.']);
-            $this->redirect(admin_url());
-        }
     }
 
     /**

@@ -6,10 +6,13 @@ namespace ZephyrPHP\Cms\Controllers;
 
 use ZephyrPHP\Core\Controllers\Controller;
 use ZephyrPHP\Auth\Auth;
+use ZephyrPHP\Cms\Traits\CmsAccessTrait;
 use ZephyrPHP\Cms\Services\PermissionService;
 
 class FileManagerController extends Controller
 {
+    use CmsAccessTrait;
+
     /** Directories accessible through the file manager */
     private const ALLOWED_ROOTS = [
         'config' => 'config',
@@ -24,18 +27,6 @@ class FileManagerController extends Controller
 
     /** File extensions that are never accessible */
     private const BLOCKED_EXTENSIONS = ['phar', 'sh', 'bat', 'exe', 'dll', 'so'];
-
-    private function requirePermission(string $permission): void
-    {
-        if (!Auth::check()) {
-            $this->redirect(login_url());
-            return;
-        }
-        if (!PermissionService::can($permission)) {
-            $this->flash('errors', ['You do not have permission to perform this action.']);
-            $this->redirect(admin_url());
-        }
-    }
 
     public function index(): string
     {
