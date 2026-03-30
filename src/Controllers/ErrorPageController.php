@@ -191,8 +191,8 @@ class ErrorPageController extends Controller
 
         // Try to render user template
         $basePath = defined('BASE_PATH') ? BASE_PATH : getcwd();
-        $viewsPath = $_ENV['VIEWS_PATH'] ?? '/pages';
-        $templateFile = $basePath . $viewsPath . '/errors/' . $statusCode . '.twig';
+        $viewsPath = $_ENV['VIEWS_PATH'] ?? 'pages';
+        $templateFile = $basePath . '/' . ltrim($viewsPath, '/') . '/errors/' . $statusCode . '.twig';
 
         if (file_exists($templateFile)) {
             try {
@@ -308,8 +308,8 @@ HTML;
     private function getErrorTemplates(): array
     {
         $basePath = defined('BASE_PATH') ? BASE_PATH : getcwd();
-        $viewsPath = $_ENV['VIEWS_PATH'] ?? '/pages';
-        $errorsDir = $basePath . $viewsPath . '/errors';
+        $viewsPath = $_ENV['VIEWS_PATH'] ?? 'pages';
+        $errorsDir = $basePath . '/' . ltrim($viewsPath, '/') . '/errors';
 
         $templates = [];
         if (is_dir($errorsDir)) {
