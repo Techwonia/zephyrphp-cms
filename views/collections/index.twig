@@ -54,9 +54,6 @@
                     <strong>{{ stats[collection.getSlug()] ?? 0 }}</strong> entries
                 </div>
                 <div class="collection-card-badges">
-                    {% if collection.isApiEnabled() %}
-                        <span class="badge badge-info">API</span>
-                    {% endif %}
                     {% if collection.isPublishable() %}
                         <span class="badge badge-success"><span class="badge-dot"></span> Publish</span>
                     {% endif %}
@@ -93,12 +90,6 @@
                         {% include '@cms/partials/sidebar-icon.twig' with {icon: 'settings'} only %}
                         Edit Collection
                     </a>
-                    {% if collection.isApiEnabled() %}
-                    <a href="{{ admin_url('settings/api') }}" class="dropdown-item">
-                        {% include '@cms/partials/sidebar-icon.twig' with {icon: 'code'} only %}
-                        API Settings
-                    </a>
-                    {% endif %}
                     <div class="dropdown-divider"></div>
                     <form method="POST" action="{{ admin_url('collections/' ~ collection.getSlug() ~ '/delete') }}">
                         {{ csrf_field() | raw }}

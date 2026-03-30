@@ -100,7 +100,6 @@
                         <th>Slug</th>
                         <th>Fields</th>
                         <th>Entries</th>
-                        <th>API</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -111,13 +110,6 @@
                         <td><code class="text-mono text-sm text-secondary">{{ collection.getSlug() }}</code></td>
                         <td>{{ collection.getFields()|length }}</td>
                         <td>{{ stats[collection.getSlug()] ?? 0 }}</td>
-                        <td>
-                            {% if collection.isApiEnabled() %}
-                                <span class="badge badge-info"><span class="badge-dot"></span>API</span>
-                            {% else %}
-                                <span class="text-secondary">&mdash;</span>
-                            {% endif %}
-                        </td>
                         <td class="actions-cell">
                             <a href="{{ admin_url('collections/' ~ collection.getSlug() ~ '/entries') }}" class="btn btn-sm btn-outline">Entries</a>
                             <a href="{{ admin_url('collections/' ~ collection.getSlug()) }}" class="btn btn-sm btn-ghost">Edit</a>

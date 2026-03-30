@@ -23,10 +23,6 @@ class AuthSettingsController extends Controller
             'AUTH_PASSWORD_RESET' => env('AUTH_PASSWORD_RESET', 'true'),
             'AUTH_EMAIL_VERIFICATION' => env('AUTH_EMAIL_VERIFICATION', 'false'),
             'AUTH_REMEMBER_ME' => env('AUTH_REMEMBER_ME', 'true'),
-            'AUTH_TWO_FACTOR' => env('AUTH_TWO_FACTOR', 'false'),
-            'AUTH_SOCIAL_LOGIN' => env('AUTH_SOCIAL_LOGIN', 'false'),
-            'AUTH_MAGIC_LINK' => env('AUTH_MAGIC_LINK', 'false'),
-            'AUTH_API_KEYS' => env('AUTH_API_KEYS', 'false'),
         ];
 
         $passwordPolicy = [
@@ -54,18 +50,6 @@ class AuthSettingsController extends Controller
             'JWT_REFRESH' => env('JWT_REFRESH', '2592000'),
         ];
 
-        $oauth = [];
-        $providers = ['google', 'github', 'facebook', 'twitter', 'linkedin', 'microsoft'];
-        foreach ($providers as $provider) {
-            $prefix = 'OAUTH_' . strtoupper($provider);
-            $oauth[$provider] = [
-                'enabled' => env($prefix . '_ENABLED', 'false'),
-                'client_id' => env($prefix . '_CLIENT_ID', ''),
-                'client_secret' => env($prefix . '_CLIENT_SECRET', '') ? '••••••••' : '',
-                'redirect' => env($prefix . '_REDIRECT', '/auth/' . $provider . '/callback'),
-            ];
-        }
-
         $session = [
             'SESSION_LIFETIME' => env('SESSION_LIFETIME', '120'),
             'SESSION_DRIVER' => env('SESSION_DRIVER', 'file'),
@@ -78,9 +62,7 @@ class AuthSettingsController extends Controller
             'passwordPolicy' => $passwordPolicy,
             'rateLimiting' => $rateLimiting,
             'jwt' => $jwt,
-            'oauth' => $oauth,
             'session' => $session,
-            'providers' => $providers,
             'user' => Auth::user(),
         ]);
     }
@@ -94,8 +76,7 @@ class AuthSettingsController extends Controller
         // Feature toggles
         $toggles = [
             'AUTH_REGISTRATION', 'AUTH_PASSWORD_RESET', 'AUTH_EMAIL_VERIFICATION',
-            'AUTH_REMEMBER_ME', 'AUTH_TWO_FACTOR', 'AUTH_SOCIAL_LOGIN',
-            'AUTH_MAGIC_LINK', 'AUTH_API_KEYS',
+            'AUTH_REMEMBER_ME',
         ];
         foreach ($toggles as $key) {
             $settings[$key] = $this->input($key, 'false');
@@ -148,41 +129,6 @@ class AuthSettingsController extends Controller
         }
 
         $this->flash('success', 'Authentication settings updated successfully.');
-        $this->redirect(admin_url('settings/auth'));
-    }
-
-    public function updateOAuth(): void
-    {
-        $this->requirePermission('settings.edit');
-
-        $provider = trim($this->input('provider', ''));
-        $allowed = ['google', 'github', 'facebook', 'twitter', 'linkedin', 'microsoft'];
-
-        if (!in_array($provider, $allowed, true)) {
-            $this->flash('errors', ['Invalid OAuth provider.']);
-            $this->redirect(admin_url('settings/auth'));
-            return;
-        }
-
-        $prefix = 'OAUTH_' . strtoupper($provider);
-        $settings = [
-            $prefix . '_ENABLED' => $this->input('enabled', 'false'),
-            $prefix . '_CLIENT_ID' => trim($this->input('client_id', '')),
-            $prefix . '_REDIRECT' => trim($this->input('redirect', '/auth/' . $provider . '/callback')),
-        ];
-
-        $secret = $this->input('client_secret', '');
-        if ($secret !== '' && $secret !== '••••••••') {
-            $settings[$prefix . '_CLIENT_SECRET'] = $secret;
-        }
-
-        if (!EnvFileManager::updateAndApply($settings)) {
-            $this->flash('errors', ['.env file not found or not writable.']);
-            $this->redirect(admin_url('settings/auth'));
-            return;
-        }
-
-        $this->flash('success', ucfirst($provider) . ' OAuth settings updated.');
         $this->redirect(admin_url('settings/auth'));
     }
 

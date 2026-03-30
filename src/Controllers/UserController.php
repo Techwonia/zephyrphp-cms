@@ -426,20 +426,9 @@ class UserController extends Controller
         $appName = $_ENV['APP_NAME'] ?? 'ZephyrPHP';
 
         $mail = MailService::getInstance();
-
-        // Try template first
-        $sent = $mail->sendTemplate('invitation', $email, [
-            'accept_url' => $acceptUrl,
-            'app_name' => $appName,
-            'expire_hours' => 72,
-        ]);
-
-        // Fallback: raw HTML email
-        if (!$sent) {
-            $subject = "You've been invited to {$appName}";
-            $body = $this->buildInvitationEmailHtml($acceptUrl, $appName);
-            $mail->send($email, $subject, $body);
-        }
+        $subject = "You've been invited to {$appName}";
+        $body = $this->buildInvitationEmailHtml($acceptUrl, $appName);
+        $mail->send($email, $subject, $body);
     }
 
     /**

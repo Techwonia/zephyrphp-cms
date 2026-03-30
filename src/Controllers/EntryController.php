@@ -22,8 +22,6 @@ use ZephyrPHP\Cms\Services\SeoService;
 use ZephyrPHP\Cms\Services\NotificationService;
 use ZephyrPHP\Cms\Services\TranslationService;
 use ZephyrPHP\Cms\Services\WorkflowService;
-use ZephyrPHP\Cms\Services\AutomationService;
-use ZephyrPHP\Cms\Api\ContentApiController;
 use ZephyrPHP\Cms\Models\Language;
 
 class EntryController extends Controller
@@ -459,7 +457,7 @@ class EntryController extends Controller
         // Sanitize richtext fields to prevent XSS
         foreach ($fields as $field) {
             if ($field->getType() === 'richtext' && isset($data[$field->getSlug()])) {
-                $data[$field->getSlug()] = ContentApiController::sanitizeHtml($data[$field->getSlug()]);
+                $data[$field->getSlug()] = self::sanitizeHtml($data[$field->getSlug()]);
             }
         }
 
@@ -529,12 +527,7 @@ class EntryController extends Controller
             );
         }
 
-        // Run automation rules for on_create trigger
         $data['id'] = $entryId;
-        AutomationService::runEventRules('on_create', $slug, $data);
-        if (($data['status'] ?? '') === 'published') {
-            AutomationService::runEventRules('on_publish', $slug, $data);
-        }
 
         $this->flash('success', 'Entry created successfully.');
         $this->redirect(admin_url("collections/{$slug}/entries"));
@@ -778,7 +771,7 @@ class EntryController extends Controller
         // Sanitize richtext fields to prevent XSS
         foreach ($fields as $field) {
             if ($field->getType() === 'richtext' && isset($data[$field->getSlug()])) {
-                $data[$field->getSlug()] = ContentApiController::sanitizeHtml($data[$field->getSlug()]);
+                $data[$field->getSlug()] = self::sanitizeHtml($data[$field->getSlug()]);
             }
         }
 
@@ -869,10 +862,6 @@ class EntryController extends Controller
 
         // Run automation rules for on_update trigger
         $data['id'] = $id;
-        AutomationService::runEventRules('on_update', $slug, $data);
-        if (($data['status'] ?? '') === 'published' && ($entry['status'] ?? '') !== 'published') {
-            AutomationService::runEventRules('on_publish', $slug, $data);
-        }
 
         $this->flash('success', 'Entry updated successfully.');
         $this->redirect(admin_url("collections/{$slug}/entries"));
@@ -898,10 +887,6 @@ class EntryController extends Controller
         ActivityLogger::log('trashed', 'entry', (string) $id, null, ['collection' => $slug]);
 
         // Run automation rules for on_delete trigger
-        if ($entry) {
-            AutomationService::runEventRules('on_delete', $slug, $entry);
-        }
-
         $this->flash('success', 'Entry moved to trash.');
         $this->redirect(admin_url("collections/{$slug}/entries"));
     }
@@ -1159,7 +1144,7 @@ class EntryController extends Controller
             $value = $this->input('translation_' . $field->getSlug(), '');
             // Sanitize richtext fields
             if ($field->getType() === 'richtext' && !empty($value)) {
-                $value = ContentApiController::sanitizeHtml($value);
+                $value = self::sanitizeHtml($value);
             }
             $fieldValues[$field->getSlug()] = $value;
         }
@@ -1754,7 +1739,7 @@ class EntryController extends Controller
             foreach ($data as $key => &$value) {
                 $fieldType = $fieldTypeMap[$key] ?? null;
                 if ($fieldType === 'richtext' && is_string($value)) {
-                    $value = ContentApiController::sanitizeHtml($value);
+                    $value = self::sanitizeHtml($value);
                 } elseif ($fieldType === 'boolean') {
                     $value = in_array(strtolower((string) $value), ['1', 'true', 'yes'], true) ? 1 : 0;
                 } elseif ($fieldType === 'number' && $value !== null && $value !== '') {
@@ -2554,6 +2539,151 @@ class EntryController extends Controller
         }
 
         echo json_encode(['ok' => false]);
+    }
+
+    /**
+     * Sanitize HTML content — whitelist-based tag/attribute filtering with XSS protection.
+     */
+    private static function sanitizeHtml(string $html): string
+    {
+        if (trim($html) === '') {
+            return '';
+        }
+
+        $html = str_replace("\0", '', $html);
+
+        $allowedTags = [
+            'p' => ['class', 'id'],
+            'br' => [],
+            'strong' => [], 'b' => [],
+            'em' => [], 'i' => [],
+            'u' => [], 's' => [],
+            'h1' => ['id'], 'h2' => ['id'], 'h3' => ['id'],
+            'h4' => ['id'], 'h5' => ['id'], 'h6' => ['id'],
+            'ul' => ['class'], 'ol' => ['class', 'start', 'type'], 'li' => ['class'],
+            'a' => ['href', 'title', 'target', 'rel'],
+            'img' => ['src', 'alt', 'title', 'width', 'height', 'loading'],
+            'blockquote' => ['class'],
+            'pre' => ['class'], 'code' => ['class'],
+            'hr' => [],
+            'table' => ['class'], 'thead' => [], 'tbody' => [],
+            'tr' => [], 'th' => ['colspan', 'rowspan'], 'td' => ['colspan', 'rowspan'],
+            'span' => ['class'], 'div' => ['class'],
+            'figure' => ['class'], 'figcaption' => [],
+            'sub' => [], 'sup' => [],
+        ];
+
+        $dangerousSchemes = ['javascript', 'vbscript', 'livescript', 'data', 'mhtml'];
+
+        $dom = new \DOMDocument('1.0', 'UTF-8');
+        libxml_use_internal_errors(true);
+        $dom->loadHTML(
+            '<?xml encoding="UTF-8"><div id="__sanitize_root__">' . $html . '</div>',
+            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_NONET
+        );
+        libxml_clear_errors();
+
+        $root = $dom->getElementById('__sanitize_root__');
+        if (!$root) {
+            return strip_tags($html);
+        }
+
+        self::sanitizeNode($root, $allowedTags, $dangerousSchemes, $dom);
+
+        $output = '';
+        foreach ($root->childNodes as $child) {
+            $output .= $dom->saveHTML($child);
+        }
+
+        return trim($output);
+    }
+
+    private static function sanitizeNode(
+        \DOMNode $node,
+        array $allowedTags,
+        array $dangerousSchemes,
+        \DOMDocument $dom
+    ): void {
+        $nodesToRemove = [];
+
+        foreach ($node->childNodes as $child) {
+            if ($child->nodeType === XML_TEXT_NODE) {
+                continue;
+            }
+
+            if ($child->nodeType === XML_COMMENT_NODE) {
+                $nodesToRemove[] = $child;
+                continue;
+            }
+
+            if ($child->nodeType !== XML_ELEMENT_NODE) {
+                $nodesToRemove[] = $child;
+                continue;
+            }
+
+            /** @var \DOMElement $child */
+            $tagName = strtolower($child->nodeName);
+
+            if (!isset($allowedTags[$tagName])) {
+                $fragment = $dom->createDocumentFragment();
+                while ($child->firstChild) {
+                    $fragment->appendChild($child->firstChild);
+                }
+                $node->replaceChild($fragment, $child);
+                self::sanitizeNode($node, $allowedTags, $dangerousSchemes, $dom);
+                return;
+            }
+
+            $allowedAttrs = $allowedTags[$tagName];
+            $attrsToRemove = [];
+            foreach ($child->attributes as $attr) {
+                $attrName = strtolower($attr->name);
+
+                if (str_starts_with($attrName, 'on')) {
+                    $attrsToRemove[] = $attr->name;
+                    continue;
+                }
+
+                if ($attrName === 'style') {
+                    $attrsToRemove[] = $attr->name;
+                    continue;
+                }
+
+                if (!in_array($attrName, $allowedAttrs, true)) {
+                    $attrsToRemove[] = $attr->name;
+                    continue;
+                }
+
+                if (in_array($attrName, ['href', 'src', 'action', 'formaction', 'poster', 'background'], true)) {
+                    $value = trim($attr->value);
+                    $decoded = html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                    $normalized = preg_replace('/[\s\x00-\x1f]+/', '', strtolower($decoded));
+
+                    foreach ($dangerousSchemes as $scheme) {
+                        if (str_starts_with($normalized, $scheme . ':')) {
+                            $attrsToRemove[] = $attr->name;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            foreach ($attrsToRemove as $attrName) {
+                $child->removeAttribute($attrName);
+            }
+
+            if ($tagName === 'a' && $child->getAttribute('target') === '_blank') {
+                $child->setAttribute('rel', 'noopener noreferrer');
+            }
+
+            if ($child->hasChildNodes()) {
+                self::sanitizeNode($child, $allowedTags, $dangerousSchemes, $dom);
+            }
+        }
+
+        foreach ($nodesToRemove as $nodeToRemove) {
+            $node->removeChild($nodeToRemove);
+        }
     }
 
 }

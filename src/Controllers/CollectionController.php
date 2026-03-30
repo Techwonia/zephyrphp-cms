@@ -63,7 +63,6 @@ class CollectionController extends Controller
         $name = trim($this->input('name', ''));
         $slug = trim($this->input('slug', ''));
         $description = $this->input('description', '');
-        $isApiEnabled = $this->boolean('is_api_enabled');
         $isPublishable = $this->boolean('is_publishable');
         $hasSlug = $this->boolean('has_slug');
         $primaryKeyType = $this->input('primary_key_type', 'integer');
@@ -121,7 +120,6 @@ class CollectionController extends Controller
         $collection->setName($name);
         $collection->setSlug($slug);
         $collection->setDescription($description ?: null);
-        $collection->setIsApiEnabled($isApiEnabled);
         $collection->setIsPublishable($isPublishable);
         $collection->setHasSlug($hasSlug);
         $collection->setPrimaryKeyType($primaryKeyType);
@@ -229,7 +227,6 @@ class CollectionController extends Controller
 
         $name = trim($this->input('name', ''));
         $description = $this->input('description', '');
-        $isApiEnabled = $this->boolean('is_api_enabled');
         $isPublishable = $this->boolean('is_publishable');
         $hasSlug = $this->boolean('has_slug');
 
@@ -292,7 +289,6 @@ class CollectionController extends Controller
         $isSubmittable = $this->boolean('is_submittable');
         $urlPrefix = trim($this->input('url_prefix', ''));
         $itemsPerPage = (int) $this->input('items_per_page', 10);
-        $apiRateLimit = max(0, (int) $this->input('api_rate_limit', 0));
 
         // Build submit settings from form inputs
         $submitSettings = null;
@@ -310,7 +306,6 @@ class CollectionController extends Controller
 
         $collection->setName($name);
         $collection->setDescription($description ?: null);
-        $collection->setIsApiEnabled($isApiEnabled);
         $collection->setIsPublishable($isPublishable);
         $collection->setHasSlug($hasSlug);
         $collection->setSlugSourceField($slugSourceField ?: null);
@@ -319,7 +314,6 @@ class CollectionController extends Controller
         $collection->setSubmitSettings($submitSettings);
         $collection->setUrlPrefix($urlPrefix ?: null);
         $collection->setItemsPerPage($itemsPerPage > 0 ? $itemsPerPage : 10);
-        $collection->setApiRateLimit($apiRateLimit);
 
         // Handle hierarchy toggle
         $hasHierarchy = $this->boolean('has_hierarchy');

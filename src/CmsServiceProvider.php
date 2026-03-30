@@ -203,36 +203,11 @@ class CmsServiceProvider
                 'permission' => 'collections.view',
                 'match' => 'exact:' . admin_url('collections'),
             ]);
-            $sidebar->addItem('collections', [
-                'id' => 'relationships-sidebar',
-                'label' => 'Relationships',
-                'url' => admin_url('relationships'),
-                'icon' => 'share-2',
-                'position' => 903,
-                'permission' => 'collections.view',
-                'match' => 'prefix:' . admin_url('relationships'),
-            ]);
         } catch (\Throwable $e) {
             // Collections table may not exist yet
         }
 
         // ── Design section items ──
-        $sidebar->addItem('design', [
-            'id' => 'ai-builder',
-            'label' => 'AI Builder',
-            'url' => admin_url('ai-builder'),
-            'icon' => 'sparkles',
-            'position' => 2,
-            'match' => 'prefix:' . admin_url('ai-builder'),
-        ]);
-        $sidebar->addItem('design', [
-            'id' => 'marketplace',
-            'label' => 'Marketplace',
-            'url' => admin_url('marketplace'),
-            'icon' => 'store',
-            'position' => 3,
-            'match' => 'prefix:' . admin_url('marketplace'),
-        ]);
         $sidebar->addItem('design', [
             'id' => 'plugins',
             'label' => 'Plugins',
@@ -285,14 +260,6 @@ class CmsServiceProvider
             'icon' => 'bell',
             'position' => 7,
             'match' => 'prefix:' . admin_url('notifications'),
-        ]);
-        $sidebar->addItem('admin', [
-            'id' => 'email-templates',
-            'label' => 'Email Templates',
-            'url' => admin_url('email-templates'),
-            'icon' => 'mail',
-            'position' => 8,
-            'match' => 'prefix:' . admin_url('email-templates'),
         ]);
         $sidebar->addItem('admin', [
             'id' => 'webhooks',
@@ -391,15 +358,6 @@ class CmsServiceProvider
         ]);
 
         $sidebar->addItem('system', [
-            'id' => 'system-database',
-            'label' => 'Database',
-            'url' => admin_url('system/database'),
-            'icon' => 'database',
-            'match' => 'prefix:' . admin_url('system/database'),
-            'permission' => 'settings.view',
-        ]);
-
-        $sidebar->addItem('system', [
             'id' => 'system-backups',
             'label' => 'Backups',
             'url' => admin_url('system/backups'),
@@ -409,38 +367,11 @@ class CmsServiceProvider
         ]);
 
         $sidebar->addItem('system', [
-            'id' => 'system-files',
-            'label' => 'File Manager',
-            'url' => admin_url('system/files'),
-            'icon' => 'folder',
-            'match' => 'prefix:' . admin_url('system/files'),
-            'permission' => 'settings.view',
-        ]);
-
-        $sidebar->addItem('system', [
             'id' => 'system-translations',
             'label' => 'Translations',
             'url' => admin_url('system/translations'),
             'icon' => 'globe',
             'match' => 'prefix:' . admin_url('system/translations'),
-            'permission' => 'settings.view',
-        ]);
-
-        $sidebar->addItem('system', [
-            'id' => 'system-routes',
-            'label' => 'Routes',
-            'url' => admin_url('system/routes'),
-            'icon' => 'map',
-            'match' => 'exact:' . admin_url('system/routes'),
-            'permission' => 'settings.view',
-        ]);
-
-        $sidebar->addItem('system', [
-            'id' => 'system-scheduled-tasks',
-            'label' => 'Scheduled Tasks',
-            'url' => admin_url('system/scheduled-tasks'),
-            'icon' => 'clock',
-            'match' => 'prefix:' . admin_url('system/scheduled-tasks'),
             'permission' => 'settings.view',
         ]);
 
@@ -460,42 +391,6 @@ class CmsServiceProvider
             'icon' => 'git-branch',
             'match' => 'exact:' . admin_url('system/workflow'),
             'permission' => 'entries.view',
-        ]);
-
-        $sidebar->addItem('system', [
-            'id' => 'system-api-analytics',
-            'label' => 'API Analytics',
-            'url' => admin_url('system/api-analytics'),
-            'icon' => 'bar-chart',
-            'match' => 'exact:' . admin_url('system/api-analytics'),
-            'permission' => 'api-keys.manage',
-        ]);
-
-        $sidebar->addItem('system', [
-            'id' => 'system-queue',
-            'label' => 'Queue Monitor',
-            'url' => admin_url('system/queue'),
-            'icon' => 'layers',
-            'match' => 'prefix:' . admin_url('system/queue'),
-            'permission' => 'settings.edit',
-        ]);
-
-        $sidebar->addItem('system', [
-            'id' => 'system-monitor',
-            'label' => 'System Monitor',
-            'url' => admin_url('system/monitor'),
-            'icon' => 'activity',
-            'match' => 'prefix:' . admin_url('system/monitor'),
-            'permission' => 'settings.view',
-        ]);
-
-        $sidebar->addItem('system', [
-            'id' => 'system-design',
-            'label' => 'Design System',
-            'url' => admin_url('system/design-system'),
-            'icon' => 'palette',
-            'match' => 'exact:' . admin_url('system/design-system'),
-            'permission' => 'settings.view',
         ]);
 
         // Register built-in dashboard widgets
@@ -1347,20 +1242,6 @@ class CmsServiceProvider
                 }
             }
 
-            // Migrate users: add 2FA columns
-            if ($sm->tablesExist(['users'])) {
-                $columns = $sm->listTableColumns('users');
-                if (!isset($columns['twofactorsecret'])) {
-                    $conn->executeStatement("ALTER TABLE `users` ADD COLUMN `twoFactorSecret` VARCHAR(255) NULL DEFAULT NULL");
-                }
-                if (!isset($columns['twofactorenabled'])) {
-                    $conn->executeStatement("ALTER TABLE `users` ADD COLUMN `twoFactorEnabled` TINYINT(1) NOT NULL DEFAULT 0");
-                }
-                if (!isset($columns['twofactorrecoverycodes'])) {
-                    $conn->executeStatement("ALTER TABLE `users` ADD COLUMN `twoFactorRecoveryCodes` TEXT NULL DEFAULT NULL");
-                }
-            }
-
             // API Keys table
             if (!$sm->tablesExist(['cms_api_keys'])) {
                 $conn->executeStatement("CREATE TABLE `cms_api_keys` (
@@ -1405,58 +1286,6 @@ class CmsServiceProvider
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
             }
 
-            // OAuth 2.0 Clients
-            if (!$sm->tablesExist(['cms_oauth_clients'])) {
-                $conn->executeStatement("CREATE TABLE `cms_oauth_clients` (
-                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                    `name` VARCHAR(255) NOT NULL,
-                    `client_id` VARCHAR(64) NOT NULL,
-                    `client_secret` VARCHAR(128) NOT NULL,
-                    `redirect_uri` VARCHAR(2048) NOT NULL,
-                    `scopes` JSON NULL DEFAULT NULL,
-                    `is_active` TINYINT(1) NOT NULL DEFAULT 1,
-                    `createdAt` DATETIME NULL DEFAULT NULL,
-                    UNIQUE KEY `uniq_client_id` (`client_id`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-            }
-
-            // OAuth Authorization Codes
-            if (!$sm->tablesExist(['cms_oauth_auth_codes'])) {
-                $conn->executeStatement("CREATE TABLE `cms_oauth_auth_codes` (
-                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                    `code` VARCHAR(128) NOT NULL,
-                    `client_id` VARCHAR(64) NOT NULL,
-                    `user_id` INT NOT NULL,
-                    `scopes` JSON NULL DEFAULT NULL,
-                    `redirect_uri` VARCHAR(2048) NOT NULL,
-                    `code_challenge` VARCHAR(128) NULL DEFAULT NULL,
-                    `code_challenge_method` VARCHAR(10) NULL DEFAULT NULL,
-                    `expires_at` DATETIME NOT NULL,
-                    `used` TINYINT(1) NOT NULL DEFAULT 0,
-                    `createdAt` DATETIME NULL DEFAULT NULL,
-                    INDEX `idx_auth_code` (`code`),
-                    INDEX `idx_auth_expires` (`expires_at`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-            }
-
-            // OAuth Access + Refresh Tokens
-            if (!$sm->tablesExist(['cms_oauth_tokens'])) {
-                $conn->executeStatement("CREATE TABLE `cms_oauth_tokens` (
-                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                    `token` VARCHAR(128) NOT NULL,
-                    `type` VARCHAR(10) NOT NULL DEFAULT 'access',
-                    `user_id` INT NOT NULL,
-                    `client_id` VARCHAR(64) NOT NULL,
-                    `scopes` JSON NULL DEFAULT NULL,
-                    `expires_at` DATETIME NOT NULL,
-                    `revoked` TINYINT(1) NOT NULL DEFAULT 0,
-                    `createdAt` DATETIME NULL DEFAULT NULL,
-                    INDEX `idx_token` (`token`),
-                    INDEX `idx_token_type` (`type`, `revoked`),
-                    INDEX `idx_token_client` (`client_id`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-            }
-
             // Webhook Subscriptions
             if (!$sm->tablesExist(['cms_webhooks'])) {
                 $conn->executeStatement("CREATE TABLE `cms_webhooks` (
@@ -1473,72 +1302,6 @@ class CmsServiceProvider
                     `createdAt` DATETIME NULL DEFAULT NULL,
                     INDEX `idx_webhook_topic` (`topic`, `is_active`),
                     INDEX `idx_webhook_client` (`client_id`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-            }
-
-            // Marketplace Items
-            if (!$sm->tablesExist(['cms_marketplace_items'])) {
-                $conn->executeStatement("CREATE TABLE `cms_marketplace_items` (
-                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                    `slug` VARCHAR(100) NOT NULL,
-                    `name` VARCHAR(255) NOT NULL,
-                    `type` VARCHAR(20) NOT NULL DEFAULT 'theme',
-                    `category` VARCHAR(100) NULL DEFAULT NULL,
-                    `description` TEXT NULL DEFAULT NULL,
-                    `version` VARCHAR(20) NOT NULL DEFAULT '1.0.0',
-                    `seller_id` INT UNSIGNED NOT NULL,
-                    `seller_name` VARCHAR(255) NOT NULL,
-                    `pricing` VARCHAR(20) NOT NULL DEFAULT 'free',
-                    `price_in_cents` INT UNSIGNED NOT NULL DEFAULT 0,
-                    `currency` VARCHAR(3) NOT NULL DEFAULT 'USD',
-                    `status` VARCHAR(20) NOT NULL DEFAULT 'pending',
-                    `package_path` VARCHAR(500) NULL DEFAULT NULL,
-                    `preview_image` VARCHAR(500) NULL DEFAULT NULL,
-                    `screenshots` JSON NULL DEFAULT NULL,
-                    `downloads` INT UNSIGNED NOT NULL DEFAULT 0,
-                    `avg_rating` DECIMAL(3,2) NOT NULL DEFAULT 0.00,
-                    `review_count` INT UNSIGNED NOT NULL DEFAULT 0,
-                    `createdAt` DATETIME NULL DEFAULT NULL,
-                    `updatedAt` DATETIME NULL DEFAULT NULL,
-                    UNIQUE KEY `uniq_mp_slug` (`slug`),
-                    INDEX `idx_mp_type` (`type`),
-                    INDEX `idx_mp_status` (`status`),
-                    INDEX `idx_mp_seller` (`seller_id`),
-                    INDEX `idx_mp_pricing` (`pricing`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-            }
-
-            // Marketplace Reviews
-            if (!$sm->tablesExist(['cms_marketplace_reviews'])) {
-                $conn->executeStatement("CREATE TABLE `cms_marketplace_reviews` (
-                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                    `item_id` INT UNSIGNED NOT NULL,
-                    `user_id` INT UNSIGNED NOT NULL,
-                    `user_name` VARCHAR(255) NOT NULL,
-                    `rating` TINYINT UNSIGNED NOT NULL,
-                    `body` TEXT NULL DEFAULT NULL,
-                    `createdAt` DATETIME NULL DEFAULT NULL,
-                    INDEX `idx_review_item` (`item_id`),
-                    UNIQUE KEY `uniq_review_user_item` (`item_id`, `user_id`),
-                    CONSTRAINT `fk_review_item` FOREIGN KEY (`item_id`) REFERENCES `cms_marketplace_items`(`id`) ON DELETE CASCADE
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-            }
-
-            // Marketplace Licenses (for paid items)
-            if (!$sm->tablesExist(['cms_marketplace_licenses'])) {
-                $conn->executeStatement("CREATE TABLE `cms_marketplace_licenses` (
-                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                    `item_id` INT UNSIGNED NOT NULL,
-                    `buyer_id` INT UNSIGNED NOT NULL,
-                    `license_key` VARCHAR(128) NOT NULL,
-                    `site_url` VARCHAR(2048) NULL DEFAULT NULL,
-                    `status` VARCHAR(20) NOT NULL DEFAULT 'active',
-                    `expires_at` DATETIME NULL DEFAULT NULL,
-                    `createdAt` DATETIME NULL DEFAULT NULL,
-                    UNIQUE KEY `uniq_license_key` (`license_key`),
-                    INDEX `idx_license_item` (`item_id`),
-                    INDEX `idx_license_buyer` (`buyer_id`),
-                    CONSTRAINT `fk_license_item` FOREIGN KEY (`item_id`) REFERENCES `cms_marketplace_items`(`id`) ON DELETE CASCADE
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
             }
 
@@ -1658,24 +1421,6 @@ class CmsServiceProvider
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
             }
 
-            // Email Templates
-            if (!$sm->tablesExist(['cms_email_templates'])) {
-                $conn->executeStatement("CREATE TABLE `cms_email_templates` (
-                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                    `slug` VARCHAR(100) NOT NULL,
-                    `name` VARCHAR(255) NOT NULL,
-                    `subject` VARCHAR(255) NOT NULL,
-                    `body_twig` TEXT NOT NULL,
-                    `is_active` TINYINT(1) NOT NULL DEFAULT 1,
-                    `createdAt` DATETIME NULL DEFAULT NULL,
-                    `updatedAt` DATETIME NULL DEFAULT NULL,
-                    UNIQUE KEY `uniq_email_tpl_slug` (`slug`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
-                // Seed default email templates
-                $this->seedEmailTemplates($conn);
-            }
-
             // Workflow Transitions
             if (!$sm->tablesExist(['cms_workflow_transitions'])) {
                 $conn->executeStatement("CREATE TABLE `cms_workflow_transitions` (
@@ -1695,22 +1440,6 @@ class CmsServiceProvider
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
             }
 
-            // AI Builder History
-            if (!$sm->tablesExist(['cms_ai_history'])) {
-                $conn->executeStatement("CREATE TABLE `cms_ai_history` (
-                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                    `user_id` INT UNSIGNED NOT NULL,
-                    `prompt` TEXT NOT NULL,
-                    `mode` VARCHAR(20) NOT NULL DEFAULT 'page',
-                    `provider` VARCHAR(50) NOT NULL,
-                    `result_summary` VARCHAR(255) NULL DEFAULT NULL,
-                    `tokens_used` INT UNSIGNED NOT NULL DEFAULT 0,
-                    `createdAt` DATETIME NULL DEFAULT NULL,
-                    INDEX `idx_ai_user` (`user_id`),
-                    INDEX `idx_ai_created` (`createdAt`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-            }
-
             // Content Templates (entry templates for quick creation)
             if (!$sm->tablesExist(['cms_content_templates'])) {
                 $conn->executeStatement("CREATE TABLE `cms_content_templates` (
@@ -1722,23 +1451,6 @@ class CmsServiceProvider
                     `createdAt` DATETIME NULL DEFAULT NULL,
                     `updatedAt` DATETIME NULL DEFAULT NULL,
                     INDEX `idx_ct_collection` (`collection_slug`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-            }
-
-            // Automation Rules
-            if (!$sm->tablesExist(['cms_automation_rules'])) {
-                $conn->executeStatement("CREATE TABLE `cms_automation_rules` (
-                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                    `name` VARCHAR(255) NOT NULL,
-                    `collection_slug` VARCHAR(255) NOT NULL,
-                    `trigger_type` VARCHAR(50) NOT NULL DEFAULT 'schedule',
-                    `conditions` TEXT NULL DEFAULT NULL,
-                    `actions` TEXT NULL DEFAULT NULL,
-                    `schedule` VARCHAR(100) NULL DEFAULT NULL,
-                    `last_run_at` DATETIME NULL DEFAULT NULL,
-                    `is_active` TINYINT(1) NOT NULL DEFAULT 1,
-                    `createdAt` DATETIME NULL DEFAULT NULL,
-                    `updatedAt` DATETIME NULL DEFAULT NULL
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
             }
 
@@ -1798,49 +1510,6 @@ class CmsServiceProvider
         } catch (\Throwable $e) {
             // Log the error so it's not invisible — tables will be retried on next request
             error_log("[ZephyrPHP CMS] ensureTablesExist failed: " . $e->getMessage());
-        }
-    }
-
-    private function seedEmailTemplates($conn): void
-    {
-        $now = (new \DateTime())->format('Y-m-d H:i:s');
-        $templates = [
-            [
-                'slug' => 'entry-published',
-                'name' => 'Entry Published',
-                'subject' => '[{{ app_name }}] "{{ entry_title }}" has been published',
-                'body_twig' => '<h2>Entry Published</h2><p>The entry <strong>{{ entry_title }}</strong> in the <em>{{ collection_name }}</em> collection has been published.</p><p><a href="{{ entry_url }}">View Entry</a></p>',
-            ],
-            [
-                'slug' => 'form-submitted',
-                'name' => 'Form Submission Received',
-                'subject' => '[{{ app_name }}] New submission in "{{ collection_name }}"',
-                'body_twig' => '<h2>New Submission</h2><p>A new entry has been submitted to the <em>{{ collection_name }}</em> collection.</p>{% if fields is defined %}{% for key, val in fields %}<p><strong>{{ key }}:</strong> {{ val }}</p>{% endfor %}{% endif %}<p><a href="{{ entry_url }}">Review Submission</a></p>',
-            ],
-            [
-                'slug' => 'user-registered',
-                'name' => 'User Registered',
-                'subject' => '[{{ app_name }}] New user registration: {{ user_name }}',
-                'body_twig' => '<h2>New User Registration</h2><p>A new user has registered:</p><ul><li><strong>Name:</strong> {{ user_name }}</li><li><strong>Email:</strong> {{ user_email }}</li></ul><p><a href="{{ admin_url }}">Go to Admin</a></p>',
-            ],
-            [
-                'slug' => 'scheduled-published',
-                'name' => 'Scheduled Entry Published',
-                'subject' => '[{{ app_name }}] Scheduled entry "{{ entry_title }}" is now live',
-                'body_twig' => '<h2>Scheduled Entry Published</h2><p>The scheduled entry <strong>{{ entry_title }}</strong> in <em>{{ collection_name }}</em> has been automatically published.</p><p><a href="{{ entry_url }}">View Entry</a></p>',
-            ],
-        ];
-
-        foreach ($templates as $tpl) {
-            $conn->insert('cms_email_templates', [
-                'slug' => $tpl['slug'],
-                'name' => $tpl['name'],
-                'subject' => $tpl['subject'],
-                'body_twig' => $tpl['body_twig'],
-                'is_active' => 1,
-                'createdAt' => $now,
-                'updatedAt' => $now,
-            ]);
         }
     }
 }

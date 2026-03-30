@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace ZephyrPHP\Cms\Services;
 
-use ZephyrPHP\Cms\Models\EmailTemplate;
-
 class MailService
 {
     private string $transport;
@@ -37,22 +35,6 @@ class MailService
             self::$instance = new self();
         }
         return self::$instance;
-    }
-
-    /**
-     * Send an email using a stored template.
-     */
-    public function sendTemplate(string $templateSlug, string $toEmail, array $variables = [], ?string $toName = null): bool
-    {
-        $template = EmailTemplate::findOneBy(['slug' => $templateSlug]);
-        if (!$template || !$template->isActive()) {
-            return false;
-        }
-
-        $subject = $this->renderTwigString($template->getSubject(), $variables);
-        $body = $this->renderTwigString($template->getBodyTwig(), $variables);
-
-        return $this->send($toEmail, $subject, $body, $toName);
     }
 
     /**

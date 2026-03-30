@@ -46,10 +46,12 @@ class NotificationService
 
         // Email notification
         if ($prefs->isEnabled($type, 'email') && $emailTo) {
-            $templateSlug = self::getTemplateSlugForType($type);
-            if ($templateSlug) {
-                MailService::getInstance()->sendTemplate($templateSlug, $emailTo, $emailVariables);
-            }
+            $appName = $_ENV['APP_NAME'] ?? 'ZephyrPHP';
+            $subject = "[{$appName}] {$title}";
+            $htmlBody = '<h2>' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</h2>'
+                . '<p>' . htmlspecialchars($body, ENT_QUOTES, 'UTF-8') . '</p>'
+                . ($link ? '<p><a href="' . htmlspecialchars($link, ENT_QUOTES, 'UTF-8') . '">View Details</a></p>' : '');
+            MailService::getInstance()->send($emailTo, $subject, $htmlBody);
         }
     }
 
@@ -202,17 +204,4 @@ class NotificationService
         $pref->save();
     }
 
-    /**
-     * Map notification type to email template slug.
-     */
-    private static function getTemplateSlugForType(string $type): ?string
-    {
-        return match ($type) {
-            'entry_published' => 'entry-published',
-            'form_submitted' => 'form-submitted',
-            'user_registered' => 'user-registered',
-            'scheduled_published' => 'scheduled-published',
-            default => null,
-        };
-    }
 }
