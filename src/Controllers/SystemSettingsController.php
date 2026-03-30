@@ -55,14 +55,7 @@ class SystemSettingsController extends Controller
         ];
 
         $authSettings = [
-            'AUTH_HOME' => env('AUTH_HOME', '/'),
             'SESSION_LIFETIME' => env('SESSION_LIFETIME', '120'),
-            'SESSION_DRIVER' => env('SESSION_DRIVER', 'file'),
-        ];
-
-        $cmsSettings = [
-            'CMS_THEME' => env('CMS_THEME', 'starter'),
-            'VIEWS_PATH' => env('VIEWS_PATH', 'pages'),
         ];
 
         $securitySettings = [
@@ -88,7 +81,6 @@ class SystemSettingsController extends Controller
             'systemInfo' => $systemInfo,
             'appSettings' => $appSettings,
             'authSettings' => $authSettings,
-            'cmsSettings' => $cmsSettings,
             'securitySettings' => $securitySettings,
             'extensions' => $extensions,
             'user' => Auth::user(),
@@ -106,13 +98,8 @@ class SystemSettingsController extends Controller
             'APP_DEBUG' => $this->input('APP_DEBUG', 'false'),
             'APP_URL' => trim($this->input('APP_URL', '')),
             'APP_TIMEZONE' => trim($this->input('APP_TIMEZONE', 'UTC')),
-            // Auth & Session
-            'AUTH_HOME' => trim($this->input('AUTH_HOME', '/')),
+            // Session
             'SESSION_LIFETIME' => trim($this->input('SESSION_LIFETIME', '120')),
-            'SESSION_DRIVER' => trim($this->input('SESSION_DRIVER', 'file')),
-            // CMS
-            'CMS_THEME' => trim($this->input('CMS_THEME', 'starter')),
-            'VIEWS_PATH' => trim($this->input('VIEWS_PATH', 'pages')),
             // Security & CSP
             'CSP_ENABLED' => $this->input('CSP_ENABLED', 'true'),
             'CSP_LEVEL' => trim($this->input('CSP_LEVEL', 'moderate')),
