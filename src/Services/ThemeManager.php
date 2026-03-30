@@ -19,7 +19,7 @@ class ThemeManager
     {
         $basePath = defined('BASE_PATH') ? BASE_PATH : dirname(__DIR__, 4);
         $viewsPath = $_ENV['VIEWS_PATH'] ?? 'pages';
-        $this->themesBasePath = $basePath . '/' . $viewsPath . '/themes';
+        $this->themesBasePath = $basePath . '/' . ltrim($viewsPath, '/') . '/themes';
         $this->publicThemesPath = $basePath . '/public/themes';
         self::$instance = $this;
     }
