@@ -260,7 +260,11 @@ class EntryController extends Controller
             }
         }
         if (!empty($activeFilters)) {
-            $options['filters'] = array_merge($options['filters'] ?? [], $activeFilters);
+            $validSlugs = array_map(fn(Field $f) => $f->getSlug(), $fields);
+            $activeFilters = array_intersect_key($activeFilters, array_flip($validSlugs));
+            if (!empty($activeFilters)) {
+                $options['filters'] = array_merge($options['filters'] ?? [], $activeFilters);
+            }
         }
 
         $query = EntryQuery::collection($slug);
