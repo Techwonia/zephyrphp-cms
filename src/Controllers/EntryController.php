@@ -161,28 +161,25 @@ class EntryController extends Controller
     /**
      * Calculate the depth of a given parent in the tree.
      * Returns 0 if parent_id is null (top-level).
+     *
+     * @param array $entryMap Entries indexed by ID (pass pre-built map for O(1) lookups)
      */
-    private function getParentDepth(array $entries, $parentId): int
+    private function getParentDepth(array $entryMap, $parentId): int
     {
         if ($parentId === null || $parentId === '' || $parentId === '0' || $parentId === 0) {
             return 0;
         }
         $depth = 0;
         $currentId = $parentId;
-        $safety = 100; // prevent infinite loops
+        $safety = 100;
         while ($currentId !== null && $safety-- > 0) {
-            foreach ($entries as $entry) {
-                if ($entry['id'] == $currentId) {
-                    $depth++;
-                    $currentId = $entry['parent_id'] ?? null;
-                    if ($currentId === '' || $currentId === '0' || $currentId === 0) {
-                        $currentId = null;
-                    }
-                    break;
-                }
+            if (!isset($entryMap[$currentId])) {
+                break;
             }
-            if ($currentId === $parentId) {
-                break; // circular, bail
+            $depth++;
+            $currentId = $entryMap[$currentId]['parent_id'] ?? null;
+            if ($currentId === '' || $currentId === '0' || $currentId === 0) {
+                $currentId = null;
             }
         }
         return $depth;
@@ -498,7 +495,11 @@ class EntryController extends Controller
                 $maxDepth = $collection->getHierarchyMaxDepth();
                 if ($maxDepth > 0) {
                     $allEntries = EntryQuery::collection($slug)->noCache()->limit(1000)->get();
-                    $parentDepth = $this->getParentDepth($allEntries, $parentId);
+                    $entryMap = [];
+                    foreach ($allEntries as $e) {
+                        $entryMap[$e['id']] = $e;
+                    }
+                    $parentDepth = $this->getParentDepth($entryMap, $parentId);
                     if ($parentDepth >= $maxDepth) {
                         $errors['parent_id'] = "Maximum hierarchy depth of {$maxDepth} reached.";
                         $this->flash('errors', $errors);
@@ -826,7 +827,11 @@ class EntryController extends Controller
                 // Validate max depth
                 $maxDepth = $collection->getHierarchyMaxDepth();
                 if ($maxDepth > 0) {
-                    $parentDepth = $this->getParentDepth($allEntries, $parentId);
+                    $entryMap = [];
+                    foreach ($allEntries as $e) {
+                        $entryMap[$e['id']] = $e;
+                    }
+                    $parentDepth = $this->getParentDepth($entryMap, $parentId);
                     if (($parentDepth + 1) > $maxDepth) {
                         $this->flash('errors', ['parent_id' => "Maximum hierarchy depth of {$maxDepth} reached."]);
                         $this->back();
