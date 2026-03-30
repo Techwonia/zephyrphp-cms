@@ -1504,9 +1504,7 @@ class EntryController extends Controller
                 // Record revisions in batch — fetch all entries first
                 $entries = EntryQuery::collection($slug)->withTrashed()->noCache()->whereIn('id', $ids)->get();
                 $tableName = $collection->getTableName();
-                foreach ($entries as $entry) {
-                    Revision::record($tableName, $entry['id'], $entry, 'delete');
-                }
+                Revision::recordMany($tableName, $entries, 'delete');
                 $count = $eq->deleteMany($ids);
             } elseif ($action === 'publish' && $collection->isPublishable()) {
                 $now = (new \DateTime())->format('Y-m-d H:i:s');

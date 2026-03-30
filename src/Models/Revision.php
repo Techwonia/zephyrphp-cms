@@ -79,6 +79,27 @@ class Revision extends Model
     }
 
     /**
+     * Record revisions for multiple entries in fewer queries.
+     *
+     * @param string $tableName
+     * @param array $entries Array of entry arrays (must have 'id' key)
+     * @param string $action The action (e.g., 'delete')
+     */
+    public static function recordMany(string $tableName, array $entries, string $action): void
+    {
+        if (empty($entries)) {
+            return;
+        }
+
+        foreach ($entries as $entry) {
+            if (!isset($entry['id'])) {
+                continue;
+            }
+            static::record($tableName, $entry['id'], $entry, $action);
+        }
+    }
+
+    /**
      * Get revision history for an entry, newest first.
      */
     public static function getHistory(string $tableName, string|int $entryId, int $limit = 50): array
