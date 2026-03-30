@@ -284,7 +284,7 @@ class EntryController extends Controller
                 $currentParentId = $parentParam;
                 $query->where('parent_id', $currentParentId);
                 // Build breadcrumb path using indexed map (O(1) lookups instead of O(n))
-                $allEntries = EntryQuery::collection($slug)->noCache()->limit(1000)->get();
+                $allEntries = EntryQuery::collection($slug)->limit(1000)->get();
 
                 // Index by ID for O(1) lookups
                 $entryMap = [];
@@ -1475,6 +1475,7 @@ class EntryController extends Controller
 
         // Handle update_field: validate field before looping
         $bulkFieldSlug = '';
+        $bulkFieldValue = '';
         if ($action === 'update_field') {
             $bulkFieldSlug = $this->input('bulk_field', '');
             $bulkFieldValue = $this->input('bulk_value', '');
@@ -1498,27 +1499,27 @@ class EntryController extends Controller
             }
         }
 
+        $tableName = $collection->getTableName();
         $conn = \ZephyrPHP\Database\Connection::getInstance();
-        $conn->transaction(function () use ($ids, $action, $slug, $eq, $collection, $bulkFieldSlug, $bulkFieldValue, &$count) {
+        $conn->transaction(function () use ($ids, $action, $slug, $tableName, $collection, $bulkFieldSlug, $bulkFieldValue, &$count) {
             if ($action === 'delete') {
                 // Record revisions in batch — fetch all entries first
                 $entries = EntryQuery::collection($slug)->withTrashed()->noCache()->whereIn('id', $ids)->get();
-                $tableName = $collection->getTableName();
                 Revision::recordMany($tableName, $entries, 'delete');
-                $count = $eq->deleteMany($ids);
+                // Use SchemaManager directly to avoid cache invalidation mid-transaction
+                $count = $this->schema->softDeleteMany($tableName, $ids);
             } elseif ($action === 'publish' && $collection->isPublishable()) {
                 $now = (new \DateTime())->format('Y-m-d H:i:s');
-                // Two batch updates: status + published_at
-                $eq->updateFieldMany($ids, 'status', 'published');
-                $count = $eq->updateFieldMany($ids, 'published_at', $now);
+                $this->schema->updateFieldMany($tableName, $ids, 'status', 'published');
+                $count = $this->schema->updateFieldMany($tableName, $ids, 'published_at', $now);
             } elseif ($action === 'unpublish' && $collection->isPublishable()) {
-                $count = $eq->updateFieldMany($ids, 'status', 'draft');
+                $count = $this->schema->updateFieldMany($tableName, $ids, 'status', 'draft');
             } elseif ($action === 'update_field') {
-                $count = $eq->updateFieldMany($ids, $bulkFieldSlug, $bulkFieldValue);
+                $count = $this->schema->updateFieldMany($tableName, $ids, $bulkFieldSlug, $bulkFieldValue);
             }
         });
 
-        // Invalidate collection cache
+        // Invalidate cache only after transaction commits successfully
         cms_invalidate_cache($slug);
 
         $actionLabel = match ($action) {
