@@ -286,20 +286,28 @@ class EntryController extends Controller
             if ($parentParam !== null && $parentParam !== '') {
                 $currentParentId = $parentParam;
                 $query->where('parent_id', $currentParentId);
-                // Build breadcrumb path to current parent
+                // Build breadcrumb path using indexed map (O(1) lookups instead of O(n))
                 $allEntries = EntryQuery::collection($slug)->noCache()->limit(1000)->get();
+
+                // Index by ID for O(1) lookups
+                $entryMap = [];
+                foreach ($allEntries as $ae) {
+                    $entryMap[$ae['id']] = $ae;
+                }
+
                 $pid = $currentParentId;
                 $safety = 20;
                 $dfKey = $collection->getDisplayField();
                 while ($pid && $safety-- > 0) {
-                    foreach ($allEntries as $ae) {
-                        if ($ae['id'] == $pid) {
-                            $lbl = ($dfKey && isset($ae[$dfKey])) ? $ae[$dfKey] : ($ae['title'] ?? $ae['name'] ?? '#' . $ae['id']);
-                            array_unshift($parentBreadcrumbs, ['id' => $ae['id'], 'label' => $lbl]);
-                            $pid = $ae['parent_id'] ?? null;
-                            if ($pid === '' || $pid === '0') $pid = null;
-                            break;
-                        }
+                    if (!isset($entryMap[$pid])) {
+                        break;
+                    }
+                    $ae = $entryMap[$pid];
+                    $lbl = ($dfKey && isset($ae[$dfKey])) ? $ae[$dfKey] : ($ae['title'] ?? $ae['name'] ?? '#' . $ae['id']);
+                    array_unshift($parentBreadcrumbs, ['id' => $ae['id'], 'label' => $lbl]);
+                    $pid = $ae['parent_id'] ?? null;
+                    if ($pid === '' || $pid === '0') {
+                        $pid = null;
                     }
                 }
             } else {
