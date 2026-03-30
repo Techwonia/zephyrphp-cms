@@ -1485,30 +1485,30 @@ class EntryController extends Controller
             }
         }
 
-        foreach ($ids as $id) {
+        $conn = \ZephyrPHP\Database\Connection::getInstance();
+        $conn->transaction(function () use ($ids, $action, $slug, $eq, $collection, $bulkFieldSlug, $bulkFieldValue, &$count) {
             if ($action === 'delete') {
-                $entry = EntryQuery::collection($slug)->withTrashed()->noCache()->find($id);
-                if ($entry) {
-                    Revision::record($collection->getTableName(), $id, $entry, 'delete');
-                    $eq->delete($id);
-                    $count++;
+                // Record revisions in batch — fetch all entries first
+                $entries = EntryQuery::collection($slug)->withTrashed()->noCache()->whereIn('id', $ids)->get();
+                $tableName = $collection->getTableName();
+                foreach ($entries as $entry) {
+                    Revision::record($tableName, $entry['id'], $entry, 'delete');
                 }
+                $count = $eq->deleteMany($ids);
             } elseif ($action === 'publish' && $collection->isPublishable()) {
-                $eq->update($id, [
-                    'status' => 'published',
-                    'published_at' => (new \DateTime())->format('Y-m-d H:i:s'),
-                ]);
-                $count++;
+                $now = (new \DateTime())->format('Y-m-d H:i:s');
+                // Two batch updates: status + published_at
+                $eq->updateFieldMany($ids, 'status', 'published');
+                $count = $eq->updateFieldMany($ids, 'published_at', $now);
             } elseif ($action === 'unpublish' && $collection->isPublishable()) {
-                $eq->update($id, [
-                    'status' => 'draft',
-                ]);
-                $count++;
+                $count = $eq->updateFieldMany($ids, 'status', 'draft');
             } elseif ($action === 'update_field') {
-                $eq->update($id, [$bulkFieldSlug => $bulkFieldValue]);
-                $count++;
+                $count = $eq->updateFieldMany($ids, $bulkFieldSlug, $bulkFieldValue);
             }
-        }
+        });
+
+        // Invalidate collection cache
+        cms_invalidate_cache($slug);
 
         $actionLabel = match ($action) {
             'delete' => 'moved to trash',
@@ -1517,9 +1517,6 @@ class EntryController extends Controller
             'update_field' => 'updated',
             default => 'processed',
         };
-
-        // Invalidate collection cache
-        cms_invalidate_cache($slug);
 
         $logContext = ['collection' => $slug, 'count' => $count];
         if ($action === 'update_field') {
