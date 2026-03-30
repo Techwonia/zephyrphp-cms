@@ -263,7 +263,7 @@ class EntryController extends Controller
             $options['filters'] = array_merge($options['filters'] ?? [], $activeFilters);
         }
 
-        $query = EntryQuery::collection($slug)->noCache();
+        $query = EntryQuery::collection($slug);
         $query->orderBy($options['sort_by'], $options['sort_dir']);
 
         if (!empty($options['search'])) {
@@ -333,7 +333,7 @@ class EntryController extends Controller
         $depthMap = [];
         $childCountMap = [];
         if ($collection->hasHierarchy()) {
-            $allForTree = EntryQuery::collection($slug)->noCache()->orderBy('parent_id')->thenBy('id')->limit(1000)->get();
+            $allForTree = EntryQuery::collection($slug)->orderBy('parent_id')->thenBy('id')->limit(1000)->get();
             $tree = $this->buildTree($allForTree);
             $treeEntries = $this->flattenTree($tree);
             // Build O(1) depth map and child count map
