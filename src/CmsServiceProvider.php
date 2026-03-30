@@ -1202,9 +1202,6 @@ class CmsServiceProvider
                 if (!isset($columns['permissions'])) {
                     $conn->executeStatement("ALTER TABLE `cms_collections` ADD COLUMN `permissions` JSON NULL DEFAULT NULL");
                 }
-                if (!isset($columns['api_rate_limit'])) {
-                    $conn->executeStatement("ALTER TABLE `cms_collections` ADD COLUMN `api_rate_limit` INT NOT NULL DEFAULT 0");
-                }
                 if (!isset($columns['seo_enabled'])) {
                     $conn->executeStatement("ALTER TABLE `cms_collections` ADD COLUMN `seo_enabled` TINYINT(1) NOT NULL DEFAULT 0");
                 }

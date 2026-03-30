@@ -90,9 +90,6 @@ class Collection extends Model
     #[ORM\Column(type: 'string', length: 50, nullable: true)]
     protected ?string $icon = null;
 
-    #[ORM\Column(name: 'is_api_enabled', type: 'boolean')]
-    protected bool $isApiEnabled = false;
-
     #[ORM\Column(name: 'is_publishable', type: 'boolean')]
     protected bool $isPublishable = false;
 
@@ -122,9 +119,6 @@ class Collection extends Model
 
     #[ORM\Column(name: 'permissions', type: 'json', nullable: true)]
     protected ?array $permissions = null;
-
-    #[ORM\Column(name: 'api_rate_limit', type: 'integer')]
-    protected int $apiRateLimit = 0;
 
     #[ORM\Column(name: 'seo_enabled', type: 'boolean')]
     protected bool $seoEnabled = false;
@@ -182,11 +176,6 @@ class Collection extends Model
     public function getIcon(): ?string
     {
         return $this->icon;
-    }
-
-    public function isApiEnabled(): bool
-    {
-        return $this->isApiEnabled;
     }
 
     public function isPublishable(): bool
@@ -262,13 +251,7 @@ class Collection extends Model
         return !empty($this->permissions);
     }
 
-    /**
-     * API rate limit per minute. 0 = no limit.
-     */
-    public function getApiRateLimit(): int
-    {
-        return $this->apiRateLimit;
-    }
+
 
     public function isSeoEnabled(): bool
     {
@@ -381,12 +364,6 @@ class Collection extends Model
         return $this;
     }
 
-    public function setIsApiEnabled(bool $isApiEnabled): self
-    {
-        $this->isApiEnabled = $isApiEnabled;
-        return $this;
-    }
-
     public function setIsPublishable(bool $isPublishable): self
     {
         $this->isPublishable = $isPublishable;
@@ -444,12 +421,6 @@ class Collection extends Model
     public function setPermissions(?array $permissions): self
     {
         $this->permissions = $permissions;
-        return $this;
-    }
-
-    public function setApiRateLimit(int $apiRateLimit): self
-    {
-        $this->apiRateLimit = max(0, $apiRateLimit);
         return $this;
     }
 
