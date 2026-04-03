@@ -848,20 +848,14 @@
                             <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-secondary);">Advanced Settings</span>
                         </summary>
                         <div style="padding-top:var(--sp-4);">
-                            {# Column config #}
+                            {# Column config (number range, decimal precision only — text uses max_length from validation) #}
                             <div id="modal-type-settings" style="display:none;margin-bottom:var(--sp-4);">
                                 <label class="form-label text-xs" style="color:var(--text-secondary);margin-bottom:var(--sp-2)">Column Configuration</label>
-                                <div id="modal-text-settings" style="display:none;">
-                                    <div class="form-group mb-0"><label class="form-label text-xs">Max Characters</label><input type="number" name="field_db_length" id="modal_field_db_length" class="form-control form-control-sm" value="255" min="0" max="65535" placeholder="255"><div class="form-hint">0 = unlimited text</div></div>
-                                </div>
                                 <div id="modal-number-settings" style="display:none;">
-                                    <div class="form-group mb-0"><label class="form-label text-xs">Range</label><select name="field_db_int_type" id="modal_field_db_int_type" class="form-control form-control-sm"><option value="INT">Standard (up to ~2B)</option><option value="SMALLINT">Small (up to ~32K)</option><option value="BIGINT">Large (unlimited)</option><option value="TINYINT">Tiny (up to 127)</option></select></div>
+                                    <div class="form-group mb-0"><label class="form-label text-xs">Number Range</label><select name="field_db_int_type" id="modal_field_db_int_type" class="form-control form-control-sm"><option value="INT">Standard (up to ~2 billion)</option><option value="SMALLINT">Small (up to ~32 thousand)</option><option value="BIGINT">Large (unlimited)</option><option value="TINYINT">Tiny (up to 127)</option></select></div>
                                 </div>
                                 <div id="modal-decimal-settings" style="display:none;">
                                     <div class="form-row-2"><div class="form-group mb-0"><label class="form-label text-xs">Total Digits</label><input type="number" name="field_db_precision" id="modal_field_db_precision" class="form-control form-control-sm" value="10" min="1" max="65"></div><div class="form-group mb-0"><label class="form-label text-xs">Decimal Places</label><input type="number" name="field_db_scale" id="modal_field_db_scale" class="form-control form-control-sm" value="2" min="0" max="30"></div></div>
-                                </div>
-                                <div id="modal-url-settings" style="display:none;">
-                                    <div class="form-group mb-0"><label class="form-label text-xs">Max URL Length</label><input type="number" name="field_db_length" id="modal_field_db_url_length" class="form-control form-control-sm" value="500" min="1" max="2048"></div>
                                 </div>
                             </div>
                             {# Permissions #}
@@ -1083,13 +1077,11 @@
             document.getElementById(id).style.display = panels[id] ? '' : 'none';
         });
 
-        // Column config in advanced settings
+        // Column config in advanced settings (only number range and decimal precision)
         var ts = document.getElementById('modal-type-settings');
-        var cfgs = { 'modal-text-settings': false, 'modal-number-settings': false, 'modal-decimal-settings': false, 'modal-url-settings': false };
-        if (['text','email','slug','select','password','checkbox_group'].includes(type)) cfgs['modal-text-settings'] = true;
-        else if (type === 'number') cfgs['modal-number-settings'] = true;
+        var cfgs = { 'modal-number-settings': false, 'modal-decimal-settings': false };
+        if (type === 'number') cfgs['modal-number-settings'] = true;
         else if (type === 'decimal') cfgs['modal-decimal-settings'] = true;
-        else if (type === 'url') cfgs['modal-url-settings'] = true;
         var hasTs = Object.values(cfgs).some(Boolean);
         ts.style.display = hasTs ? '' : 'none';
         Object.keys(cfgs).forEach(function(id) { document.getElementById(id).style.display = cfgs[id] ? '' : 'none'; });
@@ -1104,7 +1096,7 @@
         var textTypes = ['text','textarea','richtext','email','url','slug','markdown','password'];
         var numberTypes = ['number','decimal'];
         var presetTypes = ['text','email','url','password'];
-        var hasLength = textTypes.includes(type);
+        var hasLength = textTypes.includes(type) || type === 'url';
         var hasValue = numberTypes.includes(type);
         var hasPattern = textTypes.includes(type);
         var hasPreset = presetTypes.includes(type);

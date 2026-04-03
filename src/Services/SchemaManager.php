@@ -579,7 +579,7 @@ class SchemaManager
             'markdown' => $this->resolveTextColumnType($options, 'TEXT'),
             'tags' => 'TEXT',
             'color' => 'VARCHAR(25)',
-            'url' => 'VARCHAR(' . min(2048, max(1, (int) ($options['db_length'] ?? 500))) . ')',
+            'url' => 'VARCHAR(' . min(2048, max(1, (int) ($options['max_length'] ?? $options['db_length'] ?? 500))) . ')',
             'image', 'file', 'media' => 'INT UNSIGNED',
             'number' => $options['db_int_type'] ?? 'INT',
             'relation' => $this->getRelationColumnType($field),
@@ -620,23 +620,22 @@ class SchemaManager
 
     private function resolveStringColumnType(array $options): string
     {
-        $dbType = $options['db_type'] ?? 'varchar';
-        return match ($dbType) {
-            'text' => 'TEXT',
-            'longtext' => 'LONGTEXT',
-            default => 'VARCHAR(' . min(65535, max(1, (int) ($options['db_length'] ?? 255))) . ')',
-        };
+        // Auto-derive column size from validation max_length, fallback to db_length, then 255
+        $maxLen = (int) ($options['max_length'] ?? $options['db_length'] ?? 255);
+        if ($maxLen <= 0 || $maxLen > 65535) {
+            return 'TEXT';
+        }
+        return 'VARCHAR(' . $maxLen . ')';
     }
 
     private function resolveTextColumnType(array $options, string $default): string
     {
-        $dbType = $options['db_type'] ?? null;
-        return match ($dbType) {
-            'varchar' => 'VARCHAR(' . min(65535, max(1, (int) ($options['db_length'] ?? 255))) . ')',
-            'text' => 'TEXT',
-            'longtext' => 'LONGTEXT',
-            default => $default,
-        };
+        // If max_length is set, use VARCHAR; otherwise use the default (TEXT/LONGTEXT)
+        $maxLen = (int) ($options['max_length'] ?? $options['db_length'] ?? 0);
+        if ($maxLen > 0 && $maxLen <= 65535) {
+            return 'VARCHAR(' . $maxLen . ')';
+        }
+        return $default;
     }
 
     private function resolveDecimalType(array $options): string
