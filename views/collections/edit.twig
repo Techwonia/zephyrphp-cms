@@ -705,19 +705,34 @@
                     </div>
                 </div>
 
-                {# Properties #}
-                <div class="form-label mb-3">Properties</div>
-                <div class="flex gap-4 flex-wrap mb-5">
-                    <div class="form-check-row"><input type="checkbox" name="field_required" value="1" id="modal_field_required"><label for="modal_field_required" class="text-sm">Required</label></div>
-                    <div class="form-check-row"><input type="checkbox" name="field_listable" value="1" id="modal_field_listable" checked><label for="modal_field_listable" class="text-sm">Show in list</label></div>
-                    <div class="form-check-row"><input type="checkbox" name="field_searchable" value="1" id="modal_field_searchable"><label for="modal_field_searchable" class="text-sm">Searchable</label></div>
-                    <div class="form-check-row"><input type="checkbox" name="field_sortable" value="1" id="modal_field_sortable"><label for="modal_field_sortable" class="text-sm">Sortable</label></div>
-                    <div class="form-check-row"><input type="checkbox" name="field_unique" value="1" id="modal_field_unique"><label for="modal_field_unique" class="text-sm">Unique</label></div>
+                {# ── Properties (toggles) ── #}
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-2) var(--sp-5);margin-bottom:var(--sp-5);">
+                    <div class="toggle-row" style="padding:var(--sp-2) 0;border:0;">
+                        <div class="toggle-info"><div class="toggle-name text-sm">Required</div></div>
+                        <label class="toggle"><input type="checkbox" name="field_required" value="1" id="modal_field_required"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+                    </div>
+                    <div class="toggle-row" style="padding:var(--sp-2) 0;border:0;">
+                        <div class="toggle-info"><div class="toggle-name text-sm">Show in list</div></div>
+                        <label class="toggle"><input type="checkbox" name="field_listable" value="1" id="modal_field_listable" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+                    </div>
+                    <div class="toggle-row" style="padding:var(--sp-2) 0;border:0;">
+                        <div class="toggle-info"><div class="toggle-name text-sm">Searchable</div></div>
+                        <label class="toggle"><input type="checkbox" name="field_searchable" value="1" id="modal_field_searchable"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+                    </div>
+                    <div class="toggle-row" style="padding:var(--sp-2) 0;border:0;">
+                        <div class="toggle-info"><div class="toggle-name text-sm">Sortable</div></div>
+                        <label class="toggle"><input type="checkbox" name="field_sortable" value="1" id="modal_field_sortable"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+                    </div>
+                    <div class="toggle-row" style="padding:var(--sp-2) 0;border:0;">
+                        <div class="toggle-info"><div class="toggle-name text-sm">Unique</div></div>
+                        <label class="toggle"><input type="checkbox" name="field_unique" value="1" id="modal_field_unique"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+                    </div>
                 </div>
 
-                {# Select options #}
+                {# ── Type-Specific Options (shown right after type, context-sensitive) ── #}
+
+                {# Select/Dropdown options #}
                 <div id="modal-select-options-group" style="display:none;">
-                    <div class="modal-section-title">Select Options</div>
                     <div class="form-group">
                         <label for="modal_field_options_select">Options (one per line)</label>
                         <textarea id="modal_field_options_select" name="" class="form-control" rows="3"
@@ -725,9 +740,17 @@
                     </div>
                 </div>
 
+                {# Checkbox Group options #}
+                <div id="modal-checkbox-group-options" style="display:none;">
+                    <div class="form-group">
+                        <label for="modal_field_options_checkbox">Options (one per line)</label>
+                        <textarea id="modal_field_options_checkbox" name="" class="form-control" rows="3"
+                                  placeholder="Option 1&#10;Option 2&#10;Option 3"></textarea>
+                    </div>
+                </div>
+
                 {# Relation options #}
                 <div id="modal-relation-options-group" style="display:none;">
-                    <div class="modal-section-title">Relation Configuration</div>
                     <div class="form-group">
                         <label for="modal_field_relation_type">Relation Type</label>
                         <select id="modal_field_relation_type" name="field_relation_type" class="form-control">
@@ -737,44 +760,29 @@
                         </select>
                         <div class="form-hint" id="modal-relation-type-hint">One to One: Pick a single related entry.</div>
                     </div>
-                    <div class="form-group">
-                        <label for="modal_field_options_relation">Related Collection</label>
-                        <select id="modal_field_options_relation" name="" class="form-control">
-                            <option value="">-- Select a collection --</option>
-                            {% for col in collections %}
-                                {% if col.getSlug() != collection.getSlug() %}
-                                <option value="{{ col.getSlug() }}">{{ col.getName() }} ({{ col.getSlug() }})</option>
-                                {% endif %}
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="modal_field_display_field">Display Field</label>
-                        <select id="modal_field_display_field" name="field_display_field" class="form-control">
-                            <option value="">-- Select collection first --</option>
-                        </select>
-                        <div class="form-hint">Which field from the related collection to show as the label.</div>
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label for="modal_field_options_relation">Related Collection</label>
+                            <select id="modal_field_options_relation" name="" class="form-control">
+                                <option value="">-- Select --</option>
+                                {% for col in collections %}
+                                    {% if col.getSlug() != collection.getSlug() %}
+                                    <option value="{{ col.getSlug() }}">{{ col.getName() }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="modal_field_display_field">Display Field</label>
+                            <select id="modal_field_display_field" name="field_display_field" class="form-control">
+                                <option value="">-- Select collection first --</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
-                {# File/Image options #}
+                {# Media options #}
                 <div id="modal-file-options-group" style="display:none;">
-                    <div class="modal-section-title">File Settings</div>
-                    <div class="properties-grid">
-                        <div class="property-toggle">
-                            <span class="prop-label">Allow multiple</span>
-                            <label class="toggle-switch">
-                                <input type="checkbox" name="field_multiple" value="1" id="modal_field_multiple">
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                    </div>
-                    <div class="form-row" id="modal-max-files-group" style="display:none;">
-                        <div class="form-group">
-                            <label for="modal_field_max_files">Max files</label>
-                            <input type="number" id="modal_field_max_files" name="field_max_files" class="form-control" value="10" min="1" max="50">
-                        </div>
-                    </div>
                     <div class="form-group">
                         <label for="modal_field_accept_preset">Accepted file types</label>
                         <select name="field_accept_preset" id="modal_field_accept_preset" class="form-control">
@@ -784,196 +792,203 @@
                             <option value="all">All file types</option>
                         </select>
                     </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-3);">
+                        <div class="toggle-row" style="padding:var(--sp-2) 0;border:0;">
+                            <div class="toggle-info"><div class="toggle-name text-sm">Allow multiple</div></div>
+                            <label class="toggle"><input type="checkbox" name="field_multiple" value="1" id="modal_field_multiple"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+                        </div>
+                        <div class="form-group" id="modal-max-files-group" style="display:none;margin:0;">
+                            <label for="modal_field_max_files" class="text-sm">Max files</label>
+                            <input type="number" id="modal_field_max_files" name="field_max_files" class="form-control form-control-sm" value="10" min="1" max="50">
+                        </div>
+                    </div>
                     <div class="form-group">
                         <label for="modal_field_max_file_size">Max file size (MB)</label>
                         <input type="number" id="modal_field_max_file_size" name="field_max_file_size" class="form-control" value="" min="0" step="0.5" placeholder="No limit">
                     </div>
                 </div>
 
-                {# Validation Rules #}
-                <div id="modal-validation-group" style="display:none;">
-                    <div class="modal-section-title">Validation</div>
-                    <div class="form-row-2" id="modal-validation-length" style="display:none;">
-                        <div class="form-group">
-                            <label for="modal_field_min_length">Min Length</label>
-                            <input type="number" id="modal_field_min_length" name="field_min_length" class="form-control" min="0" placeholder="e.g. 5">
-                        </div>
-                        <div class="form-group">
-                            <label for="modal_field_max_length">Max Length</label>
-                            <input type="number" id="modal_field_max_length" name="field_max_length" class="form-control" min="0" placeholder="e.g. 500">
-                        </div>
-                    </div>
-                    <div class="form-row-2" id="modal-validation-value" style="display:none;">
-                        <div class="form-group">
-                            <label for="modal_field_min_value">Min Value</label>
-                            <input type="number" id="modal_field_min_value" name="field_min_value" class="form-control" step="any" placeholder="e.g. 0">
-                        </div>
-                        <div class="form-group">
-                            <label for="modal_field_max_value">Max Value</label>
-                            <input type="number" id="modal_field_max_value" name="field_max_value" class="form-control" step="any" placeholder="e.g. 1000">
-                        </div>
-                    </div>
-                    <div id="modal-validation-pattern" style="display:none;">
-                        <div class="form-row-2">
-                            <div class="form-group">
-                                <label for="modal_field_pattern">Pattern (Regex)</label>
-                                <input type="text" id="modal_field_pattern" name="field_pattern" class="form-control" placeholder="e.g. ^[a-zA-Z]+$">
-                            </div>
-                            <div class="form-group">
-                                <label for="modal_field_pattern_message">Pattern Error Message</label>
-                                <input type="text" id="modal_field_pattern_message" name="field_pattern_message" class="form-control" placeholder="e.g. Only letters allowed">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="modal_field_custom_message">Custom Required Message</label>
-                        <input type="text" id="modal_field_custom_message" name="field_custom_message" class="form-control"
-                               placeholder="Override default required/validation message">
-                    </div>
-                </div>
-
-                {# Type-specific settings (inline DB config) #}
-                <div id="modal-type-settings" style="display:none;">
-                    <div class="modal-section-title">Type Settings</div>
-
-                    {# Text types: max length #}
-                    <div id="modal-text-settings" style="display:none;">
-                        <div class="form-group">
-                            <label for="modal_field_db_length">Max Characters</label>
-                            <input type="number" name="field_db_length" id="modal_field_db_length" class="form-control"
-                                   value="255" min="0" max="65535" placeholder="255">
-                            <div class="form-hint">0 or empty = unlimited (TEXT column). 1-65,535 = fixed length.</div>
-                        </div>
-                    </div>
-
-                    {# Number: range #}
-                    <div id="modal-number-settings" style="display:none;">
-                        <div class="form-group">
-                            <label for="modal_field_db_int_type">Number Range</label>
-                            <select name="field_db_int_type" id="modal_field_db_int_type" class="form-control">
-                                <option value="INT">Standard (up to ~2 billion)</option>
-                                <option value="SMALLINT">Small (up to ~32 thousand)</option>
-                                <option value="BIGINT">Large (unlimited)</option>
-                                <option value="TINYINT">Tiny (up to 127)</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    {# Decimal: precision & scale #}
-                    <div id="modal-decimal-settings" style="display:none;">
-                        <div class="form-row-2">
-                            <div class="form-group">
-                                <label for="modal_field_db_precision">Total Digits</label>
-                                <input type="number" name="field_db_precision" id="modal_field_db_precision" class="form-control"
-                                       value="10" min="1" max="65" placeholder="10">
-                                <div class="form-hint">e.g. 10 for up to 99,999,999.99</div>
-                            </div>
-                            <div class="form-group">
-                                <label for="modal_field_db_scale">Decimal Places</label>
-                                <input type="number" name="field_db_scale" id="modal_field_db_scale" class="form-control"
-                                       value="2" min="0" max="30" placeholder="2">
-                                <div class="form-hint">e.g. 2 for prices, 4 for rates</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {# URL: max length #}
-                    <div id="modal-url-settings" style="display:none;">
-                        <div class="form-group">
-                            <label for="modal_field_db_url_length">Max URL Length</label>
-                            <input type="number" name="field_db_length" id="modal_field_db_url_length" class="form-control"
-                                   value="500" min="1" max="2048" placeholder="500">
-                        </div>
-                    </div>
-                </div>
-
-                {# Checkbox Group options (same as select but multi) #}
-                <div id="modal-checkbox-group-options" style="display:none;">
-                    <div class="modal-section-title">Checkbox Options</div>
-                    <div class="form-group">
-                        <label for="modal_field_options_checkbox">Options (one per line)</label>
-                        <textarea id="modal_field_options_checkbox" name="" class="form-control" rows="3"
-                                  placeholder="Option 1&#10;Option 2&#10;Option 3"></textarea>
-                    </div>
-                </div>
-
                 {# Repeater sub-fields #}
                 <div id="modal-repeater-options" style="display:none;">
-                    <div class="modal-section-title">Repeater Sub-Fields</div>
                     <input type="hidden" name="field_sub_fields" id="modal_field_sub_fields" value="">
                     <div id="repeater-sub-fields-list"></div>
                     <button type="button" class="btn btn-sm btn-outline" id="btn-add-sub-field" style="margin-top:var(--sp-2)">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                         Add Sub-Field
                     </button>
-                    <div class="form-hint" style="margin-top:var(--sp-1)">Define fields for each repeatable row.</div>
+                    <div class="form-hint" style="margin-top:var(--sp-1)">Define the fields for each repeatable row.</div>
                 </div>
 
-                {# Default Value — changes input type per field type #}
-                <div class="modal-section-title">Default Value</div>
-                <div id="modal-default-wrapper">
-                    <div class="form-group" id="modal-default-text">
-                        <input type="text" id="modal_field_default" name="field_default" class="form-control" placeholder="Optional">
-                    </div>
-                    <div class="form-group" id="modal-default-textarea" style="display:none;">
-                        <textarea id="modal_field_default_textarea" name="" class="form-control" rows="2" placeholder="Optional"></textarea>
-                    </div>
-                    <div class="form-group" id="modal-default-number" style="display:none;">
-                        <input type="number" id="modal_field_default_number" name="" class="form-control" step="1" placeholder="0">
-                    </div>
-                    <div class="form-group" id="modal-default-decimal" style="display:none;">
-                        <input type="number" id="modal_field_default_decimal" name="" class="form-control" step="0.01" placeholder="0.00">
-                    </div>
-                    <div class="form-group" id="modal-default-boolean" style="display:none;">
-                        <label class="toggle"><input type="checkbox" id="modal_field_default_boolean" name="" value="1"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
-                        <span class="text-sm text-secondary" style="margin-left:var(--sp-2)">Default state</span>
-                    </div>
-                    <div class="form-group" id="modal-default-date" style="display:none;">
-                        <input type="date" id="modal_field_default_date" name="" class="form-control">
-                    </div>
-                    <div class="form-group" id="modal-default-datetime" style="display:none;">
-                        <input type="datetime-local" id="modal_field_default_datetime" name="" class="form-control">
-                    </div>
-                    <div class="form-group" id="modal-default-color" style="display:none;">
-                        <input type="color" id="modal_field_default_color" name="" class="form-control" style="width:60px;height:36px;padding:2px;">
-                    </div>
-                    <div class="form-group" id="modal-default-select" style="display:none;">
-                        <select id="modal_field_default_select" name="" class="form-control">
-                            <option value="">-- No default --</option>
-                        </select>
-                    </div>
-                    <div class="form-group" id="modal-default-none" style="display:none;">
-                        <span class="text-sm text-secondary">No default value for this field type.</span>
+                {# ── Default Value (type-aware) ── #}
+                <div class="form-group" style="margin-top:var(--sp-4);">
+                    <label class="form-label">Default Value</label>
+                    <div id="modal-default-wrapper">
+                        <div id="modal-default-text">
+                            <input type="text" id="modal_field_default" name="field_default" class="form-control" placeholder="Optional">
+                        </div>
+                        <div id="modal-default-textarea" style="display:none;">
+                            <textarea id="modal_field_default_textarea" name="" class="form-control" rows="2" placeholder="Optional"></textarea>
+                        </div>
+                        <div id="modal-default-number" style="display:none;">
+                            <input type="number" id="modal_field_default_number" name="" class="form-control" step="1" placeholder="0">
+                        </div>
+                        <div id="modal-default-decimal" style="display:none;">
+                            <input type="number" id="modal_field_default_decimal" name="" class="form-control" step="0.01" placeholder="0.00">
+                        </div>
+                        <div id="modal-default-boolean" style="display:none;">
+                            <label class="toggle"><input type="checkbox" id="modal_field_default_boolean" name="" value="1"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+                            <span class="text-sm text-secondary" style="margin-left:var(--sp-2)">Default on</span>
+                        </div>
+                        <div id="modal-default-date" style="display:none;">
+                            <input type="date" id="modal_field_default_date" name="" class="form-control">
+                        </div>
+                        <div id="modal-default-datetime" style="display:none;">
+                            <input type="datetime-local" id="modal_field_default_datetime" name="" class="form-control">
+                        </div>
+                        <div id="modal-default-color" style="display:none;">
+                            <input type="color" id="modal_field_default_color" name="" class="form-control" style="width:60px;height:36px;padding:2px;">
+                        </div>
+                        <div id="modal-default-select" style="display:none;">
+                            <select id="modal_field_default_select" name="" class="form-control">
+                                <option value="">-- No default --</option>
+                            </select>
+                        </div>
+                        <div id="modal-default-none" style="display:none;">
+                            <span class="text-sm text-secondary">No default value for this type.</span>
+                        </div>
                     </div>
                 </div>
 
-                {# Field-level permissions #}
-                {% if roles is not empty %}
-                <div class="form-row-2">
-                    <div class="form-group">
-                        <label for="modal_field_perm_view">Restrict View to Roles</label>
-                        <select id="modal_field_perm_view" name="field_perm_view[]" class="form-control" multiple size="3">
-                            {% for role in roles %}
-                                {% if role.slug != 'admin' %}
-                                <option value="{{ role.slug }}">{{ role.name }}</option>
-                                {% endif %}
-                            {% endfor %}
-                        </select>
-                        <div class="form-hint">Empty = all roles. Ctrl+click to multi-select.</div>
-                    </div>
-                    <div class="form-group">
-                        <label for="modal_field_perm_edit">Restrict Edit to Roles</label>
-                        <select id="modal_field_perm_edit" name="field_perm_edit[]" class="form-control" multiple size="3">
-                            {% for role in roles %}
-                                {% if role.slug != 'admin' %}
-                                <option value="{{ role.slug }}">{{ role.name }}</option>
-                                {% endif %}
-                            {% endfor %}
-                        </select>
-                        <div class="form-hint">Empty = all roles. Ctrl+click to multi-select.</div>
-                    </div>
-                </div>
-                {% endif %}
+                {# ── Advanced Settings (collapsible) ── #}
+                <details id="modal-advanced-settings" style="margin-top:var(--sp-4);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
+                    <summary style="padding:var(--sp-3) var(--sp-4);cursor:pointer;font-weight:600;font-size:var(--text-sm);background:var(--bg-subdued);user-select:none;">
+                        Advanced Settings
+                    </summary>
+                    <div style="padding:var(--sp-4);">
+
+                        {# Type settings (DB config) #}
+                        <div id="modal-type-settings" style="display:none;">
+                            <div class="form-label mb-3" style="font-weight:600;">Column Configuration</div>
+                            <div id="modal-text-settings" style="display:none;">
+                                <div class="form-group">
+                                    <label for="modal_field_db_length">Max Characters</label>
+                                    <input type="number" name="field_db_length" id="modal_field_db_length" class="form-control"
+                                           value="255" min="0" max="65535" placeholder="255">
+                                    <div class="form-hint">0 or empty = unlimited text. 1-65,535 = fixed max length.</div>
+                                </div>
+                            </div>
+                            <div id="modal-number-settings" style="display:none;">
+                                <div class="form-group">
+                                    <label for="modal_field_db_int_type">Number Range</label>
+                                    <select name="field_db_int_type" id="modal_field_db_int_type" class="form-control">
+                                        <option value="INT">Standard (up to ~2 billion)</option>
+                                        <option value="SMALLINT">Small (up to ~32 thousand)</option>
+                                        <option value="BIGINT">Large (unlimited)</option>
+                                        <option value="TINYINT">Tiny (up to 127)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div id="modal-decimal-settings" style="display:none;">
+                                <div class="form-row-2">
+                                    <div class="form-group">
+                                        <label for="modal_field_db_precision">Total Digits</label>
+                                        <input type="number" name="field_db_precision" id="modal_field_db_precision" class="form-control"
+                                               value="10" min="1" max="65" placeholder="10">
+                                        <div class="form-hint">e.g. 10 = up to 99,999,999.99</div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="modal_field_db_scale">Decimal Places</label>
+                                        <input type="number" name="field_db_scale" id="modal_field_db_scale" class="form-control"
+                                               value="2" min="0" max="30" placeholder="2">
+                                        <div class="form-hint">2 = prices, 4 = rates</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="modal-url-settings" style="display:none;">
+                                <div class="form-group">
+                                    <label for="modal_field_db_url_length">Max URL Length</label>
+                                    <input type="number" name="field_db_length" id="modal_field_db_url_length" class="form-control"
+                                           value="500" min="1" max="2048" placeholder="500">
+                                </div>
+                            </div>
+                        </div>
+
+                        {# Validation rules #}
+                        <div id="modal-validation-group" style="display:none;margin-top:var(--sp-3);">
+                            <div class="form-label mb-3" style="font-weight:600;">Validation Rules</div>
+                            <div class="form-row-2" id="modal-validation-length" style="display:none;">
+                                <div class="form-group">
+                                    <label for="modal_field_min_length">Min Length</label>
+                                    <input type="number" id="modal_field_min_length" name="field_min_length" class="form-control" min="0" placeholder="e.g. 5">
+                                </div>
+                                <div class="form-group">
+                                    <label for="modal_field_max_length">Max Length</label>
+                                    <input type="number" id="modal_field_max_length" name="field_max_length" class="form-control" min="0" placeholder="e.g. 500">
+                                </div>
+                            </div>
+                            <div class="form-row-2" id="modal-validation-value" style="display:none;">
+                                <div class="form-group">
+                                    <label for="modal_field_min_value">Min Value</label>
+                                    <input type="number" id="modal_field_min_value" name="field_min_value" class="form-control" step="any" placeholder="e.g. 0">
+                                </div>
+                                <div class="form-group">
+                                    <label for="modal_field_max_value">Max Value</label>
+                                    <input type="number" id="modal_field_max_value" name="field_max_value" class="form-control" step="any" placeholder="e.g. 1000">
+                                </div>
+                            </div>
+                            <div id="modal-validation-pattern" style="display:none;">
+                                <div class="form-row-2">
+                                    <div class="form-group">
+                                        <label for="modal_field_pattern">Pattern (Regex)</label>
+                                        <input type="text" id="modal_field_pattern" name="field_pattern" class="form-control" placeholder="e.g. ^[a-zA-Z]+$">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="modal_field_pattern_message">Error Message</label>
+                                        <input type="text" id="modal_field_pattern_message" name="field_pattern_message" class="form-control" placeholder="e.g. Only letters allowed">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="modal_field_custom_message">Custom Required Message</label>
+                                <input type="text" id="modal_field_custom_message" name="field_custom_message" class="form-control"
+                                       placeholder="Override default message">
+                            </div>
+                        </div>
+
+                        {# Field-level permissions #}
+                        {% if roles is not empty %}
+                        <div style="margin-top:var(--sp-3);">
+                            <div class="form-label mb-3" style="font-weight:600;">Field Permissions</div>
+                            <div class="form-row-2">
+                                <div class="form-group">
+                                    <label for="modal_field_perm_view">Restrict View to Roles</label>
+                                    <select id="modal_field_perm_view" name="field_perm_view[]" class="form-control" multiple size="3">
+                                        {% for role in roles %}
+                                            {% if role.slug != 'admin' %}
+                                            <option value="{{ role.slug }}">{{ role.name }}</option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-hint">Empty = all roles.</div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="modal_field_perm_edit">Restrict Edit to Roles</label>
+                                    <select id="modal_field_perm_edit" name="field_perm_edit[]" class="form-control" multiple size="3">
+                                        {% for role in roles %}
+                                            {% if role.slug != 'admin' %}
+                                            <option value="{{ role.slug }}">{{ role.name }}</option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-hint">Empty = all roles.</div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                    </div>{# /details padding div #}
+                </details>{# /advanced settings #}
+
             </div>
 
             <div class="zui-modal-footer">
@@ -1302,6 +1317,7 @@
         var list = document.getElementById('repeater-sub-fields-list');
         var div = document.createElement('div');
         div.className = 'flex gap-2 mb-2 items-center';
+        div.setAttribute('data-sf-row', '1');
         div.innerHTML = '<input type="text" class="form-control" placeholder="Field name" value="' + (name||'') + '" data-sf="name" style="flex:2">'
             + '<input type="text" class="form-control" placeholder="slug" value="' + (slug||'') + '" data-sf="slug" style="flex:1">'
             + '<select class="form-control" data-sf="type" style="flex:1">'
@@ -1313,7 +1329,7 @@
             + '<option value="date"' + (type==='date'?' selected':'') + '>Date</option>'
             + '<option value="media"' + (type==='media'?' selected':'') + '>Media</option>'
             + '</select>'
-            + '<button type="button" class="btn btn-sm btn-icon btn-ghost" onclick="this.parentElement.remove();syncSubFields();">'
+            + '<button type="button" class="btn btn-sm btn-icon btn-ghost" onclick="this.closest(\'[data-sf-row]\').remove();syncSubFields();">'
             + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
         list.appendChild(div);
         // Auto-slug from name
