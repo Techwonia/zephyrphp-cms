@@ -409,6 +409,28 @@ class SchemaManager
         }
     }
 
+    public function addUniqueIndex(string $tableName, string $columnName): void
+    {
+        $tableName = $this->safeTable($tableName);
+        $columnName = $this->safeColumn($columnName);
+        $indexName = $this->safeIndex("uniq_{$tableName}_{$columnName}");
+        $this->connection->executeStatement(
+            "ALTER TABLE `{$tableName}` ADD UNIQUE INDEX `{$indexName}` (`{$columnName}`)"
+        );
+    }
+
+    public function dropUniqueIndex(string $tableName, string $columnName): void
+    {
+        $tableName = $this->safeTable($tableName);
+        $columnName = $this->safeColumn($columnName);
+        $indexName = $this->safeIndex("uniq_{$tableName}_{$columnName}");
+        try {
+            $this->connection->executeStatement("ALTER TABLE `{$tableName}` DROP INDEX `{$indexName}`");
+        } catch (\Throwable $e) {
+            // Index may not exist — safe to ignore
+        }
+    }
+
     /**
      * Modify a column in a collection table
      */
@@ -545,15 +567,21 @@ class SchemaManager
      */
     private function buildColumnDefinition(Field $field): string
     {
-        $mysqlType = match ($field->getType()) {
-            'text', 'email', 'slug', 'select' => 'VARCHAR(255)',
+        $options = $field->getOptions() ?? [];
+        $type = $field->getType();
+
+        $mysqlType = match ($type) {
+            'text', 'email', 'slug', 'select', 'password' => $this->resolveStringColumnType($options),
+            'textarea' => $this->resolveTextColumnType($options, 'TEXT'),
+            'richtext' => $this->resolveTextColumnType($options, 'LONGTEXT'),
+            'markdown' => $this->resolveTextColumnType($options, 'TEXT'),
+            'tags' => 'TEXT',
+            'color' => 'VARCHAR(25)',
+            'url' => 'VARCHAR(' . min(2048, max(1, (int) ($options['db_length'] ?? 500))) . ')',
             'image', 'file' => 'INT UNSIGNED',
-            'url' => 'VARCHAR(500)',
-            'textarea' => 'TEXT',
-            'richtext' => 'LONGTEXT',
-            'number' => 'INT',
+            'number' => $options['db_int_type'] ?? 'INT',
             'relation' => $this->getRelationColumnType($field),
-            'decimal' => 'DECIMAL(10,2)',
+            'decimal' => $this->resolveDecimalType($options),
             'boolean' => 'TINYINT(1)',
             'date' => 'DATE',
             'datetime' => 'DATETIME',
@@ -564,21 +592,18 @@ class SchemaManager
         $nullable = $field->isRequired() ? 'NOT NULL' : 'NULL';
         $default = '';
 
-        $isNumericDefault = in_array($field->getType(), ['number', 'decimal', 'boolean', 'image', 'file']);
-        // Relation columns pointing to UUID targets are strings, not numeric
-        if ($field->getType() === 'relation' && $mysqlType === 'INT UNSIGNED') {
+        $isNumericDefault = in_array($type, ['number', 'decimal', 'boolean', 'image', 'file']);
+        if ($type === 'relation' && str_contains($mysqlType, 'INT')) {
             $isNumericDefault = true;
         }
 
         if ($field->getDefaultValue() !== null && $field->getDefaultValue() !== '') {
             $defaultVal = $field->getDefaultValue();
             if ($isNumericDefault) {
-                // Strict numeric validation — cast to prevent any injection
                 if (is_numeric($defaultVal)) {
                     $default = "DEFAULT " . (str_contains($defaultVal, '.') ? (float) $defaultVal : (int) $defaultVal);
                 }
             } else {
-                // Use PDO quoting for proper escaping instead of manual str_replace
                 $quoted = $this->connection->quote($defaultVal);
                 $default = "DEFAULT {$quoted}";
             }
@@ -587,6 +612,34 @@ class SchemaManager
         }
 
         return "{$mysqlType} {$nullable} {$default}";
+    }
+
+    private function resolveStringColumnType(array $options): string
+    {
+        $dbType = $options['db_type'] ?? 'varchar';
+        return match ($dbType) {
+            'text' => 'TEXT',
+            'longtext' => 'LONGTEXT',
+            default => 'VARCHAR(' . min(65535, max(1, (int) ($options['db_length'] ?? 255))) . ')',
+        };
+    }
+
+    private function resolveTextColumnType(array $options, string $default): string
+    {
+        $dbType = $options['db_type'] ?? null;
+        return match ($dbType) {
+            'varchar' => 'VARCHAR(' . min(65535, max(1, (int) ($options['db_length'] ?? 255))) . ')',
+            'text' => 'TEXT',
+            'longtext' => 'LONGTEXT',
+            default => $default,
+        };
+    }
+
+    private function resolveDecimalType(array $options): string
+    {
+        $precision = min(65, max(1, (int) ($options['db_precision'] ?? 10)));
+        $scale = min($precision, max(0, (int) ($options['db_scale'] ?? 2)));
+        return "DECIMAL({$precision},{$scale})";
     }
 
     /**

@@ -552,6 +552,28 @@ class CollectionController extends Controller
             }
         }
 
+        // Parse DB-level column configuration
+        $dbType = trim($this->input('field_db_type', ''));
+        if ($dbType !== '') {
+            $options['db_type'] = $dbType;
+        }
+        $dbLength = trim($this->input('field_db_length', ''));
+        if ($dbLength !== '' && is_numeric($dbLength) && (int) $dbLength > 0) {
+            $options['db_length'] = (int) $dbLength;
+        }
+        $dbIntType = trim($this->input('field_db_int_type', ''));
+        if (in_array($dbIntType, ['INT', 'SMALLINT', 'BIGINT', 'TINYINT'], true)) {
+            $options['db_int_type'] = $dbIntType;
+        }
+        $dbPrecision = trim($this->input('field_db_precision', ''));
+        if ($dbPrecision !== '' && is_numeric($dbPrecision)) {
+            $options['db_precision'] = max(1, min(65, (int) $dbPrecision));
+        }
+        $dbScale = trim($this->input('field_db_scale', ''));
+        if ($dbScale !== '' && is_numeric($dbScale)) {
+            $options['db_scale'] = max(0, min(30, (int) $dbScale));
+        }
+
         // Parse field-level permissions
         $fieldPermissions = $this->parseFieldPermissions();
         if (!empty($fieldPermissions)) {
@@ -749,6 +771,28 @@ class CollectionController extends Controller
             }
         }
 
+        // Parse DB-level column configuration
+        $dbType = trim($this->input('field_db_type', ''));
+        if ($dbType !== '') {
+            $options['db_type'] = $dbType;
+        }
+        $dbLength = trim($this->input('field_db_length', ''));
+        if ($dbLength !== '' && is_numeric($dbLength) && (int) $dbLength > 0) {
+            $options['db_length'] = (int) $dbLength;
+        }
+        $dbIntType = trim($this->input('field_db_int_type', ''));
+        if (in_array($dbIntType, ['INT', 'SMALLINT', 'BIGINT', 'TINYINT'], true)) {
+            $options['db_int_type'] = $dbIntType;
+        }
+        $dbPrecision = trim($this->input('field_db_precision', ''));
+        if ($dbPrecision !== '' && is_numeric($dbPrecision)) {
+            $options['db_precision'] = max(1, min(65, (int) $dbPrecision));
+        }
+        $dbScale = trim($this->input('field_db_scale', ''));
+        if ($dbScale !== '' && is_numeric($dbScale)) {
+            $options['db_scale'] = max(0, min(30, (int) $dbScale));
+        }
+
         // Parse field-level permissions
         $fieldPermissions = $this->parseFieldPermissions();
         if (!empty($fieldPermissions)) {
@@ -762,12 +806,26 @@ class CollectionController extends Controller
         $field->setName($name);
         $field->setType($type);
         $field->setOptions($options);
+        $isUnique = $this->boolean('field_unique');
+        $oldIsUnique = $field->isUnique();
+        $field->setIsUnique($isUnique);
         $field->setIsRequired($isRequired);
         $field->setIsListable($isListable);
         $field->setIsSearchable($isSearchable);
         $field->setIsSortable($isSortable);
         $field->setDefaultValue($defaultValue ?: null);
         $field->save();
+
+        // Handle unique index changes
+        if ($isUnique && !$oldIsUnique) {
+            try {
+                $this->schema->addUniqueIndex($collection->getTableName(), $field->getSlug());
+            } catch (\Throwable $e) {
+                $this->flash('warning', 'Unique constraint could not be added — duplicate values may exist.');
+            }
+        } elseif (!$isUnique && $oldIsUnique) {
+            $this->schema->dropUniqueIndex($collection->getTableName(), $field->getSlug());
+        }
 
         // Modify the column if type changed
         if ($oldType !== $type) {

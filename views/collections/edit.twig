@@ -832,6 +832,72 @@
                     </div>
                 </div>
 
+                {# Database Column Configuration #}
+                <div id="modal-db-config-group" style="display:none;">
+                    <div class="modal-section-title">Database Column</div>
+
+                    {# String types: VARCHAR vs TEXT #}
+                    <div id="modal-db-string-config" style="display:none;">
+                        <div class="form-row-2">
+                            <div class="form-group">
+                                <label for="modal_field_db_type">Storage Type</label>
+                                <select name="field_db_type" id="modal_field_db_type" class="form-control">
+                                    <option value="varchar">VARCHAR (fixed max length)</option>
+                                    <option value="text">TEXT (up to 65KB)</option>
+                                    <option value="longtext">LONGTEXT (up to 4GB)</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="modal-db-length-group">
+                                <label for="modal_field_db_length">Max Length</label>
+                                <input type="number" name="field_db_length" id="modal_field_db_length" class="form-control"
+                                       value="255" min="1" max="65535" placeholder="255">
+                                <div class="form-hint">Characters (1-65,535)</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Number types: INT size #}
+                    <div id="modal-db-int-config" style="display:none;">
+                        <div class="form-group">
+                            <label for="modal_field_db_int_type">Integer Size</label>
+                            <select name="field_db_int_type" id="modal_field_db_int_type" class="form-control">
+                                <option value="INT">INT (-2.1B to 2.1B)</option>
+                                <option value="SMALLINT">SMALLINT (-32K to 32K)</option>
+                                <option value="BIGINT">BIGINT (very large numbers)</option>
+                                <option value="TINYINT">TINYINT (-128 to 127)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {# Decimal types: precision & scale #}
+                    <div id="modal-db-decimal-config" style="display:none;">
+                        <div class="form-row-2">
+                            <div class="form-group">
+                                <label for="modal_field_db_precision">Precision (total digits)</label>
+                                <input type="number" name="field_db_precision" id="modal_field_db_precision" class="form-control"
+                                       value="10" min="1" max="65" placeholder="10">
+                                <div class="form-hint">Total number of digits</div>
+                            </div>
+                            <div class="form-group">
+                                <label for="modal_field_db_scale">Scale (decimal places)</label>
+                                <input type="number" name="field_db_scale" id="modal_field_db_scale" class="form-control"
+                                       value="2" min="0" max="30" placeholder="2">
+                                <div class="form-hint">Digits after decimal point</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# URL length #}
+                    <div id="modal-db-url-config" style="display:none;">
+                        <div class="form-group">
+                            <label for="modal_field_db_url_length">Max URL Length</label>
+                            <input type="number" name="field_db_length" id="modal_field_db_url_length" class="form-control"
+                                   value="500" min="1" max="2048" placeholder="500">
+                            <div class="form-hint">Characters (1-2,048)</div>
+                        </div>
+                    </div>
+                </div>
+
                 {# Advanced #}
                 <div class="modal-section-title">Advanced</div>
                 <div class="form-group">
@@ -993,6 +1059,14 @@
         document.getElementById('modal-max-files-group') && (document.getElementById('modal-max-files-group').style.display = 'none');
         document.getElementById('modal_field_display_field') && (document.getElementById('modal_field_display_field').innerHTML = '<option value="">-- Select collection first --</option>');
 
+        // Reset DB config
+        document.getElementById('modal_field_db_type').value = 'varchar';
+        document.getElementById('modal_field_db_length').value = '255';
+        document.getElementById('modal_field_db_int_type').value = 'INT';
+        document.getElementById('modal_field_db_precision').value = '10';
+        document.getElementById('modal_field_db_scale').value = '2';
+        updateDbConfig('text');
+
         // Reset role selects
         var permView = document.getElementById('modal_field_perm_view');
         var permEdit = document.getElementById('modal_field_perm_edit');
@@ -1033,6 +1107,7 @@
             var type = btn.dataset.type;
             document.getElementById('modal_field_type').value = type;
             updateTypeSpecificFields(type);
+            updateDbConfig(type);
         });
     });
 
@@ -1076,6 +1151,40 @@
         if (vv) vv.style.display = hasValue ? '' : 'none';
         if (vp) vp.style.display = hasPattern ? '' : 'none';
     }
+
+    function updateDbConfig(type) {
+        var dbGroup = document.getElementById('modal-db-config-group');
+        var stringConf = document.getElementById('modal-db-string-config');
+        var intConf = document.getElementById('modal-db-int-config');
+        var decimalConf = document.getElementById('modal-db-decimal-config');
+        var urlConf = document.getElementById('modal-db-url-config');
+        var lengthGroup = document.getElementById('modal-db-length-group');
+
+        stringConf.style.display = 'none';
+        intConf.style.display = 'none';
+        decimalConf.style.display = 'none';
+        urlConf.style.display = 'none';
+
+        var hasConfig = false;
+        if (['text', 'email', 'slug', 'select', 'password', 'textarea', 'richtext', 'markdown'].includes(type)) {
+            stringConf.style.display = '';
+            hasConfig = true;
+        } else if (type === 'number') {
+            intConf.style.display = '';
+            hasConfig = true;
+        } else if (type === 'decimal') {
+            decimalConf.style.display = '';
+            hasConfig = true;
+        } else if (type === 'url') {
+            urlConf.style.display = '';
+            hasConfig = true;
+        }
+        dbGroup.style.display = hasConfig ? '' : 'none';
+    }
+
+    document.getElementById('modal_field_db_type').addEventListener('change', function() {
+        document.getElementById('modal-db-length-group').style.display = this.value === 'varchar' ? '' : 'none';
+    });
 
     // ========================================================================
     // File options — multiple toggle
@@ -1238,6 +1347,14 @@
                         if (opts.accept_preset) document.getElementById('modal_field_accept_preset').value = opts.accept_preset;
                         if (opts.max_file_size) document.getElementById('modal_field_max_file_size').value = (opts.max_file_size / 1024 / 1024).toFixed(1).replace(/\.0$/, '');
                     }
+
+                    // DB config
+                    if (opts.db_type) document.getElementById('modal_field_db_type').value = opts.db_type;
+                    if (opts.db_length) document.getElementById('modal_field_db_length').value = opts.db_length;
+                    if (opts.db_int_type) document.getElementById('modal_field_db_int_type').value = opts.db_int_type;
+                    if (opts.db_precision) document.getElementById('modal_field_db_precision').value = opts.db_precision;
+                    if (opts.db_scale) document.getElementById('modal_field_db_scale').value = opts.db_scale;
+                    updateDbConfig(data.type || 'text');
 
                     // Field permissions
                     if (opts.field_permissions) {

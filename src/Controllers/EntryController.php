@@ -418,6 +418,11 @@ class EntryController extends Controller
         $pivotData = $this->collectPivotData($fields);
         $errors = $this->validateEntryData($fields, $data, $pivotData);
 
+        $hierarchyError = $this->validateHierarchyParent($collection, $data);
+        if ($hierarchyError) {
+            $errors['parent_id'] = $hierarchyError;
+        }
+
         if (!empty($errors)) {
             $this->flash('errors', $errors);
             $this->flash('_old_input', $data);
@@ -712,7 +717,13 @@ class EntryController extends Controller
         $fields = array_filter($allFields, fn(Field $f) => PermissionService::canAccessField($f, 'edit'));
         $data = $this->buildEntryData($fields, $entry);
         $pivotData = $this->collectPivotData($fields);
+        $data['_entry_id'] = $id;
         $errors = $this->validateEntryData($fields, $data, $pivotData);
+
+        $hierarchyError = $this->validateHierarchyParent($collection, $data, $id);
+        if ($hierarchyError) {
+            $errors['parent_id'] = $hierarchyError;
+        }
 
         if (!empty($errors)) {
             $this->flash('errors', $errors);
@@ -1912,6 +1923,81 @@ class EntryController extends Controller
         }
     }
 
+    /**
+     * Validate hierarchy parent — ensures valid tree structure.
+     */
+    private function validateHierarchyParent(Collection $collection, array $data, ?string $currentEntryId = null): ?string
+    {
+        if (!$collection->hasHierarchy()) {
+            return null;
+        }
+
+        $parentId = $data['parent_id'] ?? null;
+        if ($parentId === null || $parentId === '' || $parentId === '0') {
+            return null; // Root-level entry, valid
+        }
+
+        $tableName = $collection->getTableName();
+        $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
+
+        // Self-reference check
+        if ($currentEntryId !== null && (string) $parentId === (string) $currentEntryId) {
+            return 'An entry cannot be its own parent.';
+        }
+
+        // Parent must exist and not be deleted
+        $stmt = $conn->executeQuery(
+            "SELECT `id`, `parent_id` FROM `{$tableName}` WHERE `id` = ? AND `deleted_at` IS NULL",
+            [$parentId]
+        );
+        if (!$stmt->fetchAssociative()) {
+            return 'The selected parent entry does not exist.';
+        }
+
+        // Depth check — walk up the tree from parent
+        $maxDepth = $collection->getHierarchyMaxDepth();
+        if ($maxDepth > 0) {
+            $depth = 1;
+            $checkId = $parentId;
+            while ($checkId !== null && $depth <= $maxDepth) {
+                $row = $conn->executeQuery(
+                    "SELECT `parent_id` FROM `{$tableName}` WHERE `id` = ?",
+                    [$checkId]
+                )->fetchAssociative();
+                if (!$row || $row['parent_id'] === null) {
+                    break;
+                }
+                $checkId = $row['parent_id'];
+                $depth++;
+            }
+            if ($depth > $maxDepth) {
+                return "Maximum nesting depth of {$maxDepth} levels exceeded.";
+            }
+        }
+
+        // Descendant loop check (for update only)
+        if ($currentEntryId !== null) {
+            $checkId = $parentId;
+            $visited = [];
+            while ($checkId !== null) {
+                if ((string) $checkId === (string) $currentEntryId) {
+                    return 'Cannot move an entry under its own descendant (would create a loop).';
+                }
+                if (isset($visited[$checkId])) {
+                    break;
+                }
+                $visited[$checkId] = true;
+                $row = $conn->executeQuery(
+                    "SELECT `parent_id` FROM `{$tableName}` WHERE `id` = ?",
+                    [$checkId]
+                )->fetchAssociative();
+                $checkId = $row['parent_id'] ?? null;
+            }
+        }
+
+        return null;
+    }
+
     private function validateEntryData(array $fields, array $data, array $pivotData = []): array
     {
         $errors = [];
@@ -1959,6 +2045,28 @@ class EntryController extends Controller
                             $errors[$field->getSlug()] = "{$field->getName()} must be a valid URL.";
                         }
                         break;
+                    case 'select':
+                        $choices = $options['choices'] ?? [];
+                        if (!empty($choices) && !in_array($value, $choices, true)) {
+                            $errors[$field->getSlug()] = "{$field->getName()} contains an invalid choice.";
+                        }
+                        break;
+                    case 'date':
+                        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) || !strtotime($value)) {
+                            $errors[$field->getSlug()] = "{$field->getName()} must be a valid date (YYYY-MM-DD).";
+                        }
+                        break;
+                    case 'datetime':
+                        if (!strtotime($value)) {
+                            $errors[$field->getSlug()] = "{$field->getName()} must be a valid date and time.";
+                        }
+                        break;
+                    case 'json':
+                        json_decode($value);
+                        if (json_last_error() !== JSON_ERROR_NONE) {
+                            $errors[$field->getSlug()] = "{$field->getName()} must be valid JSON.";
+                        }
+                        break;
                 }
 
                 // Min/Max length (text types)
@@ -1982,6 +2090,27 @@ class EntryController extends Controller
                     $pattern = '/' . str_replace('/', '\/', $options['pattern']) . '/';
                     if (@preg_match($pattern, $value) === 0) {
                         $errors[$field->getSlug()] = $options['pattern_message'] ?? 'Invalid format.';
+                    }
+                }
+
+                // Unique constraint validation
+                if ($field->isUnique()) {
+                    $tableName = $field->getCollection()->getTableName();
+                    $conn = \ZephyrPHP\Database\Connection::getInstance()->getConnection();
+                    $colName = $field->getSlug();
+                    $query = "SELECT COUNT(*) FROM `{$tableName}` WHERE `{$colName}` = ?";
+                    $params = [$value];
+
+                    // Exclude current entry on update
+                    $currentId = $data['_entry_id'] ?? null;
+                    if ($currentId) {
+                        $query .= " AND `id` != ?";
+                        $params[] = $currentId;
+                    }
+
+                    $count = (int) $conn->executeQuery($query, $params)->fetchOne();
+                    if ($count > 0) {
+                        $errors[$field->getSlug()] = "{$field->getName()} must be unique. This value already exists.";
                     }
                 }
             }
