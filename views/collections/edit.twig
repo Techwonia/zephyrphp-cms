@@ -1014,11 +1014,11 @@
         document.getElementById('modal-max-files-group') && (document.getElementById('modal-max-files-group').style.display = 'none');
         document.getElementById('modal_field_display_field') && (document.getElementById('modal_field_display_field').innerHTML = '<option value="">-- Select collection first --</option>');
 
-        // Reset type-specific config
-        document.getElementById('modal_field_db_length').value = '255';
-        document.getElementById('modal_field_db_int_type').value = 'INT';
-        document.getElementById('modal_field_db_precision').value = '10';
-        document.getElementById('modal_field_db_scale').value = '2';
+        // Reset type-specific config (use safe access — some elements removed)
+        var _el;
+        (_el = document.getElementById('modal_field_db_int_type')) && (_el.value = 'INT');
+        (_el = document.getElementById('modal_field_db_precision')) && (_el.value = '10');
+        (_el = document.getElementById('modal_field_db_scale')) && (_el.value = '2');
         document.getElementById('modal_field_options_checkbox') && (document.getElementById('modal_field_options_checkbox').value = '');
         document.getElementById('repeater-sub-fields-list').innerHTML = '';
         document.getElementById('modal_field_sub_fields').value = '';
@@ -1481,11 +1481,11 @@
                         opts.sub_fields.forEach(function(sf) { addSubField(sf.name, sf.slug, sf.type); });
                     }
 
-                    // Type-specific DB config
-                    if (opts.db_length) document.getElementById('modal_field_db_length').value = opts.db_length;
-                    if (opts.db_int_type) document.getElementById('modal_field_db_int_type').value = opts.db_int_type;
-                    if (opts.db_precision) document.getElementById('modal_field_db_precision').value = opts.db_precision;
-                    if (opts.db_scale) document.getElementById('modal_field_db_scale').value = opts.db_scale;
+                    // Type-specific DB config (safe access)
+                    var _e;
+                    if (opts.db_int_type && (_e = document.getElementById('modal_field_db_int_type'))) _e.value = opts.db_int_type;
+                    if (opts.db_precision && (_e = document.getElementById('modal_field_db_precision'))) _e.value = opts.db_precision;
+                    if (opts.db_scale && (_e = document.getElementById('modal_field_db_scale'))) _e.value = opts.db_scale;
 
                     // Field permissions
                     if (opts.field_permissions) {
