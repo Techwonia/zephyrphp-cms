@@ -916,6 +916,10 @@
                         {# Validation rules #}
                         <div id="modal-validation-group" style="display:none;margin-top:var(--sp-3);">
                             <div class="form-label mb-3" style="font-weight:600;">Validation Rules</div>
+                            <div id="modal-validation-presets" style="display:none;margin-bottom:var(--sp-3);">
+                                <label class="form-label text-xs" style="color:var(--text-secondary);margin-bottom:var(--sp-1);">Quick Presets</label>
+                                <div id="modal-preset-buttons" style="display:flex;flex-wrap:wrap;"></div>
+                            </div>
                             <div class="form-row-2" id="modal-validation-length" style="display:none;">
                                 <div class="form-group">
                                     <label for="modal_field_min_length">Min Length</label>
@@ -1178,81 +1182,123 @@
     });
 
     function updateTypeSpecificFields(type) {
-        var selectGroup = document.getElementById('modal-select-options-group');
-        var relationGroup = document.getElementById('modal-relation-options-group');
-        var fileGroup = document.getElementById('modal-file-options-group');
-        var checkboxGroup = document.getElementById('modal-checkbox-group-options');
-        var repeaterGroup = document.getElementById('modal-repeater-options');
+        // Type-specific option panels
+        var panels = {
+            'modal-select-options-group': type === 'select',
+            'modal-checkbox-group-options': type === 'checkbox_group',
+            'modal-relation-options-group': type === 'relation',
+            'modal-file-options-group': type === 'media',
+            'modal-repeater-options': type === 'repeater'
+        };
         var selectInput = document.getElementById('modal_field_options_select');
         var relationInput = document.getElementById('modal_field_options_relation');
         var checkboxInput = document.getElementById('modal_field_options_checkbox');
+        selectInput.name = type === 'select' ? 'field_options' : '';
+        relationInput.name = type === 'relation' ? 'field_options' : '';
+        checkboxInput.name = type === 'checkbox_group' ? 'field_options' : '';
+        Object.keys(panels).forEach(function(id) {
+            document.getElementById(id).style.display = panels[id] ? '' : 'none';
+        });
 
-        selectGroup.style.display = 'none';
-        relationGroup.style.display = 'none';
-        fileGroup.style.display = 'none';
-        checkboxGroup.style.display = 'none';
-        repeaterGroup.style.display = 'none';
-        selectInput.name = '';
-        relationInput.name = '';
-        checkboxInput.name = '';
-
-        if (type === 'select') {
-            selectGroup.style.display = '';
-            selectInput.name = 'field_options';
-        } else if (type === 'checkbox_group') {
-            checkboxGroup.style.display = '';
-            checkboxInput.name = 'field_options';
-        } else if (type === 'relation') {
-            relationGroup.style.display = '';
-            relationInput.name = 'field_options';
-        } else if (type === 'media') {
-            fileGroup.style.display = '';
-        } else if (type === 'repeater') {
-            repeaterGroup.style.display = '';
-        }
-
-        // Type settings (inline DB config)
+        // Column config in advanced settings
         var ts = document.getElementById('modal-type-settings');
-        var tsText = document.getElementById('modal-text-settings');
-        var tsNum = document.getElementById('modal-number-settings');
-        var tsDec = document.getElementById('modal-decimal-settings');
-        var tsUrl = document.getElementById('modal-url-settings');
-        tsText.style.display = 'none';
-        tsNum.style.display = 'none';
-        tsDec.style.display = 'none';
-        tsUrl.style.display = 'none';
-        var hasTs = false;
-        if (['text', 'email', 'slug', 'select', 'password', 'checkbox_group'].includes(type)) {
-            tsText.style.display = ''; hasTs = true;
-        } else if (type === 'number') {
-            tsNum.style.display = ''; hasTs = true;
-        } else if (type === 'decimal') {
-            tsDec.style.display = ''; hasTs = true;
-        } else if (type === 'url') {
-            tsUrl.style.display = ''; hasTs = true;
-        }
+        var cfgs = { 'modal-text-settings': false, 'modal-number-settings': false, 'modal-decimal-settings': false, 'modal-url-settings': false };
+        if (['text','email','slug','select','password','checkbox_group'].includes(type)) cfgs['modal-text-settings'] = true;
+        else if (type === 'number') cfgs['modal-number-settings'] = true;
+        else if (type === 'decimal') cfgs['modal-decimal-settings'] = true;
+        else if (type === 'url') cfgs['modal-url-settings'] = true;
+        var hasTs = Object.values(cfgs).some(Boolean);
         ts.style.display = hasTs ? '' : 'none';
+        Object.keys(cfgs).forEach(function(id) { document.getElementById(id).style.display = cfgs[id] ? '' : 'none'; });
 
-        // Validation sections
-        var textTypes = ['text', 'textarea', 'richtext', 'email', 'url', 'slug', 'markdown', 'password'];
-        var numberTypes = ['number', 'decimal'];
-        var hasLength = textTypes.indexOf(type) !== -1;
-        var hasValue = numberTypes.indexOf(type) !== -1;
-        var hasPattern = textTypes.indexOf(type) !== -1;
-        var showValidation = hasLength || hasValue || hasPattern;
-
+        // Validation — show relevant sections per type
         var vg = document.getElementById('modal-validation-group');
         var vl = document.getElementById('modal-validation-length');
         var vv = document.getElementById('modal-validation-value');
         var vp = document.getElementById('modal-validation-pattern');
+        var vPreset = document.getElementById('modal-validation-presets');
+
+        var textTypes = ['text','textarea','richtext','email','url','slug','markdown','password'];
+        var numberTypes = ['number','decimal'];
+        var presetTypes = ['text','email','url','password','slug'];
+        var hasLength = textTypes.includes(type);
+        var hasValue = numberTypes.includes(type);
+        var hasPattern = textTypes.includes(type);
+        var hasPreset = presetTypes.includes(type);
+        var showValidation = hasLength || hasValue || hasPattern || hasPreset;
 
         if (vg) vg.style.display = showValidation ? '' : 'none';
         if (vl) vl.style.display = hasLength ? '' : 'none';
         if (vv) vv.style.display = hasValue ? '' : 'none';
         if (vp) vp.style.display = hasPattern ? '' : 'none';
+        if (vPreset) {
+            vPreset.style.display = hasPreset ? '' : 'none';
+            updatePresetOptions(type);
+        }
 
-        // Default value input per type
+        // Toggle relevant properties
+        var uniqueToggle = document.getElementById('modal_field_unique').closest('.toggle-row');
+        var searchToggle = document.getElementById('modal_field_searchable').closest('.toggle-row');
+        var sortToggle = document.getElementById('modal_field_sortable').closest('.toggle-row');
+        var noUnique = ['boolean','media','relation','repeater','json','checkbox_group'];
+        var noSearch = ['boolean','media','relation','repeater','color'];
+        var noSort = ['richtext','textarea','markdown','json','repeater','checkbox_group','media','relation'];
+        if (uniqueToggle) uniqueToggle.style.display = noUnique.includes(type) ? 'none' : '';
+        if (searchToggle) searchToggle.style.display = noSearch.includes(type) ? 'none' : '';
+        if (sortToggle) sortToggle.style.display = noSort.includes(type) ? 'none' : '';
+
         updateDefaultInput(type);
+    }
+
+    // Predefined validation presets per type
+    function updatePresetOptions(type) {
+        var container = document.getElementById('modal-preset-buttons');
+        if (!container) return;
+        container.innerHTML = '';
+        var presets = [];
+        if (type === 'email') {
+            presets = [
+                { label: 'Standard email', pattern: '', msg: '', desc: 'Built-in email validation' }
+            ];
+        } else if (type === 'url') {
+            presets = [
+                { label: 'HTTPS only', pattern: '^https://', msg: 'URL must use HTTPS', desc: 'Require secure URLs' },
+                { label: 'Any URL', pattern: '', msg: '', desc: 'Built-in URL validation' }
+            ];
+        } else if (type === 'password') {
+            presets = [
+                { label: 'Strong', pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&]).{8,}$', msg: 'Must contain uppercase, lowercase, number, and symbol', desc: '8+ chars, mixed' },
+                { label: 'Medium', pattern: '^(?=.*[a-zA-Z])(?=.*\\d).{6,}$', msg: 'Must contain letters and numbers', desc: '6+ chars, letters+numbers' }
+            ];
+        } else if (type === 'text') {
+            presets = [
+                { label: 'Letters only', pattern: '^[a-zA-Z\\s]+$', msg: 'Only letters and spaces allowed', desc: 'No numbers or symbols' },
+                { label: 'Alphanumeric', pattern: '^[a-zA-Z0-9\\s]+$', msg: 'Only letters, numbers and spaces', desc: 'No special characters' },
+                { label: 'Phone', pattern: '^[\\+]?[0-9\\s\\-\\(\\)]{7,15}$', msg: 'Enter a valid phone number', desc: 'International format' },
+                { label: 'No HTML', pattern: '^[^<>]*$', msg: 'HTML tags are not allowed', desc: 'Prevent HTML injection' }
+            ];
+        } else if (type === 'slug') {
+            presets = [
+                { label: 'URL-safe', pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$', msg: 'Only lowercase letters, numbers, and hyphens', desc: 'Standard slug format' }
+            ];
+        }
+        presets.forEach(function(p) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'btn btn-sm btn-outline';
+            btn.textContent = p.label;
+            btn.title = p.desc;
+            btn.style.marginRight = 'var(--sp-1)';
+            btn.style.marginBottom = 'var(--sp-1)';
+            btn.addEventListener('click', function() {
+                if (p.pattern) document.getElementById('modal_field_pattern').value = p.pattern;
+                if (p.msg) document.getElementById('modal_field_pattern_message').value = p.msg;
+                container.querySelectorAll('.btn').forEach(function(b) { b.classList.remove('btn-primary'); b.classList.add('btn-outline'); });
+                btn.classList.remove('btn-outline');
+                btn.classList.add('btn-primary');
+            });
+            container.appendChild(btn);
+        });
     }
 
     function updateDefaultInput(type) {
@@ -1317,30 +1363,50 @@
         var list = document.getElementById('repeater-sub-fields-list');
         var div = document.createElement('div');
         div.className = 'flex gap-2 mb-2 items-center';
-        div.setAttribute('data-sf-row', '1');
-        div.innerHTML = '<input type="text" class="form-control" placeholder="Field name" value="' + (name||'') + '" data-sf="name" style="flex:2">'
-            + '<input type="text" class="form-control" placeholder="slug" value="' + (slug||'') + '" data-sf="slug" style="flex:1">'
-            + '<select class="form-control" data-sf="type" style="flex:1">'
-            + '<option value="text"' + (type==='text'?' selected':'') + '>Text</option>'
-            + '<option value="textarea"' + (type==='textarea'?' selected':'') + '>Textarea</option>'
-            + '<option value="number"' + (type==='number'?' selected':'') + '>Number</option>'
-            + '<option value="boolean"' + (type==='boolean'?' selected':'') + '>Toggle</option>'
-            + '<option value="select"' + (type==='select'?' selected':'') + '>Dropdown</option>'
-            + '<option value="date"' + (type==='date'?' selected':'') + '>Date</option>'
-            + '<option value="media"' + (type==='media'?' selected':'') + '>Media</option>'
-            + '</select>'
-            + '<button type="button" class="btn btn-sm btn-icon btn-ghost" onclick="this.closest(\'[data-sf-row]\').remove();syncSubFields();">'
-            + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
+        div.style.cssText = 'background:var(--bg-subdued);padding:var(--sp-2);border-radius:var(--radius);border:1px solid var(--border);';
+
+        var nameInput = document.createElement('input');
+        nameInput.type = 'text'; nameInput.className = 'form-control form-control-sm';
+        nameInput.placeholder = 'Field name'; nameInput.value = name || '';
+        nameInput.setAttribute('data-sf', 'name'); nameInput.style.flex = '2';
+
+        var slugInput = document.createElement('input');
+        slugInput.type = 'text'; slugInput.className = 'form-control form-control-sm';
+        slugInput.placeholder = 'slug'; slugInput.value = slug || '';
+        slugInput.setAttribute('data-sf', 'slug'); slugInput.style.flex = '1';
+
+        var typeSelect = document.createElement('select');
+        typeSelect.className = 'form-control form-control-sm';
+        typeSelect.setAttribute('data-sf', 'type'); typeSelect.style.flex = '1';
+        [['text','Text'],['textarea','Textarea'],['number','Number'],['boolean','Toggle'],['select','Dropdown'],['date','Date'],['media','Media']].forEach(function(opt) {
+            var o = document.createElement('option');
+            o.value = opt[0]; o.textContent = opt[1];
+            if (opt[0] === (type || 'text')) o.selected = true;
+            typeSelect.appendChild(o);
+        });
+
+        var delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'btn btn-sm btn-icon btn-ghost';
+        delBtn.style.cssText = 'color:var(--zui-error-500);flex-shrink:0;';
+        delBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+        delBtn.addEventListener('click', function() {
+            div.remove();
+            syncSubFields();
+        });
+
+        div.appendChild(nameInput);
+        div.appendChild(slugInput);
+        div.appendChild(typeSelect);
+        div.appendChild(delBtn);
         list.appendChild(div);
-        // Auto-slug from name
-        var nameInput = div.querySelector('[data-sf="name"]');
-        var slugInput = div.querySelector('[data-sf="slug"]');
+
         nameInput.addEventListener('input', function() {
             if (!slugInput.dataset.manual) slugInput.value = this.value.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
             syncSubFields();
         });
         slugInput.addEventListener('input', function() { this.dataset.manual = '1'; syncSubFields(); });
-        div.querySelector('[data-sf="type"]').addEventListener('change', syncSubFields);
+        typeSelect.addEventListener('change', syncSubFields);
         syncSubFields();
     }
     function syncSubFields() {
