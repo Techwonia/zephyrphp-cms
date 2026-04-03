@@ -692,10 +692,10 @@
                                 {% elseif typeKey == 'color' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>
                                 {% elseif typeKey == 'select' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="3" y1="4" x2="13" y2="4"/><line x1="3" y1="8" x2="13" y2="8"/><line x1="3" y1="12" x2="13" y2="12"/></svg>
                                 {% elseif typeKey == 'tags' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1.5 3.5h5l7 7-5 5-7-7z"/><circle cx="5" cy="6" r="1" fill="currentColor"/></svg>
-                                {% elseif typeKey == 'image' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="1.5"/><circle cx="5.5" cy="5.5" r="1.5"/><path d="M14 10l-3-3-7 7"/></svg>
-                                {% elseif typeKey == 'file' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 9.5V14a1 1 0 01-1 1H3a1 1 0 01-1-1V2a1 1 0 011-1h7l4 4v4.5z"/></svg>
-                                {% elseif typeKey == 'media' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="1.5"/><circle cx="5.5" cy="5.5" r="1.5"/><path d="M14 10l-3-3-4 4"/><path d="M10 14l3-3"/></svg>
+                                {% elseif typeKey == 'checkbox_group' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"/><path d="M3 4.5l1.5 1.5 2-2"/><rect x="2" y="9" width="5" height="5" rx="1"/><line x1="9" y1="4.5" x2="14" y2="4.5"/><line x1="9" y1="11.5" x2="14" y2="11.5"/></svg>
+                                {% elseif typeKey == 'media' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="1.5"/><circle cx="5.5" cy="5.5" r="1.5"/><path d="M14 10l-3-3-7 7"/></svg>
                                 {% elseif typeKey == 'json' %}{}
+                                {% elseif typeKey == 'repeater' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="3" y1="3" x2="13" y2="3"/><line x1="3" y1="7" x2="13" y2="7"/><line x1="3" y1="11" x2="13" y2="11"/><circle cx="2" cy="3" r="1" fill="currentColor"/><circle cx="2" cy="7" r="1" fill="currentColor"/><circle cx="2" cy="11" r="1" fill="currentColor"/></svg>
                                 {% elseif typeKey == 'relation' %}<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="4" cy="8" r="2.5"/><circle cx="12" cy="8" r="2.5"/><line x1="6.5" y1="8" x2="9.5" y2="8"/></svg>
                                 {% else %}?{% endif %}
                             </div>
@@ -832,77 +832,119 @@
                     </div>
                 </div>
 
-                {# Database Column Configuration #}
-                <div id="modal-db-config-group" style="display:none;">
-                    <div class="modal-section-title">Database Column</div>
+                {# Type-specific settings (inline DB config) #}
+                <div id="modal-type-settings" style="display:none;">
+                    <div class="modal-section-title">Type Settings</div>
 
-                    {# String types: VARCHAR vs TEXT #}
-                    <div id="modal-db-string-config" style="display:none;">
-                        <div class="form-row-2">
-                            <div class="form-group">
-                                <label for="modal_field_db_type">Storage Type</label>
-                                <select name="field_db_type" id="modal_field_db_type" class="form-control">
-                                    <option value="varchar">VARCHAR (fixed max length)</option>
-                                    <option value="text">TEXT (up to 65KB)</option>
-                                    <option value="longtext">LONGTEXT (up to 4GB)</option>
-                                </select>
-                            </div>
-                            <div class="form-group" id="modal-db-length-group">
-                                <label for="modal_field_db_length">Max Length</label>
-                                <input type="number" name="field_db_length" id="modal_field_db_length" class="form-control"
-                                       value="255" min="1" max="65535" placeholder="255">
-                                <div class="form-hint">Characters (1-65,535)</div>
-                            </div>
+                    {# Text types: max length #}
+                    <div id="modal-text-settings" style="display:none;">
+                        <div class="form-group">
+                            <label for="modal_field_db_length">Max Characters</label>
+                            <input type="number" name="field_db_length" id="modal_field_db_length" class="form-control"
+                                   value="255" min="0" max="65535" placeholder="255">
+                            <div class="form-hint">0 or empty = unlimited (TEXT column). 1-65,535 = fixed length.</div>
                         </div>
                     </div>
 
-                    {# Number types: INT size #}
-                    <div id="modal-db-int-config" style="display:none;">
+                    {# Number: range #}
+                    <div id="modal-number-settings" style="display:none;">
                         <div class="form-group">
-                            <label for="modal_field_db_int_type">Integer Size</label>
+                            <label for="modal_field_db_int_type">Number Range</label>
                             <select name="field_db_int_type" id="modal_field_db_int_type" class="form-control">
-                                <option value="INT">INT (-2.1B to 2.1B)</option>
-                                <option value="SMALLINT">SMALLINT (-32K to 32K)</option>
-                                <option value="BIGINT">BIGINT (very large numbers)</option>
-                                <option value="TINYINT">TINYINT (-128 to 127)</option>
+                                <option value="INT">Standard (up to ~2 billion)</option>
+                                <option value="SMALLINT">Small (up to ~32 thousand)</option>
+                                <option value="BIGINT">Large (unlimited)</option>
+                                <option value="TINYINT">Tiny (up to 127)</option>
                             </select>
                         </div>
                     </div>
 
-                    {# Decimal types: precision & scale #}
-                    <div id="modal-db-decimal-config" style="display:none;">
+                    {# Decimal: precision & scale #}
+                    <div id="modal-decimal-settings" style="display:none;">
                         <div class="form-row-2">
                             <div class="form-group">
-                                <label for="modal_field_db_precision">Precision (total digits)</label>
+                                <label for="modal_field_db_precision">Total Digits</label>
                                 <input type="number" name="field_db_precision" id="modal_field_db_precision" class="form-control"
                                        value="10" min="1" max="65" placeholder="10">
-                                <div class="form-hint">Total number of digits</div>
+                                <div class="form-hint">e.g. 10 for up to 99,999,999.99</div>
                             </div>
                             <div class="form-group">
-                                <label for="modal_field_db_scale">Scale (decimal places)</label>
+                                <label for="modal_field_db_scale">Decimal Places</label>
                                 <input type="number" name="field_db_scale" id="modal_field_db_scale" class="form-control"
                                        value="2" min="0" max="30" placeholder="2">
-                                <div class="form-hint">Digits after decimal point</div>
+                                <div class="form-hint">e.g. 2 for prices, 4 for rates</div>
                             </div>
                         </div>
                     </div>
 
-                    {# URL length #}
-                    <div id="modal-db-url-config" style="display:none;">
+                    {# URL: max length #}
+                    <div id="modal-url-settings" style="display:none;">
                         <div class="form-group">
                             <label for="modal_field_db_url_length">Max URL Length</label>
                             <input type="number" name="field_db_length" id="modal_field_db_url_length" class="form-control"
                                    value="500" min="1" max="2048" placeholder="500">
-                            <div class="form-hint">Characters (1-2,048)</div>
                         </div>
                     </div>
                 </div>
 
-                {# Advanced #}
-                <div class="modal-section-title">Advanced</div>
-                <div class="form-group">
-                    <label for="modal_field_default">Default Value</label>
-                    <input type="text" id="modal_field_default" name="field_default" class="form-control" placeholder="Optional">
+                {# Checkbox Group options (same as select but multi) #}
+                <div id="modal-checkbox-group-options" style="display:none;">
+                    <div class="modal-section-title">Checkbox Options</div>
+                    <div class="form-group">
+                        <label for="modal_field_options_checkbox">Options (one per line)</label>
+                        <textarea id="modal_field_options_checkbox" name="" class="form-control" rows="3"
+                                  placeholder="Option 1&#10;Option 2&#10;Option 3"></textarea>
+                    </div>
+                </div>
+
+                {# Repeater sub-fields #}
+                <div id="modal-repeater-options" style="display:none;">
+                    <div class="modal-section-title">Repeater Sub-Fields</div>
+                    <input type="hidden" name="field_sub_fields" id="modal_field_sub_fields" value="">
+                    <div id="repeater-sub-fields-list"></div>
+                    <button type="button" class="btn btn-sm btn-outline" id="btn-add-sub-field" style="margin-top:var(--sp-2)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Add Sub-Field
+                    </button>
+                    <div class="form-hint" style="margin-top:var(--sp-1)">Define fields for each repeatable row.</div>
+                </div>
+
+                {# Default Value — changes input type per field type #}
+                <div class="modal-section-title">Default Value</div>
+                <div id="modal-default-wrapper">
+                    <div class="form-group" id="modal-default-text">
+                        <input type="text" id="modal_field_default" name="field_default" class="form-control" placeholder="Optional">
+                    </div>
+                    <div class="form-group" id="modal-default-textarea" style="display:none;">
+                        <textarea id="modal_field_default_textarea" name="" class="form-control" rows="2" placeholder="Optional"></textarea>
+                    </div>
+                    <div class="form-group" id="modal-default-number" style="display:none;">
+                        <input type="number" id="modal_field_default_number" name="" class="form-control" step="1" placeholder="0">
+                    </div>
+                    <div class="form-group" id="modal-default-decimal" style="display:none;">
+                        <input type="number" id="modal_field_default_decimal" name="" class="form-control" step="0.01" placeholder="0.00">
+                    </div>
+                    <div class="form-group" id="modal-default-boolean" style="display:none;">
+                        <label class="toggle"><input type="checkbox" id="modal_field_default_boolean" name="" value="1"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+                        <span class="text-sm text-secondary" style="margin-left:var(--sp-2)">Default state</span>
+                    </div>
+                    <div class="form-group" id="modal-default-date" style="display:none;">
+                        <input type="date" id="modal_field_default_date" name="" class="form-control">
+                    </div>
+                    <div class="form-group" id="modal-default-datetime" style="display:none;">
+                        <input type="datetime-local" id="modal_field_default_datetime" name="" class="form-control">
+                    </div>
+                    <div class="form-group" id="modal-default-color" style="display:none;">
+                        <input type="color" id="modal_field_default_color" name="" class="form-control" style="width:60px;height:36px;padding:2px;">
+                    </div>
+                    <div class="form-group" id="modal-default-select" style="display:none;">
+                        <select id="modal_field_default_select" name="" class="form-control">
+                            <option value="">-- No default --</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="modal-default-none" style="display:none;">
+                        <span class="text-sm text-secondary">No default value for this field type.</span>
+                    </div>
                 </div>
 
                 {# Field-level permissions #}
@@ -1059,13 +1101,23 @@
         document.getElementById('modal-max-files-group') && (document.getElementById('modal-max-files-group').style.display = 'none');
         document.getElementById('modal_field_display_field') && (document.getElementById('modal_field_display_field').innerHTML = '<option value="">-- Select collection first --</option>');
 
-        // Reset DB config
-        document.getElementById('modal_field_db_type').value = 'varchar';
+        // Reset type-specific config
         document.getElementById('modal_field_db_length').value = '255';
         document.getElementById('modal_field_db_int_type').value = 'INT';
         document.getElementById('modal_field_db_precision').value = '10';
         document.getElementById('modal_field_db_scale').value = '2';
-        updateDbConfig('text');
+        document.getElementById('modal_field_options_checkbox') && (document.getElementById('modal_field_options_checkbox').value = '');
+        document.getElementById('repeater-sub-fields-list').innerHTML = '';
+        document.getElementById('modal_field_sub_fields').value = '';
+        // Reset all default inputs
+        document.getElementById('modal_field_default_textarea') && (document.getElementById('modal_field_default_textarea').value = '');
+        document.getElementById('modal_field_default_number') && (document.getElementById('modal_field_default_number').value = '');
+        document.getElementById('modal_field_default_decimal') && (document.getElementById('modal_field_default_decimal').value = '');
+        document.getElementById('modal_field_default_boolean') && (document.getElementById('modal_field_default_boolean').checked = false);
+        document.getElementById('modal_field_default_date') && (document.getElementById('modal_field_default_date').value = '');
+        document.getElementById('modal_field_default_datetime') && (document.getElementById('modal_field_default_datetime').value = '');
+        document.getElementById('modal_field_default_color') && (document.getElementById('modal_field_default_color').value = '#000000');
+        document.getElementById('modal_field_default_select') && (document.getElementById('modal_field_default_select').innerHTML = '<option value="">-- No default --</option>');
 
         // Reset role selects
         var permView = document.getElementById('modal_field_perm_view');
@@ -1107,7 +1159,6 @@
             var type = btn.dataset.type;
             document.getElementById('modal_field_type').value = type;
             updateTypeSpecificFields(type);
-            updateDbConfig(type);
         });
     });
 
@@ -1115,26 +1166,60 @@
         var selectGroup = document.getElementById('modal-select-options-group');
         var relationGroup = document.getElementById('modal-relation-options-group');
         var fileGroup = document.getElementById('modal-file-options-group');
+        var checkboxGroup = document.getElementById('modal-checkbox-group-options');
+        var repeaterGroup = document.getElementById('modal-repeater-options');
         var selectInput = document.getElementById('modal_field_options_select');
         var relationInput = document.getElementById('modal_field_options_relation');
+        var checkboxInput = document.getElementById('modal_field_options_checkbox');
 
         selectGroup.style.display = 'none';
         relationGroup.style.display = 'none';
         fileGroup.style.display = 'none';
+        checkboxGroup.style.display = 'none';
+        repeaterGroup.style.display = 'none';
         selectInput.name = '';
         relationInput.name = '';
+        checkboxInput.name = '';
 
         if (type === 'select') {
             selectGroup.style.display = '';
             selectInput.name = 'field_options';
+        } else if (type === 'checkbox_group') {
+            checkboxGroup.style.display = '';
+            checkboxInput.name = 'field_options';
         } else if (type === 'relation') {
             relationGroup.style.display = '';
             relationInput.name = 'field_options';
-        } else if (type === 'image' || type === 'file') {
+        } else if (type === 'media') {
             fileGroup.style.display = '';
+        } else if (type === 'repeater') {
+            repeaterGroup.style.display = '';
         }
 
-        var textTypes = ['text', 'textarea', 'richtext', 'email', 'url', 'slug'];
+        // Type settings (inline DB config)
+        var ts = document.getElementById('modal-type-settings');
+        var tsText = document.getElementById('modal-text-settings');
+        var tsNum = document.getElementById('modal-number-settings');
+        var tsDec = document.getElementById('modal-decimal-settings');
+        var tsUrl = document.getElementById('modal-url-settings');
+        tsText.style.display = 'none';
+        tsNum.style.display = 'none';
+        tsDec.style.display = 'none';
+        tsUrl.style.display = 'none';
+        var hasTs = false;
+        if (['text', 'email', 'slug', 'select', 'password', 'checkbox_group'].includes(type)) {
+            tsText.style.display = ''; hasTs = true;
+        } else if (type === 'number') {
+            tsNum.style.display = ''; hasTs = true;
+        } else if (type === 'decimal') {
+            tsDec.style.display = ''; hasTs = true;
+        } else if (type === 'url') {
+            tsUrl.style.display = ''; hasTs = true;
+        }
+        ts.style.display = hasTs ? '' : 'none';
+
+        // Validation sections
+        var textTypes = ['text', 'textarea', 'richtext', 'email', 'url', 'slug', 'markdown', 'password'];
         var numberTypes = ['number', 'decimal'];
         var hasLength = textTypes.indexOf(type) !== -1;
         var hasValue = numberTypes.indexOf(type) !== -1;
@@ -1150,41 +1235,110 @@
         if (vl) vl.style.display = hasLength ? '' : 'none';
         if (vv) vv.style.display = hasValue ? '' : 'none';
         if (vp) vp.style.display = hasPattern ? '' : 'none';
+
+        // Default value input per type
+        updateDefaultInput(type);
     }
 
-    function updateDbConfig(type) {
-        var dbGroup = document.getElementById('modal-db-config-group');
-        var stringConf = document.getElementById('modal-db-string-config');
-        var intConf = document.getElementById('modal-db-int-config');
-        var decimalConf = document.getElementById('modal-db-decimal-config');
-        var urlConf = document.getElementById('modal-db-url-config');
-        var lengthGroup = document.getElementById('modal-db-length-group');
+    function updateDefaultInput(type) {
+        var all = ['text','textarea','number','decimal','boolean','date','datetime','color','select','none'];
+        all.forEach(function(k) {
+            var el = document.getElementById('modal-default-' + k);
+            if (el) el.style.display = 'none';
+        });
+        // Disable all default name attrs
+        ['modal_field_default','modal_field_default_textarea','modal_field_default_number',
+         'modal_field_default_decimal','modal_field_default_boolean','modal_field_default_date',
+         'modal_field_default_datetime','modal_field_default_color','modal_field_default_select'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) el.name = '';
+        });
 
-        stringConf.style.display = 'none';
-        intConf.style.display = 'none';
-        decimalConf.style.display = 'none';
-        urlConf.style.display = 'none';
+        var show = 'text'; var nameId = 'modal_field_default';
+        if (['textarea','richtext','markdown','json'].includes(type)) { show = 'textarea'; nameId = 'modal_field_default_textarea'; }
+        else if (type === 'number') { show = 'number'; nameId = 'modal_field_default_number'; }
+        else if (type === 'decimal') { show = 'decimal'; nameId = 'modal_field_default_decimal'; }
+        else if (type === 'boolean') { show = 'boolean'; nameId = 'modal_field_default_boolean'; }
+        else if (type === 'date') { show = 'date'; nameId = 'modal_field_default_date'; }
+        else if (type === 'datetime') { show = 'datetime'; nameId = 'modal_field_default_datetime'; }
+        else if (type === 'color') { show = 'color'; nameId = 'modal_field_default_color'; }
+        else if (type === 'select' || type === 'checkbox_group') { show = 'select'; nameId = 'modal_field_default_select'; }
+        else if (['media','relation','repeater','tags'].includes(type)) { show = 'none'; nameId = ''; }
+        else { show = 'text'; nameId = 'modal_field_default'; }
 
-        var hasConfig = false;
-        if (['text', 'email', 'slug', 'select', 'password', 'textarea', 'richtext', 'markdown'].includes(type)) {
-            stringConf.style.display = '';
-            hasConfig = true;
-        } else if (type === 'number') {
-            intConf.style.display = '';
-            hasConfig = true;
-        } else if (type === 'decimal') {
-            decimalConf.style.display = '';
-            hasConfig = true;
-        } else if (type === 'url') {
-            urlConf.style.display = '';
-            hasConfig = true;
+        var el = document.getElementById('modal-default-' + show);
+        if (el) el.style.display = '';
+        if (nameId) {
+            var inp = document.getElementById(nameId);
+            if (inp) inp.name = 'field_default';
         }
-        dbGroup.style.display = hasConfig ? '' : 'none';
     }
 
-    document.getElementById('modal_field_db_type').addEventListener('change', function() {
-        document.getElementById('modal-db-length-group').style.display = this.value === 'varchar' ? '' : 'none';
-    });
+    // Update select default dropdown when choices change
+    function syncDefaultChoices() {
+        var sel = document.getElementById('modal_field_default_select');
+        if (!sel) return;
+        var type = document.getElementById('modal_field_type').value;
+        var src = type === 'checkbox_group' ? 'modal_field_options_checkbox' : 'modal_field_options_select';
+        var textarea = document.getElementById(src);
+        if (!textarea) return;
+        var choices = textarea.value.split('\n').map(function(s){return s.trim();}).filter(Boolean);
+        var current = sel.value;
+        sel.innerHTML = '<option value="">-- No default --</option>';
+        choices.forEach(function(c) {
+            var opt = document.createElement('option');
+            opt.value = c; opt.textContent = c;
+            if (c === current) opt.selected = true;
+            sel.appendChild(opt);
+        });
+    }
+    document.getElementById('modal_field_options_select').addEventListener('input', syncDefaultChoices);
+    document.getElementById('modal_field_options_checkbox').addEventListener('input', syncDefaultChoices);
+
+    // Repeater sub-field management
+    var subFieldCount = 0;
+    function addSubField(name, slug, type) {
+        subFieldCount++;
+        var list = document.getElementById('repeater-sub-fields-list');
+        var div = document.createElement('div');
+        div.className = 'flex gap-2 mb-2 items-center';
+        div.innerHTML = '<input type="text" class="form-control" placeholder="Field name" value="' + (name||'') + '" data-sf="name" style="flex:2">'
+            + '<input type="text" class="form-control" placeholder="slug" value="' + (slug||'') + '" data-sf="slug" style="flex:1">'
+            + '<select class="form-control" data-sf="type" style="flex:1">'
+            + '<option value="text"' + (type==='text'?' selected':'') + '>Text</option>'
+            + '<option value="textarea"' + (type==='textarea'?' selected':'') + '>Textarea</option>'
+            + '<option value="number"' + (type==='number'?' selected':'') + '>Number</option>'
+            + '<option value="boolean"' + (type==='boolean'?' selected':'') + '>Toggle</option>'
+            + '<option value="select"' + (type==='select'?' selected':'') + '>Dropdown</option>'
+            + '<option value="date"' + (type==='date'?' selected':'') + '>Date</option>'
+            + '<option value="media"' + (type==='media'?' selected':'') + '>Media</option>'
+            + '</select>'
+            + '<button type="button" class="btn btn-sm btn-icon btn-ghost" onclick="this.parentElement.remove();syncSubFields();">'
+            + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
+        list.appendChild(div);
+        // Auto-slug from name
+        var nameInput = div.querySelector('[data-sf="name"]');
+        var slugInput = div.querySelector('[data-sf="slug"]');
+        nameInput.addEventListener('input', function() {
+            if (!slugInput.dataset.manual) slugInput.value = this.value.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+            syncSubFields();
+        });
+        slugInput.addEventListener('input', function() { this.dataset.manual = '1'; syncSubFields(); });
+        div.querySelector('[data-sf="type"]').addEventListener('change', syncSubFields);
+        syncSubFields();
+    }
+    function syncSubFields() {
+        var rows = document.querySelectorAll('#repeater-sub-fields-list > div');
+        var fields = [];
+        rows.forEach(function(row) {
+            var n = row.querySelector('[data-sf="name"]').value.trim();
+            var s = row.querySelector('[data-sf="slug"]').value.trim();
+            var t = row.querySelector('[data-sf="type"]').value;
+            if (n && s) fields.push({name:n, slug:s, type:t});
+        });
+        document.getElementById('modal_field_sub_fields').value = JSON.stringify(fields);
+    }
+    document.getElementById('btn-add-sub-field').addEventListener('click', function() { addSubField('','','text'); });
 
     // ========================================================================
     // File options — multiple toggle
@@ -1337,8 +1491,8 @@
                     if (opts.pattern_message) document.getElementById('modal_field_pattern_message').value = opts.pattern_message;
                     if (opts.custom_message) document.getElementById('modal_field_custom_message').value = opts.custom_message;
 
-                    // File options
-                    if (data.type === 'image' || data.type === 'file') {
+                    // File/Media options
+                    if (data.type === 'image' || data.type === 'file' || data.type === 'media') {
                         if (opts.multiple) {
                             document.getElementById('modal_field_multiple').checked = true;
                             document.getElementById('modal-max-files-group').style.display = '';
@@ -1348,13 +1502,22 @@
                         if (opts.max_file_size) document.getElementById('modal_field_max_file_size').value = (opts.max_file_size / 1024 / 1024).toFixed(1).replace(/\.0$/, '');
                     }
 
-                    // DB config
-                    if (opts.db_type) document.getElementById('modal_field_db_type').value = opts.db_type;
+                    // Checkbox group options
+                    if (data.type === 'checkbox_group' && opts.choices) {
+                        document.getElementById('modal_field_options_checkbox').value = opts.choices.join('\n');
+                    }
+
+                    // Repeater sub-fields
+                    if (data.type === 'repeater' && opts.sub_fields) {
+                        document.getElementById('repeater-sub-fields-list').innerHTML = '';
+                        opts.sub_fields.forEach(function(sf) { addSubField(sf.name, sf.slug, sf.type); });
+                    }
+
+                    // Type-specific DB config
                     if (opts.db_length) document.getElementById('modal_field_db_length').value = opts.db_length;
                     if (opts.db_int_type) document.getElementById('modal_field_db_int_type').value = opts.db_int_type;
                     if (opts.db_precision) document.getElementById('modal_field_db_precision').value = opts.db_precision;
                     if (opts.db_scale) document.getElementById('modal_field_db_scale').value = opts.db_scale;
-                    updateDbConfig(data.type || 'text');
 
                     // Field permissions
                     if (opts.field_permissions) {

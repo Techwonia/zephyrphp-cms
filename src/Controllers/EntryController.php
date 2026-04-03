@@ -581,11 +581,11 @@ class EntryController extends Controller
                 }
             }
 
-            // Multi-image/file: entry data already has array of IDs from pivot loading
+            // Multi-image/file/media: entry data already has array of IDs from pivot loading
             // (no extraction needed — IDs are loaded directly, not resolved to objects)
         }
 
-        // Resolve media IDs to URLs for image/file field previews
+        // Resolve media IDs to URLs for image/file/media field previews
         $mediaResolved = $this->resolveMediaUrls($fields, $entry);
 
         // Load tree entries for hierarchy parent selector
@@ -1833,8 +1833,8 @@ class EntryController extends Controller
                 continue;
             }
 
-            // Skip multiple image/file fields — they use pivot tables, handled by collectPivotData
-            if (in_array($type, ['image', 'file']) && !empty($options['multiple'])) {
+            // Skip multiple image/file/media fields — they use pivot tables, handled by collectPivotData
+            if (in_array($type, ['image', 'file', 'media']) && !empty($options['multiple'])) {
                 continue;
             }
 
@@ -1843,11 +1843,34 @@ class EntryController extends Controller
                 'boolean' => $this->boolean($field->getSlug()) ? 1 : 0,
                 'number' => $value !== null && $value !== '' ? (int) $value : null,
                 'decimal' => $value !== null && $value !== '' ? (float) $value : null,
-                'image', 'file' => $this->handleSingleMedia($field, $existing),
+                'checkbox_group' => $this->resolveCheckboxGroupValue($field),
+                'repeater' => $value !== null && $value !== '' ? (is_string($value) ? $value : json_encode($value)) : null,
+                'image', 'file', 'media' => $this->handleSingleMedia($field, $existing),
                 default => $value !== '' ? $value : null,
             };
         }
         return $data;
+    }
+
+    private function resolveCheckboxGroupValue(Field $field): ?string
+    {
+        $slug = $field->getSlug();
+        // Try array first (from checkbox name="field[]")
+        $arrayVal = $this->request->all()[$slug] ?? null;
+        if (is_array($arrayVal)) {
+            $filtered = array_values(array_filter($arrayVal, fn($v) => $v !== ''));
+            return !empty($filtered) ? json_encode($filtered) : null;
+        }
+        // Try hidden field (JSON string)
+        $value = $this->input($slug);
+        if ($value !== null && $value !== '') {
+            $decoded = json_decode($value, true);
+            if (is_array($decoded)) {
+                return json_encode($decoded);
+            }
+            return $value;
+        }
+        return null;
     }
 
     /**
@@ -1872,8 +1895,8 @@ class EntryController extends Controller
                 }
             }
 
-            // Multiple image/file fields use pivot tables to cms_media
-            if (in_array($type, ['image', 'file']) && !empty($options['multiple'])) {
+            // Multiple image/file/media fields use pivot tables to cms_media
+            if (in_array($type, ['image', 'file', 'media']) && !empty($options['multiple'])) {
                 $value = $this->input($field->getSlug(), '');
                 $ids = is_array($value) ? $value : json_decode((string) $value, true);
                 if (is_array($ids)) {
@@ -1910,8 +1933,8 @@ class EntryController extends Controller
                 }
             }
 
-            // Multiple image/file fields use pivot tables to cms_media
-            if (in_array($type, ['image', 'file']) && !empty($options['multiple']) && isset($pivotData[$field->getSlug()])) {
+            // Multiple image/file/media fields use pivot tables to cms_media
+            if (in_array($type, ['image', 'file', 'media']) && !empty($options['multiple']) && isset($pivotData[$field->getSlug()])) {
                 $this->schema->syncPivotRelations(
                     $tableName,
                     $field->getSlug(),
@@ -2016,8 +2039,8 @@ class EntryController extends Controller
                 }
             }
 
-            // Check multiple image/file fields (pivot-based) for required
-            if (in_array($type, ['image', 'file']) && !empty($options['multiple'])) {
+            // Check multiple image/file/media fields (pivot-based) for required
+            if (in_array($type, ['image', 'file', 'media']) && !empty($options['multiple'])) {
                 if ($field->isRequired() && empty($pivotData[$field->getSlug()] ?? [])) {
                     $errors[$field->getSlug()] = "{$field->getName()} is required.";
                 }
@@ -2049,6 +2072,20 @@ class EntryController extends Controller
                         $choices = $options['choices'] ?? [];
                         if (!empty($choices) && !in_array($value, $choices, true)) {
                             $errors[$field->getSlug()] = "{$field->getName()} contains an invalid choice.";
+                        }
+                        break;
+                    case 'checkbox_group':
+                        $choices = $options['choices'] ?? [];
+                        if (!empty($choices) && is_array($value)) {
+                            $decoded = is_string($value) ? json_decode($value, true) : $value;
+                            if (is_array($decoded)) {
+                                foreach ($decoded as $v) {
+                                    if (!in_array($v, $choices, true)) {
+                                        $errors[$field->getSlug()] = "{$field->getName()} contains an invalid choice.";
+                                        break;
+                                    }
+                                }
+                            }
                         }
                         break;
                     case 'date':
@@ -2119,7 +2156,7 @@ class EntryController extends Controller
     }
 
     /**
-     * Handle a single image/file field. Returns the media ID (int) or null.
+     * Handle a single image/file/media field. Returns the media ID (int) or null.
      * The form sends the media ID from the media library picker.
      */
     private function handleSingleMedia(Field $field, ?array $existing = null): ?int
@@ -2192,7 +2229,7 @@ class EntryController extends Controller
     }
 
     /**
-     * Resolve media IDs to URLs for image/file fields.
+     * Resolve media IDs to URLs for image/file/media fields.
      * Single fields store an INT media ID in the column.
      * Multiple fields store IDs via pivot table (loaded as array by EntryQuery).
      */
@@ -2200,7 +2237,7 @@ class EntryController extends Controller
     {
         $resolved = [];
         foreach ($fields as $field) {
-            if (!in_array($field->getType(), ['image', 'file'])) continue;
+            if (!in_array($field->getType(), ['image', 'file', 'media'])) continue;
             $val = $entry[$field->getSlug()] ?? null;
             if (empty($val)) continue;
 

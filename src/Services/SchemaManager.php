@@ -173,6 +173,8 @@ class SchemaManager
             'tags' => Types::TEXT,
             'relation' => Types::INTEGER,
             'json' => Types::JSON,
+            'checkbox_group' => Types::JSON,
+            'repeater' => Types::JSON,
             default => Types::STRING,
         };
     }
@@ -482,7 +484,7 @@ class SchemaManager
                 } else {
                     $this->dropPivotTable($tableName, $field->getSlug());
                 }
-            } elseif (in_array($type, ['image', 'file'])) {
+            } elseif (in_array($type, ['image', 'file', 'media'])) {
                 if (!empty($options['multiple'])) {
                     $this->dropPivotTable($tableName, $field->getSlug());
                 } else {
@@ -578,7 +580,7 @@ class SchemaManager
             'tags' => 'TEXT',
             'color' => 'VARCHAR(25)',
             'url' => 'VARCHAR(' . min(2048, max(1, (int) ($options['db_length'] ?? 500))) . ')',
-            'image', 'file' => 'INT UNSIGNED',
+            'image', 'file', 'media' => 'INT UNSIGNED',
             'number' => $options['db_int_type'] ?? 'INT',
             'relation' => $this->getRelationColumnType($field),
             'decimal' => $this->resolveDecimalType($options),
@@ -586,13 +588,15 @@ class SchemaManager
             'date' => 'DATE',
             'datetime' => 'DATETIME',
             'json' => 'JSON',
+            'checkbox_group' => 'JSON',
+            'repeater' => 'JSON',
             default => 'VARCHAR(255)',
         };
 
         $nullable = $field->isRequired() ? 'NOT NULL' : 'NULL';
         $default = '';
 
-        $isNumericDefault = in_array($type, ['number', 'decimal', 'boolean', 'image', 'file']);
+        $isNumericDefault = in_array($type, ['number', 'decimal', 'boolean', 'image', 'file', 'media']);
         if ($type === 'relation' && str_contains($mysqlType, 'INT')) {
             $isNumericDefault = true;
         }
@@ -765,12 +769,13 @@ class SchemaManager
              . "`id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, "
              . "`{$srcIdCol}` {$srcType} NOT NULL, "
              . "`{$tgtIdCol}` {$tgtType} NOT NULL, "
+             . "`sort_order` INT UNSIGNED NOT NULL DEFAULT 0, "
              . "INDEX `{$idxSource}` (`{$srcIdCol}`), "
              . "INDEX `{$idxTarget}` (`{$tgtIdCol}`), "
              . "UNIQUE KEY `{$uniqKey}` (`{$srcIdCol}`, `{$tgtIdCol}`), "
              . "CONSTRAINT `{$fkSource}` FOREIGN KEY (`{$srcIdCol}`) REFERENCES `{$sourceTable}`(`id`) ON DELETE CASCADE ON UPDATE CASCADE, "
              . "CONSTRAINT `{$fkTarget}` FOREIGN KEY (`{$tgtIdCol}`) REFERENCES `{$targetTable}`(`id`) ON DELETE CASCADE ON UPDATE CASCADE"
-             . ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci";
+             . ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
 
         $this->connection->executeStatement($sql);
     }

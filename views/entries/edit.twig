@@ -209,7 +209,7 @@
                             <p class="ee-field-hint">{{ relationType|replace({'_': ' '})|title }} -- Related to: {{ field.getOptions().relation_collection }}{% if isMulti %} (hold Ctrl to select multiple){% endif %}</p>
                         {% endif %}
 
-                    {% elseif field.getType() == 'image' or field.getType() == 'file' %}
+                    {% elseif field.getType() == 'image' or field.getType() == 'file' or field.getType() == 'media' %}
                         {% set fieldOpts = field.getOptions() ?? {} %}
                         {% set isMultiple = fieldOpts.multiple ?? false %}
                         {% set maxFiles = fieldOpts.max_files ?? 10 %}
@@ -263,6 +263,53 @@
                             <button type="button" class="btn btn-outline btn-sm media-field-add-more" id="media-add-{{ field.getSlug() }}" style="display:none" data-field="{{ field.getSlug() }}">+ Add more</button>
                             {% endif %}
                         </div>
+
+                    {% elseif field.getType() == 'checkbox_group' %}
+                    {% set choices = field.getOptions().choices ?? [] %}
+                    {% set currentValues = entry[field.getSlug()] is defined ? (entry[field.getSlug()] | json_decode ?? []) : [] %}
+                    <input type="hidden" name="{{ field.getSlug() }}" value="">
+                    <div class="checkbox-group" style="display:flex;flex-direction:column;gap:var(--sp-2);">
+                        {% for choice in choices %}
+                        <label class="form-check-row" style="cursor:pointer;">
+                            <input type="checkbox" name="{{ field.getSlug() }}[]" value="{{ choice }}"
+                                   {% if choice in currentValues %}checked{% endif %}>
+                            <span class="text-sm">{{ choice }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+
+                {% elseif field.getType() == 'repeater' %}
+                    {% set subFields = field.getOptions().sub_fields ?? [] %}
+                    {% set rows = entry[field.getSlug()] is defined ? (entry[field.getSlug()] | json_decode ?? []) : [] %}
+                    <input type="hidden" name="{{ field.getSlug() }}" id="repeater_{{ field.getSlug() }}" value="{{ rows | json_encode }}">
+                    <div class="repeater-field" data-field="{{ field.getSlug() }}" data-sub-fields="{{ subFields | json_encode | e('html_attr') }}">
+                        <div class="repeater-rows" id="repeater_rows_{{ field.getSlug() }}">
+                            {% for row in rows %}
+                            <div class="repeater-row card mb-2" style="padding:var(--sp-3);">
+                                <div class="flex gap-2 flex-wrap">
+                                    {% for sf in subFields %}
+                                    <div class="form-group" style="flex:1;min-width:150px;">
+                                        <label class="form-label text-xs">{{ sf.name }}</label>
+                                        {% if sf.type == 'textarea' %}
+                                            <textarea class="form-control form-control-sm" data-sf="{{ sf.slug }}" rows="2">{{ row[sf.slug] ?? '' }}</textarea>
+                                        {% elseif sf.type == 'number' %}
+                                            <input type="number" class="form-control form-control-sm" data-sf="{{ sf.slug }}" value="{{ row[sf.slug] ?? '' }}">
+                                        {% elseif sf.type == 'boolean' %}
+                                            <label class="toggle"><input type="checkbox" data-sf="{{ sf.slug }}" value="1" {% if row[sf.slug] ?? false %}checked{% endif %}><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+                                        {% elseif sf.type == 'date' %}
+                                            <input type="date" class="form-control form-control-sm" data-sf="{{ sf.slug }}" value="{{ row[sf.slug] ?? '' }}">
+                                        {% else %}
+                                            <input type="text" class="form-control form-control-sm" data-sf="{{ sf.slug }}" value="{{ row[sf.slug] ?? '' }}">
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <button type="button" class="btn btn-sm btn-ghost text-danger mt-2" onclick="this.closest('.repeater-row').remove(); syncRepeater('{{ field.getSlug() }}');">Remove</button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline" onclick="addRepeaterRow('{{ field.getSlug() }}')">+ Add Row</button>
+                    </div>
 
                     {% elseif field.getType() == 'json' %}
                         <textarea id="field_{{ field.getSlug() }}" name="{{ field.getSlug() }}"
@@ -1354,6 +1401,89 @@ function updateSeoCounter(el, counterId, recommended) {
         });
     });
 })();
+</script>
+
+{# --- Repeater & Checkbox Group --- #}
+<script nonce="{{ csp_nonce() }}">
+// Repeater field management
+function addRepeaterRow(fieldSlug) {
+    var container = document.getElementById('repeater_rows_' + fieldSlug);
+    var wrapper = container.closest('.repeater-field');
+    var subFields = JSON.parse(wrapper.dataset.subFields);
+    var div = document.createElement('div');
+    div.className = 'repeater-row card mb-2';
+    div.style.padding = 'var(--sp-3)';
+    var html = '<div class="flex gap-2 flex-wrap">';
+    subFields.forEach(function(sf) {
+        html += '<div class="form-group" style="flex:1;min-width:150px;">';
+        html += '<label class="form-label text-xs">' + sf.name + '</label>';
+        if (sf.type === 'textarea') {
+            html += '<textarea class="form-control form-control-sm" data-sf="' + sf.slug + '" rows="2"></textarea>';
+        } else if (sf.type === 'number') {
+            html += '<input type="number" class="form-control form-control-sm" data-sf="' + sf.slug + '">';
+        } else if (sf.type === 'boolean') {
+            html += '<label class="toggle"><input type="checkbox" data-sf="' + sf.slug + '" value="1"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>';
+        } else if (sf.type === 'date') {
+            html += '<input type="date" class="form-control form-control-sm" data-sf="' + sf.slug + '">';
+        } else {
+            html += '<input type="text" class="form-control form-control-sm" data-sf="' + sf.slug + '">';
+        }
+        html += '</div>';
+    });
+    html += '</div>';
+    html += '<button type="button" class="btn btn-sm btn-ghost text-danger mt-2" onclick="this.closest(\'.repeater-row\').remove(); syncRepeater(\'' + fieldSlug + '\');">Remove</button>';
+    div.innerHTML = html;
+    container.appendChild(div);
+    // Add change listeners
+    div.querySelectorAll('input, textarea, select').forEach(function(el) {
+        el.addEventListener('input', function() { syncRepeater(fieldSlug); });
+        el.addEventListener('change', function() { syncRepeater(fieldSlug); });
+    });
+    syncRepeater(fieldSlug);
+}
+
+function syncRepeater(fieldSlug) {
+    var container = document.getElementById('repeater_rows_' + fieldSlug);
+    var hidden = document.getElementById('repeater_' + fieldSlug);
+    var rows = container.querySelectorAll('.repeater-row');
+    var data = [];
+    rows.forEach(function(row) {
+        var obj = {};
+        row.querySelectorAll('[data-sf]').forEach(function(el) {
+            if (el.type === 'checkbox') {
+                obj[el.dataset.sf] = el.checked ? 1 : 0;
+            } else {
+                obj[el.dataset.sf] = el.value;
+            }
+        });
+        data.push(obj);
+    });
+    hidden.value = JSON.stringify(data);
+}
+
+// Sync repeaters on form submit
+document.querySelector('form')?.addEventListener('submit', function() {
+    document.querySelectorAll('.repeater-field').forEach(function(rf) {
+        syncRepeater(rf.dataset.field);
+    });
+    // Sync checkbox groups to JSON
+    document.querySelectorAll('.checkbox-group').forEach(function(cg) {
+        var hidden = cg.previousElementSibling;
+        if (hidden && hidden.type === 'hidden') {
+            var checked = Array.from(cg.querySelectorAll('input[type="checkbox"]:checked')).map(function(cb) { return cb.value; });
+            hidden.value = JSON.stringify(checked);
+        }
+    });
+});
+
+// Initialize existing repeater change listeners
+document.querySelectorAll('.repeater-row input, .repeater-row textarea').forEach(function(el) {
+    var fieldSlug = el.closest('.repeater-field')?.dataset.field;
+    if (fieldSlug) {
+        el.addEventListener('input', function() { syncRepeater(fieldSlug); });
+        el.addEventListener('change', function() { syncRepeater(fieldSlug); });
+    }
+});
 </script>
 
 {% endblock %}

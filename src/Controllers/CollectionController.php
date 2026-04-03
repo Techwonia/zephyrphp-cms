@@ -172,7 +172,7 @@ class CollectionController extends Controller
             // Number
             'number' => 'Number',
             'decimal' => 'Decimal',
-            'boolean' => 'Boolean',
+            'boolean' => 'Toggle',
             // Date & Time
             'date' => 'Date',
             'datetime' => 'Date & Time',
@@ -181,14 +181,14 @@ class CollectionController extends Controller
             'url' => 'URL',
             'color' => 'Color',
             // Choice
-            'select' => 'Select / Dropdown',
+            'select' => 'Dropdown',
+            'checkbox_group' => 'Checkbox Group',
             'tags' => 'Tags',
             // Media
-            'image' => 'Image',
-            'file' => 'File',
-            'media' => 'Media Library',
+            'media' => 'Media',
             // Data
             'json' => 'JSON',
+            'repeater' => 'Repeater',
             'relation' => 'Relation',
         ];
 
@@ -489,6 +489,19 @@ class CollectionController extends Controller
             $choices = array_filter($choices);
             $options = ['choices' => array_values($choices)];
         }
+        if ($type === 'checkbox_group' && !empty($optionsRaw)) {
+            $choices = array_map('trim', explode("\n", $optionsRaw));
+            $choices = array_filter($choices);
+            $options = ['choices' => array_values($choices)];
+        }
+        if ($type === 'repeater') {
+            $subFieldsRaw = $this->input('field_sub_fields', '');
+            $subFields = json_decode($subFieldsRaw, true);
+            if (is_array($subFields) && !empty($subFields)) {
+                $options = $options ?? [];
+                $options['sub_fields'] = $subFields;
+            }
+        }
         if ($type === 'relation' && !empty($optionsRaw)) {
             $relationType = $this->input('field_relation_type', 'one_to_one');
             if (!in_array($relationType, ['one_to_one', 'one_to_many', 'many_to_many'])) {
@@ -509,8 +522,8 @@ class CollectionController extends Controller
                 'display_field' => $displayField ?: null,
             ];
         }
-        // Parse file accept options for image/file types
-        if (in_array($type, ['image', 'file'])) {
+        // Parse file accept options for image/file/media types
+        if (in_array($type, ['image', 'file', 'media'])) {
             $acceptPreset = $this->input('field_accept_preset', 'all');
             $validPresets = ['images', 'documents', 'media', 'all', 'custom'];
             if (!in_array($acceptPreset, $validPresets)) {
@@ -632,7 +645,7 @@ class CollectionController extends Controller
                     );
                 }
             }
-        } elseif (in_array($type, ['image', 'file'])) {
+        } elseif (in_array($type, ['image', 'file', 'media'])) {
             $isMultiple = !empty($options['multiple']);
             if ($isMultiple) {
                 // Multiple: pivot table to cms_media
@@ -708,6 +721,19 @@ class CollectionController extends Controller
             $choices = array_filter($choices);
             $options = ['choices' => array_values($choices)];
         }
+        if ($type === 'checkbox_group' && !empty($optionsRaw)) {
+            $choices = array_map('trim', explode("\n", $optionsRaw));
+            $choices = array_filter($choices);
+            $options = ['choices' => array_values($choices)];
+        }
+        if ($type === 'repeater') {
+            $subFieldsRaw = $this->input('field_sub_fields', '');
+            $subFields = json_decode($subFieldsRaw, true);
+            if (is_array($subFields) && !empty($subFields)) {
+                $options = $options ?? [];
+                $options['sub_fields'] = $subFields;
+            }
+        }
         if ($type === 'relation' && !empty($optionsRaw)) {
             $relationType = $this->input('field_relation_type', 'one_to_one');
             if (!in_array($relationType, ['one_to_one', 'one_to_many', 'many_to_many'])) {
@@ -728,8 +754,8 @@ class CollectionController extends Controller
                 'display_field' => $displayField ?: null,
             ];
         }
-        // Parse file accept options for image/file types
-        if (in_array($type, ['image', 'file'])) {
+        // Parse file accept options for image/file/media types
+        if (in_array($type, ['image', 'file', 'media'])) {
             $acceptPreset = $this->input('field_accept_preset', 'all');
             $validPresets = ['images', 'documents', 'media', 'all', 'custom'];
             if (!in_array($acceptPreset, $validPresets)) {
@@ -883,7 +909,7 @@ class CollectionController extends Controller
             } else {
                 $this->schema->dropPivotTable($collection->getTableName(), $fieldSlug);
             }
-        } elseif (in_array($field->getType(), ['image', 'file'])) {
+        } elseif (in_array($field->getType(), ['image', 'file', 'media'])) {
             $isMultiple = !empty(($field->getOptions() ?? [])['multiple']);
             if ($isMultiple) {
                 $this->schema->dropPivotTable($collection->getTableName(), $fieldSlug);
