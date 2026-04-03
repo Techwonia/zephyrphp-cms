@@ -1220,7 +1220,7 @@
 
         var textTypes = ['text','textarea','richtext','email','url','slug','markdown','password'];
         var numberTypes = ['number','decimal'];
-        var presetTypes = ['text','email','url','password','slug'];
+        var presetTypes = ['text','email','url','password'];
         var hasLength = textTypes.includes(type);
         var hasValue = numberTypes.includes(type);
         var hasPattern = textTypes.includes(type);
@@ -1276,10 +1276,6 @@
                 { label: 'Alphanumeric', pattern: '^[a-zA-Z0-9\\s]+$', msg: 'Only letters, numbers and spaces', desc: 'No special characters' },
                 { label: 'Phone', pattern: '^[\\+]?[0-9\\s\\-\\(\\)]{7,15}$', msg: 'Enter a valid phone number', desc: 'International format' },
                 { label: 'No HTML', pattern: '^[^<>]*$', msg: 'HTML tags are not allowed', desc: 'Prevent HTML injection' }
-            ];
-        } else if (type === 'slug') {
-            presets = [
-                { label: 'URL-safe', pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$', msg: 'Only lowercase letters, numbers, and hyphens', desc: 'Standard slug format' }
             ];
         }
         presets.forEach(function(p) {
