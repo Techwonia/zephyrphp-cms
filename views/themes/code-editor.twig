@@ -1214,7 +1214,7 @@
     // ── State ──
     const THEME_SLUG = '{{ theme.getSlug() }}';
     const BASE_URL = `/admin/themes/${THEME_SLUG}/code`;
-    const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    let CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content || '';
 
     const state = {
         files: {},
@@ -1621,6 +1621,7 @@
         const res = await fetch(url, { ...options, headers });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+        if (data.csrf_token) CSRF_TOKEN = data.csrf_token;
         return data;
     }
 
@@ -2724,14 +2725,14 @@
         }
         // Upload to public/ root by default
         formData.append('subdir', '');
-        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
         try {
             const resp = await fetch(`${BASE_URL}/upload`, {
                 method: 'POST',
-                headers: csrfMeta ? { 'X-CSRF-Token': csrfMeta.content } : {},
+                headers: { 'X-CSRF-Token': CSRF_TOKEN },
                 body: formData,
             });
             const data = await resp.json();
+            if (data.csrf_token) CSRF_TOKEN = data.csrf_token;
             if (data.error) { showToast(data.error, 'error'); return; }
             await loadFileTree();
             if (data.files && data.files.length > 0) {

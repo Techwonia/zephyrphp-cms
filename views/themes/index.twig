@@ -1,27 +1,96 @@
 {% extends "@cms/layouts/cms.twig" %}
 
 {% block title %}Themes{% endblock %}
-{% block styles %}<link rel="stylesheet" href="/cms-assets/css/themes-index.css">{% endblock %}
+
+{% block styles %}
+<style nonce="{{ csp_nonce() }}">
+    .theme-thumb {
+        position: relative;
+        display: block;
+        aspect-ratio: 16 / 10;
+        overflow: hidden;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        background: var(--zui-gray-100);
+    }
+    .theme-thumb-inner {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+    }
+    .theme-thumb-iframe {
+        width: 1440px;
+        height: 900px;
+        border: none;
+        transform-origin: top left;
+        pointer-events: none;
+    }
+    .theme-thumb-overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0);
+        transition: background var(--duration) var(--ease);
+    }
+    .theme-thumb:hover .theme-thumb-overlay {
+        background: rgba(0, 0, 0, 0.4);
+    }
+    .theme-thumb-btn {
+        opacity: 0;
+        transform: translateY(4px);
+        transition: opacity var(--duration) var(--ease), transform var(--duration) var(--ease);
+        padding: var(--sp-2) var(--sp-4);
+        background: var(--bg-surface);
+        color: var(--text-heading);
+        border-radius: var(--radius);
+        font-size: var(--text-sm);
+        font-weight: 600;
+        box-shadow: var(--shadow-md);
+    }
+    .theme-thumb:hover .theme-thumb-btn {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    .theme-active-badge {
+        position: absolute;
+        top: var(--sp-3);
+        left: var(--sp-3);
+        padding: var(--sp-1) var(--sp-2);
+        background: var(--zui-success-600);
+        color: #fff;
+        font-size: var(--text-xs);
+        font-weight: 600;
+        border-radius: var(--radius-sm);
+        z-index: 2;
+    }
+    .theme-card-full .theme-thumb {
+        aspect-ratio: 21 / 9;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="{{ admin_url() }}">Dashboard</a> <svg class="breadcrumb-sep" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg> Themes
+    <a href="{{ admin_url() }}">Dashboard</a>
+    <svg class="breadcrumb-sep" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg>
+    <span class="breadcrumb-current">Themes</span>
 </div>
 
 <div class="page-header">
     <h1>Themes</h1>
-    <div class="page-actions">
-        <div class="th-dropdown">
-            <button type="button" class="btn btn-primary btn-sm" id="addThemeBtn">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    <div class="page-header-actions">
+        <div class="dropdown">
+            <button type="button" class="btn btn-primary btn-sm" data-dropdown="add-theme-menu">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 Add theme
             </button>
-            <div class="th-dropdown-menu" id="addThemeMenu">
-                <button type="button" class="th-dropdown-item" onclick="document.getElementById('install-modal').style.display='flex'">
+            <div class="dropdown-menu" id="add-theme-menu">
+                <button type="button" class="dropdown-item" onclick="document.getElementById('install-modal').classList.add('open')">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                     Upload ZIP
                 </button>
-                <a href="{{ admin_url('themes/create') }}" class="th-dropdown-item">
+                <a href="{{ admin_url('themes/create') }}" class="dropdown-item">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                     Create blank theme
                 </a>
@@ -30,28 +99,28 @@
     </div>
 </div>
 
-{# Upload Modal #}
-<div id="install-modal" class="modal-overlay" style="display:none;">
-    <div class="modal-box">
-        <div class="modal-header">
-            <h3>Upload theme</h3>
-            <button type="button" class="modal-close" onclick="document.getElementById('install-modal').style.display='none'">&times;</button>
+{# ── Upload Modal ── #}
+<div id="install-modal" class="zui-modal-overlay">
+    <div class="zui-modal">
+        <div class="zui-modal-header">
+            <h2>Upload theme</h2>
+            <button type="button" class="btn btn-ghost btn-icon btn-sm" onclick="document.getElementById('install-modal').classList.remove('open')">&times;</button>
         </div>
         <form method="POST" action="{{ admin_url('themes/install') }}" enctype="multipart/form-data">
             {{ csrf_field() | raw }}
-            <div class="modal-body">
-                <p class="text-secondary text-sm" style="margin-bottom:12px;">Upload a ZIP containing a valid <code>theme.json</code>.</p>
+            <div class="zui-modal-body">
+                <p class="text-secondary text-sm mb-3">Upload a ZIP containing a valid <code>theme.json</code>.</p>
                 <div class="form-group">
-                    <label for="theme_zip">Theme ZIP File</label>
+                    <label class="form-label" for="theme_zip">Theme ZIP File</label>
                     <input type="file" id="theme_zip" name="theme_zip" accept=".zip" required class="form-control">
-                    <small class="text-secondary text-sm">Maximum: 50MB</small>
+                    <span class="form-hint">Maximum: 50MB</span>
                 </div>
-                <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;cursor:pointer;">
+                <label class="flex items-center gap-2 mt-3 text-sm" style="cursor:pointer">
                     <input type="checkbox" name="overwrite" value="1"> Overwrite if exists
                 </label>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline" onclick="document.getElementById('install-modal').style.display='none'">Cancel</button>
+            <div class="zui-modal-footer">
+                <button type="button" class="btn btn-outline" onclick="document.getElementById('install-modal').classList.remove('open')">Cancel</button>
                 <button type="submit" class="btn btn-primary">Upload</button>
             </div>
         </form>
@@ -70,27 +139,27 @@
 
 {# ── Active Theme (full width) ── #}
 {% if liveTheme %}
-<div class="th-card th-card--active th-card--full">
-    <a href="{{ admin_url('themes/' ~ liveTheme.getSlug() ~ '/customize') }}" class="th-card-thumb">
-        <div class="th-thumb-inner">
-            <iframe src="/?theme_preview={{ liveTheme.getSlug() }}" class="th-thumb-iframe" loading="lazy" scrolling="no" tabindex="-1"></iframe>
+<div class="card theme-card-full mb-5">
+    <a href="{{ admin_url('themes/' ~ liveTheme.getSlug() ~ '/customize') }}" class="theme-thumb">
+        <div class="theme-thumb-inner">
+            <iframe src="/?theme_preview={{ liveTheme.getSlug() }}" class="theme-thumb-iframe" loading="lazy" scrolling="no" tabindex="-1"></iframe>
         </div>
-        <div class="th-thumb-hover">
-            <span class="th-thumb-hover-btn">Customize</span>
+        <div class="theme-thumb-overlay">
+            <span class="theme-thumb-btn">Customize</span>
         </div>
-        <span class="th-badge-active">Active</span>
+        <span class="theme-active-badge">Active</span>
     </a>
-    <div class="th-card-body">
-        <div class="th-card-info">
-            <h3 class="th-card-name">{{ liveTheme.getName() }}</h3>
+    <div class="card-body flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <h3 class="font-semibold">{{ liveTheme.getName() }}</h3>
             {% if themeConfigs[liveTheme.getSlug()] is defined %}
-            <span class="th-card-version">v{{ themeConfigs[liveTheme.getSlug()].version }}</span>
+            <span class="badge badge-default">v{{ themeConfigs[liveTheme.getSlug()].version }}</span>
             {% endif %}
             {% if themeConfigs[liveTheme.getSlug()] is defined and themeConfigs[liveTheme.getSlug()].layouts|length > 0 %}
-            <span class="th-card-meta">{{ themeConfigs[liveTheme.getSlug()].layouts|length }} layout{{ themeConfigs[liveTheme.getSlug()].layouts|length > 1 ? 's' : '' }}</span>
+            <span class="text-secondary text-sm">{{ themeConfigs[liveTheme.getSlug()].layouts|length }} layout{{ themeConfigs[liveTheme.getSlug()].layouts|length > 1 ? 's' : '' }}</span>
             {% endif %}
         </div>
-        <div class="th-card-actions">
+        <div class="flex items-center gap-2">
             <a href="{{ admin_url('themes/' ~ liveTheme.getSlug() ~ '/customize') }}" class="btn btn-primary btn-sm">Customize</a>
             <a href="{{ admin_url('themes/' ~ liveTheme.getSlug() ~ '/preview') }}" class="btn btn-outline btn-sm">Preview</a>
             <a href="{{ admin_url('themes/' ~ liveTheme.getSlug() ~ '/code') }}" class="btn btn-outline btn-sm">Edit code</a>
@@ -101,52 +170,52 @@
 
 {# ── Theme Library Grid ── #}
 {% if draftThemes|length > 0 %}
-<h2 class="th-section-title">Theme library</h2>
+<h2 class="font-semibold mb-4">Theme library</h2>
 {% endif %}
-<div class="th-grid">
+<div class="grid grid-3 gap-4">
     {% for theme in draftThemes %}
-    <div class="th-card">
-        <a href="{{ admin_url('themes/' ~ theme.getSlug() ~ '/customize') }}" class="th-card-thumb">
-            <div class="th-thumb-inner">
-                <iframe src="/?theme_preview={{ theme.getSlug() }}" class="th-thumb-iframe" loading="lazy" scrolling="no" tabindex="-1"></iframe>
+    <div class="card">
+        <a href="{{ admin_url('themes/' ~ theme.getSlug() ~ '/customize') }}" class="theme-thumb">
+            <div class="theme-thumb-inner">
+                <iframe src="/?theme_preview={{ theme.getSlug() }}" class="theme-thumb-iframe" loading="lazy" scrolling="no" tabindex="-1"></iframe>
             </div>
-            <div class="th-thumb-hover">
-                <span class="th-thumb-hover-btn">Customize</span>
+            <div class="theme-thumb-overlay">
+                <span class="theme-thumb-btn">Customize</span>
             </div>
         </a>
-        <div class="th-card-body">
-            <div class="th-card-info">
-                <h3 class="th-card-name">{{ theme.getName() }}</h3>
+        <div class="card-body flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <h3 class="font-semibold text-sm">{{ theme.getName() }}</h3>
                 {% if themeConfigs[theme.getSlug()] is defined %}
-                <span class="th-card-version">v{{ themeConfigs[theme.getSlug()].version }}</span>
+                <span class="badge badge-default">v{{ themeConfigs[theme.getSlug()].version }}</span>
                 {% endif %}
             </div>
-            <div class="th-card-actions">
+            <div class="flex items-center gap-2">
                 <a href="{{ admin_url('themes/' ~ theme.getSlug() ~ '/customize') }}" class="btn btn-outline btn-sm">Customize</a>
-                <div class="th-dropdown">
-                    <button type="button" class="th-dots-btn" data-theme-menu="{{ theme.getSlug() }}">
+                <div class="dropdown">
+                    <button type="button" class="btn btn-ghost btn-icon btn-sm" data-dropdown="menu-{{ theme.getSlug() }}">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
                     </button>
-                    <div class="th-dropdown-menu th-dropdown-menu--right" id="menu-{{ theme.getSlug() }}">
-                        <a href="{{ admin_url('themes/' ~ theme.getSlug() ~ '/code') }}" class="th-dropdown-item">
+                    <div class="dropdown-menu" id="menu-{{ theme.getSlug() }}">
+                        <a href="{{ admin_url('themes/' ~ theme.getSlug() ~ '/code') }}" class="dropdown-item">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
                             Edit code
                         </a>
-                        <a href="{{ admin_url('themes/' ~ theme.getSlug() ~ '/preview') }}" class="th-dropdown-item">
+                        <a href="{{ admin_url('themes/' ~ theme.getSlug() ~ '/preview') }}" class="dropdown-item">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                             Preview
                         </a>
                         <form method="POST" action="{{ admin_url('themes/' ~ theme.getSlug() ~ '/publish') }}" style="display:contents">
                             {{ csrf_field() | raw }}
-                            <button type="submit" class="th-dropdown-item">
+                            <button type="submit" class="dropdown-item">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                                 Set as active
                             </button>
                         </form>
-                        <div class="th-dropdown-divider"></div>
+                        <div class="dropdown-divider"></div>
                         <form method="POST" action="{{ admin_url('themes/' ~ theme.getSlug() ~ '/delete') }}" class="confirm-delete" data-message="Delete theme '{{ theme.getName() }}'? This cannot be undone." style="display:contents">
                             {{ csrf_field() | raw }}
-                            <button type="submit" class="th-dropdown-item th-dropdown-item--danger">
+                            <button type="submit" class="dropdown-item danger">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
                                 Delete
                             </button>
@@ -162,25 +231,27 @@
 {% if not liveTheme and draftThemes|length == 0 %}
 <div class="card">
     <div class="card-body empty-state">
-        <h3>No themes found</h3>
+        <div class="empty-state-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
+        <h2>No themes found</h2>
         <p>Create your first theme or upload one from a ZIP package.</p>
-        <div style="display:flex;gap:8px;justify-content:center;">
+        <div class="flex gap-2 justify-center">
             <a href="{{ admin_url('themes/create') }}" class="btn btn-primary">Create Theme</a>
-            <button type="button" class="btn btn-outline" onclick="document.getElementById('install-modal').style.display='flex'">Upload ZIP</button>
+            <button type="button" class="btn btn-outline" onclick="document.getElementById('install-modal').classList.add('open')">Upload ZIP</button>
         </div>
     </div>
 </div>
 {% endif %}
 {% endblock %}
 
-
 {% block scripts %}
 <script nonce="{{ csp_nonce() }}">
 (function() {
     // Scale iframes to fit their containers
     function scaleIframes() {
-        document.querySelectorAll('.th-thumb-iframe').forEach(function(iframe) {
-            var container = iframe.closest('.th-card-thumb');
+        document.querySelectorAll('.theme-thumb-iframe').forEach(function(iframe) {
+            var container = iframe.closest('.theme-thumb');
             if (container) {
                 var scale = container.offsetWidth / 1440;
                 iframe.style.transform = 'scale(' + scale + ')';
@@ -190,31 +261,29 @@
     scaleIframes();
     window.addEventListener('resize', scaleIframes);
 
-    // Dropdown toggles
-    document.getElementById('addThemeBtn').addEventListener('click', function(e) {
-        e.stopPropagation();
-        document.getElementById('addThemeMenu').classList.toggle('is-open');
-    });
-    document.querySelectorAll('[data-theme-menu]').forEach(function(btn) {
+    // Dropdown toggles (data-dropdown pattern)
+    document.querySelectorAll('[data-dropdown]').forEach(function(btn) {
         btn.addEventListener('click', function(e) {
             e.stopPropagation();
-            var menu = document.getElementById('menu-' + this.dataset.themeMenu);
-            var wasOpen = menu.classList.contains('is-open');
-            document.querySelectorAll('.th-dropdown-menu.is-open').forEach(function(m) { m.classList.remove('is-open'); });
-            if (!wasOpen) menu.classList.add('is-open');
+            var menu = document.getElementById(this.dataset.dropdown);
+            var wasOpen = menu.classList.contains('open');
+            document.querySelectorAll('.dropdown-menu.open').forEach(function(m) { m.classList.remove('open'); });
+            if (!wasOpen) menu.classList.add('open');
         });
     });
     document.addEventListener('click', function() {
-        document.querySelectorAll('.th-dropdown-menu.is-open').forEach(function(m) { m.classList.remove('is-open'); });
+        document.querySelectorAll('.dropdown-menu.open').forEach(function(m) { m.classList.remove('open'); });
     });
 
     // Modal
     var modal = document.getElementById('install-modal');
-    modal.addEventListener('click', function(e) { if (e.target === modal) modal.style.display = 'none'; });
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) modal.classList.remove('open');
+    });
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
-            modal.style.display = 'none';
-            document.querySelectorAll('.th-dropdown-menu.is-open').forEach(function(m) { m.classList.remove('is-open'); });
+            modal.classList.remove('open');
+            document.querySelectorAll('.dropdown-menu.open').forEach(function(m) { m.classList.remove('open'); });
         }
     });
 

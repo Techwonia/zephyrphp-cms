@@ -13,11 +13,11 @@
         {% if theme.isLive() %}
             <span class="badge badge-success">Live</span>
         {% else %}
-            <span class="badge badge-draft">Draft</span>
+            <span class="badge badge-warning">Draft</span>
         {% endif %}
     </h1>
     <div class="page-actions">
-        <a href="{{ admin_url('themes/' ~ theme.getSlug() ~ '/customize') }}" class="btn btn-sm btn-primary" style="display:inline-flex; align-items:center; gap:4px;">
+        <a href="{{ admin_url('themes/' ~ theme.getSlug() ~ '/customize') }}" class="btn btn-sm btn-primary flex items-center gap-1">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
             Customize
         </a>
@@ -35,7 +35,7 @@
     <div class="tab-nav">
         <button class="tab-btn active" data-tab="tab-settings">Settings</button>
         <button class="tab-btn" data-tab="tab-pages">Pages</button>
-        <a href="{{ admin_url('themes/' ~ theme.getSlug() ~ '/code') }}" class="tab-btn" style="text-decoration:none;">Code Editor &rarr;</a>
+        <a href="{{ admin_url('themes/' ~ theme.getSlug() ~ '/code') }}" class="tab-btn">Code Editor &rarr;</a>
     </div>
 
     {# Settings Tab #}
@@ -68,8 +68,8 @@
 
     {# Pages Tab #}
     <div class="tab-panel" id="tab-pages">
-        <div class="pages-header">
-            <p class="text-secondary text-sm">Manage pages that belong to this theme. Each page has a URL, template, and layout.</p>
+        <div class="flex justify-between items-center p-4" style="border-bottom:1px solid var(--border,#E2E8F0);">
+            <p class="text-secondary text-sm" style="margin:0;">Manage pages that belong to this theme. Each page has a URL, template, and layout.</p>
             <button class="btn btn-primary btn-sm" id="addPageBtn">Add Page</button>
         </div>
 
@@ -91,50 +91,50 @@
                     <td><code>{{ page.slug }}</code></td>
                     <td>
                         {% if '{' in page.slug %}
-                            <span class="badge badge-dynamic">Dynamic</span>
+                            <span class="badge badge-info">Dynamic</span>
                         {% else %}
-                            <span class="badge badge-static">Static</span>
+                            <span class="badge badge-default">Static</span>
                         {% endif %}
                         {% if page.auth_required is defined and page.auth_required %}
-                            <span class="badge" style="background:rgba(255,152,0,0.1); color:#e65100; font-size:0.7rem;">Protected</span>
+                            <span class="badge badge-warning">Protected</span>
                         {% endif %}
                         {% if page.controller is defined and page.controller %}
-                            <a href="{{ admin_url('themes/' ~ theme.getSlug() ~ '?file=controllers/' ~ page.controller ~ '.php') }}" class="controller-link" title="Edit controller">{{ page.controller }}.php</a>
+                            <a href="{{ admin_url('themes/' ~ theme.getSlug() ~ '?file=controllers/' ~ page.controller ~ '.php') }}" class="text-sm" style="display:block;font-family:monospace;font-size:10px;color:var(--zui-primary-600);text-decoration:none;margin-top:2px;" title="Edit controller">{{ page.controller }}.php</a>
                         {% endif %}
                     </td>
                     <td><code>{{ page.template }}.twig</code></td>
                     <td>{{ page.layout ?? 'base' }}</td>
                     <td>
-                        <a href="{{ admin_url('themes/' ~ theme.getSlug() ~ '?file=templates/' ~ page.template ~ '.twig') }}" class="btn btn-xs btn-outline">Edit Template</a>
+                        <a href="{{ admin_url('themes/' ~ theme.getSlug() ~ '?file=templates/' ~ page.template ~ '.twig') }}" class="btn btn-sm btn-outline">Edit Template</a>
                         {% if page.controller is defined and page.controller %}
-                            <a href="{{ admin_url('themes/' ~ theme.getSlug() ~ '?file=controllers/' ~ page.controller ~ '.php') }}" class="btn btn-xs btn-outline">Edit Controller</a>
+                            <a href="{{ admin_url('themes/' ~ theme.getSlug() ~ '?file=controllers/' ~ page.controller ~ '.php') }}" class="btn btn-sm btn-outline">Edit Controller</a>
                         {% endif %}
-                        <button class="btn btn-xs btn-outline edit-page-btn"
+                        <button class="btn btn-sm btn-outline edit-page-btn"
                             data-template="{{ page.template }}"
                             data-title="{{ page.title }}"
                             data-slug="{{ page.slug }}"
                             data-layout="{{ page.layout ?? 'base' }}"
                             data-auth-required="{{ page.auth_required is defined and page.auth_required ? '1' : '0' }}"
                             data-allowed-roles="{{ page.allowed_roles is defined ? page.allowed_roles|join(', ') : '' }}">Settings</button>
-                        <button class="btn btn-xs btn-danger delete-page-btn" data-template="{{ page.template }}" data-title="{{ page.title }}">Delete</button>
+                        <button class="btn btn-sm btn-danger delete-page-btn" data-template="{{ page.template }}" data-title="{{ page.title }}">Delete</button>
                     </td>
                 </tr>
                 {% else %}
                 <tr class="empty-row">
-                    <td colspan="6" class="text-center text-muted" style="padding:40px">No pages yet. Click "Add Page" to create one.</td>
+                    <td colspan="6" class="text-center text-muted p-6">No pages yet. Click "Add Page" to create one.</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
 
         {# Add Page Modal #}
-        <div class="modal-overlay" id="addPageModal" style="display:none">
-            <div class="modal-card">
-                <div class="modal-header">
-                    <h3 id="pageModalTitle">Add New Page</h3>
-                    <button class="modal-close" id="closePageModal">&times;</button>
+        <div class="zui-modal-overlay" id="addPageModal">
+            <div class="zui-modal">
+                <div class="zui-modal-header">
+                    <h2 id="pageModalTitle">Add New Page</h2>
+                    <button class="btn btn-ghost btn-icon btn-sm" id="closePageModal">&times;</button>
                 </div>
-                <div class="modal-body">
+                <div class="zui-modal-body">
                     <input type="hidden" id="pageEditTemplate" value="">
                     <div class="form-group">
                         <label for="pageTitle">Page Title *</label>
@@ -142,13 +142,13 @@
                     </div>
                     <div class="form-group">
                         <label for="pageSlug">URL Path *</label>
-                        <div style="display:flex; align-items:center; border:1px solid var(--border-color,#ccc); border-radius:var(--radius-100,4px); overflow:hidden;">
-                            <span style="padding:6px 2px 6px 10px; background:var(--bg-subdued,#f7f7f7); color:var(--text-secondary); font-size:13px; border-right:1px solid var(--border-color,#ccc); flex-shrink:0;">/</span>
+                        <div style="display:flex; align-items:center; border:1px solid var(--border,#E2E8F0); border-radius:var(--radius-sm,4px); overflow:hidden;">
+                            <span style="padding:6px 2px 6px 10px; background:var(--bg-subdued); color:var(--text-secondary); font-size:13px; border-right:1px solid var(--border,#E2E8F0); flex-shrink:0;">/</span>
                             <input type="text" id="pageSlug" placeholder="about" style="width:100%; padding:6px 10px; border:none; font-size:13px; outline:none;">
                         </div>
                         <small class="text-secondary text-sm">Auto-generated from title. Edit if needed.</small>
                     </div>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-400,16px);">
+                    <div class="grid grid-2 gap-4">
                         <div class="form-group">
                             <label for="pageLayout">Layout</label>
                             <select id="pageLayout" class="form-control">
@@ -165,7 +165,7 @@
                             <small class="text-secondary text-sm">Auto-generates a controller for data fetching.</small>
                         </div>
                     </div>
-                    <div style="margin-top:var(--space-300,12px); padding:12px 14px; background:var(--bg-subdued,#f7f7f7); border:1px solid var(--border-subdued,#e1e1e1); border-radius:8px;">
+                    <div style="margin-top:var(--sp-3,12px); padding:12px 14px; background:var(--bg-subdued); border:1px solid var(--border,#E2E8F0); border-radius:8px;">
                         <div class="form-group" style="margin-bottom:8px;">
                             <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
                                 <input type="checkbox" id="pageAuthRequired" style="width:16px; height:16px;">
@@ -179,11 +179,11 @@
                             <small class="text-secondary text-sm">Comma-separated role slugs. Empty means all authenticated users.</small>
                         </div>
                     </div>
-                    <div id="pageDynamicHint" style="display:none; padding:10px 12px; background:rgba(0,128,96,0.06); border:1px solid rgba(0,128,96,0.15); border-radius:6px; font-size:0.8125rem; color:var(--text-primary,#303030); margin-top:8px;">
+                    <div id="pageDynamicHint" style="display:none; padding:10px 12px; background:rgba(0,128,96,0.06); border:1px solid rgba(0,128,96,0.15); border-radius:6px; font-size:0.8125rem; color:var(--text); margin-top:8px;">
                         <strong>Dynamic page</strong> &mdash; A PHP controller will be auto-generated to handle data fetching. You can edit it in the File Editor after creation.
                     </div>
                 </div>
-                <div class="modal-footer">
+                <div class="zui-modal-footer">
                     <button class="btn btn-outline" id="cancelPageModal">Cancel</button>
                     <button class="btn btn-primary" id="savePageBtn">Create Page</button>
                 </div>
@@ -192,20 +192,20 @@
     </div>
 
     {# New Section Modal #}
-    <div class="modal-overlay" id="newSectionModal" style="display:none">
-        <div class="modal-card">
-            <div class="modal-header">
-                <h3>Create New Section</h3>
-                <button class="modal-close" id="closeNewSectionModal">&times;</button>
+    <div class="zui-modal-overlay" id="newSectionModal">
+        <div class="zui-modal">
+            <div class="zui-modal-header">
+                <h2>Create New Section</h2>
+                <button class="btn btn-ghost btn-icon btn-sm" id="closeNewSectionModal">&times;</button>
             </div>
-            <div class="modal-body">
+            <div class="zui-modal-body">
                 <div class="form-group">
                     <label for="sectionName">Section Name *</label>
                     <input type="text" id="sectionName" class="form-control" placeholder="e.g. Pricing Table">
                     <small class="text-secondary text-sm">A .twig file will be created in the sections/ directory.</small>
                 </div>
             </div>
-            <div class="modal-footer">
+            <div class="zui-modal-footer">
                 <button class="btn btn-outline" id="cancelNewSectionModal">Cancel</button>
                 <button class="btn btn-primary" id="createSectionBtn">Create Section</button>
             </div>
@@ -215,7 +215,7 @@
     {# File Editor — redirects to standalone code editor #}
     <div class="tab-panel" id="tab-editor">
         <div style="padding:60px 40px; text-align:center;">
-            <p style="font-size:16px; margin-bottom:16px; color:var(--text-secondary, #616161);">The file editor has moved to a dedicated full-screen experience.</p>
+            <p style="font-size:16px; margin-bottom:16px; color:var(--text-secondary);">The file editor has moved to a dedicated full-screen experience.</p>
             <a href="{{ admin_url('themes/' ~ theme.getSlug() ~ '/code') }}" class="btn btn-primary" style="font-size:14px; padding:10px 24px;">
                 Open Code Editor &rarr;
             </a>
@@ -320,105 +320,6 @@
     resize: none;
     background: #282a36;
     color: #f8f8f2;
-}
-.pages-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: var(--space-400, 16px);
-    border-bottom: 1px solid var(--border-default, #E3E3E3);
-}
-.pages-header .text-muted {
-    margin: 0;
-}
-.data-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-.data-table th,
-.data-table td {
-    padding: var(--space-300, 12px) var(--space-400, 16px);
-    text-align: left;
-    border-bottom: 1px solid var(--border-default, #E3E3E3);
-}
-.data-table th {
-    font-size: var(--font-size-sm, 0.8125rem);
-    font-weight: 600;
-    color: var(--text-secondary, #616161);
-    background: var(--bg-subdued, #FAFAFA);
-}
-.data-table td code {
-    background: rgba(0,0,0,0.06);
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: var(--font-size-xs, 0.75rem);
-}
-.btn-xs {
-    padding: 4px 8px;
-    font-size: var(--font-size-xs, 0.75rem);
-}
-.btn-danger {
-    background: #D72C0D;
-    color: #fff;
-    border: none;
-}
-.btn-danger:hover {
-    background: #BC2200;
-}
-.modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.45);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-}
-.modal-card {
-    background: #fff;
-    border-radius: var(--radius-200, 8px);
-    width: 480px;
-    max-width: 90vw;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-}
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: var(--space-400, 16px) var(--space-500, 20px);
-    border-bottom: 1px solid var(--border-default, #E3E3E3);
-}
-.modal-header h3 {
-    margin: 0;
-    font-size: 1rem;
-}
-.modal-close {
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-    color: var(--text-secondary, #616161);
-    line-height: 1;
-}
-.modal-body {
-    padding: var(--space-500, 20px);
-}
-.modal-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: var(--space-200, 8px);
-    padding: var(--space-400, 16px) var(--space-500, 20px);
-    border-top: 1px solid var(--border-default, #E3E3E3);
-}
-.badge-success {
-    background: rgba(4, 123, 93, 0.1);
-    color: var(--color-success, #047B5D);
-    border: 1px solid rgba(4, 123, 93, 0.2);
-}
-.badge-draft {
-    background: rgba(255, 184, 0, 0.1);
-    color: #b8860b;
-    border: 1px solid rgba(255, 184, 0, 0.2);
 }
 
 /* ── Designer/Source Toggle ── */
@@ -812,37 +713,6 @@
     color: var(--text-secondary, #616161);
     margin: 0 0 8px 0;
 }
-
-/* ── Page Type Badges ── */
-.badge-dynamic {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 9999px;
-    font-size: 10px;
-    font-weight: 600;
-    background: rgba(139,92,246,0.1);
-    color: #7C3AED;
-    border: 1px solid rgba(139,92,246,0.2);
-}
-.badge-static {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 9999px;
-    font-size: 10px;
-    font-weight: 600;
-    background: rgba(107,114,128,0.1);
-    color: #6B7280;
-    border: 1px solid rgba(107,114,128,0.2);
-}
-.controller-link {
-    display: block;
-    font-size: 10px;
-    font-family: monospace;
-    color: var(--color-primary, #008060);
-    text-decoration: none;
-    margin-top: 2px;
-}
-.controller-link:hover { text-decoration: underline; }
 
 /* ── Controller Reference Panel (File Editor) ── */
 .editor-ref-panel {
@@ -1966,7 +1836,7 @@ document.addEventListener('DOMContentLoaded', function() {
             settingsHeader.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;';
             settingsHeader.innerHTML = '<h5 style="margin:0;">Settings</h5>';
             var addBlockSettingBtn = document.createElement('button');
-            addBlockSettingBtn.className = 'btn btn-xs btn-primary';
+            addBlockSettingBtn.className = 'btn btn-sm btn-primary';
             addBlockSettingBtn.textContent = '+ Add';
             addBlockSettingBtn.addEventListener('click', function() {
                 block.settings.push({ type: 'text', id: '', label: '' });
@@ -2223,14 +2093,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // ════════════════════════════════════════════
     function showModal(isEdit) {
         var modal = document.getElementById('addPageModal');
-        modal.style.display = 'flex';
+        modal.classList.add('open');
         document.getElementById('pageModalTitle').textContent = isEdit ? 'Edit Page Settings' : 'Add New Page';
         document.getElementById('savePageBtn').textContent = isEdit ? 'Save Changes' : 'Create Page';
     }
 
     function hideModal() {
         var modal = document.getElementById('addPageModal');
-        modal.style.display = 'none';
+        modal.classList.remove('open');
         document.getElementById('pageTitle').value = '';
         document.getElementById('pageSlug').value = '';
         document.getElementById('pageLayout').value = 'base';
@@ -2368,16 +2238,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ── New Section Management ──
     document.getElementById('newSectionBtn')?.addEventListener('click', function() {
-        document.getElementById('newSectionModal').style.display = 'flex';
+        document.getElementById('newSectionModal').classList.add('open');
         document.getElementById('sectionName').value = '';
         document.getElementById('sectionName').focus();
     });
 
     document.getElementById('closeNewSectionModal')?.addEventListener('click', function() {
-        document.getElementById('newSectionModal').style.display = 'none';
+        document.getElementById('newSectionModal').classList.remove('open');
     });
     document.getElementById('cancelNewSectionModal')?.addEventListener('click', function() {
-        document.getElementById('newSectionModal').style.display = 'none';
+        document.getElementById('newSectionModal').classList.remove('open');
     });
 
     document.getElementById('createSectionBtn')?.addEventListener('click', function() {

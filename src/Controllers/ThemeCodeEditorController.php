@@ -47,6 +47,14 @@ class ThemeCodeEditorController extends Controller
     }
 
     /**
+     * Return a success JSON response that includes the refreshed CSRF token.
+     */
+    private function jsonSuccess(array $extra = []): void
+    {
+        echo json_encode(array_merge(['success' => true, 'csrf_token' => Csrf::getToken()], $extra));
+    }
+
+    /**
      * Code editor page for a theme.
      */
     public function index(string $slug): string
@@ -330,7 +338,7 @@ class ThemeCodeEditorController extends Controller
                 return;
             }
 
-            echo json_encode(['success' => true]);
+            $this->jsonSuccess();
             return;
         }
 
@@ -359,7 +367,7 @@ class ThemeCodeEditorController extends Controller
                 return;
             }
 
-            echo json_encode(['success' => true]);
+            $this->jsonSuccess();
             return;
         }
 
@@ -370,7 +378,7 @@ class ThemeCodeEditorController extends Controller
             return;
         }
 
-        echo json_encode(['success' => true]);
+        $this->jsonSuccess();
     }
 
     /**
@@ -450,7 +458,7 @@ class ThemeCodeEditorController extends Controller
                 return;
             }
 
-            echo json_encode(['success' => true]);
+            $this->jsonSuccess();
             return;
         }
 
@@ -484,7 +492,7 @@ class ThemeCodeEditorController extends Controller
                 return;
             }
 
-            echo json_encode(['success' => true]);
+            $this->jsonSuccess();
             return;
         }
 
@@ -495,7 +503,7 @@ class ThemeCodeEditorController extends Controller
             return;
         }
 
-        echo json_encode(['success' => true]);
+        $this->jsonSuccess();
     }
 
     /**
@@ -574,7 +582,7 @@ class ThemeCodeEditorController extends Controller
             return;
         }
 
-        echo json_encode(['success' => true]);
+        $this->jsonSuccess();
     }
 
     /**
@@ -666,7 +674,7 @@ class ThemeCodeEditorController extends Controller
             return;
         }
 
-        echo json_encode(['success' => true]);
+        $this->jsonSuccess();
     }
 
     /**
@@ -762,7 +770,7 @@ class ThemeCodeEditorController extends Controller
             return;
         }
 
-        echo json_encode(['success' => true]);
+        $this->jsonSuccess();
     }
 
     /**
@@ -929,7 +937,7 @@ class ThemeCodeEditorController extends Controller
             }
         }
 
-        echo json_encode(['success' => true, 'files' => $uploaded]);
+        $this->jsonSuccess(['files' => $uploaded]);
     }
 
     /**
