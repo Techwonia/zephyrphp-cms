@@ -3,8 +3,8 @@
 {% set theme_slug = theme.getSlug() %}
 {% set ab_context = ab_context|default('customizer') %}
 
-<nav class="activity-bar" id="activityBar">
-    <div class="activity-bar-top">
+<nav class="cms-activity-bar" id="activityBar">
+    <div class="ab-top">
         {% if ab_context == 'customizer' %}
         <button class="ab-item active" data-ab-panel="sections" data-tooltip="Sections">
             {% include '@cms/partials/sidebar-icon.twig' with {icon: 'palette'} only %}
@@ -29,7 +29,7 @@
         </button>
         {% endif %}
     </div>
-    <div class="activity-bar-bottom">
+    <div class="ab-bottom">
         <a href="{{ admin_url('themes') }}" class="ab-item" data-tooltip="Back to Themes">
             {% include '@cms/partials/sidebar-icon.twig' with {icon: 'arrow-left'} only %}
         </a>

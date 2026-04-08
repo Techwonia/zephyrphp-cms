@@ -119,6 +119,13 @@
             height: calc(100vh - var(--topbar-h));
         }
 
+        /* Override fixed positioning — this page uses flex layout */
+        .cms-activity-bar {
+            position: static;
+            width: var(--activity-w);
+            flex-shrink: 0;
+        }
+
         /* ── Main Layout ── */
         .main-layout {
             display: flex;
