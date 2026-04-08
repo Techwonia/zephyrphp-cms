@@ -640,6 +640,7 @@
            Right Panel
            ══════════════════════════════════════ */
         .right-panel {
+            position: relative;
             width: 0;
             overflow: hidden;
             background: var(--bg-surface);
@@ -1083,9 +1084,9 @@
            ══════════════════════════════════════ */
         .css-editor-panel {
             position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
+            inset: 0;
             background: var(--bg-surface);
-            z-index: 50;
+            z-index: 10;
             display: none;
             flex-direction: column;
             overflow: hidden;
