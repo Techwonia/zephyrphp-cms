@@ -11,26 +11,9 @@
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
-            --primary: #005bd3;
-            --primary-hover: #004cb3;
-            --primary-bg: rgba(0,91,211,0.06);
-            --danger: #D72C0D;
-            --text: #303030;
-            --text-secondary: #616161;
-            --text-disabled: #B5B5B5;
-            --bg-app: #F1F1F1;
-            --bg-surface: #FFFFFF;
-            --bg-subdued: #FAFAFA;
-            --bg-hover: #F7F7F7;
-            --border: #E3E3E3;
-            --border-dark: #C9CCCF;
-            --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
-            --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
             --left-w: 280px;
             --right-w: 320px;
             --topbar-h: 56px;
-            --radius: 8px;
-            --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
 
         body {
@@ -908,7 +891,7 @@
 <!-- Top Bar -->
 <div class="topbar">
     <div class="topbar-left">
-        <a href="{{ admin_url('themes') }}" class="topbar-back">
+        <a href="{{ admin_url('themes/' ~ theme.getSlug()) }}" class="topbar-back" title="Exit customizer">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
         </a>
         <span class="topbar-title">{{ theme.getName() }}</span>

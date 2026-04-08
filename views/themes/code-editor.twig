@@ -10,32 +10,10 @@
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
-            --primary: #005bd3;
-            --primary-hover: #004cb3;
-            --primary-bg: rgba(0,91,211,0.06);
-            --danger: #D72C0D;
-            --danger-bg: rgba(215,44,13,0.06);
-            --success: #34a853;
-            --warning: #f0c040;
-            --text: #303030;
-            --text-secondary: #616161;
-            --text-disabled: #B5B5B5;
-            --bg-app: #F1F1F1;
-            --bg-surface: #FFFFFF;
-            --bg-subdued: #FAFAFA;
-            --bg-hover: #F7F7F7;
-            --border: #E3E3E3;
-            --border-dark: #C9CCCF;
-            --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
-            --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
-            --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
             --topbar-h: 56px;
             --sidebar-w: 260px;
             --tabbar-h: 36px;
             --toolbar-h: 34px;
-            --radius: 8px;
-            --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
         }
 
         body {
@@ -823,7 +801,7 @@
     <!-- Top Bar -->
     <div class="topbar">
         <div class="topbar-left">
-            <a href="{{ admin_url('themes/' ~ theme.getSlug()) }}" class="topbar-back">
+            <a href="{{ admin_url('themes/' ~ theme.getSlug()) }}" class="topbar-back" title="Back to theme">
                 <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
             </a>
             <div class="topbar-separator"></div>
