@@ -217,6 +217,65 @@
     {# Core JS — sidebar persistence, toasts, dropdowns, tabs, shortcuts #}
     <script src="/cms-assets/js/zephyr-ui.js"></script>
 
+    {# External link guard — intercept links leaving the admin panel #}
+    <script nonce="{{ csp_nonce() }}">
+    (function() {
+        var adminPath = document.body.getAttribute('data-admin-path') || '/admin';
+        var origin = window.location.origin;
+
+        document.addEventListener('click', function(e) {
+            var link = e.target.closest('a[href]');
+            if (!link) return;
+
+            var href = link.getAttribute('href');
+            if (!href || href === '#' || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
+            if (link.hasAttribute('download')) return;
+            if (link.target === '_blank') return;
+
+            // Build absolute URL to compare
+            var url;
+            try { url = new URL(href, origin); } catch(ex) { return; }
+
+            // Same origin + inside admin path — allow normally
+            if (url.origin === origin && url.pathname.startsWith(adminPath)) return;
+
+            // External or non-admin link — block and show confirmation
+            e.preventDefault();
+            e.stopPropagation();
+
+            var overlay = document.createElement('div');
+            overlay.className = 'zui-modal-overlay open';
+            overlay.innerHTML =
+                '<div class="zui-modal" style="max-width:440px;">' +
+                    '<div class="zui-modal-header"><h2>External link</h2></div>' +
+                    '<div class="zui-modal-body">' +
+                        '<p style="margin:0 0 8px;">This link cannot be opened inside the admin panel. It will be opened in a new window.</p>' +
+                        '<p style="margin:0;font-size:12px;color:var(--text-secondary);word-break:break-all;"><code>' + url.href.replace(/</g, '&lt;') + '</code></p>' +
+                    '</div>' +
+                    '<div class="zui-modal-footer">' +
+                        '<button class="btn btn-outline" data-action="cancel">Cancel</button>' +
+                        '<button class="btn btn-primary" data-action="open">Open in new window</button>' +
+                    '</div>' +
+                '</div>';
+
+            document.body.appendChild(overlay);
+
+            overlay.addEventListener('click', function(ev) {
+                var action = ev.target.getAttribute('data-action');
+                if (action === 'open') {
+                    window.open(url.href, '_blank', 'noopener');
+                    overlay.remove();
+                } else if (action === 'cancel' || ev.target === overlay) {
+                    overlay.remove();
+                }
+            });
+            document.addEventListener('keydown', function onEsc(ev) {
+                if (ev.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', onEsc); }
+            });
+        });
+    })();
+    </script>
+
     {# Editor scripts — only loaded when editor_scripts block is overridden #}
     {% block editor_scripts %}{% endblock %}
 
