@@ -4685,6 +4685,27 @@
                 var activeEl = doc.querySelector('[data-section-id="' + state.activeSection + '"]');
                 if (activeEl) activeEl.classList.add('inspector-active');
             }
+
+            // Block all link navigation inside the preview iframe
+            if (!doc._linkGuardBound) {
+                doc._linkGuardBound = true;
+                doc.addEventListener('click', function(ev) {
+                    var link = ev.target.closest('a[href]');
+                    if (!link) return;
+                    var href = link.getAttribute('href');
+                    if (!href || href === '#' || href.startsWith('#') || href.startsWith('javascript:')) return;
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    // Tell parent to show the external link modal
+                    window.parent.postMessage({ type: 'external-link', url: link.href }, '*');
+                }, true);
+
+                // Also block form submissions
+                doc.addEventListener('submit', function(ev) {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                }, true);
+            }
         } catch(e) {
             // Cross-origin fallback
         }
@@ -4901,6 +4922,34 @@
             } else if (action === 'duplicate' || action === 'toggle' || action === 'remove') {
                 handleSectionAction(action, sid);
             }
+        }
+
+        // External link from preview iframe
+        if (e.data.type === 'external-link' && e.data.url) {
+            var linkUrl = e.data.url;
+            var overlay = document.createElement('div');
+            overlay.className = 'zui-modal-overlay open';
+            overlay.innerHTML =
+                '<div class="zui-modal" style="max-width:440px;">' +
+                    '<div class="zui-modal-header"><h2>External link</h2></div>' +
+                    '<div class="zui-modal-body">' +
+                        '<p style="margin:0 0 8px;">This link cannot be opened inside the editor. It will be opened in a new window.</p>' +
+                        '<p style="margin:0;font-size:12px;color:var(--text-secondary);word-break:break-all;"><code>' + linkUrl.replace(/</g, '&lt;') + '</code></p>' +
+                    '</div>' +
+                    '<div class="zui-modal-footer">' +
+                        '<button class="btn btn-outline" data-action="cancel">Cancel</button>' +
+                        '<button class="btn btn-primary" data-action="open">Open in new window</button>' +
+                    '</div>' +
+                '</div>';
+            document.body.appendChild(overlay);
+            overlay.addEventListener('click', function(ev) {
+                var act = ev.target.getAttribute('data-action');
+                if (act === 'open') { window.open(linkUrl, '_blank', 'noopener'); overlay.remove(); }
+                else if (act === 'cancel' || ev.target === overlay) { overlay.remove(); }
+            });
+            document.addEventListener('keydown', function onEsc(ev) {
+                if (ev.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', onEsc); }
+            });
         }
     });
 
