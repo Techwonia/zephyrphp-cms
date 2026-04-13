@@ -482,8 +482,37 @@ class ThemeController extends Controller
             return;
         }
 
+        // Guardrails: don't let the admin delete the last remaining page or
+        // the home page (slug "/"). Neither leaves the site in a good state.
+        $pages = $this->themeManager->getPages($slug);
+        if (count($pages) <= 1) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Cannot delete the last page of a theme.']);
+            return;
+        }
+
+        $target = null;
+        foreach ($pages as $p) {
+            if (($p['template'] ?? null) === $template) {
+                $target = $p;
+                break;
+            }
+        }
+        if ($target === null) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Page not found']);
+            return;
+        }
+        if (($target['slug'] ?? '') === '/') {
+            http_response_code(400);
+            echo json_encode(['error' => 'Cannot delete the home page. Change its URL first, then delete.']);
+            return;
+        }
+
         if ($this->themeManager->deletePage($slug, $template)) {
-            // Clean up section data from settings_data.json
+            // Clean up any residual section data from the legacy settings_data
+            // shape as well (harmless no-op on Phase-1 themes where per-page
+            // section data lives inside the deleted page folder already).
             $data = $this->sectionManager->getSettingsData($slug);
             if (isset($data['pages'][$template])) {
                 unset($data['pages'][$template]);

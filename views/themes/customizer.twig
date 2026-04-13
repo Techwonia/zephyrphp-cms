@@ -331,6 +331,10 @@
             border-bottom: 1px solid var(--border);
             cursor: pointer;
             transition: background 0.1s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
         }
         .ab-page-item:hover { background: var(--bg-surface-hover); }
         .ab-page-item.active {
@@ -338,6 +342,7 @@
             border-left: 3px solid var(--zui-primary-500);
         }
 
+        .ab-page-info { flex: 1 1 auto; min-width: 0; }
         .ab-page-title { font-size: var(--text-sm); font-weight: 600; color: var(--text); }
         .ab-page-url {
             font-size: 11px;
@@ -345,6 +350,26 @@
             margin-top: 2px;
             font-family: var(--font-mono);
         }
+
+        .ab-page-delete {
+            flex: 0 0 auto;
+            width: 22px;
+            height: 22px;
+            padding: 0;
+            border: none;
+            background: transparent;
+            color: var(--text-disabled);
+            cursor: pointer;
+            border-radius: 4px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.1s, background 0.1s;
+        }
+        .ab-page-item:hover .ab-page-delete,
+        .ab-page-item.active .ab-page-delete { display: inline-flex; }
+        .ab-page-delete:hover { color: #dc2626; background: rgba(220, 38, 38, 0.08); }
+        .ab-page-delete svg { width: 14px; height: 14px; }
 
         /* ══════════════════════════════════════
            Section Tree (flat list)
@@ -1932,9 +1957,16 @@
                 </div>
                 <div class="ab-pages-list" id="abPagesList">
                     {% for page in pages %}
-                    <div class="ab-page-item{% if page.template == currentPage %} active{% endif %}" data-template="{{ page.template }}">
-                        <div class="ab-page-title">{{ page.title }}</div>
-                        <div class="ab-page-url">{{ page.slug }}</div>
+                    <div class="ab-page-item{% if page.template == currentPage %} active{% endif %}" data-template="{{ page.template }}" data-slug="{{ page.slug }}">
+                        <div class="ab-page-info">
+                            <div class="ab-page-title">{{ page.title }}</div>
+                            <div class="ab-page-url">{{ page.slug }}</div>
+                        </div>
+                        {% if page.slug != '/' %}
+                        <button class="ab-page-delete" type="button" data-delete-page="{{ page.template }}" title="Delete this page">
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 5h10M6 5V3.5A.5.5 0 0 1 6.5 3h3a.5.5 0 0 1 .5.5V5M5 5v8.5A.5.5 0 0 0 5.5 14h5a.5.5 0 0 0 .5-.5V5"/><path d="M7 8v3M9 8v3"/></svg>
+                        </button>
+                        {% endif %}
                     </div>
                     {% else %}
                     <div style="padding:16px; color:var(--text-disabled); font-size:13px;">No pages yet.</div>
@@ -5024,7 +5056,9 @@
 
     // Pages panel: click page to switch
     document.querySelectorAll('.ab-page-item').forEach(function(item) {
-        item.addEventListener('click', function() {
+        item.addEventListener('click', function(e) {
+            // Ignore clicks on the delete button so they don't also switch pages
+            if (e.target.closest('[data-delete-page]')) return;
             var template = item.dataset.template;
             if (template) {
                 document.querySelectorAll('.ab-page-item').forEach(function(p) { p.classList.remove('active'); });
@@ -5035,6 +5069,44 @@
                     pageSelect.dispatchEvent(new Event('change'));
                 }
             }
+        });
+    });
+
+    // Pages panel: click trash icon to delete a page
+    document.querySelectorAll('[data-delete-page]').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var template = btn.dataset.deletePage;
+            var item = btn.closest('.ab-page-item');
+            var title = item ? (item.querySelector('.ab-page-title')?.textContent || template) : template;
+            if (!window.confirm('Delete the page "' + title + '"? This cannot be undone.')) return;
+
+            btn.disabled = true;
+            fetch('/admin/themes/' + THEME_SLUG + '/pages/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN },
+                body: JSON.stringify({ template: template })
+            })
+            .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+            .then(function(res) {
+                if (!res.ok || !res.data.success) {
+                    alert(res.data.error || 'Failed to delete page');
+                    btn.disabled = false;
+                    return;
+                }
+                // If we just deleted the page currently being customised, drop
+                // the ?page=... param so the reload lands on whatever page is
+                // first in the registry.
+                var url = new URL(window.location);
+                if (url.searchParams.get('page') === template) {
+                    url.searchParams.delete('page');
+                }
+                window.location.href = url.toString();
+            })
+            .catch(function() {
+                alert('Network error');
+                btn.disabled = false;
+            });
         });
     });
 
