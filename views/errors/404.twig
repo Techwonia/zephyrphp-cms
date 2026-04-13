@@ -1,0 +1,12 @@
+{% extends "@theme/layouts/base.twig" %}
+
+{% block title %}{{ code }} - {{ title }}{% endblock %}
+
+{% block content %}
+<div class="text-center py-5">
+    <h1 class="display-1 fw-bold text-muted">{{ code }}</h1>
+    <h2 class="mb-3">{{ title }}</h2>
+    <p class="text-muted mb-4">{{ message }}</p>
+    <a href="/" class="btn btn-primary">Go Home</a>
+</div>
+{% endblock %}

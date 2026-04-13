@@ -70,6 +70,11 @@ class CmsServiceProvider
         // Register Twig namespace for CMS templates
         $view->addNamespace('cms', __DIR__ . '/../views');
 
+        // Register @errors namespace for CMS-shipped error pages.
+        // Handler resolves @errors/{code}.twig as a default when the active
+        // theme has no override and the host has no legacy pages/errors/ file.
+        $view->addNamespace('errors', __DIR__ . '/../views/errors');
+
         // Register theme namespace (uses effective theme: preview if admin, else live)
         $themeManager = ThemeManager::getInstance();
         $themePath = $themeManager->getActiveThemePath();
