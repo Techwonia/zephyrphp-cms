@@ -503,7 +503,53 @@ class ThemeCodeEditorController extends Controller
             return;
         }
 
+        // If a new layout was created, register it in theme.blueprint.json
+        // so the page-editor's layout picker surfaces it.
+        if (preg_match('#^layouts/([A-Za-z0-9_-]+)\.twig$#', $path, $m)) {
+            $this->registerLayoutInBlueprint($slug, $m[1]);
+        }
+
         $this->jsonSuccess();
+    }
+
+    /**
+     * Add a `layouts.{name}` entry to the theme blueprint (or legacy theme.json
+     * as a fallback). Idempotent: existing entries are left alone.
+     */
+    private function registerLayoutInBlueprint(string $slug, string $layoutName): void
+    {
+        $themePath = $this->themeManager->getThemePath($slug);
+
+        $manifestFile = $themePath . '/theme.blueprint.json';
+        if (!file_exists($manifestFile)) {
+            $manifestFile = $themePath . '/theme.json';
+        }
+        if (!file_exists($manifestFile)) {
+            return;
+        }
+
+        $data = json_decode((string) file_get_contents($manifestFile), true);
+        if (!is_array($data)) {
+            return;
+        }
+
+        if (!isset($data['layouts']) || !is_array($data['layouts'])) {
+            $data['layouts'] = [];
+        }
+        if (isset($data['layouts'][$layoutName])) {
+            return;
+        }
+
+        $label = ucwords(str_replace(['-', '_'], ' ', $layoutName));
+        $data['layouts'][$layoutName] = [
+            'name' => $label,
+            'description' => $label . ' layout',
+        ];
+
+        file_put_contents(
+            $manifestFile,
+            json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
+        );
     }
 
     /**
@@ -542,10 +588,12 @@ class ThemeCodeEditorController extends Controller
 
         // Block deletion of critical files
         $criticalFiles = [
-            'theme.json',
-            'pages.json',
-            'config/settings_data.json',
-            'config/settings_schema.json',
+            'theme.blueprint.json',
+            'theme.settings.json',
+            'theme.json',                       // legacy
+            'pages.json',                       // legacy
+            'config/settings_data.json',        // legacy
+            'config/settings_schema.json',      // legacy
             'layouts/base.twig',
         ];
         if (in_array($path, $criticalFiles, true)) {

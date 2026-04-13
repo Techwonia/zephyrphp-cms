@@ -452,12 +452,9 @@ class ThemeManager
             }
         }
 
-        // Theme-level JSON (blueprint + live settings) at the theme root
-        foreach (['theme.blueprint.json', 'theme.settings.json'] as $rootJson) {
-            if (file_exists($themePath . '/' . $rootJson)) {
-                $files['config'][] = $rootJson;
-            }
-        }
+        // Note: theme-level JSON (theme.blueprint.json, theme.settings.json,
+        // theme.json, pages.json) is surfaced by the code-editor controller
+        // under a separate 'root' bucket — don't double-list them here.
 
         // Legacy config/ folder (for unmigrated themes)
         $configDir = $themePath . '/config';
