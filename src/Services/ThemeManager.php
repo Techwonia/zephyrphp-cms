@@ -125,7 +125,10 @@ class ThemeManager
     }
 
     /**
-     * Read theme.json config for the effective theme.
+     * Read the theme manifest. Prefers `theme.blueprint.json` (which bundles
+     * the old theme.json manifest plus the settings schema under a
+     * `settings_schema` key). Falls back to legacy `theme.json` if the
+     * blueprint file is absent.
      */
     public function getThemeConfig(?string $slug = null): array
     {
@@ -134,12 +137,16 @@ class ThemeManager
         }
 
         $themePath = $slug ? $this->getThemePath($slug) : $this->getActiveThemePath();
-        $configFile = $themePath . '/theme.json';
 
-        if (file_exists($configFile)) {
-            $config = json_decode(file_get_contents($configFile), true) ?: [];
+        $config = [];
+        $blueprintFile = $themePath . '/theme.blueprint.json';
+        if (file_exists($blueprintFile)) {
+            $config = json_decode(file_get_contents($blueprintFile), true) ?: [];
         } else {
-            $config = [];
+            $legacyFile = $themePath . '/theme.json';
+            if (file_exists($legacyFile)) {
+                $config = json_decode(file_get_contents($legacyFile), true) ?: [];
+            }
         }
 
         if ($slug === null) {
@@ -265,6 +272,46 @@ class ThemeManager
     }
 
     /**
+     * Write a page's Twig markup to `pages/{template}/{template}.twig`.
+     * Creates the page folder if it doesn't yet exist.
+     */
+    public function writePageTwig(string $template, string $content, ?string $slug = null): bool
+    {
+        if (!preg_match('/^[A-Za-z0-9_-]+$/', $template)) {
+            return false;
+        }
+        $slug = $slug ?? $this->getEffectiveTheme();
+        $path = $this->getPageTwigPath($slug, $template);
+        $dir = dirname($path);
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+        return file_put_contents($path, $content) !== false;
+    }
+
+    /**
+     * Read a page's Twig markup.
+     */
+    public function readPageTwig(string $template, ?string $slug = null): ?string
+    {
+        if (!preg_match('/^[A-Za-z0-9_-]+$/', $template)) {
+            return null;
+        }
+        $slug = $slug ?? $this->getEffectiveTheme();
+        $path = $this->getPageTwigPath($slug, $template);
+        return file_exists($path) ? file_get_contents($path) : null;
+    }
+
+    public function pageExists(string $template, ?string $slug = null): bool
+    {
+        if (!preg_match('/^[A-Za-z0-9_-]+$/', $template)) {
+            return false;
+        }
+        $slug = $slug ?? $this->getEffectiveTheme();
+        return file_exists($this->getPageTwigPath($slug, $template));
+    }
+
+    /**
      * Check if a template exists.
      */
     public function templateExists(string $filename, ?string $slug = null): bool
@@ -335,15 +382,17 @@ class ThemeManager
     }
 
     /**
-     * List all editable files in a theme (layouts, templates, snippets).
+     * List all editable files in a theme (layouts, pages, partials, sections,
+     * controllers, and theme-level JSON config).
      */
     public function listFiles(string $slug): array
     {
         $themePath = $this->getThemePath($slug);
         $files = [];
 
-        // Twig template directories
-        $twigDirs = ['layouts', 'templates', 'snippets', 'sections'];
+        // Twig directories — per-page folders live under pages/; also include
+        // legacy templates/ and snippets/ so edits on unmigrated themes still work
+        $twigDirs = ['layouts', 'pages', 'partials', 'sections', 'templates', 'snippets'];
         foreach ($twigDirs as $dir) {
             $dirPath = $themePath . '/' . $dir;
             if (!is_dir($dirPath)) continue;
@@ -354,7 +403,11 @@ class ThemeManager
             );
 
             foreach ($iterator as $file) {
-                if ($file->isFile() && str_ends_with($file->getFilename(), '.twig')) {
+                if (!$file->isFile()) continue;
+                $ext = strtolower(pathinfo($file->getFilename(), PATHINFO_EXTENSION));
+                // Under pages/ we allow both .twig and .json so the code editor
+                // can open a page's metadata alongside its markup.
+                if ($ext === 'twig' || ($dir === 'pages' && $ext === 'json')) {
                     $relative = $dir . '/' . str_replace('\\', '/', $iterator->getSubPathName());
                     $files[$dir][] = $relative;
                 }
@@ -372,7 +425,14 @@ class ThemeManager
             }
         }
 
-        // Config files (JSON)
+        // Theme-level JSON (blueprint + live settings) at the theme root
+        foreach (['theme.blueprint.json', 'theme.settings.json'] as $rootJson) {
+            if (file_exists($themePath . '/' . $rootJson)) {
+                $files['config'][] = $rootJson;
+            }
+        }
+
+        // Legacy config/ folder (for unmigrated themes)
         $configDir = $themePath . '/config';
         if (is_dir($configDir)) {
             foreach (scandir($configDir) as $file) {
@@ -404,12 +464,15 @@ class ThemeManager
                 $this->copyDirectory($sourceAssets, $targetAssets);
             }
 
-            // Update theme.json with new name
-            $configFile = $themePath . '/theme.json';
-            if (file_exists($configFile)) {
-                $config = json_decode(file_get_contents($configFile), true) ?: [];
-                $config['name'] = $name;
-                file_put_contents($configFile, json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+            // Update the theme manifest with new name (prefers blueprint)
+            foreach (['theme.blueprint.json', 'theme.json'] as $manifest) {
+                $configFile = $themePath . '/' . $manifest;
+                if (file_exists($configFile)) {
+                    $config = json_decode(file_get_contents($configFile), true) ?: [];
+                    $config['name'] = $name;
+                    file_put_contents($configFile, json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+                    break;
+                }
             }
         } else {
             // Create fresh theme with starter files
@@ -512,91 +575,179 @@ class ThemeManager
         return $this->publicThemesPath;
     }
 
+    /**
+     * Source assets directory inside a theme — `{theme}/assets`. This is
+     * where CSS/JS/images/fonts live alongside the markup. Call publish()
+     * to mirror this directory into the web-served public path.
+     */
+    public function getThemeAssetsSourcePath(string $slug): string
+    {
+        return $this->getThemePath($slug) . '/assets';
+    }
+
+    /**
+     * Copy `{theme}/assets/**` into `public/themes/{slug}/**` so the web
+     * server can serve them. Called on theme install, activate, and upload.
+     * Safe to invoke even when the source is missing — becomes a no-op.
+     *
+     * Returns the number of files copied. Existing files at the destination
+     * are overwritten (publish is idempotent — running twice is fine).
+     */
+    public function publish(string $slug): int
+    {
+        $source = $this->getThemeAssetsSourcePath($slug);
+        if (!is_dir($source)) {
+            return 0;
+        }
+
+        $target = $this->getThemeAssetsPath($slug);
+        if (!is_dir($target)) {
+            mkdir($target, 0755, true);
+        }
+
+        return $this->copyDir($source, $target);
+    }
+
+    private function copyDir(string $source, string $target): int
+    {
+        $count = 0;
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($source, \RecursiveDirectoryIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::SELF_FIRST
+        );
+
+        foreach ($iterator as $item) {
+            $relative = substr($item->getPathname(), strlen($source) + 1);
+            $dest = $target . '/' . $relative;
+            if ($item->isDir()) {
+                if (!is_dir($dest)) {
+                    mkdir($dest, 0755, true);
+                }
+            } else {
+                copy($item->getPathname(), $dest);
+                $count++;
+            }
+        }
+
+        return $count;
+    }
+
     // --- Pages Management ---
 
     /**
      * Get the path to a theme's pages.json config.
      */
-    public function getPagesConfigPath(string $slug): string
+    /**
+     * Directory under a theme that holds per-page folders. Each page lives
+     * in its own folder named after the page template: `pages/{tpl}/{tpl}.twig`
+     * (markup) + `pages/{tpl}/{tpl}.json` (metadata + section data).
+     */
+    public function getPagesDir(?string $slug = null): string
     {
-        return $this->getThemePath($slug) . '/pages.json';
+        $slug = $slug ?? $this->getEffectiveTheme();
+        return $this->getThemePath($slug) . '/pages';
     }
 
     /**
-     * Get all pages from a theme's pages.json.
+     * Path to a specific page's JSON metadata file.
+     */
+    public function getPageJsonPath(string $slug, string $template): string
+    {
+        return $this->getPagesDir($slug) . '/' . $template . '/' . $template . '.json';
+    }
+
+    /**
+     * Path to a specific page's Twig markup file.
+     */
+    public function getPageTwigPath(string $slug, string $template): string
+    {
+        return $this->getPagesDir($slug) . '/' . $template . '/' . $template . '.twig';
+    }
+
+    /**
+     * Enumerate pages by scanning `{theme}/pages/*\/*.json`. Each entry is
+     * decorated with `template` = folder name so callers have the full
+     * page descriptor without re-reading.
      */
     public function getPages(?string $slug = null): array
     {
         $slug = $slug ?? $this->getEffectiveTheme();
-        $path = $this->getPagesConfigPath($slug);
+        $pagesDir = $this->getPagesDir($slug);
 
-        if (!file_exists($path)) {
+        if (!is_dir($pagesDir)) {
             return [];
         }
 
-        $data = json_decode(file_get_contents($path), true);
-        return $data['pages'] ?? [];
+        $pages = [];
+        foreach (scandir($pagesDir) as $entry) {
+            if ($entry === '.' || $entry === '..') continue;
+            $folder = $pagesDir . '/' . $entry;
+            if (!is_dir($folder)) continue;
+
+            $jsonFile = $folder . '/' . $entry . '.json';
+            if (!file_exists($jsonFile)) continue;
+
+            $data = json_decode(file_get_contents($jsonFile), true);
+            if (!is_array($data)) continue;
+
+            // Folder name is authoritative for the template identifier
+            $data['template'] = $entry;
+            $pages[] = $data;
+        }
+
+        return $pages;
     }
 
     /**
-     * Save a page entry to pages.json (add or update by template name).
+     * Write a page's metadata/section JSON. Creates the folder if needed.
+     * The `template` key in $page is the folder name; it is also implicit
+     * from the filesystem so it's optional in the stored JSON.
      */
     public function savePage(string $slug, array $page): void
     {
-        $path = $this->getPagesConfigPath($slug);
-        $data = file_exists($path) ? json_decode(file_get_contents($path), true) : [];
-        $pages = $data['pages'] ?? [];
-
-        // Update existing or add new
-        $found = false;
-        foreach ($pages as $i => $existing) {
-            if ($existing['template'] === $page['template']) {
-                $pages[$i] = $page;
-                $found = true;
-                break;
-            }
+        $template = $page['template'] ?? null;
+        if (!$template) {
+            throw new \InvalidArgumentException('Page descriptor missing "template" key.');
         }
 
-        if (!$found) {
-            $pages[] = $page;
+        $pagesDir = $this->getPagesDir($slug);
+        $folder = $pagesDir . '/' . $template;
+        if (!is_dir($folder)) {
+            mkdir($folder, 0755, true);
         }
 
-        $data['pages'] = $pages;
-        file_put_contents($path, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        // `template` is implicit from folder; don't duplicate it in the JSON body
+        $body = $page;
+        unset($body['template']);
+
+        file_put_contents(
+            $folder . '/' . $template . '.json',
+            json_encode($body, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
+        );
     }
 
     /**
-     * Delete a page from pages.json and optionally delete the template file.
+     * Remove a page folder entirely (both the JSON and Twig file).
+     * `$deleteFile` is retained for API compatibility but is effectively
+     * redundant since deleting the folder removes both files.
      */
     public function deletePage(string $slug, string $template, bool $deleteFile = true): bool
     {
-        $path = $this->getPagesConfigPath($slug);
-        if (!file_exists($path)) {
+        $folder = $this->getPagesDir($slug) . '/' . $template;
+        if (!is_dir($folder)) {
             return false;
         }
 
-        $data = json_decode(file_get_contents($path), true);
-        $pages = $data['pages'] ?? [];
-
-        $filtered = array_values(array_filter($pages, function ($p) use ($template) {
-            return $p['template'] !== $template;
-        }));
-
-        if (count($filtered) === count($pages)) {
-            return false; // Not found
-        }
-
-        $data['pages'] = $filtered;
-        file_put_contents($path, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
-
-        // Delete template file
-        if ($deleteFile) {
-            $templateFile = $this->getTemplatesPath($slug) . '/' . $template . '.twig';
-            if (file_exists($templateFile)) {
-                unlink($templateFile);
+        // Remove known children then the folder (avoid recursive rm for safety)
+        foreach ([$template . '.json', $template . '.twig'] as $file) {
+            $path = $folder . '/' . $file;
+            if (file_exists($path)) {
+                unlink($path);
             }
         }
-
+        // If any stray file remains (custom per-page asset), skip rmdir; the
+        // folder stays but the page is unregistered.
+        @rmdir($folder);
         return true;
     }
 
@@ -627,25 +778,21 @@ class ThemeManager
 
     private function createStarterTheme(string $path, string $name, string $slug): void
     {
-        $dirs = ['layouts', 'templates', 'snippets', 'sections', 'config'];
+        // New layout: everything is inside the theme folder.
+        //   pages/    → per-page folders ({tpl}/{tpl}.twig + {tpl}/{tpl}.json)
+        //   partials/ → dumb Twig includes (was snippets/)
+        //   sections/ → schema-bearing, admin-editable
+        //   layouts/  → top-level page shells
+        //   assets/   → source CSS/JS/images/fonts (publish() syncs to public/)
+        $dirs = ['layouts', 'pages', 'partials', 'sections', 'assets/css', 'assets/js', 'assets/images', 'assets/fonts'];
         foreach ($dirs as $dir) {
             mkdir($path . '/' . $dir, 0755, true);
-        }
-
-        // Create public assets directory at public/themes/{slug}/
-        $assetsPath = $this->getThemeAssetsPath($slug);
-        $assetDirs = ['css', 'js', 'images', 'fonts'];
-        foreach ($assetDirs as $dir) {
-            mkdir($assetsPath . '/' . $dir, 0755, true);
         }
 
         // Copy starter sections from stubs
         $this->copyStarterSections($path);
 
-        // Copy config stubs (settings_schema.json, settings_data.json)
-        $this->copyConfigStubs($path);
-
-        // theme.json — enhanced asset schema with defer, preload, preconnect, CSP support
+        // theme.blueprint.json — manifest + settings schema in one file
         $config = [
             'name' => $name,
             'version' => '1.0.0',
@@ -653,20 +800,12 @@ class ThemeManager
                 'base' => ['name' => 'Base Layout', 'description' => 'Default page layout'],
             ],
             'assets' => [
-                'css' => [
-                    'css/base.css',
-                ],
-                'js' => [
-                    ['path' => 'js/base.js', 'defer' => true],
-                ],
-                'preload' => [
-                ],
-                'preconnect' => [
-                ],
-                'external_css' => [
-                ],
-                'external_js' => [
-                ],
+                'css' => ['css/base.css'],
+                'js' => [['path' => 'js/base.js', 'defer' => true]],
+                'preload' => [],
+                'preconnect' => [],
+                'external_css' => [],
+                'external_js' => [],
                 'csp' => [
                     'default-src' => "'self'",
                     'script-src' => "'self'",
@@ -675,8 +814,9 @@ class ThemeManager
                     'font-src' => "'self'",
                 ],
             ],
+            'settings_schema' => [],
         ];
-        file_put_contents($path . '/theme.json', json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        file_put_contents($path . '/theme.blueprint.json', json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 
         // Base layout — uses assets_head()/assets_footer() for automatic asset management
         $baseLayout = <<<'TWIG'
@@ -706,7 +846,7 @@ class ThemeManager
     {% block styles %}{% endblock %}
 </head>
 <body>
-    {% include "@theme/snippets/header.twig" %}
+    {% include "@theme/partials/header.twig" %}
 
     {% block body %}
     {% if use_sections is defined and use_sections %}
@@ -718,7 +858,7 @@ class ThemeManager
     {% endif %}
     {% endblock %}
 
-    {% include "@theme/snippets/footer.twig" %}
+    {% include "@theme/partials/footer.twig" %}
     {{ assets_footer()|raw }}
     {% block scripts %}{% endblock %}
 </body>
@@ -744,7 +884,7 @@ TWIG;
     </div>
 </header>
 TWIG;
-        file_put_contents($path . '/snippets/header.twig', $header);
+        file_put_contents($path . '/partials/header.twig', $header);
 
         // Footer snippet
         $footer = <<<'TWIG'
@@ -756,7 +896,7 @@ TWIG;
     </div>
 </footer>
 TWIG;
-        file_put_contents($path . '/snippets/footer.twig', $footer);
+        file_put_contents($path . '/partials/footer.twig', $footer);
 
         // Home page template
         $home = <<<'TWIG'
@@ -775,9 +915,20 @@ TWIG;
 </section>
 {% endblock %}
 TWIG;
-        file_put_contents($path . '/templates/home.twig', $home);
+        // Home page: per-page folder with markup + metadata JSON
+        mkdir($path . '/pages/home', 0755, true);
+        file_put_contents($path . '/pages/home/home.twig', $home);
+        file_put_contents(
+            $path . '/pages/home/home.json',
+            json_encode([
+                'title' => 'Home',
+                'slug' => '/',
+                'layout' => 'base',
+            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
+        );
 
-        // Starter CSS (in public/themes/{slug}/css/)
+        // Starter CSS — written to theme source (assets/). Web-served copy
+        // appears in public/themes/{slug}/ after publish().
         $starterCss = <<<'CSS'
 /* Theme Stylesheet */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -848,23 +999,12 @@ body {
     .footer__inner { flex-direction: column; gap: 12px; text-align: center; }
 }
 CSS;
-        file_put_contents($assetsPath . '/css/base.css', $starterCss);
+        file_put_contents($path . '/assets/css/base.css', $starterCss);
+        file_put_contents($path . '/assets/js/base.js', "/* Theme JavaScript */\n");
 
-        // Starter JS (in public/themes/{slug}/js/)
-        file_put_contents($assetsPath . '/js/base.js', "/* Theme JavaScript */\n");
-
-        // pages.json
-        $pagesConfig = [
-            'pages' => [
-                [
-                    'title' => 'Home',
-                    'slug' => '/',
-                    'template' => 'home',
-                    'layout' => 'base',
-                ],
-            ],
-        ];
-        file_put_contents($path . '/pages.json', json_encode($pagesConfig, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        // Mirror assets into public/themes/{slug}/ so the web server can serve
+        // them immediately (publish is idempotent; safe to call again later)
+        $this->publish($slug);
     }
 
     /**

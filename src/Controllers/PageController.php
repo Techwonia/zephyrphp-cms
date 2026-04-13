@@ -85,7 +85,7 @@ class PageController
             $pageData['use_sections'] = true;
             $html = $view->render('@theme/layouts/' . $layout, $pageData);
         } else {
-            $html = $view->render('@theme/templates/' . $template, $pageData);
+            $html = $view->render('@theme/pages/' . $template . '/' . $template, $pageData);
         }
 
         $html = $this->injectPageBundles($html, $template);

@@ -331,6 +331,10 @@ class ThemeController extends Controller
         // Create template file — rich template for collection pages, minimal for others
         if (!empty($collection)) {
             $templateContent = $this->generateCollectionTemplate($layout, $title, $pageSlug, $collection, $hasDynamicParams, $detailSlug);
+            // Collection detail templates live in the legacy templates/ dir
+            // because they're referenced from the collection routing layer
+            // (not the per-page registry).
+            $this->themeManager->writeTemplate($templateName . '.twig', $templateContent, $slug);
         } else {
             $templateContent = "{% extends \"@theme/layouts/{$layout}.twig\" %}\n\n";
             $templateContent .= "{% block title %}{{ page.title }}{% endblock %}\n\n";
@@ -339,9 +343,8 @@ class ThemeController extends Controller
             $templateContent .= "    <h1>{{ page.title }}</h1>\n";
             $templateContent .= "</div>\n";
             $templateContent .= "{% endblock %}\n";
+            $this->themeManager->writePageTwig($templateName, $templateContent, $slug);
         }
-
-        $this->themeManager->writeTemplate($templateName . '.twig', $templateContent, $slug);
         $controllerName = null;
 
         if ($hasDynamicParams || !empty($collection)) {

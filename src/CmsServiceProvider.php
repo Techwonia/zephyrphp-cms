@@ -81,7 +81,21 @@ class CmsServiceProvider
         if (is_dir($themePath)) {
             $view->addNamespace('theme', $themePath);
 
-            // Prepend theme templates path so render('home') finds theme templates first
+            // Prepend per-page folder AND the legacy templates path so
+            // unnamespaced render('home') still resolves. New themes keep
+            // everything under pages/{tpl}/{tpl}.twig; legacy collection
+            // templates live in templates/ (still supported).
+            $pagesPath = $themePath . '/pages';
+            if (is_dir($pagesPath)) {
+                // Make each per-page folder resolvable as `{tpl}` shorthand
+                foreach (scandir($pagesPath) as $entry) {
+                    if ($entry === '.' || $entry === '..') continue;
+                    $pageFolder = $pagesPath . '/' . $entry;
+                    if (is_dir($pageFolder)) {
+                        $view->prependTemplatePath($pageFolder);
+                    }
+                }
+            }
             $templatesPath = $themePath . '/templates';
             if (is_dir($templatesPath)) {
                 $view->prependTemplatePath($templatesPath);

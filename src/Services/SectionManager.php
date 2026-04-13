@@ -145,97 +145,110 @@ class SectionManager
     // --- Settings Schema (global theme settings) ---
 
     /**
-     * Read config/settings_schema.json for a theme.
+     * Read the theme's settings schema. Prefers the `settings_schema` key
+     * inside `theme.blueprint.json`; falls back to the legacy
+     * `config/settings_schema.json` file.
      */
     public function getSettingsSchema(?string $slug = null): array
     {
         $slug = $slug ?? $this->themeManager->getEffectiveTheme();
-        $path = $this->themeManager->getThemePath($slug) . '/config/settings_schema.json';
 
+        // Prefer blueprint
+        $blueprint = $this->themeManager->getThemeConfig($slug);
+        if (!empty($blueprint['settings_schema']) && is_array($blueprint['settings_schema'])) {
+            return $blueprint['settings_schema'];
+        }
+
+        // Legacy fallback
+        $legacy = $this->themeManager->getThemePath($slug) . '/config/settings_schema.json';
+        if (file_exists($legacy)) {
+            $data = json_decode(file_get_contents($legacy), true);
+            return is_array($data) ? $data : [];
+        }
+
+        return [];
+    }
+
+    // --- Global settings (theme.settings.json) ---
+
+    /**
+     * Path to the theme's global-settings file. Holds the live values for
+     * the schema defined in theme.blueprint.json (or legacy settings_schema.json).
+     */
+    private function getGlobalSettingsPath(string $slug): string
+    {
+        return $this->themeManager->getThemePath($slug) . '/theme.settings.json';
+    }
+
+    /**
+     * Read the raw current-values map from theme.settings.json.
+     * Returns an empty array if the file is missing or invalid.
+     */
+    private function readGlobalSettingsFile(string $slug): array
+    {
+        $path = $this->getGlobalSettingsPath($slug);
         if (!file_exists($path)) {
             return [];
         }
-
-        return json_decode(file_get_contents($path), true) ?: [];
-    }
-
-    // --- Settings Data (stored values) ---
-
-    /**
-     * Read config/settings_data.json for a theme.
-     */
-    public function getSettingsData(?string $slug = null): array
-    {
-        $slug = $slug ?? $this->themeManager->getEffectiveTheme();
-        $path = $this->themeManager->getThemePath($slug) . '/config/settings_data.json';
-
-        if (!file_exists($path)) {
-            return ['current' => [], 'pages' => []];
-        }
-
         $data = json_decode(file_get_contents($path), true);
-        if (!is_array($data)) {
-            return ['current' => [], 'pages' => []];
-        }
-
-        if (!isset($data['current']) || !is_array($data['current'])) {
-            $data['current'] = [];
-        }
-        if (!isset($data['pages']) || !is_array($data['pages'])) {
-            $data['pages'] = [];
-        }
-
-        return $data;
+        return is_array($data) ? $data : [];
     }
 
-    /**
-     * Write config/settings_data.json for a theme.
-     */
-    public function saveSettingsData(string $slug, array $data): bool
+    private function writeGlobalSettingsFile(string $slug, array $values): bool
     {
-        $path = $this->themeManager->getThemePath($slug) . '/config/settings_data.json';
+        $path = $this->getGlobalSettingsPath($slug);
         $dir = dirname($path);
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+        $payload = empty($values) ? new \stdClass() : $values;
+        return file_put_contents(
+            $path,
+            json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
+        ) !== false;
+    }
 
+    // --- Per-page section data (pages/{tpl}/{tpl}.json) ---
+
+    private function readPageJson(string $slug, string $template): array
+    {
+        $path = $this->themeManager->getPageJsonPath($slug, $template);
+        if (!file_exists($path)) {
+            return [];
+        }
+        $data = json_decode(file_get_contents($path), true);
+        return is_array($data) ? $data : [];
+    }
+
+    private function writePageJson(string $slug, string $template, array $data): bool
+    {
+        $path = $this->themeManager->getPageJsonPath($slug, $template);
+        $dir = dirname($path);
         if (!is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
 
-        // Ensure current and pages encode as JSON objects (not arrays) when empty
-        if (empty($data['current'])) {
-            $data['current'] = new \stdClass();
-        }
-        if (empty($data['pages'])) {
-            $data['pages'] = new \stdClass();
-        }
-
-        // Ensure nested sections/blocks encode as JSON objects, not arrays
-        if (is_array($data['pages'])) {
-            foreach ($data['pages'] as &$pageData) {
-                if (is_array($pageData)) {
-                    if (empty($pageData['sections'])) {
-                        $pageData['sections'] = new \stdClass();
-                    } elseif (is_array($pageData['sections'])) {
-                        foreach ($pageData['sections'] as &$section) {
-                            if (!is_array($section)) continue;
-                            if (isset($section['settings']) && empty($section['settings'])) {
-                                $section['settings'] = new \stdClass();
-                            }
-                            if (isset($section['blocks']) && empty($section['blocks'])) {
-                                $section['blocks'] = new \stdClass();
-                            } elseif (isset($section['blocks']) && is_array($section['blocks'])) {
-                                foreach ($section['blocks'] as &$block) {
-                                    if (is_array($block) && isset($block['settings']) && empty($block['settings'])) {
-                                        $block['settings'] = new \stdClass();
-                                    }
-                                }
-                                unset($block);
-                            }
+        // Normalise empty collections so JSON encodes as objects, not arrays
+        if (isset($data['sections']) && empty($data['sections'])) {
+            $data['sections'] = new \stdClass();
+        } elseif (isset($data['sections']) && is_array($data['sections'])) {
+            foreach ($data['sections'] as &$section) {
+                if (!is_array($section)) continue;
+                if (isset($section['settings']) && empty($section['settings'])) {
+                    $section['settings'] = new \stdClass();
+                }
+                if (isset($section['blocks']) && empty($section['blocks'])) {
+                    $section['blocks'] = new \stdClass();
+                } elseif (isset($section['blocks']) && is_array($section['blocks'])) {
+                    foreach ($section['blocks'] as &$block) {
+                        if (is_array($block) && isset($block['settings']) && empty($block['settings'])) {
+                            $block['settings'] = new \stdClass();
                         }
-                        unset($section);
                     }
+                    unset($block);
                 }
             }
-            unset($pageData);
+            unset($section);
         }
 
         return file_put_contents(
@@ -244,45 +257,101 @@ class SectionManager
         ) !== false;
     }
 
-    // --- Page Sections ---
+    // --- Legacy compatibility shims ---
+    //
+    // Older controllers (ThemeCustomizerController, ThemeController) still
+    // call getSettingsData / saveSettingsData with the old flat shape:
+    //   { current: {...}, pages: { tpl: { sections, order, header_order, footer_order } } }
+    // These shims synthesise that shape from the new split storage so those
+    // callers keep working without modification.
 
     /**
-     * Get section configuration for a specific page template.
-     * Returns ['sections' => [...], 'order' => [...]]
+     * Assemble the legacy settings_data shape from the new split files.
      */
-    public function getPageSections(?string $slug, string $pageTemplate): array
+    public function getSettingsData(?string $slug = null): array
     {
-        $data = $this->getSettingsData($slug);
-        $pageData = $data['pages'][$pageTemplate] ?? null;
+        $slug = $slug ?? $this->themeManager->getEffectiveTheme();
 
-        if (!$pageData) {
-            return ['sections' => [], 'order' => []];
+        $pages = [];
+        foreach ($this->themeManager->getPages($slug) as $page) {
+            $tpl = $page['template'] ?? null;
+            if (!$tpl) continue;
+            $pages[$tpl] = [
+                'sections' => $page['sections'] ?? [],
+                'order' => $page['order'] ?? [],
+                'header_order' => $page['header_order'] ?? [],
+                'footer_order' => $page['footer_order'] ?? [],
+            ];
         }
 
         return [
-            'sections' => $pageData['sections'] ?? [],
-            'order' => $pageData['order'] ?? [],
-            'header_order' => $pageData['header_order'] ?? [],
-            'footer_order' => $pageData['footer_order'] ?? [],
+            'current' => $this->readGlobalSettingsFile($slug),
+            'pages' => $pages,
         ];
     }
 
     /**
-     * Save section configuration for a specific page template.
+     * Persist the legacy settings_data shape by splitting it back into the
+     * new files. `current` → theme.settings.json; each `pages[tpl]` merges
+     * into the existing pages/{tpl}/{tpl}.json (preserving metadata like
+     * title/slug/layout/controller).
+     */
+    public function saveSettingsData(string $slug, array $data): bool
+    {
+        $this->writeGlobalSettingsFile($slug, $data['current'] ?? []);
+
+        $pages = $data['pages'] ?? [];
+        if (is_array($pages)) {
+            foreach ($pages as $template => $pageData) {
+                if (!is_array($pageData)) continue;
+                $existing = $this->readPageJson($slug, $template);
+                $merged = array_merge($existing, [
+                    'sections' => $pageData['sections'] ?? [],
+                    'order' => $pageData['order'] ?? [],
+                    'header_order' => $pageData['header_order'] ?? [],
+                    'footer_order' => $pageData['footer_order'] ?? [],
+                ]);
+                $this->writePageJson($slug, (string) $template, $merged);
+            }
+        }
+
+        return true;
+    }
+
+    // --- Page Sections (new primary API) ---
+
+    /**
+     * Get section configuration for a specific page template.
+     */
+    public function getPageSections(?string $slug, string $pageTemplate): array
+    {
+        $slug = $slug ?? $this->themeManager->getEffectiveTheme();
+        $page = $this->readPageJson($slug, $pageTemplate);
+
+        return [
+            'sections' => $page['sections'] ?? [],
+            'order' => $page['order'] ?? [],
+            'header_order' => $page['header_order'] ?? [],
+            'footer_order' => $page['footer_order'] ?? [],
+        ];
+    }
+
+    /**
+     * Save section configuration for a specific page template. Preserves
+     * any non-section metadata (title, slug, layout, controller, etc.)
+     * already present in the page's JSON.
      */
     public function savePageSections(string $slug, string $pageTemplate, array $sections, array $order): void
     {
-        $data = $this->getSettingsData($slug);
-
-        $data['pages'][$pageTemplate] = [
+        $existing = $this->readPageJson($slug, $pageTemplate);
+        $merged = array_merge($existing, [
             'sections' => empty($sections) ? new \stdClass() : $sections,
             'order' => $order,
-        ];
-
-        $this->saveSettingsData($slug, $data);
+        ]);
+        $this->writePageJson($slug, $pageTemplate, $merged);
     }
 
-    // --- Global Settings ---
+    // --- Global Settings (new primary API) ---
 
     /**
      * Get the current global theme settings (merged with defaults from schema).
@@ -291,10 +360,9 @@ class SectionManager
     {
         $slug = $slug ?? $this->themeManager->getEffectiveTheme();
         $schema = $this->getSettingsSchema($slug);
-        $data = $this->getSettingsData($slug);
-        $current = $data['current'] ?? [];
+        $current = $this->readGlobalSettingsFile($slug);
 
-        // Merge defaults from schema with saved values
+        // Merge schema defaults with saved values
         $settings = [];
         foreach ($schema as $group) {
             foreach ($group['settings'] ?? [] as $setting) {
@@ -312,9 +380,7 @@ class SectionManager
      */
     public function saveGlobalSettings(string $slug, array $settings): void
     {
-        $data = $this->getSettingsData($slug);
-        $data['current'] = $settings;
-        $this->saveSettingsData($slug, $data);
+        $this->writeGlobalSettingsFile($slug, $settings);
     }
 
     /**
