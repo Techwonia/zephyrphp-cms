@@ -2534,14 +2534,22 @@
     function _cmt(s) { return _O + '#' + ' ' + s + ' #' + _C; }
 
     function layoutBoilerplate(name) {
+        // Keep the sections branch identical to what hello/layouts/base.twig
+        // ships. PageController::show() renders the layout (not the page twig)
+        // when the page has any sections configured — so the layout needs the
+        // use_sections/sections_html conditional or sections silently vanish.
         return '<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>'
             + _tag('block title') + name + _tag('endblock')
             + '</title>\n    ' + _expr('assets_head()|raw')
             + '\n    ' + _tag('block styles') + _tag('endblock')
             + '\n</head>\n<body>\n    ' + _tag('include "@theme/partials/header.twig"')
             + '\n\n    <main>\n        ' + _tag('block body')
+            + '\n        ' + _tag('if use_sections is defined and use_sections and sections_html is defined')
+            + '\n            ' + _expr('sections_html|raw')
+            + '\n        ' + _tag('else')
             + '\n        <div class="container">\n            ' + _tag('block content') + _tag('endblock')
-            + '\n        </div>\n        ' + _tag('endblock')
+            + '\n        </div>\n        ' + _tag('endif')
+            + '\n        ' + _tag('endblock')
             + '\n    </main>\n\n    ' + _tag('include "@theme/partials/footer.twig"')
             + '\n    ' + _expr('assets_footer()|raw')
             + '\n    ' + _tag('block scripts') + _tag('endblock')
