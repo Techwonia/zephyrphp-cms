@@ -12,9 +12,9 @@ use ZephyrPHP\Cms\Services\SidebarManager;
 use ZephyrPHP\Cms\Services\DashboardManager;
 use ZephyrPHP\Cms\Services\SettingsManager;
 use ZephyrPHP\Cms\Services\ThemeInstaller;
-use ZephyrPHP\Cms\Services\AssetBundler;
 use ZephyrPHP\Cms\Services\EntryQuery;
 use ZephyrPHP\Cms\Extensions\ThemeAssetExtension;
+use ZephyrPHP\Cms\Controllers\PageController;
 use ZephyrPHP\Database\EntityManager;
 
 class CmsServiceProvider
@@ -702,167 +702,31 @@ class CmsServiceProvider
         try {
             $pages = $themeManager->getPages();
             foreach ($pages as $page) {
-                $template = $page['template'];
                 $slug = $page['slug'] ?? '/';
-                $title = $page['title'] ?? '';
-                $layout = $page['layout'] ?? 'base';
-                $controllerName = $page['controller'] ?? null;
                 $authRequired = (bool) ($page['auth_required'] ?? false);
-                $allowedRoles = $page['allowed_roles'] ?? [];
 
-                // Check if this route has dynamic parameters like {slug}
-                $isDynamic = (bool) preg_match('/\{(\w+)\}/', $slug);
-
-                // Build middleware array
                 $middleware = [];
                 if ($authRequired) {
                     $middleware[] = \ZephyrPHP\Middleware\AuthMiddleware::class;
                 }
 
+                $isDynamic = (bool) preg_match('/\{(\w+)\}/', $slug);
+
                 if ($isDynamic) {
-                    \ZephyrPHP\Router\Route::get($slug, function (...$args) use ($slug, $template, $title, $layout, $controllerName, $themeManager, $authRequired, $allowedRoles) {
-                        if ($authRequired) {
-                            $this->enforcePageAuth($allowedRoles);
-                        }
+                    \ZephyrPHP\Router\Route::get($slug, function (...$args) use ($page, $themeManager) {
                         $params = $args;
                         $params['_query'] = $_GET;
-                        $this->renderThemePage($themeManager, $template, $title, $layout, $controllerName, $params, $slug);
+                        (new PageController($themeManager))->show($page, $params);
                     }, $middleware);
                 } else {
-                    \ZephyrPHP\Router\Route::get($slug, function () use ($slug, $template, $title, $layout, $controllerName, $themeManager, $authRequired, $allowedRoles) {
-                        if ($authRequired) {
-                            $this->enforcePageAuth($allowedRoles);
-                        }
-                        $params = ['_query' => $_GET];
-                        $this->renderThemePage($themeManager, $template, $title, $layout, $controllerName, $params, $slug);
+                    \ZephyrPHP\Router\Route::get($slug, function () use ($page, $themeManager) {
+                        (new PageController($themeManager))->show($page, ['_query' => $_GET]);
                     }, $middleware);
                 }
             }
         } catch (\Exception $e) {
             // pages.json may not exist yet
         }
-    }
-
-    /**
-     * Enforce auth and role checks for protected theme pages.
-     */
-    private function enforcePageAuth(array $allowedRoles): void
-    {
-        // AuthMiddleware already handles the redirect-to-login,
-        // this method adds role-based access on top
-        if (empty($allowedRoles)) {
-            return; // Any authenticated user can access
-        }
-
-        try {
-            $user = \ZephyrPHP\Auth\Auth::user();
-            if (!$user || !method_exists($user, 'hasAnyRole')) {
-                return; // Can't check roles, allow access if authenticated
-            }
-
-            if ($user->hasAnyRole($allowedRoles)) {
-                return; // User has an allowed role
-            }
-
-            // User is logged in but doesn't have the required role
-            http_response_code(403);
-            $view = \ZephyrPHP\View\View::getInstance();
-            if ($view->exists('errors/403')) {
-                echo $view->render('errors/403', []);
-            } else {
-                echo '<!DOCTYPE html><html><head><title>Access Denied</title></head><body>';
-                echo '<div style="max-width:600px;margin:4rem auto;text-align:center;font-family:system-ui;">';
-                echo '<h1>403 — Access Denied</h1>';
-                echo '<p>You do not have permission to view this page.</p>';
-                echo '<a href="/">Go Home</a>';
-                echo '</div></body></html>';
-            }
-            exit;
-        } catch (\Exception $e) {
-            // Auth not available, allow through
-        }
-    }
-
-    private function renderThemePage(ThemeManager $themeManager, string $template, string $title, string $layout, ?string $controllerName, array $params, string $routeSlug = '/'): void
-    {
-        $view = \ZephyrPHP\View\View::getInstance();
-        $sectionManager = new SectionManager($themeManager);
-
-        // Execute controller if one exists
-        $controllerData = [];
-        if ($controllerName) {
-            $controllerPath = $themeManager->getActiveThemePath() . '/controllers/' . $controllerName . '.php';
-            if (file_exists($controllerPath)) {
-                $handler = require $controllerPath;
-                if (is_callable($handler)) {
-                    $result = $handler($params);
-                    if (is_array($result)) {
-                        $controllerData = $result;
-                    }
-                }
-            }
-        }
-
-        // Use route pattern slug (e.g. /blogs) and actual request path
-        $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
-
-        $pageData = array_merge($controllerData, [
-            'page' => array_merge([
-                'title' => $title,
-                'template' => $template,
-                'slug' => $routeSlug,
-                'url' => $requestPath,
-            ], $controllerData['page'] ?? []),
-            'params' => $params,
-            'theme_settings' => $sectionManager->getGlobalSettings(),
-        ]);
-
-        // Check if this page has sections configured
-        if ($sectionManager->hasSections(null, $template)) {
-            $sectionsHtml = $sectionManager->renderSections($template);
-            $pageData['sections_html'] = $sectionsHtml;
-            $pageData['use_sections'] = true;
-            $html = $view->render('@theme/layouts/' . $layout, $pageData);
-        } else {
-            $html = $view->render('@theme/templates/' . $template, $pageData);
-        }
-
-        // Bundle companion CSS/JS into single minified files per page
-        $themeSlug = $themeManager->getEffectiveTheme();
-        $assetsPath = $themeManager->getThemeAssetsPath($themeSlug);
-        $basePath = defined('BASE_PATH') ? BASE_PATH : dirname(__DIR__, 3);
-        $bundler = new AssetBundler($basePath . '/public', $themeSlug);
-
-        // Collect all CSS files: section companions + page companion
-        $cssFiles = $sectionManager->getCollectedCssPaths();
-        $pageCssFile = $assetsPath . '/css/' . $template . '.css';
-        if (file_exists($pageCssFile)) {
-            $cssFiles[] = $pageCssFile;
-        }
-
-        // Collect JS files: page companion
-        $jsFiles = [];
-        $pageJsFile = $assetsPath . '/js/' . $template . '.js';
-        if (file_exists($pageJsFile)) {
-            $jsFiles[] = $pageJsFile;
-        }
-
-        // Bundle and inject CSS
-        $bundleName = 'page-' . preg_replace('/[^a-z0-9_-]/i', '-', $template);
-        $cssBundleUrl = $bundler->bundleCss($cssFiles, $bundleName);
-        if ($cssBundleUrl) {
-            $cssTag = '<link rel="stylesheet" href="' . htmlspecialchars($cssBundleUrl) . '">';
-            $html = str_replace('</head>', $cssTag . "\n</head>", $html);
-        }
-
-        // Bundle and inject JS
-        $jsBundleUrl = $bundler->bundleJs($jsFiles, $bundleName);
-        if ($jsBundleUrl) {
-            $jsTag = '<script src="' . htmlspecialchars($jsBundleUrl) . '" defer></script>';
-            $html = str_replace('</body>', $jsTag . "\n</body>", $html);
-        }
-
-        echo $html;
     }
 
     private function registerCollectionRoutes(ThemeManager $themeManager): void
