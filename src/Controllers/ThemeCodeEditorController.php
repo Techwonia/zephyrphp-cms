@@ -149,7 +149,7 @@ class ThemeCodeEditorController extends Controller
         }
 
         // Add root files if they exist
-        $rootFiles = ['theme.json', 'pages.json'];
+        $rootFiles = ['theme.blueprint.json', 'theme.settings.json', 'theme.json', 'pages.json'];
         foreach ($rootFiles as $rootFile) {
             if (file_exists($themePath . '/' . $rootFile)) {
                 $files['root'][] = $rootFile;
@@ -811,8 +811,21 @@ class ThemeCodeEditorController extends Controller
             return 'Invalid path — directory traversal not allowed';
         }
 
-        // Must start with an allowed prefix or be a known root file
-        $allowedPrefixes = ['layouts/', 'templates/', 'snippets/', 'sections/', 'config/', 'controllers/', 'assets/', 'public/'];
+        // Must start with an allowed prefix or be a known root file.
+        // pages/ and partials/ are the Phase-1 layout; templates/ + snippets/
+        // stay whitelisted for backwards compatibility with legacy themes.
+        $allowedPrefixes = [
+            'layouts/',
+            'pages/',
+            'partials/',
+            'sections/',
+            'templates/',   // legacy
+            'snippets/',    // legacy
+            'config/',      // legacy
+            'controllers/',
+            'assets/',
+            'public/',
+        ];
         $isAllowedPrefix = false;
         foreach ($allowedPrefixes as $prefix) {
             if (str_starts_with($path, $prefix)) {
@@ -822,7 +835,7 @@ class ThemeCodeEditorController extends Controller
         }
 
         if (!$isAllowedPrefix && !$this->isRootFile($path)) {
-            return 'Invalid path — must be in an allowed directory or be theme.json/pages.json';
+            return 'Invalid path — must be in an allowed directory or a recognised root file (theme.blueprint.json, theme.settings.json, theme.json, pages.json)';
         }
 
         return null;
@@ -833,7 +846,12 @@ class ThemeCodeEditorController extends Controller
      */
     private function isRootFile(string $path): bool
     {
-        return in_array($path, ['theme.json', 'pages.json'], true);
+        return in_array($path, [
+            'theme.blueprint.json',
+            'theme.settings.json',
+            'theme.json',   // legacy
+            'pages.json',   // legacy
+        ], true);
     }
 
     /**
