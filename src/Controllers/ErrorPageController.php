@@ -180,21 +180,20 @@ class ErrorPageController extends Controller
         $title = $titles[$statusCode] ?? 'Error';
         $message = $config['http'][$statusCode] ?? 'An error occurred.';
 
-        // Try to render user template
-        $basePath = defined('BASE_PATH') ? BASE_PATH : getcwd();
-        $viewsPath = $_ENV['VIEWS_PATH'] ?? 'pages';
-        $templateFile = $basePath . '/' . ltrim($viewsPath, '/') . '/errors/' . $statusCode . '.twig';
-
-        if (file_exists($templateFile)) {
+        // Try theme override → CMS default via namespaces
+        foreach (['@theme/errors/' . $statusCode, '@errors/' . $statusCode] as $tpl) {
             try {
-                echo view('errors/' . $statusCode, [
+                $html = view($tpl, [
                     'code' => $statusCode,
                     'title' => $title,
                     'message' => $message,
                 ]);
-                return '';
+                if ($html !== null && $html !== '') {
+                    echo $html;
+                    return '';
+                }
             } catch (\Throwable $e) {
-                // Fall through to default
+                // Try next candidate
             }
         }
 
@@ -298,9 +297,11 @@ HTML;
 
     private function getErrorTemplates(): array
     {
-        $basePath = defined('BASE_PATH') ? BASE_PATH : getcwd();
-        $viewsPath = $_ENV['VIEWS_PATH'] ?? 'pages';
-        $errorsDir = $basePath . '/' . ltrim($viewsPath, '/') . '/errors';
+        // Error templates now live inside the active theme (for overrides)
+        // or inside the CMS module (for defaults). The admin listing walks
+        // the active theme's errors/ dir, falling back to none if unset.
+        $themeManager = \ZephyrPHP\Cms\Services\ThemeManager::getInstance();
+        $errorsDir = $themeManager->getActiveThemePath() . '/errors';
 
         $templates = [];
         if (is_dir($errorsDir)) {

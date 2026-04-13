@@ -18,8 +18,7 @@ class ThemeManager
     public function __construct()
     {
         $basePath = defined('BASE_PATH') ? BASE_PATH : dirname(__DIR__, 4);
-        $viewsPath = $_ENV['VIEWS_PATH'] ?? 'pages';
-        $this->themesBasePath = $basePath . '/' . ltrim($viewsPath, '/') . '/themes';
+        $this->themesBasePath = $basePath . '/themes';
         $this->publicThemesPath = $basePath . '/public/themes';
         self::$instance = $this;
     }
@@ -575,62 +574,6 @@ class ThemeManager
         return $this->publicThemesPath;
     }
 
-    /**
-     * Source assets directory inside a theme — `{theme}/assets`. This is
-     * where CSS/JS/images/fonts live alongside the markup. Call publish()
-     * to mirror this directory into the web-served public path.
-     */
-    public function getThemeAssetsSourcePath(string $slug): string
-    {
-        return $this->getThemePath($slug) . '/assets';
-    }
-
-    /**
-     * Copy `{theme}/assets/**` into `public/themes/{slug}/**` so the web
-     * server can serve them. Called on theme install, activate, and upload.
-     * Safe to invoke even when the source is missing — becomes a no-op.
-     *
-     * Returns the number of files copied. Existing files at the destination
-     * are overwritten (publish is idempotent — running twice is fine).
-     */
-    public function publish(string $slug): int
-    {
-        $source = $this->getThemeAssetsSourcePath($slug);
-        if (!is_dir($source)) {
-            return 0;
-        }
-
-        $target = $this->getThemeAssetsPath($slug);
-        if (!is_dir($target)) {
-            mkdir($target, 0755, true);
-        }
-
-        return $this->copyDir($source, $target);
-    }
-
-    private function copyDir(string $source, string $target): int
-    {
-        $count = 0;
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($source, \RecursiveDirectoryIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::SELF_FIRST
-        );
-
-        foreach ($iterator as $item) {
-            $relative = substr($item->getPathname(), strlen($source) + 1);
-            $dest = $target . '/' . $relative;
-            if ($item->isDir()) {
-                if (!is_dir($dest)) {
-                    mkdir($dest, 0755, true);
-                }
-            } else {
-                copy($item->getPathname(), $dest);
-                $count++;
-            }
-        }
-
-        return $count;
-    }
 
     // --- Pages Management ---
 
@@ -778,15 +721,26 @@ class ThemeManager
 
     private function createStarterTheme(string $path, string $name, string $slug): void
     {
-        // New layout: everything is inside the theme folder.
+        // Theme layout (logic only — no assets folder):
         //   pages/    → per-page folders ({tpl}/{tpl}.twig + {tpl}/{tpl}.json)
-        //   partials/ → dumb Twig includes (was snippets/)
+        //   partials/ → dumb Twig includes
         //   sections/ → schema-bearing, admin-editable
         //   layouts/  → top-level page shells
-        //   assets/   → source CSS/JS/images/fonts (publish() syncs to public/)
-        $dirs = ['layouts', 'pages', 'partials', 'sections', 'assets/css', 'assets/js', 'assets/images', 'assets/fonts'];
+        //
+        // Assets (CSS/JS/images/fonts) live only at public/themes/{slug}/ —
+        // served directly by the web server, never through PHP. Export bundles
+        // them under an assets/ folder inside the ZIP; import splits them back.
+        $dirs = ['layouts', 'pages', 'partials', 'sections'];
         foreach ($dirs as $dir) {
             mkdir($path . '/' . $dir, 0755, true);
+        }
+
+        // Create public asset directories for this theme at public/themes/{slug}/
+        $assetsPath = $this->getThemeAssetsPath($slug);
+        foreach (['css', 'js', 'images', 'fonts'] as $dir) {
+            if (!is_dir($assetsPath . '/' . $dir)) {
+                mkdir($assetsPath . '/' . $dir, 0755, true);
+            }
         }
 
         // Copy starter sections from stubs
@@ -927,8 +881,8 @@ TWIG;
             ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
         );
 
-        // Starter CSS — written to theme source (assets/). Web-served copy
-        // appears in public/themes/{slug}/ after publish().
+        // Starter CSS — written directly to public/themes/{slug}/css/ for
+        // immediate web-serving. No intermediate source copy inside the theme.
         $starterCss = <<<'CSS'
 /* Theme Stylesheet */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -999,12 +953,8 @@ body {
     .footer__inner { flex-direction: column; gap: 12px; text-align: center; }
 }
 CSS;
-        file_put_contents($path . '/assets/css/base.css', $starterCss);
-        file_put_contents($path . '/assets/js/base.js', "/* Theme JavaScript */\n");
-
-        // Mirror assets into public/themes/{slug}/ so the web server can serve
-        // them immediately (publish is idempotent; safe to call again later)
-        $this->publish($slug);
+        file_put_contents($assetsPath . '/css/base.css', $starterCss);
+        file_put_contents($assetsPath . '/js/base.js', "/* Theme JavaScript */\n");
     }
 
     /**

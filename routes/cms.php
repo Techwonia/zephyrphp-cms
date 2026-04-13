@@ -150,9 +150,10 @@ Route::group(['prefix' => '/' . admin_path(), 'middleware' => [\ZephyrPHP\Middle
     // Theme section creation
     Route::post('/themes/{slug}/sections/create', [ThemeController::class, 'createSection']);
 
-    // Theme Install/Uninstall (before slug routes to avoid collision)
+    // Theme Install/Uninstall/Export (before slug routes to avoid collision)
     Route::post('/themes/install', [ThemeController::class, 'installUpload']);
     Route::post('/themes/{slug}/uninstall', [ThemeController::class, 'uninstallTheme']);
+    Route::get('/themes/{slug}/export', [ThemeController::class, 'export']);
 
     // Themes
     Route::get('/themes', [ThemeController::class, 'index']);

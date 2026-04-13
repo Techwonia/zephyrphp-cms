@@ -627,8 +627,7 @@ class ThemeCodeEditorController extends Controller
             'snippets/',    // legacy
             'config/',      // legacy
             'controllers/',
-            'assets/',
-            'public/',
+            'public/',      // assets — served from public/themes/{slug}/
         ];
         $isAllowedPrefix = false;
         foreach ($allowedPrefixes as $prefix) {
@@ -835,8 +834,7 @@ class ThemeCodeEditorController extends Controller
             'snippets/',    // legacy
             'config/',      // legacy
             'controllers/',
-            'assets/',
-            'public/',
+            'public/',      // assets — served from public/themes/{slug}/
         ];
         $isAllowedPrefix = false;
         foreach ($allowedPrefixes as $prefix) {

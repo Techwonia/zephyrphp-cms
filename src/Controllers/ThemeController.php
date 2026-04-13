@@ -647,6 +647,85 @@ class ThemeController extends Controller
     }
 
     /**
+     * Stream a theme as a downloadable ZIP. The archive bundles the theme's
+     * markup/config folder (`themes/{slug}/`) alongside its public assets
+     * (`public/themes/{slug}/`) under an `assets/` subfolder, so a later
+     * import call on another ZephyrPHP site re-splits them into the correct
+     * locations (ThemeInstaller already routes `assets/` -> public/).
+     */
+    public function export(string $slug): void
+    {
+        $this->requirePermission('themes.edit');
+
+        if (!preg_match('/^[a-z0-9_-]+$/', $slug)) {
+            http_response_code(400);
+            echo 'Invalid theme slug';
+            return;
+        }
+
+        $themePath = $this->themeManager->getThemePath($slug);
+        if (!is_dir($themePath)) {
+            http_response_code(404);
+            echo 'Theme not found';
+            return;
+        }
+
+        $publicAssets = $this->themeManager->getThemeAssetsPath($slug);
+
+        $tmpZip = tempnam(sys_get_temp_dir(), 'zephyr-theme-') . '.zip';
+        $zip = new \ZipArchive();
+        if ($zip->open($tmpZip, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            http_response_code(500);
+            echo 'Could not create archive';
+            return;
+        }
+
+        // 1) Theme source (everything except legacy/stale dirs — publish/build/cache)
+        $this->addDirectoryToZip($zip, $themePath, '', ['.git', 'node_modules', 'vendor']);
+
+        // 2) Public assets bundled under assets/ so import puts them back under public/themes/{slug}
+        if (is_dir($publicAssets)) {
+            $this->addDirectoryToZip($zip, $publicAssets, 'assets');
+        }
+
+        $zip->close();
+
+        $filename = preg_replace('/[^a-z0-9_-]/', '-', $slug) . '-theme.zip';
+        header('Content-Type: application/zip');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Content-Length: ' . filesize($tmpZip));
+        readfile($tmpZip);
+        @unlink($tmpZip);
+    }
+
+    /**
+     * Recursively add a directory's contents to a ZipArchive under an
+     * optional prefix path. `$exclude` top-level folder names are skipped.
+     */
+    private function addDirectoryToZip(\ZipArchive $zip, string $source, string $prefix = '', array $exclude = []): void
+    {
+        if (!is_dir($source)) return;
+
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($source, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::LEAVES_ONLY
+        );
+
+        foreach ($iterator as $file) {
+            if (!$file->isFile()) continue;
+
+            $relative = str_replace('\\', '/', substr($file->getPathname(), strlen($source) + 1));
+
+            // Skip excluded top-level folders
+            $top = explode('/', $relative, 2)[0];
+            if (in_array($top, $exclude, true)) continue;
+
+            $zipPath = $prefix === '' ? $relative : $prefix . '/' . $relative;
+            $zip->addFile($file->getPathname(), $zipPath);
+        }
+    }
+
+    /**
      * Uninstall a theme — removes files, published assets, and DB record.
      */
     public function uninstallTheme(string $slug): void
