@@ -28,7 +28,28 @@
             --text-heading:     #FFFFFF;
             --border:           #2D2D30;
             --border-hover:     #3E3E42;
+            /* Chrome vars keep ZephyrUI dark defaults */
         }
+
+        /* ── Light theme — override chrome (topbar + activity bar) to match ── */
+        body[data-theme="light"] {
+            --chrome-bg:          #F3F3F3;
+            --chrome-surface:     #F9F9F9;
+            --chrome-hover:       rgba(0,0,0,0.05);
+            --chrome-active:      rgba(14,165,233,0.12);
+            --chrome-text:        #616161;
+            --chrome-text-active: #111111;
+            --chrome-border:      rgba(0,0,0,0.08);
+        }
+        body[data-theme="light"] .topbar { border-bottom: 1px solid var(--border); }
+        body[data-theme="light"] .topbar-label,
+        body[data-theme="light"] .topbar-back:hover { color: var(--chrome-text-active); }
+        body[data-theme="light"] .cms-activity-bar { border-right: 1px solid var(--border); }
+        body[data-theme="light"] .ref-panel { background: var(--bg-surface); }
+        body[data-theme="light"] .ref-item { color: var(--text); }
+        body[data-theme="light"] .ref-group-header:hover { color: var(--text-heading); }
+        body[data-theme="light"] .ref-panel-refresh:hover { color: var(--text-heading); background: var(--bg-surface-hover); }
+        body[data-theme="light"] .ref-panel-close:hover { color: var(--text-heading); }
 
         /* ── Body ── */
         body {
@@ -1990,10 +2011,11 @@
                 ...(indentWithTab ? [indentWithTab] : []),
             ]) : null;
 
+            const isDark = (document.body.getAttribute('data-theme') || 'dark') === 'dark';
             const extensions = [
                 basicSetup,
                 editorKeymap,
-                oneDark,
+                isDark ? oneDark : null,
                 EditorView.updateListener.of(update => {
                     if (update.docChanged && role === 'main') onEditorChange();
                     if (update.selectionSet && role === 'main') updateCursorPos(update.state);
@@ -3869,15 +3891,28 @@
     $('btnSplit').addEventListener('click', () => window._toggleSplitView());
 
     // ── Theme toggle (dark / light) ──
-    function applyEditorTheme(theme) {
+    function applyEditorTheme(theme, recreate) {
         document.body.setAttribute('data-theme', theme);
         try { localStorage.setItem('cms-code-editor-theme', theme); } catch(e) {}
+        // Recreate editor views so CodeMirror picks up the new theme
+        if (recreate && state.activeTab) {
+            // Sync current content before recreating
+            const tab = state.openTabs.find(t => t.path === state.activeTab);
+            if (tab && state.editorView) {
+                tab.content = state.editorView.state.doc.toString();
+            }
+            switchTab(state.activeTab);
+            if (state.splitTab && state.splitView) {
+                const splitTab = state.openTabs.find(t => t.path === state.splitTab);
+                if (splitTab) createEditor($container2, splitTab.content, splitTab.path, 'split');
+            }
+        }
     }
-    // Apply saved theme on load — default to dark
-    applyEditorTheme(localStorage.getItem('cms-code-editor-theme') || 'dark');
+    // Apply saved theme on load — default to dark (no recreate needed; editor not built yet)
+    applyEditorTheme(localStorage.getItem('cms-code-editor-theme') || 'dark', false);
     $('btnThemeToggle').addEventListener('click', () => {
         const current = document.body.getAttribute('data-theme') || 'dark';
-        applyEditorTheme(current === 'dark' ? 'light' : 'dark');
+        applyEditorTheme(current === 'dark' ? 'light' : 'dark', true);
     });
     // CSS/JS companion file buttons
     async function openOrCreateCompanion(ext) {
