@@ -16,6 +16,20 @@
             --toolbar-h: 34px;
         }
 
+        /* ── Dark theme — overrides ZephyrUI tokens for the whole editor chrome ── */
+        body[data-theme="dark"] {
+            --bg-app:           #1E1E1E;
+            --bg-surface:       #252526;
+            --bg-surface-hover: #2A2D2E;
+            --bg-subdued:       #252526;
+            --text:             #CCCCCC;
+            --text-secondary:   #9D9D9D;
+            --text-disabled:    #6E6E6E;
+            --text-heading:     #FFFFFF;
+            --border:           #2D2D30;
+            --border-hover:     #3E3E42;
+        }
+
         /* ── Body ── */
         body {
             font-family: var(--font-sans);
@@ -27,6 +41,13 @@
             display: flex;
             flex-direction: column;
         }
+
+        /* Swap toggle icons based on current theme */
+        #btnThemeToggle svg { width: 14px; height: 14px; }
+        body[data-theme="dark"] #btnThemeToggle .icon-theme-dark { display: none; }
+        body[data-theme="dark"] #btnThemeToggle .icon-theme-light { display: block; }
+        body[data-theme="light"] #btnThemeToggle .icon-theme-dark { display: block; }
+        body[data-theme="light"] #btnThemeToggle .icon-theme-light { display: none; }
 
         /* ── Top Bar ── */
         .topbar {
@@ -824,6 +845,10 @@
         <div class="topbar-center">{{ theme.getName() }}</div>
         <div class="topbar-right">
             <span class="unsaved-indicator" id="unsavedIndicator">Unsaved</span>
+            <button class="btn-topbar" id="btnThemeToggle" title="Toggle theme">
+                <svg class="icon-theme-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                <svg class="icon-theme-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            </button>
             <button class="btn-save" id="btnSave" disabled>Save</button>
         </div>
     </div>
@@ -3842,6 +3867,18 @@
     $('btnSearch').addEventListener('click', () => window._openQuickSearch());
     $('btnFormat').addEventListener('click', () => window._formatCode());
     $('btnSplit').addEventListener('click', () => window._toggleSplitView());
+
+    // ── Theme toggle (dark / light) ──
+    function applyEditorTheme(theme) {
+        document.body.setAttribute('data-theme', theme);
+        try { localStorage.setItem('cms-code-editor-theme', theme); } catch(e) {}
+    }
+    // Apply saved theme on load — default to dark
+    applyEditorTheme(localStorage.getItem('cms-code-editor-theme') || 'dark');
+    $('btnThemeToggle').addEventListener('click', () => {
+        const current = document.body.getAttribute('data-theme') || 'dark';
+        applyEditorTheme(current === 'dark' ? 'light' : 'dark');
+    });
     // CSS/JS companion file buttons
     async function openOrCreateCompanion(ext) {
         const path = state.activeTab;
