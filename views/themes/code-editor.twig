@@ -2402,7 +2402,9 @@
     // SAVE / DELETE / CREATE / RENAME
     // ══════════════════════════════════════════════
 
+    let _saveInFlight = false;
     window._saveFile = async function() {
+        if (_saveInFlight) return;
         const tab = state.openTabs.find(t => t.path === state.activeTab);
         if (!tab || !tab.modified) return;
 
@@ -2411,6 +2413,7 @@
             tab.content = state.editorView.state.doc.toString();
         }
 
+        _saveInFlight = true;
         $btnSave.disabled = true;
         $btnSave.textContent = 'Saving...';
         try {
@@ -2423,6 +2426,7 @@
         } catch (e) {
             showToast(`Save failed: ${e.message}`, 'error');
         } finally {
+            _saveInFlight = false;
             $btnSave.textContent = 'Save';
             updateUnsavedState();
         }
@@ -3806,7 +3810,13 @@
     // ══════════════════════════════════════════════
 
     document.addEventListener('keydown', e => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); window._saveFile(); }
+        // Ctrl+S is handled by the CodeMirror keybinding and textarea fallback.
+        // Only trigger the global save when the focus is NOT inside the editor,
+        // so we don't fire the save twice.
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            const inEditor = e.target.closest('.cm-editor, .editor-fallback');
+            if (!inEditor) { e.preventDefault(); window._saveFile(); }
+        }
         if ((e.ctrlKey || e.metaKey) && e.key === 'p') { e.preventDefault(); window._openQuickSearch(); }
     });
 
