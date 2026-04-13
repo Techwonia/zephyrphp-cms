@@ -32,7 +32,15 @@ class ThemeManager
     }
 
     /**
-     * Get the live (published) theme slug from DB, fallback to env/default.
+     * Get the live (published) theme slug. Resolution order:
+     *   1. DB: cms_themes row with status = 'live'
+     *   2. Env: CMS_THEME override
+     *   3. Filesystem: first folder under themes/ that carries a manifest
+     *      (theme.blueprint.json preferred, theme.json accepted).
+     *
+     * Step 3 is the self-heal path — if the DB seed never ran (e.g. setup
+     * wizard completed before this code shipped), the site still renders
+     * as long as at least one theme exists on disk.
      */
     public function getActiveTheme(): string
     {
@@ -50,7 +58,27 @@ class ThemeManager
             // DB not ready yet
         }
 
-        $this->activeThemeSlug = $_ENV['CMS_THEME'] ?? 'starter';
+        if (!empty($_ENV['CMS_THEME'])) {
+            $this->activeThemeSlug = $_ENV['CMS_THEME'];
+            return $this->activeThemeSlug;
+        }
+
+        // Last-resort filesystem scan — pick the first theme folder with a
+        // valid manifest. Keeps the site rendering after a fresh install
+        // even before an admin explicitly activates a theme.
+        if (is_dir($this->themesBasePath)) {
+            foreach (scandir($this->themesBasePath) as $entry) {
+                if ($entry === '.' || $entry === '..') continue;
+                $dir = $this->themesBasePath . '/' . $entry;
+                if (!is_dir($dir)) continue;
+                if (file_exists($dir . '/theme.blueprint.json') || file_exists($dir . '/theme.json')) {
+                    $this->activeThemeSlug = $entry;
+                    return $this->activeThemeSlug;
+                }
+            }
+        }
+
+        $this->activeThemeSlug = 'starter';
         return $this->activeThemeSlug;
     }
 
