@@ -616,8 +616,20 @@ class ThemeCodeEditorController extends Controller
             return;
         }
 
-        // Must start with an allowed prefix
-        $allowedPrefixes = ['layouts/', 'templates/', 'snippets/', 'sections/', 'config/', 'controllers/', 'assets/', 'public/'];
+        // Must start with an allowed prefix or be a recognised root file.
+        // Mirrors the allowlist in validateFilePath() — keep in sync.
+        $allowedPrefixes = [
+            'layouts/',
+            'pages/',
+            'partials/',
+            'sections/',
+            'templates/',   // legacy
+            'snippets/',    // legacy
+            'config/',      // legacy
+            'controllers/',
+            'assets/',
+            'public/',
+        ];
         $isAllowedPrefix = false;
         foreach ($allowedPrefixes as $prefix) {
             if (str_starts_with($path, $prefix)) {
@@ -626,9 +638,9 @@ class ThemeCodeEditorController extends Controller
             }
         }
 
-        if (!$isAllowedPrefix) {
+        if (!$isAllowedPrefix && !$this->isRootFile($path)) {
             http_response_code(400);
-            echo json_encode(['error' => 'Invalid path — must be in an allowed directory']);
+            echo json_encode(['error' => 'Invalid path — must be in an allowed directory or a recognised root file']);
             return;
         }
 
